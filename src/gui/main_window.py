@@ -1191,9 +1191,12 @@ Shows the current base file version and contracts.ini version. "✓" means up to
         self.table.blockSignals(False)
 
     def _create_item(self, text: str):
-        """Create table item with text."""
+        """Create table item with text and tooltip for full content."""
         item = QTableWidgetItem(text)
         item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
+        # Add tooltip to show full text when hovering (helpful for truncated content)
+        if text:
+            item.setToolTip(text)
         return item
 
     def _status_color(self, status: str) -> QColor:
