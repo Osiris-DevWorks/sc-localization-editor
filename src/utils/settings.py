@@ -1,10 +1,11 @@
 """Settings management using QSettings."""
+
 import logging
 import os
+import winreg
 from pathlib import Path
 
 from PyQt6.QtCore import QSettings
-import winreg
 
 logger = logging.getLogger(__name__)
 
@@ -71,34 +72,34 @@ class AppSettings:
 
     # Enhancements cache filenames (written by generate_enhancements_ini.py into cache dir)
     ENHANCEMENTS_FILES = {
-        "ship_descs":          "ships_desc_enhancements.ini",
-        "component_descs":     "components_desc_enhancements.ini",
-        "ship_weapon_descs":   "ship_weapons_desc_enhancements.ini",
-        "fps_weapon_descs":    "fps_weapons_desc_enhancements.ini",
-        "mission_rewards":     "mission_rewards_enhancements.ini",
-        "commodity_crafting":  "commodity_crafting_enhancements.ini",
-        "journal":            "journal_enhancements.ini",
+        "ship_descs": "ships_desc_enhancements.ini",
+        "component_descs": "components_desc_enhancements.ini",
+        "ship_weapon_descs": "ship_weapons_desc_enhancements.ini",
+        "fps_weapon_descs": "fps_weapons_desc_enhancements.ini",
+        "mission_rewards": "mission_rewards_enhancements.ini",
+        "commodity_crafting": "commodity_crafting_enhancements.ini",
+        "journal": "journal_enhancements.ini",
         "missile_enhancements": "missile_enhancements.ini",
     }
 
     # User-facing category labels — match the filter categories on the main page
     ENHANCEMENT_LABELS = {
-        "ships":       "Ships",
-        "ship_items":  "Ship Items",
-        "gear":        "Gear",
-        "missions":    "Missions",
+        "ships": "Ships",
+        "ship_items": "Ship Items",
+        "gear": "Gear",
+        "missions": "Missions",
         "commodities": "Commodities",
-        "journal":     "Journal",
+        "journal": "Journal",
     }
 
     # Maps each checkbox key to the enhancement file keys it controls
     ENHANCEMENT_CATEGORY_FILES = {
-        "ships":       ["ship_descs"],
-        "ship_items":  ["component_descs", "ship_weapon_descs", "missile_enhancements"],
-        "gear":        ["fps_weapon_descs"],
-        "missions":    ["mission_rewards"],
+        "ships": ["ship_descs"],
+        "ship_items": ["component_descs", "ship_weapon_descs", "missile_enhancements"],
+        "gear": ["fps_weapon_descs"],
+        "missions": ["mission_rewards"],
         "commodities": ["commodity_crafting"],
-        "journal":     ["journal"],
+        "journal": ["journal"],
     }
 
     # Settings keys - Legacy (kept for migration)
@@ -139,7 +140,9 @@ class AppSettings:
     @staticmethod
     def get_enhancements_enabled() -> bool:
         """Check whether enhancements are enabled (default: True)."""
-        return AppSettings.settings().value(AppSettings.ENHANCEMENTS_ENABLED, True, type=bool)
+        return AppSettings.settings().value(
+            AppSettings.ENHANCEMENTS_ENABLED, True, type=bool
+        )
 
     @staticmethod
     def set_enhancements_enabled(enabled: bool) -> None:
@@ -150,13 +153,15 @@ class AppSettings:
     def get_enhancement_category_enabled(key: str) -> bool:
         """Check if a specific enhancement category is enabled (default: True)."""
         return AppSettings.settings().value(
-            f"enhancements/categories/{key}/enabled", True, type=bool)
+            f"enhancements/categories/{key}/enabled", True, type=bool
+        )
 
     @staticmethod
     def set_enhancement_category_enabled(key: str, enabled: bool) -> None:
         """Enable or disable a specific enhancement category."""
         AppSettings.settings().setValue(
-            f"enhancements/categories/{key}/enabled", enabled)
+            f"enhancements/categories/{key}/enabled", enabled
+        )
 
     @staticmethod
     def get_enabled_enhancement_categories() -> set[str]:
@@ -170,7 +175,8 @@ class AppSettings:
     @staticmethod
     def get_theme() -> str:
         """Get UI theme name ('light' or 'dark')."""
-        from src.gui.theme import DEFAULT_THEME, AVAILABLE_THEMES
+        from src.gui.theme import AVAILABLE_THEMES, DEFAULT_THEME
+
         value = AppSettings.settings().value(AppSettings.THEME, DEFAULT_THEME)
         return value if value in AVAILABLE_THEMES else DEFAULT_THEME
 
@@ -279,15 +285,17 @@ class AppSettings:
 
         # Installer-written registry key (older flow).
         try:
-            reg_path = r'Software\Osiris DevWorks\SC Localization Editor'
+            reg_path = r"Software\Osiris DevWorks\SC Localization Editor"
             registry_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_path)
-            sc_directory, _ = winreg.QueryValueEx(registry_key, 'sc_directory')
+            sc_directory, _ = winreg.QueryValueEx(registry_key, "sc_directory")
             winreg.CloseKey(registry_key)
             if sc_directory:
-                AppSettings.settings().setValue(AppSettings.GAME_INSTALL_PATH, sc_directory)
+                AppSettings.settings().setValue(
+                    AppSettings.GAME_INSTALL_PATH, sc_directory
+                )
                 return sc_directory
-        except (WindowsError, OSError):
-            pass
+        except (WindowsError, OSError) as e:
+            logger.debug(f"Could not read legacy registry path: {e}")
 
         for candidate in [
             r"C:\Program Files\Roberts Space Industries\StarCitizen\LIVE",
@@ -306,6 +314,7 @@ class AppSettings:
             Version string (e.g., "4.7.176.58286") or empty string if not found/invalid
         """
         import json
+
         game_path = AppSettings.get_game_install_path()
         if not game_path:
             return ""
@@ -315,7 +324,7 @@ class AppSettings:
             return ""
 
         try:
-            with open(manifest_path, 'r') as f:
+            with open(manifest_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 version = data.get("Data", {}).get("Version", "")
                 return version
@@ -331,7 +340,9 @@ class AppSettings:
     @staticmethod
     def get_auto_write_enabled() -> bool:
         """Get auto-write to game enabled flag."""
-        return AppSettings.settings().value(AppSettings.AUTO_WRITE_ENABLED, False, type=bool)
+        return AppSettings.settings().value(
+            AppSettings.AUTO_WRITE_ENABLED, False, type=bool
+        )
 
     @staticmethod
     def set_auto_write_enabled(enabled: bool) -> None:
@@ -409,7 +420,7 @@ class AppSettings:
         AppSettings.settings().setValue(key, enabled)
 
     @staticmethod
-    def get_merge_hierarchy() -> list:
+    def get_merge_hierarchy() -> list[str]:
         """Get the merge hierarchy (ordered list of source names).
 
         Returns:
@@ -421,7 +432,9 @@ class AppSettings:
         if isinstance(value, str):
             # If stored as comma-separated string, split it
             return value.split(",") if value else default
-        return value if value else default
+        if isinstance(value, list):
+            return value
+        return default
 
     @staticmethod
     def set_merge_hierarchy(hierarchy: list) -> None:
@@ -507,11 +520,13 @@ class AppSettings:
         # (Pre-1.0 the marker was the contracts source — that key may still
         # exist on upgraders but the dedicated retired-source migrator below
         # will remove it on the same launch.)
-        if settings.value(f"{AppSettings.DATA_SOURCES_PREFIX}/{AppSettings.SOURCE_GLOBAL}/path"):
+        if settings.value(
+            f"{AppSettings.DATA_SOURCES_PREFIX}/{AppSettings.SOURCE_GLOBAL}/path"
+        ):
             return
 
         # Global: locally-cached base.ini, populated by P4K extraction.
-        global_local_path = str(AppSettings.get_cache_dir() / 'base.ini')
+        global_local_path = str(AppSettings.get_cache_dir() / "base.ini")
         AppSettings.set_source_path(AppSettings.SOURCE_GLOBAL, global_local_path)
         AppSettings.set_source_enabled(AppSettings.SOURCE_GLOBAL, True)
         AppSettings.set_source_auto_update(AppSettings.SOURCE_GLOBAL, False)
@@ -567,7 +582,7 @@ class AppSettings:
         prune: list[str] = []
         for source_name in AppSettings.RETIRED_URL_SOURCE_NAMES:
             path = AppSettings.get_source_path(source_name)
-            if path and not (path.startswith('http://') or path.startswith('https://')):
+            if path and not (path.startswith("http://") or path.startswith("https://")):
                 logger.info(
                     f"Skipping retired-source prune for {source_name}: "
                     f"path is local ({path}), not a URL — preserving user override"
@@ -609,17 +624,15 @@ class AppSettings:
             True if migration was performed, False if already using local path.
         """
         current_path = AppSettings.get_source_path(AppSettings.SOURCE_GLOBAL)
-        if current_path.startswith('http'):
-            local_path = str(AppSettings.get_cache_dir() / 'base.ini')
+        if current_path.startswith("http"):
+            local_path = str(AppSettings.get_cache_dir() / "base.ini")
             AppSettings.set_source_path(AppSettings.SOURCE_GLOBAL, local_path)
             AppSettings.set_source_auto_update(AppSettings.SOURCE_GLOBAL, False)
-            logger.info("Migrated global source from remote URL to local P4K cache path")
+            logger.info(
+                "Migrated global source from remote URL to local P4K cache path"
+            )
             return True
         return False
-
-
-
-
 
     @staticmethod
     def _resolve_docs_base() -> Path:
@@ -627,7 +640,7 @@ class AppSettings:
         try:
             key = winreg.OpenKey(
                 winreg.HKEY_CURRENT_USER,
-                r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+                r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
             )
             docs_path = Path(winreg.QueryValueEx(key, "Personal")[0])
             winreg.CloseKey(key)
@@ -677,8 +690,7 @@ class AppSettings:
             return
 
         logger.info(
-            f"Migrating registry settings "
-            f"HKCU\\{old_path}  →  HKCU\\{new_path}"
+            f"Migrating registry settings HKCU\\{old_path}  →  HKCU\\{new_path}"
         )
         try:
             AppSettings._reg_copy_tree(old_path, new_path)
@@ -751,9 +763,7 @@ class AppSettings:
                     sub = winreg.EnumKey(src, i)
                 except OSError:
                     break
-                AppSettings._reg_copy_tree(
-                    f"{src_path}\\{sub}", f"{dst_path}\\{sub}"
-                )
+                AppSettings._reg_copy_tree(f"{src_path}\\{sub}", f"{dst_path}\\{sub}")
                 i += 1
         finally:
             winreg.CloseKey(src)
@@ -839,7 +849,9 @@ class AppSettings:
                 tail = legacy_path.name.upper()
                 channels_upper = {c.upper(): c for c in AppSettings.AVAILABLE_CHANNELS}
                 if tail in channels_upper:
-                    settings.setValue(AppSettings.SC_INSTALL_ROOT, str(legacy_path.parent))
+                    settings.setValue(
+                        AppSettings.SC_INSTALL_ROOT, str(legacy_path.parent)
+                    )
                     settings.setValue(AppSettings.ACTIVE_CHANNEL, channels_upper[tail])
                     logger.info(
                         f"Migrated GAME_INSTALL_PATH {legacy!r} → "
@@ -848,7 +860,9 @@ class AppSettings:
                     )
                 else:
                     settings.setValue(AppSettings.SC_INSTALL_ROOT, legacy)
-                    settings.setValue(AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL)
+                    settings.setValue(
+                        AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL
+                    )
                     logger.info(
                         f"Migrated GAME_INSTALL_PATH {legacy!r} (no channel suffix) → "
                         f"SC_INSTALL_ROOT={legacy}, ACTIVE_CHANNEL={AppSettings.DEFAULT_CHANNEL}"
@@ -874,7 +888,8 @@ class AppSettings:
             return False
 
         populated_channel_dirs = [
-            p for p in (root.iterdir() if root.exists() else [])
+            p
+            for p in (root.iterdir() if root.exists() else [])
             if p.is_dir() and p.name.upper() in channel_names_upper and _has_content(p)
         ]
 
@@ -884,7 +899,9 @@ class AppSettings:
                 f"{[p.name for p in populated_channel_dirs]}; skipping filesystem migration"
             )
         else:
-            target_channel = settings.value(AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL)
+            target_channel = settings.value(
+                AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL
+            )
             target_dir = root / target_channel
             moved = []
             skipped = []
@@ -942,7 +959,9 @@ class AppSettings:
                         f"moved {moved}"
                     )
                 if skipped:
-                    logger.debug(f"Skipped (already channel dirs or collisions): {skipped}")
+                    logger.debug(
+                        f"Skipped (already channel dirs or collisions): {skipped}"
+                    )
             except OSError as e:
                 logger.warning(f"Channel-layout filesystem migration failed: {e}")
 
@@ -1004,7 +1023,9 @@ class AppSettings:
         safer than raising, since path helpers downstream depend on this and
         a bad value would break every subsequent call.
         """
-        value = AppSettings.settings().value(AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL)
+        value = AppSettings.settings().value(
+            AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL
+        )
         if value in AppSettings.AVAILABLE_CHANNELS:
             return value
         logger.warning(
@@ -1044,7 +1065,9 @@ class AppSettings:
         legacy = AppSettings.settings().value(AppSettings.GAME_INSTALL_PATH, "")
         if legacy:
             legacy_path = Path(legacy)
-            if legacy_path.name.upper() in (c.upper() for c in AppSettings.AVAILABLE_CHANNELS):
+            if legacy_path.name.upper() in (
+                c.upper() for c in AppSettings.AVAILABLE_CHANNELS
+            ):
                 return str(legacy_path.parent)
             return legacy  # assume it was already a root
 
@@ -1076,7 +1099,8 @@ class AppSettings:
             return list(AppSettings.AVAILABLE_CHANNELS)
         root_path = Path(root)
         return [
-            channel for channel in AppSettings.AVAILABLE_CHANNELS
+            channel
+            for channel in AppSettings.AVAILABLE_CHANNELS
             if (root_path / channel / "Data.p4k").exists()
         ]
 
@@ -1163,9 +1187,11 @@ class AppSettings:
         """
         import shutil
 
-        old_base = Path(
-            os.environ.get("APPDATA", str(Path.home() / "AppData" / "Roaming"))
-        ) / "Osiris DevWorks" / "SC Localization Editor"
+        old_base = (
+            Path(os.environ.get("APPDATA", str(Path.home() / "AppData" / "Roaming")))
+            / "Osiris DevWorks"
+            / "SC Localization Editor"
+        )
         old_cache = old_base / "cache"
 
         new_base = AppSettings.get_user_data_dir()
@@ -1209,29 +1235,31 @@ class AppSettings:
     def get_unp4k_exe_path() -> Path:
         """Resolve bundled unp4k.exe — works both frozen (PyInstaller) and in dev."""
         import sys
+
         meipass = getattr(sys, "_MEIPASS", None)
-        if getattr(sys, 'frozen', False) and meipass is not None:
+        if getattr(sys, "frozen", False) and meipass is not None:
             base = Path(meipass)
         else:
             # src/utils/settings.py → src/utils → src → project root
             base = Path(__file__).parent.parent.parent
-        return base / 'assets' / 'unp4k' / 'unp4k.exe'
+        return base / "assets" / "unp4k" / "unp4k.exe"
 
     @staticmethod
     def get_unforge_exe_path() -> Path:
         """Resolve bundled unforge.exe — works both frozen (PyInstaller) and in dev."""
         import sys
+
         meipass = getattr(sys, "_MEIPASS", None)
-        if getattr(sys, 'frozen', False) and meipass is not None:
+        if getattr(sys, "frozen", False) and meipass is not None:
             base = Path(meipass)
         else:
             base = Path(__file__).parent.parent.parent
-        return base / 'assets' / 'unp4k' / 'unforge.exe'
+        return base / "assets" / "unp4k" / "unforge.exe"
 
     @staticmethod
     def get_dataforge_cache_dir() -> Path:
         """Return the directory where DataForge entity XMLs are cached after unforge."""
-        return AppSettings.get_cache_dir() / 'dataforge'
+        return AppSettings.get_cache_dir() / "dataforge"
 
     @staticmethod
     def get_p4k_path() -> Path:
@@ -1249,7 +1277,9 @@ class AppSettings:
             return Path(channel_path) / "Data.p4k"
 
         game_path = Path(AppSettings.get_game_install_path())
-        if game_path.name.upper() in {c.upper() for c in AppSettings.AVAILABLE_CHANNELS}:
+        if game_path.name.upper() in {
+            c.upper() for c in AppSettings.AVAILABLE_CHANNELS
+        }:
             return game_path / "Data.p4k"
         return game_path / AppSettings.get_active_channel() / "Data.p4k"
 
@@ -1266,14 +1296,22 @@ class AppSettings:
         """
         channel_path = AppSettings.get_channel_install_path()
         if channel_path:
-            return Path(channel_path) / "data" / "Localization" / "english" / "global.ini"
+            return (
+                Path(channel_path) / "data" / "Localization" / "english" / "global.ini"
+            )
 
         game_path = Path(AppSettings.get_game_install_path())
-        if game_path.name.upper() in {c.upper() for c in AppSettings.AVAILABLE_CHANNELS}:
+        if game_path.name.upper() in {
+            c.upper() for c in AppSettings.AVAILABLE_CHANNELS
+        }:
             return game_path / "data" / "Localization" / "english" / "global.ini"
         return (
-            game_path / AppSettings.get_active_channel()
-            / "data" / "Localization" / "english" / "global.ini"
+            game_path
+            / AppSettings.get_active_channel()
+            / "data"
+            / "Localization"
+            / "english"
+            / "global.ini"
         )
 
     @staticmethod
