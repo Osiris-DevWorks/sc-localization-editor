@@ -51,24 +51,8 @@ def main():
     logger.info(f"Starting Open Strings v{get_version()}")
 
     try:
-        # Migrate legacy settings to new data source format
-        AppSettings.migrate_legacy_settings()
-
-        # One-shot prune of the four URL-based sources (contracts/components/
-        # ships/commodities) retired in 0.7.0 when the app switched to local
-        # Data.p4k extraction. They've been silently 404-ing for ~10 versions
-        # and produced zero-key rows in the Merge Preview. Marker-gated so it
-        # runs exactly once per user.
-        AppSettings.migrate_remove_retired_url_sources()
-
-        # Migrate global source from any remote URL to local P4K cache path (v0.6.0+)
-        AppSettings.migrate_global_to_p4k_local()
-
-        # Split the pre-0.9.3 single-channel layout into channel-aware directories
-        # (registry: GAME_INSTALL_PATH → SC_INSTALL_ROOT + ACTIVE_CHANNEL;
-        # filesystem: Documents\Open Strings\{base.ini,cache,backups,user.ini,...}
-        # → Documents\Open Strings\LIVE\{...}). One-shot, marker-gated.
-        AppSettings.migrate_game_path_to_channel_layout()
+        # Seed default settings on first launch if registry is empty.
+        AppSettings.ensure_default_settings()
 
         # Always keep user source path in sync with canonical user.ini location
         AppSettings.set_source_path(AppSettings.SOURCE_USER, str(AppSettings.get_user_ini_path()))

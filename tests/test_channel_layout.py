@@ -1,12 +1,4 @@
-"""Tests for 0.9.3 Star Citizen channel-aware layout.
-
-Covers:
-- Channel-scoped path helpers nest under the active channel.
-- get_available_channels() reports only channels whose Data.p4k exists.
-- migrate_game_path_to_channel_layout() handles flat → channel-nested
-  migration (both registry side and filesystem side), is idempotent, and
-  merges into empty channel shells left by eager path-helper mkdir calls.
-"""
+"""Tests for the channel-aware layout — path helpers and channel selection API."""
 
 from __future__ import annotations
 
@@ -53,8 +45,8 @@ def fake_sc_root(tmp_path):
 @pytest.fixture
 def fake_user_data_dir(tmp_path, monkeypatch):
     """Redirect AppSettings.get_user_data_dir() to a tmp_path so we don't
-    touch the real ``Documents\\Smart Citizen\\``."""
-    user_dir = tmp_path / "Smart Citizen"
+    touch the real ``Documents\\Open Strings\\``."""
+    user_dir = tmp_path / "Open Strings"
     user_dir.mkdir(parents=True)
     monkeypatch.setattr(AppSettings, "get_user_data_dir", staticmethod(lambda: user_dir))
     return user_dir
@@ -191,115 +183,6 @@ class TestAvailableChannels:
         empty_root.mkdir()
         AppSettings.set_sc_install_root(str(empty_root))
         assert AppSettings.get_available_channels() == []
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Migrator
-# ─────────────────────────────────────────────────────────────────────────────
-
-
-@pytest.mark.critical
-class TestMigrateGamePathToChannelLayout:
-    def test_registry_split_from_live_suffix(self, isolated_qsettings, tmp_path):
-        s = AppSettings.settings()
-        s.setValue(
-            AppSettings.GAME_INSTALL_PATH,
-            r"C:\Program Files\Roberts Space Industries\StarCitizen\LIVE",
-        )
-        AppSettings.migrate_game_path_to_channel_layout()
-        assert s.value(AppSettings.SC_INSTALL_ROOT, "") == r"C:\Program Files\Roberts Space Industries\StarCitizen"
-        assert s.value(AppSettings.ACTIVE_CHANNEL, "") == "LIVE"
-        assert s.value(AppSettings.CHANNEL_LAYOUT_MIGRATED, False, type=bool)
-
-    def test_registry_split_from_ptu_suffix(self, isolated_qsettings, tmp_path):
-        s = AppSettings.settings()
-        s.setValue(
-            AppSettings.GAME_INSTALL_PATH,
-            r"D:\Games\StarCitizen\PTU",
-        )
-        AppSettings.migrate_game_path_to_channel_layout()
-        assert s.value(AppSettings.SC_INSTALL_ROOT, "") == r"D:\Games\StarCitizen"
-        assert s.value(AppSettings.ACTIVE_CHANNEL, "") == "PTU"
-
-    def test_registry_no_channel_suffix_defaults_to_live(self, isolated_qsettings, tmp_path):
-        s = AppSettings.settings()
-        s.setValue(AppSettings.GAME_INSTALL_PATH, r"D:\SomeWeirdPath")
-        AppSettings.migrate_game_path_to_channel_layout()
-        assert s.value(AppSettings.SC_INSTALL_ROOT, "") == r"D:\SomeWeirdPath"
-        assert s.value(AppSettings.ACTIVE_CHANNEL, "") == "LIVE"
-
-    def test_registry_no_legacy_path_sets_default_channel(self, isolated_qsettings):
-        """First-time-ever user: no legacy path at all. Migrator should
-        still set ACTIVE_CHANNEL so downstream callers get a real value."""
-        AppSettings.migrate_game_path_to_channel_layout()
-        assert AppSettings.settings().value(AppSettings.ACTIVE_CHANNEL, "") == "LIVE"
-
-    def test_filesystem_moves_flat_layout_into_live(self, isolated_qsettings, fake_user_data_dir):
-        # Flat pre-0.9.3 layout.
-        (fake_user_data_dir / "user.ini").write_text("k=v")
-        (fake_user_data_dir / "base.ini").write_text("stock=strings")
-        (fake_user_data_dir / "cache").mkdir()
-        (fake_user_data_dir / "cache" / "foo.ini").write_text("x")
-        (fake_user_data_dir / "backups").mkdir()
-        (fake_user_data_dir / "backups" / "global.ini.bak_20240101").write_text("b")
-
-        AppSettings.migrate_game_path_to_channel_layout()
-
-        live = fake_user_data_dir / "LIVE"
-        assert live.exists()
-        assert (live / "user.ini").read_text() == "k=v"
-        assert (live / "base.ini").read_text() == "stock=strings"
-        assert (live / "cache" / "foo.ini").exists()
-        assert (live / "backups" / "global.ini.bak_20240101").exists()
-        # Nothing left at the top level that looks like flat data.
-        assert not (fake_user_data_dir / "user.ini").exists()
-        assert not (fake_user_data_dir / "cache").exists()
-
-    def test_filesystem_merges_into_empty_live_shell(self, isolated_qsettings, fake_user_data_dir):
-        """A previous app-start may have touched ``get_cache_dir()`` which
-        auto-creates ``LIVE\\cache\\``. An empty LIVE shell shouldn't block
-        the migrator — flat data must still move in, merged with any empty
-        same-named subfolders under LIVE."""
-        (fake_user_data_dir / "LIVE").mkdir()
-        (fake_user_data_dir / "LIVE" / "cache").mkdir()  # empty shell
-        (fake_user_data_dir / "LIVE" / "backups").mkdir()  # empty shell
-        # Flat data that should be folded into LIVE.
-        (fake_user_data_dir / "user.ini").write_text("k=v")
-        (fake_user_data_dir / "cache").mkdir()
-        (fake_user_data_dir / "cache" / "base.ini").write_text("stock")
-
-        AppSettings.migrate_game_path_to_channel_layout()
-
-        assert (fake_user_data_dir / "LIVE" / "user.ini").read_text() == "k=v"
-        # The flat ``cache/base.ini`` got merged into the existing empty
-        # ``LIVE/cache/`` shell.
-        assert (fake_user_data_dir / "LIVE" / "cache" / "base.ini").read_text() == "stock"
-
-    def test_skips_when_populated_channel_dir_exists(self, isolated_qsettings, fake_user_data_dir):
-        """A populated LIVE dir means the user already has channel-aware
-        layout; don't touch sibling flat data (which could be partial
-        leftovers the user is intentionally keeping)."""
-        (fake_user_data_dir / "LIVE").mkdir()
-        (fake_user_data_dir / "LIVE" / "user.ini").write_text("channel=live")
-        # Sibling flat data that should NOT get moved.
-        (fake_user_data_dir / "stray.txt").write_text("don't touch")
-
-        AppSettings.migrate_game_path_to_channel_layout()
-
-        assert (fake_user_data_dir / "stray.txt").read_text() == "don't touch"
-        assert (fake_user_data_dir / "LIVE" / "user.ini").read_text() == "channel=live"
-
-    def test_idempotent(self, isolated_qsettings, fake_user_data_dir):
-        (fake_user_data_dir / "user.ini").write_text("original")
-
-        AppSettings.migrate_game_path_to_channel_layout()
-        first_state = (fake_user_data_dir / "LIVE" / "user.ini").read_text()
-
-        # Second call should no-op — marker is set.
-        AppSettings.migrate_game_path_to_channel_layout()
-        second_state = (fake_user_data_dir / "LIVE" / "user.ini").read_text()
-
-        assert first_state == second_state == "original"
 
 
 if __name__ == "__main__":
