@@ -1,7 +1,7 @@
 """Settings management using QSettings."""
 
 import logging
-import winreg
+import sys
 from pathlib import Path
 
 from PyQt6.QtCore import QSettings
@@ -434,14 +434,19 @@ class AppSettings:
     @staticmethod
     def _resolve_docs_base() -> Path:
         """Resolve the real Documents root (honors OneDrive redirection)."""
-        try:
-            key = winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER,
-                r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
-            )
-            docs_path = Path(winreg.QueryValueEx(key, "Personal")[0])
-            winreg.CloseKey(key)
-        except OSError:
+        if sys.platform == "win32":
+            try:
+                import winreg
+
+                key = winreg.OpenKey(
+                    winreg.HKEY_CURRENT_USER,
+                    r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
+                )
+                docs_path = Path(winreg.QueryValueEx(key, "Personal")[0])
+                winreg.CloseKey(key)
+            except OSError:
+                docs_path = Path.home() / "Documents"
+        else:
             docs_path = Path.home() / "Documents"
         return docs_path
 
