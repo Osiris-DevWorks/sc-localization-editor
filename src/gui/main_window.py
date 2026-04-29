@@ -690,7 +690,7 @@ class MainWindow(QMainWindow):
                 else:
                     restore_note = "\n\nNo backup was available to restore."
 
-                self.statusBar().showMessage("Apply failed — validation error")  # type: ignore[union-attr]
+                self._status_bar().showMessage("Apply failed — validation error")
                 QMessageBox.critical(
                     self,
                     "Validation Failed",
@@ -712,7 +712,7 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(0, ensure_user_cfg_language)
 
             logger.info(f"Applied to game: {target_path}")
-            self.statusBar().showMessage(  # type: ignore[union-attr]
+            self._status_bar().showMessage(
                 f"Applied to game | {user_count} user edits | {enhancement_count} enhancements"
             )
             QMessageBox.information(
@@ -767,7 +767,7 @@ class MainWindow(QMainWindow):
         try:
             global_ini.unlink()
             logger.info(f"Deleted {global_ini}")
-            self.statusBar().showMessage("Localization cleared — game reverted to vanilla text")  # type: ignore[union-attr]
+            self._status_bar().showMessage("Localization cleared — game reverted to vanilla text")
             QMessageBox.information(
                 self,
                 "Done",
@@ -919,7 +919,7 @@ class MainWindow(QMainWindow):
                 )
                 return
 
-            self.statusBar().showMessage("Merging sources...")  # type: ignore[union-attr]
+            self._status_bar().showMessage("Merging sources...")
 
             try:
                 # Load synchronously in main thread
@@ -943,7 +943,7 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 logger.exception(f"Error during merge: {e}")
                 QMessageBox.critical(self, "Error", f"Failed to merge sources: {e}")
-                self.statusBar().showMessage("Merge failed")  # type: ignore[union-attr]
+                self._status_bar().showMessage("Merge failed")
 
         except Exception as e:
             logger.exception(f"Error in perform_merge_and_reload: {e}")
@@ -1002,7 +1002,7 @@ class MainWindow(QMainWindow):
                     source = source.replace("https://github.com/", "https://raw.githubusercontent.com/")
                     source = source.replace("/blob/", "/")
 
-                self.statusBar().showMessage("Downloading INI file...")  # type: ignore[union-attr]
+                self._status_bar().showMessage("Downloading INI file...")
                 try:
                     temp_file = tempfile.NamedTemporaryFile(suffix=".ini", delete=False)
                     temp_file.close()

@@ -398,5 +398,5 @@ class SelectAllDelegate(QStyledItemDelegate):
     def createEditor(self, parent, option, index):
         editor = super().createEditor(parent, option, index)
         if editor is not None and hasattr(editor, "selectAll"):
-            editor.selectAll()
+            editor.selectAll()  # type: ignore  # hasattr guard is correct; type checkers can't narrow through hasattr
         return editor
