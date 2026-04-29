@@ -117,7 +117,52 @@ SmartCitizen-v0.1.0-Setup.exe
 
 ---
 
-## Distribution Package Contents
+## Code Signing (Optional)
+
+Signing requires a Windows code-signing certificate. Without one, the build still works — Windows will just show an "Unknown Publisher" SmartScreen warning when users run the installer.
+
+### Certificate options
+
+| Option                  | Cost         | Notes                                            |
+| ----------------------- | ------------ | ------------------------------------------------ |
+| **SignPath Foundation** | Free (OSS)   | Apply at signpath.io — approval takes a few days |
+| **Sectigo / Comodo OV** | ~€80–150/yr  | Standard OV cert, issued in a few hours          |
+| **EV cert**             | ~€300–500/yr | Immediately removes SmartScreen warning          |
+
+### Configure signing
+
+Set environment variables before building. Only one cert source is needed:
+
+```powershell
+# Option A — PFX file
+$env:SC_SIGN_CERT     = "C:\path\to\cert.pfx"
+$env:SC_SIGN_PASSWORD = "your-pfx-password"   # omit if the PFX has no password
+
+# Option B — cert already installed in Windows cert store
+$env:SC_SIGN_THUMB = "AABBCCDDEEFF..."        # SHA-1 thumbprint from certmgr.msc
+
+# Optional: override signtool.exe path (auto-detected from Windows SDK if unset)
+$env:SIGNTOOL_PATH = "C:\path\to\signtool.exe"
+```
+
+`build_all.bat` detects these vars automatically and signs both the app exe and the installer. When the vars are not set, signing is silently skipped.
+
+### Manual signing
+
+```powershell
+# Sign app exe only (after build_exe.py has run)
+uv run python scripts/build/build_exe.py --sign
+
+# Sign any arbitrary file
+uv run python scripts/build/build_exe.py --sign-file dist\SmartCitizen-1.0.0-Setup.exe
+```
+
+### What gets signed
+
+- `dist/SmartCitizen/SmartCitizen.exe` — the PyInstaller app (signed before installer is built)
+- `dist/SmartCitizen-{version}-Setup.exe` — the Inno Setup installer
+
+---
 
 The installer includes:
 
