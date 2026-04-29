@@ -1,11 +1,12 @@
 """Main window for Smart Citizen."""
 
+import html as _html_mod
 import logging
 import os
-import sys
+import re as _re_mod
 from pathlib import Path
 
-from PyQt6.QtCore import QEasingCurve, QModelIndex, QPropertyAnimation, Qt, QThread, QTimer, QUrl, pyqtSignal, pyqtSlot
+from PyQt6.QtCore import QEasingCurve, QModelIndex, QPropertyAnimation, Qt, QTimer, QUrl, pyqtSlot
 from PyQt6.QtGui import QCursor, QDesktopServices, QFont, QIcon, QPixmap
 from PyQt6.QtWidgets import (
     QAbstractItemView,
@@ -25,7 +26,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QStackedLayout,
     QStatusBar,
-    QStyledItemDelegate,
     QTableView,
     QTabWidget,
     QTextBrowser,
@@ -54,7 +54,7 @@ from src.gui.workers import (
     P4kExtractWorker,
     SelectAllDelegate,
     StartupSyncWorker,
-    _resolve_patches_dir,
+    get_resource_path,
 )
 from src.merger.ini_merger import merge_sources_by_hierarchy
 from src.models.string_model import StringEntry
@@ -66,7 +66,6 @@ from src.utils.version import get_version
 
 logger = logging.getLogger(__name__)
 
-
 # Preview-pane token translation — turns the raw loc-string format the game
 # reads into styled HTML that mirrors the in-game feel. Patterns:
 #   \n              → line break
@@ -75,8 +74,6 @@ logger = logging.getLogger(__name__)
 #   ~mission(Foo)   → greyed placeholder [Foo] (game substitutes at runtime)
 # Escape first, then substitute against the escaped tags so raw text
 # containing < or & can't break rendering.
-import html as _html_mod
-import re as _re_mod
 
 _EM3_RE = _re_mod.compile(r"&lt;EM3&gt;(.*?)&lt;/EM3&gt;", _re_mod.DOTALL)
 _EM4_RE = _re_mod.compile(r"&lt;EM4&gt;(.*?)&lt;/EM4&gt;", _re_mod.DOTALL)
@@ -117,7 +114,6 @@ def _render_preview_html(key: str, raw: str) -> str:
     )
 
 
-class MainWindow(QMainWindow):
 class MainWindow(QMainWindow):
     """Main application window."""
 

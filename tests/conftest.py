@@ -68,9 +68,7 @@ def sample_sources():
 @pytest.fixture
 def mock_game_path(temp_dir):
     """Provide a mock game installation path"""
-    game_path = os.path.join(
-        temp_dir, "StarCitizen", "LIVE", "data", "Localization", "english"
-    )
+    game_path = os.path.join(temp_dir, "StarCitizen", "LIVE", "data", "Localization", "english")
     os.makedirs(game_path, exist_ok=True)
 
     # Create a dummy global.ini
@@ -112,22 +110,16 @@ def mock_p4k_path(temp_dir):
 
 def pytest_configure(config):
     """Configure pytest with custom markers"""
+    import warnings
+
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
     config.addinivalue_line("markers", "unit: Unit test (fast, no I/O)")
-    config.addinivalue_line(
-        "markers", "integration: Integration test (file I/O or external tools)"
-    )
-    config.addinivalue_line(
-        "markers", "slow: Slow test (P4K extraction, large file operations)"
-    )
-    config.addinivalue_line(
-        "markers", "critical: Critical feature test (must pass before release)"
-    )
-    config.addinivalue_line(
-        "markers", "regression: Regression test for previously found bugs"
-    )
-    config.addinivalue_line(
-        "markers", "gui: GUI test (requires PyQt6, requires manual testing)"
-    )
+    config.addinivalue_line("markers", "integration: Integration test (file I/O or external tools)")
+    config.addinivalue_line("markers", "slow: Slow test (P4K extraction, large file operations)")
+    config.addinivalue_line("markers", "critical: Critical feature test (must pass before release)")
+    config.addinivalue_line("markers", "regression: Regression test for previously found bugs")
+    config.addinivalue_line("markers", "gui: GUI test (requires PyQt6, requires manual testing)")
 
 
 def pytest_collection_modifyitems(config, items):
@@ -185,11 +177,3 @@ class TestReporter:
 def reporter():
     """Provide a test reporter fixture"""
     return TestReporter()
-
-
-# Suppress warnings that clutter test output
-def pytest_configure(config):
-    import warnings
-
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    warnings.filterwarnings("ignore", category=PendingDeprecationWarning)

@@ -5,6 +5,7 @@ Usage:
     python build_exe.py
 """
 
+import importlib.util
 import os
 import shutil
 import sys
@@ -44,8 +45,6 @@ print()
 os.chdir(root_dir)
 
 # Generate PE version resource
-import importlib.util
-
 gen_script = os.path.join(project_dir, "gen_version_info.py")
 spec = importlib.util.spec_from_file_location("gen_version_info", gen_script)
 mod = importlib.util.module_from_spec(spec)

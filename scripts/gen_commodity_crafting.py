@@ -1,4 +1,5 @@
 """Generate commodity_crafting_enhancements.ini with blueprint usage data."""
+
 import os
 import re
 import subprocess
@@ -27,14 +28,13 @@ for xml_file in bp_dir.rglob("*.xml"):
                 r = elem.get("resource", "")
                 if r and r != "00000000-0000-0000-0000-000000000000":
                     resource_uuids_all.add(r)
-    except:
+    except Exception:
         pass
 
 uuid_names = {}
 for uid in resource_uuids_all:
     result = subprocess.run(
-        ["grep", "-rl", uid, str(scitem_dir / "carryables")],
-        capture_output=True, text=True, timeout=30
+        ["grep", "-rl", uid, str(scitem_dir / "carryables")], capture_output=True, text=True, timeout=30
     )
     files = [f for f in result.stdout.strip().split("\n") if f]
     if files:
@@ -58,7 +58,7 @@ for xml_file in scitem_dir.rglob("*.xml"):
                 display = loc.get(loc_key, loc_key)
                 entity_names[ref] = display
                 break
-    except:
+    except Exception:
         pass
 
 # Step 3: Parse blueprints
@@ -83,7 +83,7 @@ for xml_file in sorted(bp_dir.rglob("*.xml")):
                     materials.add(uuid_names[r])
         for mat in materials:
             commodity_items[mat].append((category, item_name))
-    except:
+    except Exception:
         pass
 
 
@@ -102,8 +102,8 @@ def condense_items(items_list):
         if "weapons" in cat:
             base_names = set()
             for n in names:
-                clean = re.sub(r'\s*"[^"]*"\s*', ' ', n).strip()
-                clean = re.sub(r'\s+', ' ', clean)
+                clean = re.sub(r'\s*"[^"]*"\s*', " ", n).strip()
+                clean = re.sub(r"\s+", " ", clean)
                 base_names.add(clean)
             if len(base_names) <= 3:
                 lines.append(", ".join(sorted(base_names)))
@@ -116,7 +116,7 @@ def condense_items(items_list):
             armour_type = parts[-2].title() if len(parts) > 2 else "Armour"
             set_names = set()
             for n in names:
-                m2 = re.match(r'^([\w-]+(?:\s[\w-]+)?)\s+(?:Arms|Core|Legs|Helmet|Backpack|Suit|Armor)', n)
+                m2 = re.match(r"^([\w-]+(?:\s[\w-]+)?)\s+(?:Arms|Core|Legs|Helmet|Backpack|Suit|Armor)", n)
                 if m2:
                     set_names.add(m2.group(1))
                 else:
@@ -183,8 +183,12 @@ write_ini(output_path, out)
 print(f"Written {len(out)} entries to {output_path}")
 
 # Preview
-for key in ["items_commodities_iron", "items_commodities_iron_desc",
-            "items_commodities_hephaestanite", "items_commodities_hephaestanite_desc"]:
+for key in [
+    "items_commodities_iron",
+    "items_commodities_iron_desc",
+    "items_commodities_hephaestanite",
+    "items_commodities_hephaestanite_desc",
+]:
     if key in out:
         val = out[key].replace("\\n", "\n")
         print(f"\n{key}:\n  {val[:400]}")

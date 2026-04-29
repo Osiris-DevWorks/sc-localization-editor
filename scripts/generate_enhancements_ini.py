@@ -30,16 +30,16 @@ logger = logging.getLogger(__name__)
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
-SCRIPT_DIR   = Path(__file__).parent
+SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 
 
 def _get_documents_dir() -> Path:
     try:
         import winreg
+
         key = winreg.OpenKey(
-            winreg.HKEY_CURRENT_USER,
-            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+            winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
         )
         docs = Path(winreg.QueryValueEx(key, "Personal")[0])
         winreg.CloseKey(key)
@@ -48,7 +48,7 @@ def _get_documents_dir() -> Path:
         return Path.home() / "Documents"
 
 
-APP_CACHE_DIR    = _get_documents_dir() / "Smart Citizen" / "cache"
+APP_CACHE_DIR = _get_documents_dir() / "Smart Citizen" / "cache"
 DEFAULT_BASE_INI = APP_CACHE_DIR / "base.ini"
 DEFAULT_FORGE_DIR = APP_CACHE_DIR / "dataforge"
 
@@ -56,6 +56,7 @@ OUTPUT_DIR = APP_CACHE_DIR
 
 
 # ── INI helpers ───────────────────────────────────────────────────────────────
+
 
 def parse_ini(path: Path) -> dict[str, str]:
     result = {}
@@ -86,6 +87,7 @@ def write_ini(path: Path, entries: dict[str, str]) -> None:
 # them under cache/dataforge/.lookups/ keyed on the .p4k_mtime stamp written
 # by pak_extractor.py. When DataForge is re-extracted, the stamp changes and
 # the cache is invalidated automatically.
+
 
 def _dataforge_cache_key(forge_dir: Path) -> str:
     """Return a stable fingerprint for the current DataForge cache.
@@ -141,8 +143,7 @@ ENHANCEMENT_SEPARATOR = "\\n\\n--- STATS ---\\n"
 MISSION_SEPARATOR = "\\n\\n<EM3>MISSION DETAILS</EM3>\\n"
 
 
-def append_enhancements(existing_value: str, enhancements_block: str,
-                        separator: str = ENHANCEMENT_SEPARATOR) -> str:
+def append_enhancements(existing_value: str, enhancements_block: str, separator: str = ENHANCEMENT_SEPARATOR) -> str:
     if not enhancements_block:
         return existing_value
     # Strip any existing stats/mission details block. BP/ITEMS/BLUEPRINT DATA
@@ -150,12 +151,17 @@ def append_enhancements(existing_value: str, enhancements_block: str,
     # MISSION DETAILS and belong with the base content, not treated as stale
     # augmentation. Stripping them would remove content the caller just
     # prepended in the same run (see mission desc construction in main()).
-    for marker in ("\\n\\n--- STATS ---", "\\n\\n<EM3>STATS</EM3>",
-                    "\\n\\n<EM3>MISSION DETAILS</EM3>",
-                    "\\n\\n<EM3>== Stats ==</EM3>", "\\n\\n<EM3>== Mission Details ==</EM3>",
-                    "\\n\\n== Stats ==", "\\n\\n== Mission Details =="):
+    for marker in (
+        "\\n\\n--- STATS ---",
+        "\\n\\n<EM3>STATS</EM3>",
+        "\\n\\n<EM3>MISSION DETAILS</EM3>",
+        "\\n\\n<EM3>== Stats ==</EM3>",
+        "\\n\\n<EM3>== Mission Details ==</EM3>",
+        "\\n\\n== Stats ==",
+        "\\n\\n== Mission Details ==",
+    ):
         if marker in existing_value:
-            existing_value = existing_value[:existing_value.index(marker)]
+            existing_value = existing_value[: existing_value.index(marker)]
             break
     return existing_value + separator + enhancements_block
 
@@ -178,6 +184,7 @@ def _fmt(value, unit="", decimals=0) -> str:
 
 
 # ── XML parsing helpers ───────────────────────────────────────────────────────
+
 
 def _find(root: ET.Element, tag: str) -> ET.Element | None:
     """Find first element with the given tag anywhere in the tree."""
@@ -208,16 +215,18 @@ def _attr(root: ET.Element, tag: str, attr: str, default=None):
 # which is the bug we guard against in scan_contract_generators and
 # _loc_key. Keep this list synced with the ``LOC_*`` entries at the top
 # of base.ini.
-_SENTINEL_LOC_KEYS = frozenset({
-    "LOC_BADSTRING",
-    "LOC_BADTOKEN",
-    "LOC_DEBUG",
-    "LOC_EMPTY",
-    "LOC_INVALID",
-    "LOC_NOINNERTHOUGHT",
-    "LOC_PLACEHOLDER",
-    "LOC_UNINITIALIZED",
-})
+_SENTINEL_LOC_KEYS = frozenset(
+    {
+        "LOC_BADSTRING",
+        "LOC_BADTOKEN",
+        "LOC_DEBUG",
+        "LOC_EMPTY",
+        "LOC_INVALID",
+        "LOC_NOINNERTHOUGHT",
+        "LOC_PLACEHOLDER",
+        "LOC_UNINITIALIZED",
+    }
+)
 
 
 def _is_sentinel_loc_ref(ref: str) -> bool:
@@ -237,16 +246,18 @@ def _is_sentinel_loc_ref(ref: str) -> bool:
 # an attribute that doesn't go through that gate) and gets resolved by
 # `loc.get`, we still want to drop the resulting `<= PLACEHOLDER =>`
 # string before it appears in a stats list.
-_PLACEHOLDER_TEXTS = frozenset({
-    "<= PLACEHOLDER =>",
-    "<= UNINITIALIZED =>",
-    "<= BADSTRING =>",
-    "<= BADTOKEN =>",
-    "<= DEBUG =>",
-    "<= EMPTY =>",
-    "<= INVALID =>",
-    "<= NOINNERTHOUGHT =>",
-})
+_PLACEHOLDER_TEXTS = frozenset(
+    {
+        "<= PLACEHOLDER =>",
+        "<= UNINITIALIZED =>",
+        "<= BADSTRING =>",
+        "<= BADTOKEN =>",
+        "<= DEBUG =>",
+        "<= EMPTY =>",
+        "<= INVALID =>",
+        "<= NOINNERTHOUGHT =>",
+    }
+)
 
 
 def _is_placeholder_text(s: str) -> bool:
@@ -274,10 +285,10 @@ def _loc_name_key(root: ET.Element) -> str | None:
 # Classification abbreviations for component name tags
 _CLASS_ABBREV = {
     "Competition": "CMP",
-    "Military":    "MIL",
-    "Civilian":    "CIV",
-    "Industrial":  "IND",
-    "Stealth":     "STH",
+    "Military": "MIL",
+    "Civilian": "CIV",
+    "Industrial": "IND",
+    "Stealth": "STH",
 }
 
 
@@ -291,6 +302,7 @@ def _component_name_tag(desc_value: str, root: ET.Element | None = None) -> str 
         Tag string like "[MIL-S1-A]" or None if parsing fails.
     """
     import re
+
     size_m = re.search(r"Size:\s*(\d+)", desc_value)
     grade_m = re.search(r"Grade:\s*([A-D])", desc_value)
     class_m = re.search(r"Class:\s*(\w+)", desc_value)
@@ -304,9 +316,9 @@ def _component_name_tag(desc_value: str, root: ET.Element | None = None) -> str 
 
 # CIG's internal trackingSignalType values → in-game community shorthand.
 _MISSILE_TRACKING_ABBREV = {
-    "CrossSection":   "CS",
+    "CrossSection": "CS",
     "Electromagnetic": "EM",
-    "Infrared":       "IR",
+    "Infrared": "IR",
 }
 
 
@@ -319,6 +331,7 @@ def _missile_name_tag(desc_value: str, root: ET.Element | None = None) -> str | 
     plain [S{size}] tag.
     """
     import re
+
     size_m = re.search(r"Size:\s*(\d+)", desc_value)
     if not size_m:
         return None
@@ -416,7 +429,7 @@ def _fire_rate(root: ET.Element) -> str | None:
                     # Check if this is marked as default/primary
                     is_default = el.get("default") == "1" or el.get("isDefault") == "true"
                     action_type = el.get("actionType", "")
-                    is_primary = (is_default or "primary" in action_type.lower())
+                    is_primary = is_default or "primary" in action_type.lower()
 
                     fire_rates.append((v, is_primary))
                 except (ValueError, TypeError):
@@ -433,8 +446,11 @@ def _fire_rate(root: ET.Element) -> str | None:
 
 
 _FIRE_MODE_LABELS = {
-    "rapid": "Auto", "single": "Semi-Auto", "burst": "Burst",
-    "charge": "Charge", "shotgun": "Shotgun",
+    "rapid": "Auto",
+    "single": "Semi-Auto",
+    "burst": "Burst",
+    "charge": "Charge",
+    "shotgun": "Shotgun",
 }
 
 
@@ -462,11 +478,22 @@ def _fire_modes(root: ET.Element, loc: dict | None = None) -> list[str]:
     return names
 
 
-_DAMAGE_TYPES = ("DamagePhysical", "DamageEnergy", "DamageDistortion",
-                 "DamageThermal", "DamageBiochemical", "DamageStun")
-_DAMAGE_LABELS = {"DamagePhysical": "Phys", "DamageEnergy": "Energy",
-                  "DamageDistortion": "Distort", "DamageThermal": "Thermal",
-                  "DamageBiochemical": "Bio", "DamageStun": "Stun"}
+_DAMAGE_TYPES = (
+    "DamagePhysical",
+    "DamageEnergy",
+    "DamageDistortion",
+    "DamageThermal",
+    "DamageBiochemical",
+    "DamageStun",
+)
+_DAMAGE_LABELS = {
+    "DamagePhysical": "Phys",
+    "DamageEnergy": "Energy",
+    "DamageDistortion": "Distort",
+    "DamageThermal": "Thermal",
+    "DamageBiochemical": "Bio",
+    "DamageStun": "Stun",
+}
 
 
 def _ammo_damage(ammo_root: ET.Element) -> float:
@@ -522,18 +549,19 @@ def _ammo_damage_breakdown(ammo_root: ET.Element) -> tuple[float, dict]:
 
 # ── Per-type stat generators ──────────────────────────────────────────────────
 
+
 def enhancements_shield(root: ET.Element) -> str:
     el = _find(root, "SCItemShieldGeneratorParams")
     if el is None:
         return ""
-    hp      = el.get("MaxShieldHealth")
-    regen   = el.get("MaxShieldRegen")
-    downed  = el.get("DownedRegenDelay")
+    hp = el.get("MaxShieldHealth")
+    regen = el.get("MaxShieldRegen")
+    downed = el.get("DownedRegenDelay")
     damaged = el.get("DamagedRegenDelay")
-    pwr     = _find_resource(root, "Power")
+    pwr = _find_resource(root, "Power")
     comp_hp = _attr(root, "SHealthComponentParams", "Health")
-    em_sig  = _attr(root, "EMSignature", "nominalSignature")
-    ir_sig  = _attr(root, "IRSignature", "nominalSignature")
+    em_sig = _attr(root, "EMSignature", "nominalSignature")
+    ir_sig = _attr(root, "IRSignature", "nominalSignature")
 
     # ShieldResistance is a 6-entry array under SCItemShieldGeneratorParams.
     # Order is inferred from the standard SC damage-type ordering used elsewhere
@@ -564,8 +592,10 @@ def enhancements_shield(root: ET.Element) -> str:
     if hp is not None or regen is not None:
         lines.append(f"Max HP: {_fmt(hp)}  |  Regen: {_fmt(regen, ' HP/s')}")
     delays = []
-    if downed  is not None: delays.append(f"Downed Delay: {_fmt(downed, 's', 1)}")
-    if damaged is not None: delays.append(f"Damaged Delay: {_fmt(damaged, 's', 1)}")
+    if downed is not None:
+        delays.append(f"Downed Delay: {_fmt(downed, 's', 1)}")
+    if damaged is not None:
+        delays.append(f"Damaged Delay: {_fmt(damaged, 's', 1)}")
     if delays:
         lines.append("  |  ".join(delays))
 
@@ -573,14 +603,18 @@ def enhancements_shield(root: ET.Element) -> str:
     energy_resist = _resist_pct(1)
     if phys_resist or energy_resist:
         parts = []
-        if phys_resist: parts.append(f"Phys: {phys_resist}")
-        if energy_resist: parts.append(f"Energy: {energy_resist}")
+        if phys_resist:
+            parts.append(f"Phys: {phys_resist}")
+        if energy_resist:
+            parts.append(f"Energy: {energy_resist}")
         lines.append("Resist:  " + "  |  ".join(parts))
 
     if em_sig is not None or ir_sig is not None:
         parts = []
-        if em_sig is not None: parts.append(f"EM: {_fmt(em_sig)}")
-        if ir_sig is not None: parts.append(f"IR: {_fmt(ir_sig)}")
+        if em_sig is not None:
+            parts.append(f"EM: {_fmt(em_sig)}")
+        if ir_sig is not None:
+            parts.append(f"IR: {_fmt(ir_sig)}")
         lines.append("Signatures:  " + "  |  ".join(parts))
 
     if pwr is not None:
@@ -622,7 +656,11 @@ def enhancements_missile(root: ET.Element) -> str:
 
                 # Guidance and tracking parameters
                 if "guidance" in el.tag.lower() or "tracking" in el.tag.lower():
-                    guidance_type = el.get("guidanceType") or el.get("type") or el.tag.replace("Guidance", "").replace("Tracking", "")
+                    guidance_type = (
+                        el.get("guidanceType")
+                        or el.get("type")
+                        or el.tag.replace("Guidance", "").replace("Tracking", "")
+                    )
                     if guidance_type and "none" not in guidance_type.lower():
                         lines.append(f"Guidance: {guidance_type}")
 
@@ -931,12 +969,12 @@ def enhancements_radar(root: ET.Element) -> str:
 
 
 def enhancements_cooler(root: ET.Element) -> str:
-    cooling   = _find_resource(root, "Coolant")
-    pwr       = _find_resource(root, "Power")
-    comp_hp   = _attr(root, "SHealthComponentParams", "Health")
-    em_sig    = _attr(root, "EMSignature", "nominalSignature")
-    ir_sig    = _attr(root, "IRSignature", "nominalSignature")
-    overheat  = _attr(root, "itemResourceParams", "overheatTemperature")
+    cooling = _find_resource(root, "Coolant")
+    pwr = _find_resource(root, "Power")
+    comp_hp = _attr(root, "SHealthComponentParams", "Health")
+    em_sig = _attr(root, "EMSignature", "nominalSignature")
+    ir_sig = _attr(root, "IRSignature", "nominalSignature")
+    overheat = _attr(root, "itemResourceParams", "overheatTemperature")
 
     lines = []
     if cooling is not None:
@@ -947,8 +985,10 @@ def enhancements_cooler(root: ET.Element) -> str:
         lines.append(f"Component HP: {_fmt(comp_hp)}")
     if em_sig is not None or ir_sig is not None:
         parts = []
-        if em_sig is not None: parts.append(f"EM: {_fmt(em_sig)}")
-        if ir_sig is not None: parts.append(f"IR: {_fmt(ir_sig)}")
+        if em_sig is not None:
+            parts.append(f"EM: {_fmt(em_sig)}")
+        if ir_sig is not None:
+            parts.append(f"IR: {_fmt(ir_sig)}")
         lines.append("Signatures:  " + "  |  ".join(parts))
     if overheat is not None:
         try:
@@ -960,12 +1000,12 @@ def enhancements_cooler(root: ET.Element) -> str:
 
 
 def enhancements_powerplant(root: ET.Element) -> str:
-    gen       = _find_resource(root, "Power")
-    comp_hp   = _attr(root, "SHealthComponentParams", "Health")
-    em_sig    = _attr(root, "EMSignature", "nominalSignature")
-    ir_sig    = _attr(root, "IRSignature", "nominalSignature")
-    overheat  = _attr(root, "itemResourceParams", "overheatTemperature")
-    distort   = _attr(root, "SDistortionParams", "Maximum")
+    gen = _find_resource(root, "Power")
+    comp_hp = _attr(root, "SHealthComponentParams", "Health")
+    em_sig = _attr(root, "EMSignature", "nominalSignature")
+    ir_sig = _attr(root, "IRSignature", "nominalSignature")
+    overheat = _attr(root, "itemResourceParams", "overheatTemperature")
+    distort = _attr(root, "SDistortionParams", "Maximum")
 
     lines = []
     if gen is not None:
@@ -974,8 +1014,10 @@ def enhancements_powerplant(root: ET.Element) -> str:
         lines.append(f"Component HP: {_fmt(comp_hp)}")
     if em_sig is not None or ir_sig is not None:
         parts = []
-        if em_sig is not None: parts.append(f"EM: {_fmt(em_sig)}")
-        if ir_sig is not None: parts.append(f"IR: {_fmt(ir_sig)}")
+        if em_sig is not None:
+            parts.append(f"EM: {_fmt(em_sig)}")
+        if ir_sig is not None:
+            parts.append(f"IR: {_fmt(ir_sig)}")
         lines.append("Signatures:  " + "  |  ".join(parts))
     if overheat is not None:
         try:
@@ -995,23 +1037,23 @@ def enhancements_quantum_drive(root: ET.Element) -> str:
     fuel_req = qd.get("quantumFuelRequirement")
 
     # SQuantumDriveParams is an inline struct: <params __type="SQuantumDriveParams" driveSpeed=... />
-    params   = _find_by_type(root, "SQuantumDriveParams")
-    speed    = params.get("driveSpeed")           if params is not None else None
-    spool    = params.get("spoolUpTime")          if params is not None else None
-    cooldown = params.get("cooldownTime")         if params is not None else None
-    cal_rate = params.get("calibrationRate")      if params is not None else None
-    cal_min  = params.get("minCalibrationRequirement") if params is not None else None
-    cal_max  = params.get("maxCalibrationRequirement") if params is not None else None
-    accel1   = params.get("stageOneAccelRate")    if params is not None else None
-    accel2   = params.get("stageTwoAccelRate")    if params is not None else None
+    params = _find_by_type(root, "SQuantumDriveParams")
+    speed = params.get("driveSpeed") if params is not None else None
+    spool = params.get("spoolUpTime") if params is not None else None
+    cooldown = params.get("cooldownTime") if params is not None else None
+    cal_rate = params.get("calibrationRate") if params is not None else None
+    cal_min = params.get("minCalibrationRequirement") if params is not None else None
+    cal_max = params.get("maxCalibrationRequirement") if params is not None else None
+    accel1 = params.get("stageOneAccelRate") if params is not None else None
+    accel2 = params.get("stageTwoAccelRate") if params is not None else None
 
-    pwr      = _find_resource(root, "Power")
-    qt_fuel  = _find_resource(root, "QuantumFuel")
-    comp_hp  = _attr(root, "SHealthComponentParams", "Health")
-    em_sig   = _attr(root, "EMSignature", "nominalSignature")
-    ir_sig   = _attr(root, "IRSignature", "nominalSignature")
+    pwr = _find_resource(root, "Power")
+    qt_fuel = _find_resource(root, "QuantumFuel")
+    comp_hp = _attr(root, "SHealthComponentParams", "Health")
+    em_sig = _attr(root, "EMSignature", "nominalSignature")
+    ir_sig = _attr(root, "IRSignature", "nominalSignature")
     overheat = _attr(root, "itemResourceParams", "overheatTemperature")
-    distort  = _attr(root, "SDistortionParams", "Maximum")
+    distort = _attr(root, "SDistortionParams", "Maximum")
 
     lines = []
     if speed is not None:
@@ -1026,8 +1068,10 @@ def enhancements_quantum_drive(root: ET.Element) -> str:
         lines.append(f"QT Fuel Use: {_fmt(qt_fuel)} μ/s")
     if accel1 is not None or accel2 is not None:
         parts = []
-        if accel1: parts.append(f"S1: {_fmt(accel1)}")
-        if accel2: parts.append(f"S2: {_fmt(accel2)}")
+        if accel1:
+            parts.append(f"S1: {_fmt(accel1)}")
+        if accel2:
+            parts.append(f"S2: {_fmt(accel2)}")
         lines.append("Accel:  " + "  |  ".join(parts))
     if cal_rate is not None:
         lines.append(f"Cal Rate: {_fmt(cal_rate)}  |  Required: {_fmt(cal_min)}–{_fmt(cal_max)}")
@@ -1037,8 +1081,10 @@ def enhancements_quantum_drive(root: ET.Element) -> str:
         lines.append(f"Component HP: {_fmt(comp_hp)}")
     if em_sig is not None or ir_sig is not None:
         parts = []
-        if em_sig is not None: parts.append(f"EM: {_fmt(em_sig)}")
-        if ir_sig is not None: parts.append(f"IR: {_fmt(ir_sig)}")
+        if em_sig is not None:
+            parts.append(f"EM: {_fmt(em_sig)}")
+        if ir_sig is not None:
+            parts.append(f"IR: {_fmt(ir_sig)}")
         lines.append("Signatures:  " + "  |  ".join(parts))
     if overheat is not None:
         try:
@@ -1130,13 +1176,16 @@ def _extract_spawn_counts(element: ET.Element) -> tuple[int, int, int]:
         if total_npcs <= 0:
             # Try parsing count from name (e.g., "Soldier x 3")
             import re
+
             m = re.search(r"x\s*(\d+)", name)
             if m:
                 total_npcs = int(m.group(1))
 
         if total_npcs > 0:
             name_lower = name.lower()
-            if any(kw in name_lower for kw in ("target", "soldier", "cqc", "sniper", "tech", "guard", "sentry", "captain")):
+            if any(
+                kw in name_lower for kw in ("target", "soldier", "cqc", "sniper", "tech", "guard", "sentry", "captain")
+            ):
                 num_enemies += total_npcs
                 wave_groups += 1
             elif any(kw in name_lower for kw in ("escort", "friendly", "civilian", "hostage")):
@@ -1374,7 +1423,7 @@ def _variant_label_short(debug_name: str) -> str:
         "BountyHuntersGuild_",
     ):
         if debug_name.startswith(prefix):
-            tail = debug_name[len(prefix):]
+            tail = debug_name[len(prefix) :]
             return tail.split("_", 1)[0]
     return debug_name.rsplit("_", 1)[-1]
 
@@ -1649,7 +1698,21 @@ def scan_contract_generators(
                             # Add all missions (not just those with XP/blueprint data)
                             if title_key not in missions:
                                 missions[title_key] = []
-                            missions[title_key].append((system_name, success_xp, failure_xp, desc_key, contract_flags, enemies, not_enemies, contract_difficulty, contract_has_bp, contract_bp_chance, contract_bp_variant))
+                            missions[title_key].append(
+                                (
+                                    system_name,
+                                    success_xp,
+                                    failure_xp,
+                                    desc_key,
+                                    contract_flags,
+                                    enemies,
+                                    not_enemies,
+                                    contract_difficulty,
+                                    contract_has_bp,
+                                    contract_bp_chance,
+                                    contract_bp_variant,
+                                )
+                            )
                         except Exception:
                             pass
 
@@ -1660,7 +1723,9 @@ def scan_contract_generators(
     except Exception as e:
         logger.warning(f"Error scanning contract generators: {e}")
 
-    logger.info(f"Contract generators: {len(missions)} missions, {len(mission_blueprints)} with blueprints, {len(mission_items)} with items")
+    logger.info(
+        f"Contract generators: {len(missions)} missions, {len(mission_blueprints)} with blueprints, {len(mission_items)} with items"
+    )
     return missions, mission_blueprints, mission_bp_chance, mission_items
 
 
@@ -1709,7 +1774,7 @@ def _normalize_commodity_name(raw: str) -> str:
     n = raw.lower()
     for prefix in ("ore_", "raw_", "processed_", "refined_"):
         if n.startswith(prefix):
-            n = n[len(prefix):]
+            n = n[len(prefix) :]
     for suffix in ("_ore", "_raw", "_processed", "_refined"):
         if n.endswith(suffix):
             n = n[: -len(suffix)]
@@ -1773,6 +1838,7 @@ def _discover_commodity_loc_pairs(internal_name: str, loc: dict[str, str]) -> li
 def _condense_crafted_items(items_list: list[tuple[str, str]]) -> list[str]:
     """Condense crafted items into readable summary lines, grouped by blueprint category."""
     from collections import defaultdict
+
     by_cat: dict[str, list[str]] = defaultdict(list)
     for cat, name in items_list:
         by_cat[cat].append(name)
@@ -1787,8 +1853,8 @@ def _condense_crafted_items(items_list: list[tuple[str, str]]) -> list[str]:
         if "weapons" in cat:
             base_names = set()
             for n in names:
-                clean = re.sub(r'\s*"[^"]*"\s*', ' ', n).strip()
-                clean = re.sub(r'\s+', ' ', clean)
+                clean = re.sub(r'\s*"[^"]*"\s*', " ", n).strip()
+                clean = re.sub(r"\s+", " ", clean)
                 base_names.add(clean)
             if len(base_names) <= 3:
                 lines.append(", ".join(sorted(base_names)))
@@ -1801,7 +1867,7 @@ def _condense_crafted_items(items_list: list[tuple[str, str]]) -> list[str]:
             armour_type = parts[-2].title() if len(parts) > 2 else "Armour"
             set_names = set()
             for n in names:
-                m2 = re.match(r'^([\w-]+(?:\s[\w-]+)?)\s+(?:Arms|Core|Legs|Helmet|Backpack|Suit|Armor)', n)
+                m2 = re.match(r"^([\w-]+(?:\s[\w-]+)?)\s+(?:Arms|Core|Legs|Helmet|Backpack|Suit|Armor)", n)
                 if m2:
                     set_names.add(m2.group(1))
                 else:
@@ -1875,9 +1941,7 @@ def scan_crafting_blueprints(
     # Hitting 0 here almost always means base.ini is stale (missing modern
     # commodity strings) — surfacing that in the log beats silently writing an
     # empty enhancements file.
-    loc_commodity_key_count = sum(
-        1 for k in loc if k.lower().startswith("items_commodities_")
-    )
+    loc_commodity_key_count = sum(1 for k in loc if k.lower().startswith("items_commodities_"))
     logger.info(
         f"Crafting: {len(commodity_items)} commodities discovered from blueprints; "
         f"{loc_commodity_key_count} items_commodities_* keys in loc"
@@ -1947,18 +2011,21 @@ def scan_crafting_blueprints(
     return out, out_journal
 
 
-def enhancements_weapon(root: ET.Element, ammo_lookup: dict[str, ET.Element],
-                 loc: dict | None = None,
-                 magazine_lookup: dict[str, tuple[str, str]] | None = None) -> str:
+def enhancements_weapon(
+    root: ET.Element,
+    ammo_lookup: dict[str, ET.Element],
+    loc: dict | None = None,
+    magazine_lookup: dict[str, tuple[str, str]] | None = None,
+) -> str:
     """Ship or FPS weapon stats."""
-    fr    = _fire_rate(root)
+    fr = _fire_rate(root)
     modes = _fire_modes(root, loc)
-    pwr   = _find_resource(root, "Power")
+    pwr = _find_resource(root, "Power")
 
     # Component health / signatures / heat
-    comp_hp  = _attr(root, "SHealthComponentParams", "Health")
-    em_sig   = _attr(root, "EMSignature", "nominalSignature")
-    ir_sig   = _attr(root, "IRSignature", "nominalSignature")
+    comp_hp = _attr(root, "SHealthComponentParams", "Health")
+    em_sig = _attr(root, "EMSignature", "nominalSignature")
+    ir_sig = _attr(root, "IRSignature", "nominalSignature")
     overheat = _attr(root, "itemResourceParams", "overheatTemperature")
 
     # Weight (mass from physics controller)
@@ -2018,14 +2085,16 @@ def enhancements_weapon(root: ET.Element, ammo_lookup: dict[str, ET.Element],
                 total_dmg *= pellet_count
                 breakdown = {k: v * pellet_count for k, v in breakdown.items()}
             # Try multiple field names for projectile speed (varies by ammo type)
-            proj_speed = (ammo_root.get("speed") or
-                         ammo_root.get("velocity") or
-                         ammo_root.get("projectileSpeed") or
-                         ammo_root.get("initialSpeed"))
+            proj_speed = (
+                ammo_root.get("speed")
+                or ammo_root.get("velocity")
+                or ammo_root.get("projectileSpeed")
+                or ammo_root.get("initialSpeed")
+            )
             # Try multiple field names for lifetime
-            proj_lifetime = (ammo_root.get("lifetime") or
-                           ammo_root.get("projectileLifetime") or
-                           ammo_root.get("maxLifetime"))
+            proj_lifetime = (
+                ammo_root.get("lifetime") or ammo_root.get("projectileLifetime") or ammo_root.get("maxLifetime")
+            )
             if total_dmg and fr:
                 try:
                     dps = total_dmg * float(fr) / 60.0
@@ -2058,14 +2127,14 @@ def enhancements_weapon(root: ET.Element, ammo_lookup: dict[str, ET.Element],
                                 pass
 
     # Capacity: energy weapons use regen pool; ballistic use fixed container
-    regen    = _find(root, "SWeaponRegenConsumerParams")
+    regen = _find(root, "SWeaponRegenConsumerParams")
     regen_rate = regen_cooldown = regen_cost = None
     if regen is not None:
         if not capacity:
             capacity = regen.get("maxAmmoLoad")
-        regen_rate    = regen.get("requestedRegenPerSec")
+        regen_rate = regen.get("requestedRegenPerSec")
         regen_cooldown = regen.get("regenerationCooldown")
-        regen_cost    = regen.get("regenerationCostPerBullet")
+        regen_cost = regen.get("regenerationCostPerBullet")
     elif ammo_container is not None and not capacity:
         capacity = ammo_container.get("maxAmmoCount")
 
@@ -2093,9 +2162,12 @@ def enhancements_weapon(root: ET.Element, ammo_lookup: dict[str, ET.Element],
         lines.append(f"Ammo: {_fmt(capacity)}")
     if regen_rate or regen_cooldown:
         parts = []
-        if regen_rate:    parts.append(f"Regen: {_fmt(regen_rate)}/s")
-        if regen_cooldown: parts.append(f"Cooldown: {_fmt(regen_cooldown, 's', 1)}")
-        if regen_cost:    parts.append(f"Cost/Shot: {_fmt(regen_cost)}")
+        if regen_rate:
+            parts.append(f"Regen: {_fmt(regen_rate)}/s")
+        if regen_cooldown:
+            parts.append(f"Cooldown: {_fmt(regen_cooldown, 's', 1)}")
+        if regen_cost:
+            parts.append(f"Cost/Shot: {_fmt(regen_cost)}")
         lines.append("  |  ".join(parts))
     if proj_speed is not None:
         try:
@@ -2130,8 +2202,10 @@ def enhancements_weapon(root: ET.Element, ammo_lookup: dict[str, ET.Element],
         lines.append(f"Component HP: {_fmt(comp_hp)}")
     if em_sig is not None or ir_sig is not None:
         parts = []
-        if em_sig is not None: parts.append(f"EM: {_fmt(em_sig)}")
-        if ir_sig is not None: parts.append(f"IR: {_fmt(ir_sig)}")
+        if em_sig is not None:
+            parts.append(f"EM: {_fmt(em_sig)}")
+        if ir_sig is not None:
+            parts.append(f"IR: {_fmt(ir_sig)}")
         lines.append("Signatures:  " + "  |  ".join(parts))
     # Overheat temp is meaningful for ship weapons but not surfaced in-game
     # for FPS weapons; skip it on the FPS path (magazine_lookup is the FPS
@@ -2147,9 +2221,10 @@ def enhancements_weapon(root: ET.Element, ammo_lookup: dict[str, ET.Element],
 
 # ── Ship enhancements (DataForge-based) ──────────────────────────────────────────────
 
+
 def _extract_item_size(cls: str) -> str | None:
     """Extract size code from entity class name, e.g. 'SHLD_ASAS_S01_Shimmer_SCItem' → 'S1'."""
-    m = re.search(r'_S0*(\d+)_', cls)
+    m = re.search(r"_S0*(\d+)_", cls)
     return f"S{int(m.group(1))}" if m else None
 
 
@@ -2164,13 +2239,13 @@ def _loadout_summary(root: ET.Element) -> tuple[str, str]:
     - Connie-style gimbal/fixed mount: hardpoint_weapon_* with Mount_Gimbal_S3 entity
       → size extracted from mount entity class name (Mount_Gimbal_S3 → S3)
     """
-    guns:    list[tuple[str, bool]] = []   # (size_str, filled)
+    guns: list[tuple[str, bool]] = []  # (size_str, filled)
     turrets: list[tuple[str, bool]] = []
-    mracks:  list[tuple[str, bool]] = []
-    shields: list[str] = []               # size strings for filled slots
-    powers:  list[str] = []
+    mracks: list[tuple[str, bool]] = []
+    shields: list[str] = []  # size strings for filled slots
+    powers: list[str] = []
     coolers: list[str] = []
-    qd:      list[str] = []
+    qd: list[str] = []
 
     # Only process direct children of the top-level loadout entries element
     # to avoid counting nested sub-weapon slots inside turrets/mounts
@@ -2185,14 +2260,14 @@ def _loadout_summary(root: ET.Element) -> tuple[str, str]:
         if entry.tag != "SItemPortLoadoutEntryParams":
             continue
         port = entry.get("itemPortName", "").lower()
-        cls  = entry.get("entityClassName", "")
+        cls = entry.get("entityClassName", "")
 
         if "controller" in port:
             continue
 
         # Size: _classN in port name (Avenger-style), or _S0N_ in entity class name
         sz = None
-        m = re.search(r'_class_?(\d+)', port)
+        m = re.search(r"_class_?(\d+)", port)
         if m:
             sz = f"S{int(m.group(1))}"
         elif cls:
@@ -2200,7 +2275,7 @@ def _loadout_summary(root: ET.Element) -> tuple[str, str]:
 
         # Gimbal/fixed mount → counts as a gun slot; size from the mount entity (Mount_Gimbal_S3)
         if cls.startswith("Mount_Gimbal_") or cls.startswith("Mount_Fixed_"):
-            guns.append((sz or "?", True))   # mount exists = slot is equipped
+            guns.append((sz or "?", True))  # mount exists = slot is equipped
         # Avenger-style bare gun slot (may be empty)
         elif "weapon_gun" in port:
             guns.append((sz or "?", bool(cls)))
@@ -2277,7 +2352,7 @@ def build_controller_lookup(controller_dir: Path) -> dict[str, ET.Element]:
         logger.warning(f"Controller dir not found: {controller_dir}")
         return lookup
     for xml_file in controller_dir.glob("controller_flight_*.xml"):
-        ship_class = xml_file.stem[len("controller_flight_"):]
+        ship_class = xml_file.stem[len("controller_flight_") :]
         try:
             root = ET.parse(xml_file).getroot()
             lookup[ship_class.lower()] = root
@@ -2325,8 +2400,7 @@ def _armor_stats_block(armor_root: ET.Element) -> str:
     if dm is not None:
         di = dm.find("DamageInfo")
         if di is not None:
-            p, e, d, t = (di.get(k) for k in
-                ("DamagePhysical", "DamageEnergy", "DamageDistortion", "DamageThermal"))
+            p, e, d, t = (di.get(k) for k in ("DamagePhysical", "DamageEnergy", "DamageDistortion", "DamageThermal"))
             if any(v is not None for v in (p, e, d, t)):
                 lines.append(
                     f"Dmg Mult: P {_fmt(p, 'x', 2)}  |  E {_fmt(e, 'x', 2)}"
@@ -2337,12 +2411,9 @@ def _armor_stats_block(armor_root: ET.Element) -> str:
     if ad is not None:
         dv = ad.find("deflectionValue")
         if dv is not None:
-            p, e, d, t = (dv.get(k) for k in
-                ("DamagePhysical", "DamageEnergy", "DamageDistortion", "DamageThermal"))
+            p, e, d, t = (dv.get(k) for k in ("DamagePhysical", "DamageEnergy", "DamageDistortion", "DamageThermal"))
             if any(v is not None for v in (p, e, d, t)):
-                lines.append(
-                    f"Deflect: P {_fmt(p)}  |  E {_fmt(e)}  |  D {_fmt(d)}  |  T {_fmt(t)}"
-                )
+                lines.append(f"Deflect: P {_fmt(p)}  |  E {_fmt(e)}  |  D {_fmt(d)}  |  T {_fmt(t)}")
 
     return "\\n".join(lines)
 
@@ -2360,16 +2431,16 @@ def enhancements_ship_dataforge(
 
     crew_size = vpc.get("crewSize")
     career_key = (vpc.get("vehicleCareer") or "").lstrip("@")
-    role_key   = (vpc.get("vehicleRole")   or "").lstrip("@")
+    role_key = (vpc.get("vehicleRole") or "").lstrip("@")
     career = (loc or {}).get(career_key) if career_key else None
-    role   = (loc or {}).get(role_key)   if role_key   else None
+    role = (loc or {}).get(role_key) if role_key else None
 
-    bbox   = vpc.find("maxBoundingBoxSize")
+    bbox = vpc.find("maxBoundingBoxSize")
     length = bbox.get("y") if bbox is not None else None
 
     # Insurance — DataForge tag is lowercase 'shipInsuranceParams', __type is 'ShipInsuranceParams'
-    ins         = _find(root, "shipInsuranceParams")
-    ins_base    = ins.get("baseWaitTimeMinutes")      if ins is not None else None
+    ins = _find(root, "shipInsuranceParams")
+    ins_base = ins.get("baseWaitTimeMinutes") if ins is not None else None
     ins_express = ins.get("mandatoryWaitTimeMinutes") if ins is not None else None
 
     # Default loadout summary
@@ -2395,17 +2466,17 @@ def enhancements_ship_dataforge(
     if controller_root is not None:
         ifcs = _find(controller_root, "IFCSParams")
         if ifcs is not None:
-            scm       = ifcs.get("scmSpeed")
-            max_spd   = ifcs.get("maxSpeed")
+            scm = ifcs.get("scmSpeed")
+            max_spd = ifcs.get("maxSpeed")
             boost_fwd = ifcs.get("boostSpeedForward")
             boost_bwd = ifcs.get("boostSpeedBackward")
         sp = _find_by_type(controller_root, "SIFCSSpeedProfile")
         if sp is not None:
             av = sp.find("angularVelocity")
             if av is not None:
-                pitch = av.get("x")   # pitch rate °/s
-                roll  = av.get("y")   # roll rate  °/s
-                yaw   = av.get("z")   # yaw rate   °/s
+                pitch = av.get("x")  # pitch rate °/s
+                roll = av.get("y")  # roll rate  °/s
+                yaw = av.get("z")  # yaw rate   °/s
 
     lines = []
 
@@ -2414,15 +2485,17 @@ def enhancements_ship_dataforge(
     if boost_fwd is not None or boost_bwd is not None:
         lines.append(f"Boost: +{_fmt(boost_fwd, ' m/s')}  /  -{_fmt(boost_bwd, ' m/s')}")
     if pitch is not None:
-        lines.append(
-            f"Pitch: {_fmt(pitch, '°/s')}  |  Roll: {_fmt(roll, '°/s')}  |  Yaw: {_fmt(yaw, '°/s')}"
-        )
+        lines.append(f"Pitch: {_fmt(pitch, '°/s')}  |  Roll: {_fmt(roll, '°/s')}  |  Yaw: {_fmt(yaw, '°/s')}")
 
     basics = []
-    if crew_size is not None: basics.append(f"Crew: {_fmt(crew_size)}")
-    if length    is not None: basics.append(f"Length: {_fmt(length, 'm', 1)}")
-    if career    is not None: basics.append(f"Class: {career}")
-    if role      is not None: basics.append(f"Role: {role}")
+    if crew_size is not None:
+        basics.append(f"Crew: {_fmt(crew_size)}")
+    if length is not None:
+        basics.append(f"Length: {_fmt(length, 'm', 1)}")
+    if career is not None:
+        basics.append(f"Class: {career}")
+    if role is not None:
+        basics.append(f"Role: {role}")
     if basics:
         lines.append("  |  ".join(basics))
 
@@ -2434,9 +2507,7 @@ def enhancements_ship_dataforge(
         lines.append(armor_block)
 
     if ins_base is not None:
-        lines.append(
-            f"Insurance: {_fmt(ins_base, ' min', 2)} base  |  {_fmt(ins_express, ' min', 2)} express"
-        )
+        lines.append(f"Insurance: {_fmt(ins_base, ' min', 2)} base  |  {_fmt(ins_express, ' min', 2)} express")
 
     return "\\n".join(lines)
 
@@ -2503,6 +2574,7 @@ def scan_spaceships(
 
 
 # ── Ammo lookup builder ───────────────────────────────────────────────────────
+
 
 def build_ammo_lookup(ammo_dir: Path) -> dict[str, ET.Element]:
     """Parse all ammo XML files and index them by their __ref GUID.
@@ -2587,14 +2659,15 @@ def build_magazine_lookup(scitem_dir: Path) -> dict[str, tuple[str, str]]:
 
 # ── DataForge directory scanner ───────────────────────────────────────────────
 
+
 def scan_entity_dir(
     entity_dir: Path,
     enhancement_fn,
     ammo_lookup: dict | None = None,
     loc: dict | None = None,
-    loc_key_fn = None,
+    loc_key_fn=None,
     generate_name_tags: bool = False,
-    name_tag_fn = None,
+    name_tag_fn=None,
     separator: str = ENHANCEMENT_SEPARATOR,
     capture_all: bool = False,
 ) -> dict[str, str]:
@@ -2677,17 +2750,23 @@ def scan_entity_dir(
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
-def main(base_ini_path: Path, forge_dir: Path | None = None,
-         categories: set[str] | None = None,
-         progress_callback: Callable[[int, int, str], None] | None = None,
-         max_workers: int = 6,
-         patches_dir: Path | None = None) -> None:
+
+def main(
+    base_ini_path: Path,
+    forge_dir: Path | None = None,
+    categories: set[str] | None = None,
+    progress_callback: Callable[[int, int, str], None] | None = None,
+    max_workers: int = 6,
+    patches_dir: Path | None = None,
+) -> None:
     import sys as sys_mod
+
     # Deferred import — the script is loaded by both the app worker (where
     # src.utils is on the path) and as a standalone CLI, so we swallow an
     # ImportError and run without a sink if the module isn't reachable.
     try:
         from src.utils.progress_sink import ProgressSink
+
         _sink = ProgressSink(callback=progress_callback)
     except ImportError:
         _sink = None
@@ -2739,8 +2818,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
     records = forge_dir / "raw" / "libs" / "foundry" / "records"
     if not forge_dir.exists() or not records.exists():
         raise FileNotFoundError(
-            f"DataForge cache not found at {forge_dir}\n"
-            "Run 'Extract DataForge' in the app first (Enhancements tab)."
+            f"DataForge cache not found at {forge_dir}\nRun 'Extract DataForge' in the app first (Enhancements tab)."
         )
 
     # ── Estimate total phases for determinate progress ────────────────────────
@@ -2782,12 +2860,14 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
 
     def _build_scitem_pair():
         return _cached_lookup(
-            forge_dir, "scitem_lookups",
+            forge_dir,
+            "scitem_lookups",
             lambda: build_scitem_lookups(records / "entities" / "scitem", loc),
         )
 
     def _build_reputation():
         rep_rewards_dir = records / "reputation" / "rewards" / "missionrewards_reputation"
+
         def _builder() -> dict[str, int]:
             out: dict[str, int] = {}
             if not rep_rewards_dir.exists():
@@ -2805,43 +2885,42 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
                 except ET.ParseError:
                     continue
             return out
+
         return _cached_lookup(forge_dir, "reputation", _builder)
 
     lookup_jobs: dict[str, Callable] = {}
     if need_ammo:
         lookup_jobs["vehicle_ammo"] = lambda: build_ammo_lookup(records / "ammoparams" / "vehicle")
-        lookup_jobs["fps_ammo"]     = lambda: build_ammo_lookup(records / "ammoparams" / "fps")
+        lookup_jobs["fps_ammo"] = lambda: build_ammo_lookup(records / "ammoparams" / "fps")
     if need_mag or need_names:
         lookup_jobs["scitem"] = _build_scitem_pair
     if _want("ship_descs"):
-        lookup_jobs["controller"] = lambda: build_controller_lookup(records / "entities" / "scitem" / "ships" / "controller")
-        lookup_jobs["armor"]      = lambda: build_armor_lookup(records / "entities" / "scitem" / "ships" / "armor")
+        lookup_jobs["controller"] = lambda: build_controller_lookup(
+            records / "entities" / "scitem" / "ships" / "controller"
+        )
+        lookup_jobs["armor"] = lambda: build_armor_lookup(records / "entities" / "scitem" / "ships" / "armor")
     if _want("mission_rewards"):
         lookup_jobs["reputation"] = _build_reputation
 
     if lookup_jobs:
         logger.info(f"Building {len(lookup_jobs)} lookups in parallel (workers={min(max_workers, len(lookup_jobs))})…")
         _flush()
-        with ThreadPoolExecutor(max_workers=min(max_workers, len(lookup_jobs)),
-                                thread_name_prefix="lookup") as pool:
+        with ThreadPoolExecutor(max_workers=min(max_workers, len(lookup_jobs)), thread_name_prefix="lookup") as pool:
             futures = {name: pool.submit(fn) for name, fn in lookup_jobs.items()}
             results = {name: fut.result() for name, fut in futures.items()}
 
         if "vehicle_ammo" in results:
             vehicle_ammo = results["vehicle_ammo"]
-            fps_ammo     = results["fps_ammo"]
+            fps_ammo = results["fps_ammo"]
             logger.info(f"Vehicle ammo: {len(vehicle_ammo)} records, FPS ammo: {len(fps_ammo)} records")
             _tick("Built ammo lookups")
         if "scitem" in results:
             mag_lookup, entity_names = results["scitem"]
-            logger.info(
-                f"Magazine lookup: {len(mag_lookup)} entries, "
-                f"Entity names: {len(entity_names)} entries"
-            )
+            logger.info(f"Magazine lookup: {len(mag_lookup)} entries, Entity names: {len(entity_names)} entries")
             _tick("Built scitem lookups")
         if "controller" in results:
             controller_lookup = results["controller"]
-            armor_lookup      = results["armor"]
+            armor_lookup = results["armor"]
             logger.info(f"Controllers: {len(controller_lookup)}, Armors: {len(armor_lookup)}")
             _tick("Built ship controller + armor lookups")
         if "reputation" in results:
@@ -2857,7 +2936,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
     # Across closures there is no shared mutable state — every output dict is
     # owned by exactly one closure — so they run safely on independent threads.
     ships_scitem = records / "entities" / "scitem" / "ships"
-    scitem_dir   = records / "entities" / "scitem"
+    scitem_dir = records / "entities" / "scitem"
 
     def _gen_components() -> dict[str, str]:
         out: dict[str, str] = {}
@@ -2865,9 +2944,9 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
         _flush()
         for subdir, fn in [
             ("shieldgenerator", enhancements_shield),
-            ("cooler",          enhancements_cooler),
-            ("powerplant",      enhancements_powerplant),
-            ("quantumdrive",    enhancements_quantum_drive),
+            ("cooler", enhancements_cooler),
+            ("powerplant", enhancements_powerplant),
+            ("quantumdrive", enhancements_quantum_drive),
         ]:
             logger.info(f"Processing {subdir}...")
             _flush()
@@ -2886,16 +2965,16 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
         for key, value in list(out.items()):
             if not key.endswith("_SCItem"):
                 continue
-            base_key = key[:-len("_SCItem")]
+            base_key = key[: -len("_SCItem")]
             for ct in comp_types:
                 desc_prefix = f"item_Desc{ct}_"
                 if base_key.startswith(desc_prefix):
-                    sibling = f"item_Desc_{ct}_{base_key[len(desc_prefix):]}"
+                    sibling = f"item_Desc_{ct}_{base_key[len(desc_prefix) :]}"
                     if sibling not in out and sibling in loc:
                         sibling_base = loc[sibling]
                         stats_marker = ENHANCEMENT_SEPARATOR
                         if stats_marker in value:
-                            stats_block = value[value.index(stats_marker):]
+                            stats_block = value[value.index(stats_marker) :]
                             out[sibling] = sibling_base + stats_block
                         else:
                             out[sibling] = value
@@ -2903,7 +2982,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
                     break
                 name_prefix = f"item_name{ct}_"
                 if base_key.startswith(name_prefix):
-                    sibling = f"item_Name_{ct}_{base_key[len(name_prefix):]}"
+                    sibling = f"item_Name_{ct}_{base_key[len(name_prefix) :]}"
                     if sibling not in out and sibling in loc:
                         out[sibling] = value
                         sibling_count += 1
@@ -2924,7 +3003,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
             ):
                 if not key.startswith(prefix_with):
                     continue
-                rest = key[len(prefix_with):]
+                rest = key[len(prefix_with) :]
                 if not rest or "_" not in rest:
                     continue
                 head = rest.split("_", 1)[0]
@@ -2937,7 +3016,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
                     legacy_base = loc[legacy_sibling]
                     stats_marker = ENHANCEMENT_SEPARATOR
                     if stats_marker in value:
-                        out[legacy_sibling] = legacy_base + value[value.index(stats_marker):]
+                        out[legacy_sibling] = legacy_base + value[value.index(stats_marker) :]
                     else:
                         out[legacy_sibling] = value
                 else:  # item_Name_
@@ -2967,13 +3046,15 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
         ]:
             if missile_dir.exists():
                 logger.info(f"Processing from {missile_dir}…")
-                out.update(scan_entity_dir(
-                    missile_dir,
-                    enhancements_missile,
-                    loc=loc,
-                    generate_name_tags=True,
-                    name_tag_fn=_missile_name_tag,
-                ))
+                out.update(
+                    scan_entity_dir(
+                        missile_dir,
+                        enhancements_missile,
+                        loc=loc,
+                        generate_name_tags=True,
+                        name_tag_fn=_missile_name_tag,
+                    )
+                )
         _tick("Generated missile enhancements")
         return out
 
@@ -3019,14 +3100,16 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
         if pu_missions_dir.exists():
             logger.info(f"Processing {pu_missions_dir.name}…")
             _flush()
-            out.update(scan_entity_dir(
-                pu_missions_dir,
-                lambda root: enhancements_mission(root, reputation_lookup),
-                loc=loc,
-                loc_key_fn=_mission_loc_key,
-                separator=MISSION_SEPARATOR,
-                capture_all=True,
-            ))
+            out.update(
+                scan_entity_dir(
+                    pu_missions_dir,
+                    lambda root: enhancements_mission(root, reputation_lookup),
+                    loc=loc,
+                    loc_key_fn=_mission_loc_key,
+                    separator=MISSION_SEPARATOR,
+                    capture_all=True,
+                )
+            )
 
         for mission_dir in [
             records / "entities" / "missions",
@@ -3036,13 +3119,15 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
             if mission_dir.exists():
                 logger.info(f"Processing {mission_dir.name}…")
                 _flush()
-                out.update(scan_entity_dir(
-                    mission_dir,
-                    lambda root: enhancements_mission(root, reputation_lookup),
-                    loc=loc,
-                    separator=MISSION_SEPARATOR,
-                    capture_all=True,
-                ))
+                out.update(
+                    scan_entity_dir(
+                        mission_dir,
+                        lambda root: enhancements_mission(root, reputation_lookup),
+                        loc=loc,
+                        separator=MISSION_SEPARATOR,
+                        capture_all=True,
+                    )
+                )
 
         logger.info(f"Finished missions scan ({len(out)} entries)")
         _tick("Scanned missions")
@@ -3051,7 +3136,8 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
         pool_dir = records / "crafting" / "blueprintrewards" / "blueprintmissionpools"
         bp_dir = records / "crafting" / "blueprints" / "crafting"
         blueprint_pools = _cached_lookup(
-            forge_dir, "blueprint_pools",
+            forge_dir,
+            "blueprint_pools",
             lambda: build_blueprint_pool_lookup(pool_dir, bp_dir, entity_names),
         )
         _tick("Built blueprint pool lookup")
@@ -3061,7 +3147,9 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
         contractgen_missions, mission_blueprints, mission_bp_chance, mission_items = scan_contract_generators(
             contractgen_dir, reputation_lookup, blueprint_pools, entity_names
         )
-        logger.info(f"Processed {len(contractgen_missions)} contract generator mission variants, {len(mission_blueprints)} with blueprints, {len(mission_items)} with items")
+        logger.info(
+            f"Processed {len(contractgen_missions)} contract generator mission variants, {len(mission_blueprints)} with blueprints, {len(mission_items)} with items"
+        )
         _flush()
 
         mission_titles_augmented = 0
@@ -3105,15 +3193,10 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
             _total_bucketed = sum(desc_bucket_count.values())
             _any_variant_has_bp = any(_bp_variants)
             _has_dominant_no_bp_bucket = _total_bucketed > 0 and any(
-                not desc_bucket_has_bp[dk]
-                and desc_bucket_count[dk] / _total_bucketed > 0.5
+                not desc_bucket_has_bp[dk] and desc_bucket_count[dk] / _total_bucketed > 0.5
                 for dk in desc_bucket_has_bp
             )
-            _bp_partial = (
-                has_blueprints
-                and _any_variant_has_bp
-                and not _has_dominant_no_bp_bucket
-            )
+            _bp_partial = has_blueprints and _any_variant_has_bp and not _has_dominant_no_bp_bucket
             augmented_title = base_title
             if _all_have_bp:
                 augmented_title += " <EM4>[BP]</EM4>"
@@ -3200,7 +3283,11 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
                 if any_variant_has_bp and has_blueprints:
                     chance_pct = int(variant_bp_chance * 100)
                     if all_variants_have_bp:
-                        bp_header = f"<EM4>Blueprint Reward:</EM4> {chance_pct}% chance" if chance_pct < 100 else "<EM4>Blueprint Reward:</EM4> Guaranteed"
+                        bp_header = (
+                            f"<EM4>Blueprint Reward:</EM4> {chance_pct}% chance"
+                            if chance_pct < 100
+                            else "<EM4>Blueprint Reward:</EM4> Guaranteed"
+                        )
                     else:
                         variant_note = ", ".join(bp_variant_names) if bp_variant_names else "select variants"
                         bp_header = f"<EM4>Blueprint Reward:</EM4> {chance_pct}% chance ({variant_note} only)"
@@ -3211,10 +3298,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
                     # have a wider per-system pool set than any one desc does).
                     pools_by_system = mission_blueprints.get(title_key, {})
                     desc_systems = {v[0] for v in desc_variants if v[8]}  # v[0]=system, v[8]=has_bp
-                    desc_pools = {
-                        s: items for s, items in pools_by_system.items()
-                        if s in desc_systems
-                    }
+                    desc_pools = {s: items for s, items in pools_by_system.items() if s in desc_systems}
                     if not desc_pools:
                         # Fallback: no intersection (defensive — shouldn't
                         # happen if any_variant_has_bp holds) — show whatever
@@ -3231,26 +3315,15 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
                     if len(unique_fps) == 1:
                         # One effective pool — render flat.
                         items = list(next(iter(unique_fps)))
-                        bp_body_parts.append(
-                            "\\n".join(f"- {name}" for name in items)
-                        )
+                        bp_body_parts.append("\\n".join(f"- {name}" for name in items))
                     else:
                         # Multiple regional pools — one sub-section each,
                         # sorted by system name for stable output.
-                        for fp, systems in sorted(
-                            unique_fps.items(), key=lambda kv: sorted(kv[1])
-                        ):
+                        for fp, systems in sorted(unique_fps.items(), key=lambda kv: sorted(kv[1])):
                             label = ", ".join(sorted(systems))
-                            region_list = "\\n".join(
-                                f"- {name}" for name in fp
-                            )
-                            bp_body_parts.append(
-                                f"<EM4>[{label}]</EM4>\\n{region_list}"
-                            )
-                    sections.append(
-                        "<EM3>POTENTIAL BLUEPRINTS</EM3>\\n"
-                        + "\\n".join(bp_body_parts)
-                    )
+                            region_list = "\\n".join(f"- {name}" for name in fp)
+                            bp_body_parts.append(f"<EM4>[{label}]</EM4>\\n{region_list}")
+                    sections.append("<EM3>POTENTIAL BLUEPRINTS</EM3>\\n" + "\\n".join(bp_body_parts))
 
                 if title_key in mission_items:
                     item_list = "\\n".join(f"- {name}" for name in mission_items[title_key])
@@ -3339,7 +3412,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
         _tick("Augmented missions with XP + blueprint rewards")
 
         # Mission XP coverage report
-        titles_with_xp = {k for k in out if re.search(r'\[\d', out[k])}
+        titles_with_xp = {k for k in out if re.search(r"\[\d", out[k])}
         desc_keys = {k for k in out if k not in titles_with_xp}
         titles_skipped_no_xp = 0
         titles_skipped_reasons: dict[str, list[str]] = {
@@ -3414,10 +3487,11 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
     out_journal: dict[str, str] = {}
 
     if gen_jobs:
-        logger.info(f"Running {len(gen_jobs)} output generators in parallel (workers={min(max_workers, len(gen_jobs))})…")
+        logger.info(
+            f"Running {len(gen_jobs)} output generators in parallel (workers={min(max_workers, len(gen_jobs))})…"
+        )
         _flush()
-        with ThreadPoolExecutor(max_workers=min(max_workers, len(gen_jobs)),
-                                thread_name_prefix="gen") as pool:
+        with ThreadPoolExecutor(max_workers=min(max_workers, len(gen_jobs)), thread_name_prefix="gen") as pool:
             futs = {name: pool.submit(fn) for name, fn in gen_jobs.items()}
             for name, fut in futs.items():
                 result = fut.result()
@@ -3449,16 +3523,22 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
                 apply_locstring_workarounds,
                 load_locstring_workarounds,
             )
+
             workarounds = load_locstring_workarounds(patches_dir)
             if workarounds:
                 total_applied = 0
-                for out_dict in (out_missions, out_components, out_ship_weapons,
-                                 out_fps_weapons, out_ships, out_missiles,
-                                 out_commodities, out_journal):
+                for out_dict in (
+                    out_missions,
+                    out_components,
+                    out_ship_weapons,
+                    out_fps_weapons,
+                    out_ships,
+                    out_missiles,
+                    out_commodities,
+                    out_journal,
+                ):
                     total_applied += apply_locstring_workarounds(out_dict, workarounds)
-                logger.info(
-                    f"Loc-string workarounds: {total_applied}/{len(workarounds)} applied"
-                )
+                logger.info(f"Loc-string workarounds: {total_applied}/{len(workarounds)} applied")
                 _flush()
         except ImportError:
             logger.debug("src.utils.dataforge_patcher unavailable; skipping workarounds")
@@ -3467,11 +3547,11 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
     logger.info("Writing output files…")
     _flush()
     if _want("ship_descs"):
-        write_ini(output_dir / "ships_desc_enhancements.ini",       out_ships)
+        write_ini(output_dir / "ships_desc_enhancements.ini", out_ships)
     if _want("component_descs"):
-        write_ini(output_dir / "components_desc_enhancements.ini",  out_components)
+        write_ini(output_dir / "components_desc_enhancements.ini", out_components)
     if _want("ship_weapon_descs"):
-        write_ini(output_dir / "ship_weapons_desc_enhancements.ini",out_ship_weapons)
+        write_ini(output_dir / "ship_weapons_desc_enhancements.ini", out_ship_weapons)
     if _want("fps_weapon_descs"):
         write_ini(output_dir / "fps_weapons_desc_enhancements.ini", out_fps_weapons)
     if _want("mission_rewards"):
@@ -3483,9 +3563,16 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
     if _want("missile_enhancements"):
         write_ini(output_dir / "missile_enhancements.ini", out_missiles)
 
-    total = (len(out_ships) + len(out_components) + len(out_ship_weapons) +
-             len(out_fps_weapons) + len(out_missions) + len(out_commodities) +
-             len(out_journal) + len(out_missiles))
+    total = (
+        len(out_ships)
+        + len(out_components)
+        + len(out_ship_weapons)
+        + len(out_fps_weapons)
+        + len(out_missions)
+        + len(out_commodities)
+        + len(out_journal)
+        + len(out_missiles)
+    )
     logger.info(f"Done — {total:,} total stat entries written to {output_dir}")
     _tick("Wrote all output files")
     if _sink is not None:
@@ -3493,6 +3580,6 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
 
 
 if __name__ == "__main__":
-    base_ini  = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_BASE_INI
+    base_ini = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_BASE_INI
     forge_dir = Path(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_FORGE_DIR
     main(base_ini, forge_dir)
