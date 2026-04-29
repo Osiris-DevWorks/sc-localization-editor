@@ -44,6 +44,7 @@ from src.gui.string_table_model import (
 from src.gui.theme import BRAND_FONT_FAMILY, get_button_color, get_button_text_color, get_tagline_color, get_title_color
 from src.gui.workers import (
     AnimatedProgressDialog,
+    AppUpdateCheckerWorker,
     DataForgeExtractWorker,
     EnhancementsGeneratorWorker,
     FileLoaderWorker,
@@ -134,6 +135,9 @@ class MainWindow(QMainWindow):
 
         # Startup sync worker
         self._startup_sync_worker: StartupSyncWorker | None = None
+
+        # App update checker worker
+        self._update_checker_worker: AppUpdateCheckerWorker | None = None
 
         # P4K extraction worker and progress dialog
         self._p4k_worker: P4kExtractWorker | None = None
@@ -508,6 +512,16 @@ class MainWindow(QMainWindow):
         self.about_browser.setOpenExternalLinks(True)
         self._render_about_html()
         layout.addWidget(self.about_browser)
+
+        btn_row = QHBoxLayout()
+        self._check_update_btn = QPushButton("Check for Updates")
+        self._check_update_btn.setMaximumWidth(180)
+        self._check_update_btn.setToolTip("Check whether a newer version of Open Strings is available on GitHub")
+        self._check_update_btn.clicked.connect(lambda: self._check_for_app_update(manual=True))
+        btn_row.addWidget(self._check_update_btn)
+        btn_row.addStretch()
+        layout.addLayout(btn_row)
+
         return widget
 
     def _render_about_html(self):
@@ -1433,6 +1447,83 @@ class MainWindow(QMainWindow):
             return
         self._post_tutorial_tasks_started = True
         self._start_startup_sync()
+        self._check_for_app_update(manual=False)
+
+    # ── App update check ─────────────────────────────────────────────────────
+
+    _UPDATE_CHECK_INTERVAL = 6 * 60 * 60  # 6 hours between auto-checks
+
+    def _check_for_app_update(self, manual: bool = False) -> None:
+        """Start an async app-update check.
+
+        Auto-checks are throttled to once every 6 hours.  Manual checks
+        (triggered from the About tab button) always run and show feedback
+        regardless of outcome.  A second call while a check is already
+        running is silently ignored.
+        """
+        import time
+
+        if self._update_checker_worker is not None and self._update_checker_worker.isRunning():
+            return
+
+        if not manual:
+            last = AppSettings.get_last_update_check_epoch()
+            if last and (time.time() - last) < self._UPDATE_CHECK_INTERVAL:
+                return
+
+        self._update_checker_worker = AppUpdateCheckerWorker()
+        self._update_checker_worker.finished.connect(
+            lambda ok, ver, url: self._on_update_check_finished(ok, ver, url, manual=manual)
+        )
+        self._update_checker_worker.error.connect(lambda msg: self._on_update_check_error(msg, manual=manual))
+        self._update_checker_worker.start()
+
+        if manual:
+            self._status_bar().showMessage("Checking for updates…")
+
+    @pyqtSlot(bool, str, str)
+    def _on_update_check_finished(
+        self, update_available: bool, new_version: str, release_url: str, *, manual: bool
+    ) -> None:
+        """Handle the result of an update check."""
+        if self._update_checker_worker is not None:
+            self._update_checker_worker.quit()
+            self._update_checker_worker.wait()
+            self._update_checker_worker = None
+
+        if update_available:
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("Update Available")
+            msg_box.setIcon(QMessageBox.Icon.Information)
+            msg_box.setText(f"<b>Open Strings v{new_version}</b> is available.")
+            msg_box.setInformativeText(
+                "Click <b>Open Release Page</b> to download the new version,\nor <b>Later</b> to dismiss."
+            )
+            open_btn = msg_box.addButton("Open Release Page", QMessageBox.ButtonRole.AcceptRole)
+            msg_box.addButton("Later", QMessageBox.ButtonRole.RejectRole)
+            msg_box.exec()
+            if msg_box.clickedButton() is open_btn:
+                QDesktopServices.openUrl(QUrl(release_url))
+        elif manual:
+            QMessageBox.information(self, "Up to Date", f"You are running the latest version ({get_version()}).")
+
+        if manual:
+            self._status_bar().showMessage("Ready")
+
+    def _on_update_check_error(self, message: str, *, manual: bool) -> None:
+        """Handle update check network failure."""
+        if self._update_checker_worker is not None:
+            self._update_checker_worker.quit()
+            self._update_checker_worker.wait()
+            self._update_checker_worker = None
+
+        if manual:
+            QMessageBox.warning(
+                self,
+                "Update Check Failed",
+                f"Could not reach the update server.\n\nDetail: {message}",
+            )
+            self._status_bar().showMessage("Ready")
 
     def _maybe_start_first_run_tutorial(self) -> None:
         """Auto-start the tour on first launch of a version whose tour wasn't seen.

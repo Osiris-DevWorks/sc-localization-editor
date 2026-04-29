@@ -392,6 +392,70 @@ class DataForgeExtractWorker(QThread):
             self.finished.emit(False)
 
 
+class AppUpdateCheckerWorker(QThread):
+    """Check for a newer app release against the GitHub Releases API.
+
+    Emits ``finished(update_available, new_version, release_url)`` on
+    success.  Emits ``error(message)`` if the network request fails or
+    the response cannot be parsed — callers that initiated the check
+    manually should surface this; auto-checks can silently swallow it.
+
+    Version comparison is done numerically on dot-separated integer
+    tuples so "1.10.0" > "1.9.0" works correctly.
+    """
+
+    finished = pyqtSignal(bool, str, str)  # (update_available, new_version, release_url)
+    error = pyqtSignal(str)
+
+    _API_URL = "https://api.github.com/repos/jonigirl/open-strings/releases/latest"
+    _RELEASES_URL = "https://github.com/jonigirl/open-strings/releases"
+
+    def run(self):
+        import json
+        import urllib.request
+
+        from src.utils.version import get_version
+
+        try:
+            req = urllib.request.Request(
+                self._API_URL,
+                headers={"User-Agent": "open-strings-update-check", "Accept": "application/vnd.github+json"},
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310  # HTTPS enforced by URL constant
+                data = json.loads(resp.read())
+
+            tag = data.get("tag_name", "").lstrip("v").strip()
+            release_url = data.get("html_url", self._RELEASES_URL)
+
+            if not tag:
+                self.error.emit("GitHub API returned an empty tag_name")
+                return
+
+            current = get_version()
+            update_available = self._is_newer(tag, current)
+            AppSettings.set_last_update_check_epoch(int(__import__("time").time()))
+            self.finished.emit(update_available, tag, release_url)
+        except Exception as e:
+            logger.warning(f"Update check failed: {e}")
+            self.error.emit(str(e))
+
+    @staticmethod
+    def _is_newer(remote: str, current: str) -> bool:
+        """Return True if *remote* version is strictly newer than *current*.
+
+        Comparison is done on integer tuples so "1.10.0" > "1.9.0".
+        Falls back to False on any parse error.
+        """
+        try:
+
+            def _parts(v: str) -> tuple[int, ...]:
+                return tuple(int(x) for x in v.split("."))
+
+            return _parts(remote) > _parts(current)
+        except (ValueError, AttributeError):
+            return False
+
+
 class SelectAllDelegate(QStyledItemDelegate):
     """Custom delegate that selects all text on edit."""
 
