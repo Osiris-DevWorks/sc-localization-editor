@@ -16,6 +16,7 @@ Kept as a self-contained module so the rest of the GUI doesn't need to know
 anything about overlay painting — the main window just builds a list of steps
 and calls ``tour.start()``.
 """
+
 from __future__ import annotations
 
 import logging
@@ -42,22 +43,22 @@ logger = logging.getLogger(__name__)
 # only exists after a tab is activated) still match.
 @dataclass
 class CoachMarkStep:
-    target: Callable[[], QWidget | None]   # None → step paints dim only, no spotlight
+    target: Callable[[], QWidget | None]  # None → step paints dim only, no spotlight
     title: str
     description: str
     pre_action: Callable[[], None] | None = None  # e.g. switch to Config tab
-    preferred_side: str = "auto"              # "right" | "below" | "above" | "left" | "auto"
+    preferred_side: str = "auto"  # "right" | "below" | "above" | "left" | "auto"
 
 
 # ── Visual constants ──────────────────────────────────────────────────────────
-_DIM_OPACITY = 170                 # 0..255 — how dark the overlay is outside the spotlight
-_SPOTLIGHT_PADDING = 6             # px of empty space around target before the highlight border
-_SPOTLIGHT_CORNER = 6              # rounded-rect radius for the spotlight cut-out
+_DIM_OPACITY = 170  # 0..255 — how dark the overlay is outside the spotlight
+_SPOTLIGHT_PADDING = 6  # px of empty space around target before the highlight border
+_SPOTLIGHT_CORNER = 6  # rounded-rect radius for the spotlight cut-out
 _SPOTLIGHT_BORDER_PX = 3
 _SPOTLIGHT_BORDER_COLOR = QColor("#00d4ff")
-_CALLOUT_MARGIN = 16               # px gap between spotlight and callout
+_CALLOUT_MARGIN = 16  # px gap between spotlight and callout
 _CALLOUT_MAX_WIDTH = 380
-_WINDOW_EDGE_MARGIN = 16           # keep callout at least this far from the window edge
+_WINDOW_EDGE_MARGIN = 16  # keep callout at least this far from the window edge
 
 
 class CoachMarkOverlay(QWidget):
@@ -174,8 +175,10 @@ class CoachMarkOverlay(QWidget):
             # means the target's ancestors share a coordinate space with us.
             top_left = target.mapTo(self.parentWidget(), QPoint(0, 0))
             self._spotlight = QRect(top_left, target.size()).adjusted(
-                -_SPOTLIGHT_PADDING, -_SPOTLIGHT_PADDING,
-                _SPOTLIGHT_PADDING, _SPOTLIGHT_PADDING,
+                -_SPOTLIGHT_PADDING,
+                -_SPOTLIGHT_PADDING,
+                _SPOTLIGHT_PADDING,
+                _SPOTLIGHT_PADDING,
             )
 
         self._title_label.setText(step.title)
@@ -235,16 +238,20 @@ class CoachMarkOverlay(QWidget):
         candidates: dict[str, QRect] = {}
         if not spot.isEmpty():
             candidates["right"] = QRect(
-                QPoint(spot.right() + _CALLOUT_MARGIN, spot.top()), size,
+                QPoint(spot.right() + _CALLOUT_MARGIN, spot.top()),
+                size,
             )
             candidates["below"] = QRect(
-                QPoint(spot.left(), spot.bottom() + _CALLOUT_MARGIN), size,
+                QPoint(spot.left(), spot.bottom() + _CALLOUT_MARGIN),
+                size,
             )
             candidates["above"] = QRect(
-                QPoint(spot.left(), spot.top() - _CALLOUT_MARGIN - size.height()), size,
+                QPoint(spot.left(), spot.top() - _CALLOUT_MARGIN - size.height()),
+                size,
             )
             candidates["left"] = QRect(
-                QPoint(spot.left() - _CALLOUT_MARGIN - size.width(), spot.top()), size,
+                QPoint(spot.left() - _CALLOUT_MARGIN - size.width(), spot.top()),
+                size,
             )
 
         order = ["right", "below", "above", "left"]
@@ -302,7 +309,9 @@ class CoachMarkOverlay(QWidget):
             p.setPen(pen)
             p.setBrush(Qt.BrushStyle.NoBrush)
             p.drawRoundedRect(
-                QRectF(spot), _SPOTLIGHT_CORNER, _SPOTLIGHT_CORNER,
+                QRectF(spot),
+                _SPOTLIGHT_CORNER,
+                _SPOTLIGHT_CORNER,
             )
 
 
@@ -357,7 +366,9 @@ class TutorialTour(QObject):
         QApplication.processEvents()
         self._overlay.setGeometry(self._root.rect())
         self._overlay.show_step(
-            step, self._idx, len(self._steps),
+            step,
+            self._idx,
+            len(self._steps),
             has_back=self._idx > 0,
             is_last=self._idx == len(self._steps) - 1,
         )

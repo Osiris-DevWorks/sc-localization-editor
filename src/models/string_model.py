@@ -10,11 +10,25 @@ from functools import cache
 # to module scope plus the @lru_cache below dropped that whole block of work.
 
 _FPS_WEAPON_WORDS = (
-    "_rifle_", "_pistol_", "_smg_", "_shotgun_", "_sniper_",
-    "_launcher_", "_lmg_", "_hmg_", "_knife_", "_multi_",
+    "_rifle_",
+    "_pistol_",
+    "_smg_",
+    "_shotgun_",
+    "_sniper_",
+    "_launcher_",
+    "_lmg_",
+    "_hmg_",
+    "_knife_",
+    "_multi_",
 )
 _ARMOR_GEAR_WORDS = (
-    "armor", "helmet", "suit", "vest", "glasses", "_optics_", "_barrel_",
+    "armor",
+    "helmet",
+    "suit",
+    "vest",
+    "glasses",
+    "_optics_",
+    "_barrel_",
 )
 
 # Ship-component type codes. Pre-expanded to all four valid
@@ -23,10 +37,7 @@ _ARMOR_GEAR_WORDS = (
 # in C and short-circuits on first match.
 _COMPONENT_CODES = ("shld", "powr", "cool", "qdrv", "jump", "misl", "gmisl", "bomb")
 _COMPONENT_PREFIXES = tuple(
-    f"item_{field}{sep}{comp}_"
-    for comp in _COMPONENT_CODES
-    for field in ("name", "desc")
-    for sep in ("", "_")
+    f"item_{field}{sep}{comp}_" for comp in _COMPONENT_CODES for field in ("name", "desc") for sep in ("", "_")
 )
 
 # Ship-weapon size designator (_S1, _S02, _XL, _XL-2, _XXL, _L-3, …).
@@ -41,48 +52,129 @@ _SHIP_WEAPON_SIZE_RE = re.compile(r"_S\d+|_X{1,2}L(-\d+)?|_[LMS]-\d+", re.IGNORE
 # case-insensitive (we lower the key first). Bare prefixes (no trailing _)
 # are preferred where safe, to catch variant spellings (bitzeros vs bitzeroes).
 _MISSION_PREFIXES = (
-    "adagio_", "assassin", "basesweep_",
-    "bbt_", "bhg_", "bitzero", "blackbox", "blacjac", "blockaderunner",
+    "adagio_",
+    "assassin",
+    "basesweep_",
+    "bbt_",
+    "bhg_",
+    "bitzero",
+    "blackbox",
+    "blacjac",
+    "blockaderunner",
     "bounty_",
-    "cdf_", "cfp", "civilian_", "claimsweep_", "cleanair_",
-    "clovis_", "combatassist_", "commarray", "confirmkill_",
-    "constantine_", "contract", "covalex", "criminal_",
-    "crusader_", "crus_",
-    "dataheis", "deadsaints_", "deploypiggyback_", "deployprobe_",
-    "destroyblade_", "destroydebris_", "destroyitem_",
-    "destroyprobe", "destroystash_", "distraction",
+    "cdf_",
+    "cfp",
+    "civilian_",
+    "claimsweep_",
+    "cleanair_",
+    "clovis_",
+    "combatassist_",
+    "commarray",
+    "confirmkill_",
+    "constantine_",
+    "contract",
+    "covalex",
+    "criminal_",
+    "crusader_",
+    "crus_",
+    "dataheis",
+    "deadsaints_",
+    "deploypiggyback_",
+    "deployprobe_",
+    "destroyblade_",
+    "destroydebris_",
+    "destroyitem_",
+    "destroyprobe",
+    "destroystash_",
+    "distraction",
     "dusters_",
-    "eckhart", "ecn_", "escort_",
-    "fffinale_", "firesale_", "forcedepletion",
-    "foxwell_", "fps_bounty", "ftl_",
-    "genlocal_", "gobling_", "groupbounty_",
-    "hack_", "haulcargo_", "hdactivist_", "headhunters_",
-    "hexpenetrator_", "hh_", "highpoint_", "hockcrow_", "hockrow_",
+    "eckhart",
+    "ecn_",
+    "escort_",
+    "fffinale_",
+    "firesale_",
+    "forcedepletion",
+    "foxwell_",
+    "fps_bounty",
+    "ftl_",
+    "genlocal_",
+    "gobling_",
+    "groupbounty_",
+    "hack_",
+    "haulcargo_",
+    "hdactivist_",
+    "headhunters_",
+    "hexpenetrator_",
+    "hh_",
+    "highpoint_",
+    "hockcrow_",
+    "hockrow_",
     "hurston_",
     "intersec_",
     "jt_",
-    "kaboos_", "kareahsweep_", "killship_",
-    "lingfamily_", "localdelivery_", "locationrush_",
-    "me_blackbox", "me_bounty", "me_planetcollect",
-    "meet_", "mg_", "mgclovus_", "miningclaim",
-    "mission", "mtps_", "murderspree_",
-    "ninetails_", "northrock_", "ntlockdown_",
-    "outpost_repair", "outlawsweep_",
-    "p_showdown", "p_protect", "planetcollect_",
-    "preventdata_", "prisonerbreak_", "protlife_",
-    "rain_", "recovery_", "recoverstash_", "recoverstolen_",
-    "redwind_", "repairoxygenkiosk_", "retakelocation_",
-    "retrieveconsignment_", "retrievedatapad_",
-    "roughready_", "ruto_",
-    "scramblerace_", "searchbody", "searchcrew_",
-    "sectorsweep_", "securitypatrol_", "servicebeacon_",
-    "shubin_", "singleidrisfight_", "spacecargo_",
-    "spacecollect", "spacesteal_", "stealevidence_", "stealitem_",
-    "tarpits_", "test_title_", "thecollector_",
-    "timesensitive_", "tutorial",
-    "udm_", "uwc_",
-    "vaughn_", "vendingmachine_",
-    "wantedlevel", "wstr_", "xenothreat_",
+    "kaboos_",
+    "kareahsweep_",
+    "killship_",
+    "lingfamily_",
+    "localdelivery_",
+    "locationrush_",
+    "me_blackbox",
+    "me_bounty",
+    "me_planetcollect",
+    "meet_",
+    "mg_",
+    "mgclovus_",
+    "miningclaim",
+    "mission",
+    "mtps_",
+    "murderspree_",
+    "ninetails_",
+    "northrock_",
+    "ntlockdown_",
+    "outpost_repair",
+    "outlawsweep_",
+    "p_showdown",
+    "p_protect",
+    "planetcollect_",
+    "preventdata_",
+    "prisonerbreak_",
+    "protlife_",
+    "rain_",
+    "recovery_",
+    "recoverstash_",
+    "recoverstolen_",
+    "redwind_",
+    "repairoxygenkiosk_",
+    "retakelocation_",
+    "retrieveconsignment_",
+    "retrievedatapad_",
+    "roughready_",
+    "ruto_",
+    "scramblerace_",
+    "searchbody",
+    "searchcrew_",
+    "sectorsweep_",
+    "securitypatrol_",
+    "servicebeacon_",
+    "shubin_",
+    "singleidrisfight_",
+    "spacecargo_",
+    "spacecollect",
+    "spacesteal_",
+    "stealevidence_",
+    "stealitem_",
+    "tarpits_",
+    "test_title_",
+    "thecollector_",
+    "timesensitive_",
+    "tutorial",
+    "udm_",
+    "uwc_",
+    "vaughn_",
+    "vendingmachine_",
+    "wantedlevel",
+    "wstr_",
+    "xenothreat_",
 )
 
 
@@ -163,12 +255,13 @@ def _extract_category_impl(key: str) -> str:
 @dataclass
 class StringEntry:
     """Represents a localization string entry."""
+
     key: str
-    source_file: str              # "global" or "vehicles"
-    category: str = ""            # Extracted from key prefix
-    original_value: str = ""      # From merged sources (base file + others)
-    custom_value: str = ""        # From target_strings.ini (or empty)
-    status: str = ""              # "Modified" | "Unmodified" | "New"
+    source_file: str  # "global" or "vehicles"
+    category: str = ""  # Extracted from key prefix
+    original_value: str = ""  # From merged sources (base file + others)
+    custom_value: str = ""  # From target_strings.ini (or empty)
+    status: str = ""  # "Modified" | "Unmodified" | "New"
 
     def __post_init__(self) -> None:
         # Older call sites sometimes omitted category/status and relied on the

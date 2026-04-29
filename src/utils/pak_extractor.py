@@ -61,10 +61,7 @@ def _robust_rmtree(path: Path, attempts: int = 6) -> None:
             # ceiling ~6s before we bail, enough to outlast most AV/indexer
             # scans without hanging the UI forever.
             delay = min(0.2 * (2**i), 3.0)
-            logger.warning(
-                f"rmtree {path} attempt {i + 1}/{attempts} failed ({e}); "
-                f"retrying in {delay:.1f}s"
-            )
+            logger.warning(f"rmtree {path} attempt {i + 1}/{attempts} failed ({e}); retrying in {delay:.1f}s")
             time.sleep(delay)
 
     raise last_err if last_err else OSError(f"Failed to remove {path}")
@@ -134,9 +131,7 @@ def _copy_filtered_records(src_libs: Path, dst_libs: Path) -> tuple[int, int]:
     records_dst = dst_libs / "foundry" / "records"
 
     if not records_src.exists():
-        raise FileNotFoundError(
-            f"unforge output missing expected 'foundry/records/' layout at {records_src}"
-        )
+        raise FileNotFoundError(f"unforge output missing expected 'foundry/records/' layout at {records_src}")
 
     records_dst.mkdir(parents=True, exist_ok=True)
 
@@ -233,9 +228,7 @@ def extract_global_ini(
 
         if result.returncode != 0:
             logger.error(f"unp4k stderr: {result.stderr}")
-            raise RuntimeError(
-                f"unp4k.exe exited with code {result.returncode}.\n\n{result.stderr or result.stdout}"
-            )
+            raise RuntimeError(f"unp4k.exe exited with code {result.returncode}.\n\n{result.stderr or result.stdout}")
 
         extracted = Path(tmp_dir) / _GLOBAL_INI_RELATIVE
         if not extracted.exists():
@@ -306,9 +299,7 @@ def extract_dataforge(
         if progress_callback:
             progress_callback("Extracting Game2.dcb from Data.p4k…")
         if progress_pct_callback:
-            progress_pct_callback(
-                0, TOTAL_PHASES, "Extracting Game2.dcb from Data.p4k…"
-            )
+            progress_pct_callback(0, TOTAL_PHASES, "Extracting Game2.dcb from Data.p4k…")
         logger.info(f"Running unp4k to extract .dcb: {unp4k_exe} {p4k_path} .dcb")
         result = _run_subprocess(
             [str(unp4k_exe), str(p4k_path), ".dcb"],
@@ -316,9 +307,7 @@ def extract_dataforge(
             timeout=600,
         )
         if result.returncode != 0:
-            raise RuntimeError(
-                f"unp4k.exe failed (code {result.returncode}):\n{result.stderr or result.stdout}"
-            )
+            raise RuntimeError(f"unp4k.exe failed (code {result.returncode}):\n{result.stderr or result.stdout}")
 
         # Explicit cleanup: ensure subprocess is fully released
         del result
@@ -328,19 +317,13 @@ def extract_dataforge(
         # unp4k preserves archive structure: Data/Game2.dcb
         dcb_candidates = list(tmp.glob("Data/Game*.dcb"))
         if not dcb_candidates:
-            raise FileNotFoundError(
-                "Game*.dcb not found in p4k output — check game install path."
-            )
+            raise FileNotFoundError("Game*.dcb not found in p4k output — check game install path.")
         dcb_path = dcb_candidates[0]
-        logger.info(
-            f"Found DCB: {dcb_path} ({dcb_path.stat().st_size / 1_048_576:.0f} MB)"
-        )
+        logger.info(f"Found DCB: {dcb_path} ({dcb_path.stat().st_size / 1_048_576:.0f} MB)")
 
         # ── Step 2: Run unforge to produce entity XMLs ────────────────────────
         if progress_callback:
-            progress_callback(
-                "Converting DataForge database — this takes several minutes…"
-            )
+            progress_callback("Converting DataForge database — this takes several minutes…")
         if progress_pct_callback:
             progress_pct_callback(1, TOTAL_PHASES, "Converting DataForge database…")
         logger.info(f"Running unforge: {unforge_exe} {dcb_path}")
@@ -358,17 +341,11 @@ def extract_dataforge(
         _stdout = (result.stdout or "").strip()
         _stderr = (result.stderr or "").strip()
         if _stdout:
-            logger.info(
-                f"unforge stdout ({len(_stdout)} bytes, truncated): {_stdout[:2000]}"
-            )
+            logger.info(f"unforge stdout ({len(_stdout)} bytes, truncated): {_stdout[:2000]}")
         if _stderr:
-            logger.info(
-                f"unforge stderr ({len(_stderr)} bytes, truncated): {_stderr[:2000]}"
-            )
+            logger.info(f"unforge stderr ({len(_stderr)} bytes, truncated): {_stderr[:2000]}")
         if result.returncode != 0:
-            raise RuntimeError(
-                f"unforge.exe failed (code {result.returncode}):\n{_stderr or _stdout or '(no output)'}"
-            )
+            raise RuntimeError(f"unforge.exe failed (code {result.returncode}):\n{_stderr or _stdout or '(no output)'}")
 
         # Explicit cleanup: ensure subprocess is fully released
         del result
@@ -398,8 +375,7 @@ def extract_dataforge(
                     "runtime from Microsoft and try again."
                 )
             raise FileNotFoundError(
-                "unforge ran but libs/ directory was not created — unexpected output structure."
-                + diagnostic
+                "unforge ran but libs/ directory was not created — unexpected output structure." + diagnostic
             )
 
         # ── Step 3: Cache the full extraction ─────────────────────────────────
@@ -446,9 +422,7 @@ def extract_dataforge(
 
 
 @timed
-def dataforge_cache_is_fresh(
-    p4k_path: Path | str, dataforge_cache_dir: Path | str
-) -> bool:
+def dataforge_cache_is_fresh(p4k_path: Path | str, dataforge_cache_dir: Path | str) -> bool:
     """Return True if the cached DataForge XMLs are up-to-date with the p4k.
 
     Requires both a matching mtime stamp AND actual XML content in the cache
@@ -459,10 +433,7 @@ def dataforge_cache_is_fresh(
 
     legacy_cache_dir = dataforge_cache_dir
     legacy_p4k_path = p4k_path
-    legacy_order = (
-        legacy_p4k_path.suffix.lower() != ".p4k"
-        and legacy_cache_dir.suffix.lower() == ".p4k"
-    )
+    legacy_order = legacy_p4k_path.suffix.lower() != ".p4k" and legacy_cache_dir.suffix.lower() == ".p4k"
     if legacy_order:
         p4k_path = legacy_cache_dir
         dataforge_cache_dir = legacy_p4k_path
@@ -471,10 +442,7 @@ def dataforge_cache_is_fresh(
     libs_dir = dataforge_cache_dir / "raw" / "libs"
     if legacy_order and not stamp.exists():
         try:
-            return (
-                dataforge_cache_dir.exists()
-                and dataforge_cache_dir.stat().st_mtime >= p4k_path.stat().st_mtime
-            )
+            return dataforge_cache_dir.exists() and dataforge_cache_dir.stat().st_mtime >= p4k_path.stat().st_mtime
         except Exception:
             return False
     if not stamp.exists() or not libs_dir.exists():

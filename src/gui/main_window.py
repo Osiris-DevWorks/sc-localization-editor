@@ -55,6 +55,8 @@ from src.gui.workers import (
 from src.merger.ini_merger import merge_sources_by_hierarchy
 from src.models.string_model import StringEntry
 from src.parser.ini_parser import load_source_files, load_sources_from_settings
+from src.utils.applied_file_validator import validate_applied_file
+from src.utils.entry_filter import filter_entry_indices
 from src.utils.perf import timed
 from src.utils.settings import AppSettings
 from src.utils.version import get_version
@@ -727,75 +729,8 @@ class MainWindow(QMainWindow):
         written_path: Path,
         stock_keys: set[str] | None = None,
     ) -> str:
-        """Validate the written global.ini against the stock base.ini.
-
-        Checks that every key in base.ini is present in the written file.
-        Values are allowed to differ. Extra keys (from components/contracts/
-        commodities sources) are expected and not treated as errors.
-
-        Args:
-            written_path: Path to the global.ini just written to the game directory.
-            stock_keys: Optional pre-parsed set of base.ini keys. If provided,
-                skips a redundant ~87k-line parse — apply_to_game already has
-                base.ini in memory via load_sources_from_settings(). The
-                written-file parse remains (independent verification against
-                a merger bug).
-
-        Returns:
-            Empty string if validation passed, or a human-readable warning message
-            describing any missing keys.
-        """
-        from src.parser.ini_parser import parse_ini_file
-
-        if stock_keys is None:
-            stock_path = AppSettings.get_cache_dir() / "base.ini"
-            if not stock_path.exists():
-                logger.warning("Validation skipped: base.ini not found in cache")
-                return ""
-            try:
-                stock_keys = set(parse_ini_file(stock_path).keys())
-            except Exception as e:
-                logger.warning(f"Validation error reading stock base.ini: {e}")
-                return ""
-
-        try:
-            written_keys = set(parse_ini_file(written_path).keys())
-        except Exception as e:
-            logger.warning(f"Validation error reading written file: {e}")
-            return ""
-
-        missing = stock_keys - written_keys
-        extra = written_keys - stock_keys
-
-        logger.info(
-            f"Validation: stock={len(stock_keys)} keys, "
-            f"written={len(written_keys)} keys, "
-            f"missing={len(missing)}, extra={len(extra)}"
-        )
-
-        if not missing and not extra:
-            return ""
-
-        lines = []
-
-        if missing:
-            sample = sorted(missing)[:20]
-            lines += [f"{len(missing)} key(s) from base.ini are missing from the written file:"]
-            lines += [f"  {k}" for k in sample]
-            if len(missing) > 20:
-                lines.append(f"  ... and {len(missing) - 20} more")
-
-        if extra:
-            if lines:
-                lines.append("")
-            sample = sorted(extra)[:20]
-            lines += [f"{len(extra)} unexpected key(s) in written file (not in base.ini):"]
-            lines += [f"  {k}" for k in sample]
-            if len(extra) > 20:
-                lines.append(f"  ... and {len(extra) - 20} more")
-
-        lines += ["", "The previous file has been restored. Check your source configuration."]
-        return "\n".join(lines)
+        """Validate the written global.ini. Delegates to applied_file_validator."""
+        return validate_applied_file(written_path, AppSettings.get_cache_dir(), stock_keys)
 
     @pyqtSlot()
     def clear_localization(self):
@@ -2294,44 +2229,16 @@ class MainWindow(QMainWindow):
     @timed
     def _filtered_entry_indices(self) -> list[int]:
         """Return indices into self.entries for entries passing the current filters."""
-        column_filters = self.filter_header.get_filter_texts()
-        category_filter = self.category_combo.currentText()
-        status_filter = self.status_combo.currentText()
-        hide_unmodified = self.hide_unmodified_check.isChecked()
-        favorites_only = self.favorites_only_check.isChecked()
-        prefix = AppSettings.get_favorite_prefix()
-        active_col_filters = [(i, t) for i, t in enumerate(column_filters) if t]
-
-        result = []
-        for idx, entry in enumerate(self.entries):
-            show = True
-
-            if hide_unmodified and entry.status == "Unmodified":
-                show = False
-            elif category_filter != "All" and entry.category != category_filter:
-                show = False
-            elif status_filter != "All" and entry.status != status_filter:
-                show = False
-            elif favorites_only and not entry.custom_value.startswith(prefix):
-                show = False
-            elif active_col_filters:
-                row_values = [
-                    entry.category.lower(),
-                    entry.key.lower(),
-                    self.default_values.get(entry.key, "").lower(),
-                    entry.original_value.lower(),
-                    "★" if entry.custom_value.startswith(prefix) else "",
-                    entry.custom_value.lower(),
-                    entry.status.lower(),
-                ]
-                for col, filter_text in active_col_filters:
-                    if filter_text not in row_values[col]:
-                        show = False
-                        break
-
-            if show:
-                result.append(idx)
-        return result
+        return filter_entry_indices(
+            entries=self.entries,
+            default_values=self.default_values,
+            column_filters=self.filter_header.get_filter_texts(),
+            category_filter=self.category_combo.currentText(),
+            status_filter=self.status_combo.currentText(),
+            hide_unmodified=self.hide_unmodified_check.isChecked(),
+            favorites_only=self.favorites_only_check.isChecked(),
+            favorite_prefix=AppSettings.get_favorite_prefix(),
+        )
 
     @timed
     def update_category_combo(self):
@@ -2536,187 +2443,34 @@ class MainWindow(QMainWindow):
             self.restoreState(state)
 
     def create_anchor_id(self, text: str) -> str:
-        """Convert text to anchor ID (used in markdown links)."""
-        return text.lower().replace(" ", "-").replace(".", "").replace("&", "and")
+        """Convert text to anchor ID."""
+        from src.gui.markdown_renderer import create_anchor_id
+
+        return create_anchor_id(text)
 
     def markdown_to_html(self, markdown_text: str) -> str:
         """Convert markdown to HTML with theme-aware styling."""
-        # Pull directly from the application palette so this is stable even when
-        # called synchronously right after QApplication.setPalette (widget-local
-        # palettes can lag one event-loop tick behind the app palette).
         from PyQt6.QtGui import QPalette
         from PyQt6.QtWidgets import QApplication
 
+        from src.gui.markdown_renderer import markdown_to_html as _render
+
         palette = QApplication.palette()
-        text_color = palette.color(QPalette.ColorRole.Text).name()
-        base_color = palette.color(QPalette.ColorRole.Base).name()
-        link_color = palette.color(QPalette.ColorRole.Link).name()
-
-        # Build HTML with styling
-        html = "<html><head><style>"
-        html += f"body {{ font-family: Segoe UI, Arial, sans-serif; line-height: 1.8; padding: 20px; font-size: 15px; color: {text_color}; background-color: {base_color}; }}"
-        html += f"h1 {{ color: {link_color}; border-bottom: 3px solid {link_color}; padding-bottom: 10px; font-size: 32px; font-weight: bold; margin-top: 20px; }}"
-        html += f"h2 {{ color: {link_color}; border-bottom: 2px solid {link_color}; padding-bottom: 5px; margin-top: 30px; font-size: 24px; font-weight: bold; }}"
-        html += f"h3 {{ color: {link_color}; margin-top: 20px; font-size: 20px; font-weight: bold; }}"
-        html += f"p {{ font-size: 15px; margin: 10px 0; color: {text_color}; }}"
-        html += f"li {{ font-size: 15px; margin: 5px 0; color: {text_color}; }}"
-        html += f"a {{ color: {link_color}; text-decoration: underline; font-weight: 500; }}"
-        html += "a:hover { text-decoration: underline; opacity: 0.8; cursor: pointer; }"
-        html += "code { background-color: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 14px; }"
-        html += "pre { background-color: rgba(0,0,0,0.05); padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 14px; }"
-        html += "ul { margin-left: 20px; font-size: 15px; }"
-        html += "ol { margin-left: 20px; font-size: 15px; }"
-        html += "strong { font-weight: bold; }"
-        html += f"blockquote {{ border-left: 4px solid {link_color}; padding-left: 15px; font-style: italic; font-size: 15px; }}"
-        html += "</style></head><body>"
-
-        lines = markdown_text.split("\n")
-        in_code_block = False
-        in_list = False
-        list_type = None
-        prev_blank = False
-
-        for line in lines:
-            # Code blocks
-            if line.strip().startswith("```"):
-                if in_code_block:
-                    html += "</pre>"
-                    in_code_block = False
-                else:
-                    html += "<pre><code>"
-                    in_code_block = True
-                continue
-
-            if in_code_block:
-                html += line + "\n"
-                continue
-
-            # Headers
-            if line.startswith("# "):
-                if in_list:
-                    html += f"</{list_type}>"
-                    in_list = False
-                header_text = line[2:].strip()
-                anchor_id = self.create_anchor_id(header_text)
-                html += f"<h1 id='{anchor_id}'>{self._convert_markdown_inline(header_text)}</h1>"
-                prev_blank = False
-            elif line.startswith("## "):
-                if in_list:
-                    html += f"</{list_type}>"
-                    in_list = False
-                header_text = line[3:].strip()
-                anchor_id = self.create_anchor_id(header_text)
-                html += f"<h2 id='{anchor_id}'>{self._convert_markdown_inline(header_text)}</h2>"
-                prev_blank = False
-            elif line.startswith("### "):
-                if in_list:
-                    html += f"</{list_type}>"
-                    in_list = False
-                header_text = line[4:].strip()
-                anchor_id = self.create_anchor_id(header_text)
-                html += f"<h3 id='{anchor_id}'>{self._convert_markdown_inline(header_text)}</h3>"
-                prev_blank = False
-            # Lists
-            elif line.strip().startswith("- ") or line.strip().startswith("* "):
-                if not in_list or list_type != "ul":
-                    if in_list:
-                        html += f"</{list_type}>"
-                    html += "<ul>"
-                    in_list = True
-                    list_type = "ul"
-                list_text = line.strip()[2:].strip()
-                list_text = self._convert_markdown_inline(list_text)
-                html += f"<li>{list_text}</li>"
-                prev_blank = False
-            elif line.strip() and line[0].isdigit() and ". " in line:
-                if not in_list or list_type != "ol":
-                    if in_list:
-                        html += f"</{list_type}>"
-                    html += "<ol>"
-                    in_list = True
-                    list_type = "ol"
-                list_text = line.strip()
-                # Remove number and period
-                list_text = list_text[list_text.index(". ") + 2 :].strip()
-                list_text = self._convert_markdown_inline(list_text)
-                html += f"<li>{list_text}</li>"
-                prev_blank = False
-            # Empty lines (skip consecutive blank lines)
-            elif not line.strip():
-                if in_list:
-                    html += f"</{list_type}>"
-                    in_list = False
-                    prev_blank = True
-                elif not prev_blank:
-                    # Only add one blank line, not consecutive ones
-                    prev_blank = True
-                continue
-            # Paragraphs
-            else:
-                if in_list:
-                    html += f"</{list_type}>"
-                    in_list = False
-                line = self._convert_markdown_inline(line)
-                html += f"<p>{line}</p>"
-                prev_blank = False
-
-        # Close any open tags
-        if in_list:
-            html += f"</{list_type}>"
-        if in_code_block:
-            html += "</pre>"
-
-        html += "</body></html>"
-        return html
+        return _render(
+            markdown_text,
+            text_color=palette.color(QPalette.ColorRole.Text).name(),
+            base_color=palette.color(QPalette.ColorRole.Base).name(),
+            link_color=palette.color(QPalette.ColorRole.Link).name(),
+        )
 
     def _convert_markdown_links(self, text: str) -> str:
-        """Convert markdown links [text](url) to HTML links."""
-        import re
+        """Delegate to markdown_renderer module."""
+        from src.gui.markdown_renderer import _convert_markdown_links
 
-        # Match [text](url) pattern
-        pattern = r"\[([^\]]+)\]\(([^\)]+)\)"
-        replacement = r'<a href="\2">\1</a>'
-        return re.sub(pattern, replacement, text)
+        return _convert_markdown_links(text)
 
     def _convert_markdown_inline(self, text: str) -> str:
-        """Apply inline Markdown (code, links, bold, italic) to a single line.
+        """Delegate to markdown_renderer module."""
+        from src.gui.markdown_renderer import _convert_markdown_inline
 
-        Order matters: inline ``code`` is stashed first so ``**`` or ``_``
-        inside a code span stay literal, then links / bold / italic run over
-        the remaining text. Bold runs before italic so a ``**`` pair isn't
-        mis-parsed as two ``*italic*`` brackets.
-        """
-        import re
-        from html import escape
-
-        # 1. Stash inline code spans behind opaque placeholders so bold/italic
-        #    regexes can't touch their content (e.g. `vehicle_Name*` shouldn't
-        #    become vehicle_Name<em>).
-        code_spans: list[str] = []
-
-        def _stash(match):
-            code_spans.append(match.group(1))
-            return f"\x00CODE{len(code_spans) - 1}\x00"
-
-        text = re.sub(r"`([^`]+)`", _stash, text)
-
-        # 2. Links — do before bold/italic so '_' inside URLs doesn't get
-        #    chewed.
-        text = self._convert_markdown_links(text)
-
-        # 3. Bold: **...** and __...__.
-        text = re.sub(r"\*\*([^*]+?)\*\*", r"<strong>\1</strong>", text)
-        text = re.sub(r"__([^_]+?)__", r"<strong>\1</strong>", text)
-
-        # 4. Italic: *...* (only; '_' is too common in loc-keys/identifiers
-        #    to italicize safely without a proper tokenizer). Require no '*'
-        #    on either side of the pair so we don't steal halves of a '**'
-        #    bold run that happened to not match step 3.
-        text = re.sub(r"(?<!\*)\*(?!\*)([^*\n]+?)\*(?!\*)", r"<em>\1</em>", text)
-
-        # 5. Restore code spans — escape the content so any stray angle
-        #    brackets inside a backtick span render as literal text.
-        for i, content in enumerate(code_spans):
-            text = text.replace(f"\x00CODE{i}\x00", f"<code>{escape(content)}</code>")
-
-        return text
+        return _convert_markdown_inline(text)

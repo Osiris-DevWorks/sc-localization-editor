@@ -1,4 +1,5 @@
 """User INI persistence and import utilities."""
+
 import logging
 from pathlib import Path
 
@@ -24,16 +25,12 @@ def save_user_ini(entries: list[StringEntry], user_ini_path: Path) -> int:
         IOError: If write fails
     """
     # Filter to entries the user actually modified (custom differs from original)
-    user_edits = {
-        entry.key: entry.custom_value
-        for entry in entries
-        if entry.is_modified
-    }
+    user_edits = {entry.key: entry.custom_value for entry in entries if entry.is_modified}
 
     user_ini_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
-        with open(user_ini_path, 'w', encoding='utf-8') as f:
+        with open(user_ini_path, "w", encoding="utf-8") as f:
             for key, value in user_edits.items():
                 f.write(f"{key}={value}\n")
 
@@ -63,7 +60,7 @@ def save_user_ini_dict(data: dict[str, str], user_ini_path: Path) -> int:
     user_ini_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
-        with open(user_ini_path, 'w', encoding='utf-8') as f:
+        with open(user_ini_path, "w", encoding="utf-8") as f:
             for key, value in data.items():
                 f.write(f"{key}={value}\n")
 
@@ -77,11 +74,7 @@ def save_user_ini_dict(data: dict[str, str], user_ini_path: Path) -> int:
 
 
 @timed
-def generate_user_ini_from_diff(
-    reference_path: Path,
-    current_path: Path,
-    user_ini_path: Path
-) -> int:
+def generate_user_ini_from_diff(reference_path: Path, current_path: Path, user_ini_path: Path) -> int:
     """Diff reference vs current file, write differing keys as user.ini.
 
     Used on first run to bootstrap user edits from existing game file.
@@ -121,7 +114,7 @@ def generate_user_ini_from_diff(
             return 0
 
         user_ini_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(user_ini_path, 'w', encoding='utf-8') as f:
+        with open(user_ini_path, "w", encoding="utf-8") as f:
             for key, value in diffs.items():
                 f.write(f"{key}={value}\n")
 

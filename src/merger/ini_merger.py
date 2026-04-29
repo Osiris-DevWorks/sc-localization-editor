@@ -1,4 +1,5 @@
 """INI file merger for combining base and custom strings."""
+
 from functools import cache
 from pathlib import Path
 
@@ -14,9 +15,7 @@ _COMPONENT_CODES = ("shld", "powr", "cool", "qdrv", "jump", "misl", "gmisl", "bo
 
 @timed
 def merge_sources_by_hierarchy(
-    sources_dict: dict[str, dict[str, str]],
-    hierarchy: list[str],
-    user_overrides: dict[str, str] | None = None
+    sources_dict: dict[str, dict[str, str]], hierarchy: list[str], user_overrides: dict[str, str] | None = None
 ) -> dict[str, str]:
     """Merge multiple INI sources in specified hierarchy order.
 
@@ -160,7 +159,7 @@ def sync_key_variants(merged_dict: dict[str, str]) -> None:
 
             # Prefer non-_SCItem variants
             for var in variants:
-                if not var.lower().endswith('_scitem'):
+                if not var.lower().endswith("_scitem"):
                     preferred_key = var
                     synced_value = merged_dict[var]
                     break
@@ -176,11 +175,7 @@ def sync_key_variants(merged_dict: dict[str, str]) -> None:
 
 
 @timed
-def merge_ini_files(
-    source_path: str | Path,
-    overrides_dict: dict[str, str],
-    output_path: str | Path
-) -> None:
+def merge_ini_files(source_path: str | Path, overrides_dict: dict[str, str], output_path: str | Path) -> None:
     """Merge source INI with overrides, preserving all lines.
 
     Reads source file line-by-line, replaces values for matching keys,
@@ -204,30 +199,28 @@ def merge_ini_files(
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
-        with open(source_path, encoding='utf-8') as infile, \
-             open(output_path, 'w', encoding='utf-8') as outfile:
-
+        with open(source_path, encoding="utf-8") as infile, open(output_path, "w", encoding="utf-8") as outfile:
             for line in infile:
                 # Preserve line ending style, but work with stripped version
-                line_rstrip = line.rstrip('\n\r')
-                original_ending = line[len(line_rstrip):]
+                line_rstrip = line.rstrip("\n\r")
+                original_ending = line[len(line_rstrip) :]
 
                 # Skip processing for comments and empty lines
-                if not line_rstrip.strip() or line_rstrip.strip().startswith(';'):
+                if not line_rstrip.strip() or line_rstrip.strip().startswith(";"):
                     outfile.write(line)
                     continue
 
                 # Try to split on first '='
-                if '=' not in line_rstrip:
+                if "=" not in line_rstrip:
                     outfile.write(line)
                     continue
 
-                key, value = line_rstrip.split('=', 1)
+                key, value = line_rstrip.split("=", 1)
                 key_stripped = key.strip()
 
                 # Strip comma-based metadata suffix (e.g., "key,P" → "key")
                 # This ensures keys from different sources match up correctly
-                clean_key = key_stripped.split(',')[0].strip()
+                clean_key = key_stripped.split(",")[0].strip()
 
                 # Check if we have an override for this key (using clean key)
                 if clean_key in overrides_dict:

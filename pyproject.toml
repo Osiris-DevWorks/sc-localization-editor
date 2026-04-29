@@ -46,3 +46,4 @@ ignore = ["E501"]
 python_version = "3.12"
 mypy_path = "src"
 ignore_missing_imports = true
+check_untyped_defs = true

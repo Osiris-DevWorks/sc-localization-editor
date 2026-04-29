@@ -40,7 +40,7 @@ _DEFAULT_STATUS_COLOR = QColor("black")
 
 _FAV_GOLD = QColor("#FFD700")
 _FAV_GREY = QColor("#666666")
-_FAV_BG_DARK = QColor("#3a3000")   # deep gold-brown for dark theme
+_FAV_BG_DARK = QColor("#3a3000")  # deep gold-brown for dark theme
 _FAV_BG_LIGHT = QColor("#FFF4C4")  # soft pale gold for light theme
 
 
@@ -48,6 +48,7 @@ def _fav_row_bg() -> QColor:
     """Return the favorite-row highlight appropriate for the current theme."""
     from src.gui.theme import THEME_LIGHT
     from src.utils.settings import AppSettings
+
     return _FAV_BG_LIGHT if AppSettings.get_theme() == THEME_LIGHT else _FAV_BG_DARK
 
 
@@ -58,15 +59,15 @@ def status_color(status: str) -> QColor:
 # ---------------------------------------------------------------------------
 # Grouped-sort helpers (moved from main_window.py)
 # ---------------------------------------------------------------------------
-_ITEM_PREFIX_RE = _re.compile(r'^(item_)(Name|Desc|name|desc)(.*)', _re.IGNORECASE)
-_VEHICLE_PREFIX_RE = _re.compile(r'^(vehicle_)(Name|Desc)(.*)', _re.IGNORECASE)
+_ITEM_PREFIX_RE = _re.compile(r"^(item_)(Name|Desc|name|desc)(.*)", _re.IGNORECASE)
+_VEHICLE_PREFIX_RE = _re.compile(r"^(vehicle_)(Name|Desc)(.*)", _re.IGNORECASE)
 _MISSION_SUFFIX_RE = _re.compile(
-    r'^(.*?)_(title|desc|content)(_.+)?$',
+    r"^(.*?)_(title|desc|content)(_.+)?$",
     _re.IGNORECASE,
 )
 # Commodity keys: items_commodities_X (name) / items_commodities_X_desc or _des (description)
 _COMMODITY_RE = _re.compile(
-    r'^(items_commodities_\w+?)(?:_(desc?|description))?$',
+    r"^(items_commodities_\w+?)(?:_(desc?|description))?$",
     _re.IGNORECASE,
 )
 
@@ -132,6 +133,7 @@ def _make_sort_key(entries, default_values, sort_keys, col, grouped, favorite_pr
             e = entries[idx]
             is_fav = e.category == "Ships" and e.custom_value.startswith(favorite_prefix)
             return (0 if is_fav else 1, e.key.lower())
+
         return fav_key
     # unknown — fall back to key
     return lambda idx: entries[idx].key.lower()
@@ -351,8 +353,12 @@ class StringTableModel(QAbstractTableModel):
         if not self._filtered_indices:
             return
         key_fn = _make_sort_key(
-            self._entries, self._default_values, self._sort_keys,
-            self._sort_column, self._grouped_sort, self._favorite_prefix,
+            self._entries,
+            self._default_values,
+            self._sort_keys,
+            self._sort_column,
+            self._grouped_sort,
+            self._favorite_prefix,
         )
         reverse = self._sort_order == Qt.SortOrder.DescendingOrder
         self._filtered_indices.sort(key=key_fn, reverse=reverse)

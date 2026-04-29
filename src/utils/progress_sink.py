@@ -5,6 +5,7 @@ a single `(completed, total, message)` tuple and pushes it through a callback.
 The callback is throttled so high-frequency updates from many threads don't
 flood the Qt event loop.
 """
+
 from __future__ import annotations
 
 import threading
@@ -15,8 +16,16 @@ ProgressCallback = Callable[[int, int, str], None]
 
 
 class ProgressSink:
-    __slots__ = ("_cb", "_lock", "_completed", "_total", "_message",
-                 "_min_interval", "_last_emit", "_last_emitted_tuple")
+    __slots__ = (
+        "_cb",
+        "_lock",
+        "_completed",
+        "_total",
+        "_message",
+        "_min_interval",
+        "_last_emit",
+        "_last_emitted_tuple",
+    )
 
     def __init__(
         self,

@@ -1,4 +1,5 @@
 """Manages Star Citizen user.cfg file for language and other settings."""
+
 import logging
 from pathlib import Path
 
@@ -27,8 +28,7 @@ def ensure_user_cfg_language() -> bool:
     channel_dir = Path(channel_path)
     if not channel_dir.exists():
         logger.warning(
-            f"{AppSettings.get_active_channel()} directory not found at {channel_dir} "
-            f"— skipping user.cfg setup"
+            f"{AppSettings.get_active_channel()} directory not found at {channel_dir} — skipping user.cfg setup"
         )
         return False
 

@@ -1,4 +1,5 @@
 """INI file parser for localization strings."""
+
 import logging
 from pathlib import Path
 
@@ -30,26 +31,26 @@ def parse_ini_file(path: str | Path) -> dict[str, str]:
         return result
 
     try:
-        with open(path, encoding='utf-8-sig') as f:
+        with open(path, encoding="utf-8-sig") as f:
             for line in f:
-                line = line.rstrip('\n\r')
+                line = line.rstrip("\n\r")
 
                 # Skip empty lines and comments
-                if not line.strip() or line.strip().startswith(';'):
+                if not line.strip() or line.strip().startswith(";"):
                     continue
 
                 # Split on first '=' only
-                if '=' not in line:
+                if "=" not in line:
                     continue
 
-                key, value = line.split('=', 1)
+                key, value = line.split("=", 1)
                 key = key.strip()
                 value = value.strip()
 
                 if key:
                     # Strip comma-based metadata suffix (e.g., "key,P" → "key")
                     # This is used in some source files to track properties
-                    clean_key = key.split(',')[0].strip()
+                    clean_key = key.split(",")[0].strip()
                     if clean_key:
                         result[clean_key] = value
     except Exception as e:
@@ -92,7 +93,9 @@ def load_source_files(
         logger.info(f"Loading user overrides from legacy path: {custom_path}")
         user_overrides = parse_ini_file(custom_path)
 
-    logger.info(f"Starting merge of {sum(len(d) for d in sources_dict.values())} total keys from {len(sources_dict)} sources")
+    logger.info(
+        f"Starting merge of {sum(len(d) for d in sources_dict.values())} total keys from {len(sources_dict)} sources"
+    )
     logger.info(f"Hierarchy: {hierarchy}, Sources available: {list(sources_dict.keys())}")
 
     # Filter hierarchy to only include sources that exist in sources_dict
@@ -113,8 +116,8 @@ def load_source_files(
 
         # Map source types to their relevant categories
         source_category_filters = {
-            AppSettings.SOURCE_GLOBAL: None,           # No filtering - load all
-            "enhancements": None,                       # No filtering
+            AppSettings.SOURCE_GLOBAL: None,  # No filtering - load all
+            "enhancements": None,  # No filtering
         }
 
         category_filter = source_category_filters.get(source_name)
@@ -125,7 +128,9 @@ def load_source_files(
             for key, value in source_data.items():
                 if StringEntry.extract_category(key) == category_filter:
                     filtered_data[key] = value
-            logger.info(f"Filtered {source_name}: {len(source_data)} keys -> {len(filtered_data)} keys (category: {category_filter})")
+            logger.info(
+                f"Filtered {source_name}: {len(source_data)} keys -> {len(filtered_data)} keys (category: {category_filter})"
+            )
             filtered_sources[source_name] = filtered_data
         else:
             # No filtering for this source
@@ -167,7 +172,7 @@ def load_source_files(
 
     # Create StringEntry for each key
     logger.info("Creating StringEntry objects...")
-    base_source = base_hierarchy[0] if base_hierarchy else 'global'
+    base_source = base_hierarchy[0] if base_hierarchy else "global"
     entry_count = 0
     for key in all_keys:
         # Skip abbreviated ship name entries (e.g. vehicle_Name*_short, vehicle_name*_short,P)
@@ -178,28 +183,28 @@ def load_source_files(
         if entry_count % 10000 == 0:
             logger.debug(f"Processing entry {entry_count} of ~{len(all_keys)}...")
 
-        original_value = base_merged.get(key, '')
-        custom_value = effective_user_overrides.get(key, '')
+        original_value = base_merged.get(key, "")
+        custom_value = effective_user_overrides.get(key, "")
 
         # Determine status
         if key not in base_merged:
             # Only in user overrides — user added a brand-new key
-            status = 'New'
+            status = "New"
         elif custom_value:
             # User has an override for this key
-            status = 'Modified'
+            status = "Modified"
         else:
             # No user override — use source-origin-based status
             source = source_origin.get(key, base_source)
             status = _determine_status_from_source(source, base_source)
 
-        source = source_origin.get(key, 'user' if key not in base_merged else base_source)
+        source = source_origin.get(key, "user" if key not in base_merged else base_source)
 
         # Determine category: source-based override first, then key-prefix fallback
-        if source == 'contracts':
-            category = 'Missions'
-        elif 'journal' in key.lower():
-            category = 'Journal'
+        if source == "contracts":
+            category = "Missions"
+        elif "journal" in key.lower():
+            category = "Journal"
         elif enhancements_key_categories and key in enhancements_key_categories:
             category = enhancements_key_categories[key]
         else:
@@ -239,7 +244,7 @@ def load_sources_from_settings() -> tuple[dict[str, dict[str, str]], list[str], 
 
     # Map source names to their cached file names in Documents cache
     cache_mapping = {
-        AppSettings.SOURCE_GLOBAL:      "base.ini",
+        AppSettings.SOURCE_GLOBAL: "base.ini",
     }
 
     cache_dir = AppSettings.get_cache_dir()
@@ -260,7 +265,7 @@ def load_sources_from_settings() -> tuple[dict[str, dict[str, str]], list[str], 
 
         try:
             # Handle URLs vs local files
-            if source_path.startswith('http://') or source_path.startswith('https://'):
+            if source_path.startswith("http://") or source_path.startswith("https://"):
                 # For remote sources, load from cached local file in AppData (must exist)
                 if source_name in cache_mapping:
                     cache_file = cache_dir / cache_mapping[source_name]
@@ -276,7 +281,9 @@ def load_sources_from_settings() -> tuple[dict[str, dict[str, str]], list[str], 
                             logger.warning(f"Parsed {source_name} but got empty result")
                     else:
                         logger.error(f"Remote source {source_name} requires download. Cache not found: {cache_file}")
-                        raise FileNotFoundError(f"Source {source_name} cache not found. Run auto-update to download: {cache_file}")
+                        raise FileNotFoundError(
+                            f"Source {source_name} cache not found. Run auto-update to download: {cache_file}"
+                        )
                 continue
 
             # Local file path
@@ -311,13 +318,13 @@ def load_sources_from_settings() -> tuple[dict[str, dict[str, str]], list[str], 
     # ── Enhancements ────────────────────────────────────────────────────────
     # Map enhancements file labels to the category their keys should be assigned to
     _ENHANCEMENTS_LABEL_CATEGORY = {
-        "ship_descs":        "Ships",
-        "component_descs":   "Ship Items",
+        "ship_descs": "Ships",
+        "component_descs": "Ship Items",
         "ship_weapon_descs": "Ship Items",
-        "fps_weapon_descs":  "Gear",
-        "mission_rewards":   "Missions",
+        "fps_weapon_descs": "Gear",
+        "mission_rewards": "Missions",
         "commodity_crafting": "Commodities",
-        "journal":           "Journal",
+        "journal": "Journal",
         "missile_enhancements": "Ship Items",
     }
     enhancements_key_categories: dict[str, str] = {}
@@ -369,10 +376,10 @@ def load_overrides(target_path: str | Path) -> dict[str, str]:
 def _determine_status(original_value: str, custom_value: str) -> str:
     """Determine status of an entry (legacy, kept for compatibility)."""
     if not custom_value:
-        return 'Unmodified'
+        return "Unmodified"
     if custom_value != original_value:
-        return 'Modified'
-    return 'Unmodified'
+        return "Modified"
+    return "Unmodified"
 
 
 def _determine_status_from_source(source_name: str, base_source: str) -> str:
@@ -386,8 +393,8 @@ def _determine_status_from_source(source_name: str, base_source: str) -> str:
         Status string: 'Modified' if from higher-priority source or user,
                       'Unmodified' if from base source
     """
-    if source_name == 'user':
-        return 'Modified'  # User explicitly customized
+    if source_name == "user":
+        return "Modified"  # User explicitly customized
     if source_name == base_source:
-        return 'Unmodified'  # From base, not overridden
-    return 'Modified'  # Overridden by higher-priority source
+        return "Unmodified"  # From base, not overridden
+    return "Modified"  # Overridden by higher-priority source

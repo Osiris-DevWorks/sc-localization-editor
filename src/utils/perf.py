@@ -1,4 +1,5 @@
 """Performance timing decorator for debug-level profiling."""
+
 import functools
 import logging
 import time
@@ -12,6 +13,7 @@ def timed(func):
     Logs the qualified function name, arguments summary, and elapsed time.
     No-op overhead when DEBUG logging is disabled.
     """
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if not logger.isEnabledFor(logging.DEBUG):

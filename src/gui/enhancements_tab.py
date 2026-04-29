@@ -1,4 +1,5 @@
 """Enhancements tab for Open Strings."""
+
 import logging
 
 from PyQt6.QtCore import pyqtSignal
@@ -23,7 +24,7 @@ class EnhancementsTab(QWidget):
     """Tab for optional enhancements: localization enhancements and ship favorites."""
 
     merge_requested = pyqtSignal()
-    enhancements_pipeline_requested = pyqtSignal()   # extract DataForge if needed, then generate enhancements
+    enhancements_pipeline_requested = pyqtSignal()  # extract DataForge if needed, then generate enhancements
 
     def __init__(self):
         super().__init__()
@@ -40,8 +41,7 @@ class EnhancementsTab(QWidget):
         layout.addWidget(title)
 
         desc = QLabel(
-            "Optional features that extend the base localization data. "
-            "Each can be enabled or disabled independently."
+            "Optional features that extend the base localization data. Each can be enabled or disabled independently."
         )
         desc.setProperty("role", "secondary")
         desc.setStyleSheet("font-size: 11px;")
@@ -69,12 +69,12 @@ class EnhancementsTab(QWidget):
 
         # Per-category checkbox + description + status dot
         _CATEGORY_DESCRIPTIONS = {
-            "ships":       "Ship performance, loadout, and crew data",
-            "ship_items":  "Component class/size/grade annotations and statistics",
-            "gear":        "Combat stats for FPS weapons",
-            "missions":    "XP rewards and blueprint drops for missions",
+            "ships": "Ship performance, loadout, and crew data",
+            "ship_items": "Component class/size/grade annotations and statistics",
+            "gear": "Combat stats for FPS weapons",
+            "missions": "XP rewards and blueprint drops for missions",
             "commodities": "Crafting recipes and material usage",
-            "journal":     "Mining Compendium with crafting data per mineral",
+            "journal": "Mining Compendium with crafting data per mineral",
         }
 
         self._enhancements_status_labels: dict = {}
@@ -110,9 +110,7 @@ class EnhancementsTab(QWidget):
         self._apply_categories_btn = QPushButton("Apply")
         self._apply_categories_btn.setMaximumWidth(100)
         self._apply_categories_btn.setEnabled(False)
-        self._apply_categories_btn.setToolTip(
-            "Save category selection. Unchecked categories will be disabled."
-        )
+        self._apply_categories_btn.setToolTip("Save category selection. Unchecked categories will be disabled.")
         self._apply_categories_btn.clicked.connect(self._apply_category_changes)
         btn_row.addWidget(self._apply_categories_btn)
 
@@ -213,10 +211,10 @@ class EnhancementsTab(QWidget):
         prefix_row.addWidget(QLabel("Sort prefix:"))
 
         self.favorite_prefix_combo = QComboBox()
-        self.favorite_prefix_combo.setToolTip("Character prepended to favorited ship names so they sort to the top of the in-game ship list. Click Apply Prefix after changing to update all existing favorites.")
-        self.favorite_prefix_combo.setSizeAdjustPolicy(
-            QComboBox.SizeAdjustPolicy.AdjustToContents
+        self.favorite_prefix_combo.setToolTip(
+            "Character prepended to favorited ship names so they sort to the top of the in-game ship list. Click Apply Prefix after changing to update all existing favorites."
         )
+        self.favorite_prefix_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self.favorite_prefix_combo.addItem("  (space)", userData=" ")
         for code in range(33, 65):
             self.favorite_prefix_combo.addItem(chr(code), userData=chr(code))
@@ -232,9 +230,7 @@ class EnhancementsTab(QWidget):
         prefix_row.addWidget(self.favorite_prefix_combo)
 
         apply_prefix_btn = QPushButton("Apply")
-        apply_prefix_btn.setToolTip(
-            "Save the selected prefix and update all existing favorites to use it"
-        )
+        apply_prefix_btn.setToolTip("Save the selected prefix and update all existing favorites to use it")
         apply_prefix_btn.clicked.connect(self._apply_favorite_prefix)
         prefix_row.addWidget(apply_prefix_btn)
 
@@ -260,7 +256,7 @@ class EnhancementsTab(QWidget):
                         if "=" in line:
                             key, _, value = line.partition("=")
                             if value.startswith(old_prefix):
-                                value = new_prefix + value[len(old_prefix):]
+                                value = new_prefix + value[len(old_prefix) :]
                                 migrated += 1
                             updated.append(f"{key}={value}")
                         else:
@@ -309,12 +305,11 @@ class EnhancementsTab(QWidget):
     def refresh_forge_status(self):
         """Update the DataForge cache status label."""
         from src.utils.pak_extractor import dataforge_cache_is_fresh
+
         forge_dir = AppSettings.get_dataforge_cache_dir()
         p4k_path = AppSettings.get_p4k_path()
         if not (forge_dir / ".p4k_mtime").exists():
-            self._forge_status_label.setText(
-                "DataForge: not yet extracted — click 'Generate Enhancements' to begin"
-            )
+            self._forge_status_label.setText("DataForge: not yet extracted — click 'Generate Enhancements' to begin")
             self._forge_status_label.setStyleSheet("font-size: 10px; color: #f44336;")
         elif p4k_path.exists() and not dataforge_cache_is_fresh(p4k_path, forge_dir):
             self._forge_status_label.setText(

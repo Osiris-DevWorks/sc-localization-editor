@@ -1,4 +1,5 @@
 """Download utilities for fetching source files from remote URLs."""
+
 import datetime
 import email.utils
 import logging
@@ -41,7 +42,7 @@ def download_file(url: str, output_path: str | Path) -> Path:
                     logger.warning("Download timeout, retrying...")
                     raise
 
-            file_data = b''.join(chunks)
+            file_data = b"".join(chunks)
 
         # Write to output
         output_path.parent.mkdir(parents=True, exist_ok=True)

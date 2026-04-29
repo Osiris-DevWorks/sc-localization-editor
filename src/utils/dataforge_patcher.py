@@ -43,6 +43,7 @@ bookkeeping. Merging the intended desc onto the loc key the game actually
 reads makes the in-game display correct. See :class:`LocstringWorkaround`
 and :func:`apply_locstring_workarounds`.
 """
+
 from __future__ import annotations
 
 import json
@@ -58,12 +59,13 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PatchReport:
     """Summary of a patch run. Use for logging and UI status."""
+
     patches_seen: int = 0
     files_rewritten: int = 0
     edits_applied: int = 0
-    edits_idempotent: int = 0       # already at target value; no change needed
+    edits_idempotent: int = 0  # already at target value; no change needed
     edits_skipped_mismatch: int = 0  # current value != expected; skipped with warning
-    edits_no_match: int = 0          # xpath found no element; skipped with warning
+    edits_no_match: int = 0  # xpath found no element; skipped with warning
     errors: list[str] = field(default_factory=list)
 
     def summary_line(self) -> str:
@@ -92,11 +94,12 @@ class LocstringWorkaround:
     declaration (or the whole patch file) and the next regenerate produces
     clean split descs again.
     """
-    target: str                # loc key whose value gets the append
-    append_from: str           # loc key whose value is appended onto target
-    separator: str = ""        # text inserted between target and appended
-    description: str = ""      # for logs
-    patch_source: str = ""     # source .patch.json filename, for logs
+
+    target: str  # loc key whose value gets the append
+    append_from: str  # loc key whose value is appended onto target
+    separator: str = ""  # text inserted between target and appended
+    description: str = ""  # for logs
+    patch_source: str = ""  # source .patch.json filename, for logs
 
 
 # DataForge XMLs live under {cache}/raw/libs/foundry/records/... — patch
@@ -212,9 +215,7 @@ def _apply_edit(root: ET.Element, edit: dict, patch_name: str) -> str:
 
     elements = root.findall(xpath)
     if not elements:
-        logger.warning(
-            f"[{patch_name}] xpath matched 0 elements (target may have shifted): {xpath}"
-        )
+        logger.warning(f"[{patch_name}] xpath matched 0 elements (target may have shifted): {xpath}")
         return "no_match"
 
     applied = False
@@ -265,17 +266,17 @@ def load_locstring_workarounds(patch_root: Path) -> list[LocstringWorkaround]:
             target = entry.get("target")
             append_from = entry.get("append_from")
             if not target or not append_from:
-                logger.warning(
-                    f"[{patch_file.name}] locstring workaround missing target/append_from: {entry}"
-                )
+                logger.warning(f"[{patch_file.name}] locstring workaround missing target/append_from: {entry}")
                 continue
-            out.append(LocstringWorkaround(
-                target=target,
-                append_from=append_from,
-                separator=entry.get("separator", ""),
-                description=entry.get("description", ""),
-                patch_source=patch_file.name,
-            ))
+            out.append(
+                LocstringWorkaround(
+                    target=target,
+                    append_from=append_from,
+                    separator=entry.get("separator", ""),
+                    description=entry.get("description", ""),
+                    patch_source=patch_file.name,
+                )
+            )
     return out
 
 
@@ -296,27 +297,18 @@ def apply_locstring_workarounds(
     applied = 0
     for w in workarounds:
         if w.target not in entries:
-            logger.debug(
-                f"[{w.patch_source}] locstring workaround target {w.target!r} not in dict; skipping"
-            )
+            logger.debug(f"[{w.patch_source}] locstring workaround target {w.target!r} not in dict; skipping")
             continue
         if w.append_from not in entries:
-            logger.debug(
-                f"[{w.patch_source}] locstring workaround source {w.append_from!r} not in dict; skipping"
-            )
+            logger.debug(f"[{w.patch_source}] locstring workaround source {w.append_from!r} not in dict; skipping")
             continue
         from_text = entries[w.append_from]
         target_text = entries[w.target]
         suffix = w.separator + from_text
         if target_text.endswith(suffix):
-            logger.debug(
-                f"[{w.patch_source}] locstring workaround already applied to {w.target!r}"
-            )
+            logger.debug(f"[{w.patch_source}] locstring workaround already applied to {w.target!r}")
             continue
         entries[w.target] = target_text + suffix
         applied += 1
-        logger.info(
-            f"[{w.patch_source}] appended {w.append_from!r} onto {w.target!r} "
-            f"({len(from_text):,} chars)"
-        )
+        logger.info(f"[{w.patch_source}] appended {w.append_from!r} onto {w.target!r} ({len(from_text):,} chars)")
     return applied
