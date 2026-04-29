@@ -3,12 +3,14 @@
 ## Quick Start
 
 **Build executable (recommended):**
+
 ```bash
 cd scripts/build
 .venv\Scripts\python.exe build_exe.py
 ```
 
 **Build everything (executable + installer):**
+
 ```bash
 cd scripts/build
 build_all.bat
@@ -20,12 +22,13 @@ build_all.bat
 
 ### Required Software
 
-1. **Python 3.9+** - Already installed in your `.venv`
+1. **Python 3.12+** - Already installed in your `.venv`
 2. **PyInstaller** - Auto-installed by build scripts
 
 ### Download Inno Setup (Optional)
 
 For creating the installer, download from: https://jrsoftware.org/isdl.php
+
 - Install the Unicode version
 - Default installation is fine
 
@@ -40,10 +43,10 @@ cd scripts/build
 .venv\Scripts\python.exe clean_cache_for_distribution.py
 ```
 
-This removes the `raw/` DataForge extraction (keeping the filtered `libs/` which has all necessary stats data). 
+This removes the `raw/` DataForge extraction (keeping the filtered `libs/` which has all necessary stats data).
 Users can regenerate raw/ if needed by re-extracting their P4K.
 
-**Note:** The executable doesn't bundle user cache data - it's created at runtime. This script is only 
+**Note:** The executable doesn't bundle user cache data - it's created at runtime. This script is only
 useful if you've manually included cache in any distribution package.
 
 ---
@@ -58,12 +61,14 @@ cd scripts/build
 ```
 
 This will:
+
 - Clean previous builds
 - Package the application into a single `.exe` file
 - Include all necessary data files (global.ini)
 - Create `dist/SmartCitizen-v0.1.0.exe`
 
 **Testing the EXE:**
+
 ```bash
 dist\SmartCitizen-v0.1.0.exe
 ```
@@ -95,6 +100,7 @@ This runs both build_exe.py and Inno Setup automatically.
 ```
 
 The installer will be created in the project root as:
+
 ```
 SmartCitizen-v0.1.0-Setup.exe
 ```
@@ -117,6 +123,7 @@ SmartCitizen-v0.1.0-Setup.exe
 ## Distribution Package Contents
 
 The installer includes:
+
 - ✅ Main executable (`SmartCitizen.exe`)
 - ✅ Data files (default global.ini)
 - ✅ Start menu shortcuts
@@ -140,6 +147,7 @@ For future versions:
    - `installer.iss` (line ~5)
 
 2. Rebuild:
+
    ```bash
    cd scripts/build
    build_all.bat
@@ -150,6 +158,7 @@ For future versions:
 4. Create release notes
 
 5. Tag in git:
+
    ```bash
    git tag -a v0.2.0 -m "Release v0.2.0"
    git push origin v0.2.0
@@ -165,23 +174,29 @@ For future versions:
 ## Troubleshooting
 
 ### "PyInstaller not found"
+
 ```bash
 .venv\Scripts\pip install pyinstaller
 ```
 
 ### "Module not found" errors
+
 Make sure all dependencies are installed:
+
 ```bash
 .venv\Scripts\pip install -r requirements.txt
 ```
 
 ### Executable is too large
+
 This is normal for PyQt6 applications. PyInstaller bundles the entire Python runtime and all libraries (60-100MB is standard).
 
 ### Inno Setup not found
+
 Install from: https://jrsoftware.org/isdl.php
 
 Or compile the installer manually by:
+
 1. Opening `installer.iss` in Inno Setup Compiler
 2. Clicking Build → Compile
 

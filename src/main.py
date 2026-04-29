@@ -1,4 +1,5 @@
 """Smart Citizen - Main entry point."""
+
 import ctypes
 import logging
 import os
@@ -30,24 +31,23 @@ from PyQt6.QtWidgets import QApplication
 
 from src.gui.main_window import MainWindow
 from src.gui.theme import apply_theme, load_application_fonts
-from src.utils.version import get_version
 from src.utils.settings import AppSettings
-
-# Setup logging — use --debug flag or LOG_LEVEL env var for perf timing output
-_log_level = logging.DEBUG if ('--debug' in sys.argv or os.environ.get('LOG_LEVEL', '').upper() == 'DEBUG') else logging.INFO
-logging.basicConfig(
-    level=_log_level,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
-)
+from src.utils.version import get_version
 
 logger = logging.getLogger(__name__)
 
 
 def main():
     """Application entry point."""
+    # Setup logging — use --debug flag or LOG_LEVEL env var for perf timing output
+    _log_level = (
+        logging.DEBUG if ("--debug" in sys.argv or os.environ.get("LOG_LEVEL", "").upper() == "DEBUG") else logging.INFO
+    )
+    logging.basicConfig(
+        level=_log_level,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
     logger.info(f"Starting Smart Citizen v{get_version()}")
 
     # Move HKCU\Software\Osiris DevWorks\SC Localization Editor → Smart Citizen
@@ -111,10 +111,8 @@ def main():
 
     # Required on Windows so the taskbar groups the app under its own icon
     # instead of the Python interpreter icon.
-    if sys.platform == 'win32':
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-            'OsirisDevWorks.SmartCitizen'
-        )
+    if sys.platform == "win32":
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("OsirisDevWorks.SmartCitizen")
 
     app = QApplication(sys.argv)
     load_application_fonts()
@@ -126,5 +124,5 @@ def main():
     sys.exit(app.exec())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

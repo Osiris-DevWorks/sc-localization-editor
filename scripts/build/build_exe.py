@@ -2,47 +2,34 @@
 Build script for creating Smart Citizen executable
 
 Usage:
-    python build_exe.py                    # Build without incrementing version
-    python build_exe.py --increment patch  # Increment patch version (0.1.0 -> 0.1.1)
-    python build_exe.py --increment minor  # Increment minor version (0.1.0 -> 0.2.0)
-    python build_exe.py --increment major  # Increment major version (0.1.0 -> 1.0.0)
+    python build_exe.py
 """
 
-import PyInstaller.__main__
 import os
-import sys
 import shutil
+import sys
+
+import PyInstaller.__main__
 
 # Get the project directory
 project_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.dirname(os.path.dirname(project_dir))
 
 # Add src to path for imports
-sys.path.insert(0, os.path.join(root_dir, 'src'))
-
-# Handle version increment argument
-increment_version = None
-if len(sys.argv) > 1:
-    if sys.argv[1] == '--increment' and len(sys.argv) > 2:
-        increment_type = sys.argv[2].lower()
-        if increment_type in ['major', 'minor', 'patch']:
-            increment_version = increment_type
-        else:
-            print(f"Error: Invalid increment type '{increment_type}'. Use 'major', 'minor', or 'patch'")
-            sys.exit(1)
+sys.path.insert(0, os.path.join(root_dir, "src"))
 
 # Get version from VERSION.TXT
-version_file = os.path.join(root_dir, 'VERSION.TXT')
-with open(version_file, 'r') as f:
+version_file = os.path.join(root_dir, "VERSION.TXT")
+with open(version_file) as f:
     current_version = f.read().strip()
 
-print(f"\n{'='*60}")
+print(f"\n{'=' * 60}")
 print(f"Building version: {current_version}")
-print(f"{'='*60}\n")
+print(f"{'=' * 60}\n")
 
 # Clean previous builds
 print("Cleaning old builds...")
-for folder in ['build', 'dist']:
+for folder in ["build", "dist"]:
     path = os.path.join(root_dir, folder)
     if os.path.exists(path):
         shutil.rmtree(path)
@@ -50,82 +37,19 @@ for folder in ['build', 'dist']:
 
 print()
 
-# Build executable with PyInstaller
-exe_name = f"SmartCitizen-v{current_version}"
-
-assets_dir   = os.path.join(root_dir, 'assets')
-icon_path    = os.path.join(assets_dir, 'logo.ico')
-about_file   = os.path.join(root_dir, 'ABOUT.md')
-help_file    = os.path.join(root_dir, 'HELP.md')
-patches_dir  = os.path.join(root_dir, 'patches')
-enhancements_script = os.path.join(root_dir, 'scripts', 'generate_enhancements_ini.py')
-
-common_args = [
-    os.path.join(root_dir, 'src', 'main.py'),
-    '--name', exe_name,
-    '--windowed',
-    '--icon', icon_path,
-    '--add-data', f'{version_file}{os.pathsep}.',
-    '--add-data', f'{about_file}{os.pathsep}.',
-    '--add-data', f'{help_file}{os.pathsep}.',
-    '--add-data', f'{assets_dir}{os.pathsep}assets',
-    '--add-data', f'{patches_dir}{os.pathsep}patches',
-    '--add-data', f'{enhancements_script}{os.pathsep}scripts',
-    '--workpath', os.path.join(root_dir, 'build'),
-    '--specpath', root_dir,
-    '--hidden-import=PyQt6',
-    '--hidden-import=src.gui',
-    '--hidden-import=src.parser',
-    '--hidden-import=src.merger',
-    '--hidden-import=src.models',
-    '--hidden-import=src.utils',
-    # Modules that are only referenced from files PyInstaller loads as *data*
-    # (not as code) need to be listed explicitly, or they silently miss the
-    # bundle. scripts/generate_enhancements_ini.py is added via --add-data
-    # and therefore never parsed for imports — its
-    # `from src.utils.progress_sink import ProgressSink` then hits the
-    # `except ImportError: _sink = None` branch in the frozen build, and
-    # Generate Enhancements runs with an indeterminate progress bar the
-    # whole time even though the determinate plumbing works in dev. We
-    # pre-empted `--collect-submodules=src.utils` as a broader fix but it
-    # didn't pick up progress_sink (pyinstaller's module-graph walk still
-    # needs some in-graph reference to the package to expand it on our
-    # src/ layout). Explicit hidden-import for the two script-only helpers
-    # is the robust fix.
-    '--hidden-import=src.utils.progress_sink',
-    '--hidden-import=src.utils.dataforge_patcher',
-    '--hidden-import=xml',
-    '--hidden-import=xml.etree',
-    '--hidden-import=xml.etree.ElementTree',
-    # scripts/generate_enhancements_ini.py is loaded dynamically via
-    # importlib at runtime (see EnhancementsGeneratorWorker), so
-    # PyInstaller's static import graph can't see its dependencies.
-    # --collect-all is stronger than --hidden-import: it forces every
-    # submodule + data file into the bundle regardless of whether the
-    # module graph finds a reference. Earlier hidden-import flags alone
-    # silently no-op'd for concurrent.futures on PyInstaller 6 / Py 3.12.
-    '--collect-all=concurrent',
-]
-
-# Build --onedir version only — feeds the Inno Setup installer. The portable
-# --onefile build was retired because we release the installer as the sole
-# distribution artifact.
+# Build using spec file from repo root
 print("Building --onedir version (for installer)...")
-print(f"  Output: dist/{exe_name}/")
 print()
 
-onedir_args = common_args + [
-    '--onedir',
-    '--distpath', os.path.join(root_dir, 'dist'),
-]
+os.chdir(root_dir)
 
 try:
-    PyInstaller.__main__.run(onedir_args)
-    print(f"\n{'='*60}")
+    PyInstaller.__main__.run(["SmartCitizen.spec"])
+    print(f"\n{'=' * 60}")
     print("Build successful!")
-    print(f"{'='*60}")
-    print(f"Installer dir: dist/{exe_name}/")
+    print(f"{'=' * 60}")
+    print(f"Installer dir: dist/SmartCitizen-v{current_version}/")
     print()
 except Exception as e:
-    print(f"\nError building --onedir executable: {e}")
+    print(f"\nError building executable: {e}")
     sys.exit(1)

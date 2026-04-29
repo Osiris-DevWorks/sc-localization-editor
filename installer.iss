@@ -6,7 +6,7 @@
 #undef VersionFile
 
 [Setup]
-AppId={{9A8B7C6D-4E3F-5B2A-0D1E-8F7G6H5I4J3K}
+AppId={{0CCDDCA2-CD87-4942-A600-F338F6841466}
 AppName=Smart Citizen
 AppVersion={#AppVer}
 AppPublisher=Osiris DevWorks
@@ -22,7 +22,7 @@ ArchitecturesInstallIn64BitMode=x64
 WizardStyle=modern
 DisableDirPage=no
 AllowUNCPath=no
-PrivilegesRequired=admin
+PrivilegesRequired=lowest
 SetupIconFile=assets\logo.ico
 
 [Languages]

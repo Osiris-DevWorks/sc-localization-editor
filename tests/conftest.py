@@ -1,5 +1,5 @@
 """
-Pytest configuration and fixtures for SC Localization Editor tests
+Pytest configuration and fixtures for Smart Citizen tests
 
 Provides:
 - Temporary directories for file-based tests
@@ -8,14 +8,14 @@ Provides:
 - Custom markers
 """
 
-import pytest
-import tempfile
 import os
 import sys
-from pathlib import Path
+import tempfile
+
+import pytest
 
 # Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ def temp_dir():
 @pytest.fixture
 def sample_ini_file(temp_dir):
     """Provide a sample INI file with test data"""
-    ini_path = os.path.join(temp_dir, 'sample.ini')
+    ini_path = os.path.join(temp_dir, "sample.ini")
     content = """vehicle_NameHunter=Drake Cutlass Black
 vehicle_DescHunter=A versatile fighter spacecraft
 item_NameSHLD_Aspirum=Aspirum Shield
@@ -37,7 +37,7 @@ items_commodities_AluminumOre=Aluminum Ore
 contract_001_name=First Contract
 item_Name_GMNL_rifle=Gemini Rifle
 """
-    with open(ini_path, 'w', encoding='utf-8') as f:
+    with open(ini_path, "w", encoding="utf-8") as f:
         f.write(content)
     return ini_path
 
@@ -46,35 +46,37 @@ item_Name_GMNL_rifle=Gemini Rifle
 def sample_sources():
     """Provide sample source dictionaries for merge testing"""
     return {
-        'global': {
-            'vehicle_NameHunter': 'Drake Cutlass Black',
-            'vehicle_NameAvenger': 'Aegis Avenger',
-            'item_NameSHLD_Aspirum': 'Aspirum Shield',
-            'custom_key_1': 'value1',
+        "global": {
+            "vehicle_NameHunter": "Drake Cutlass Black",
+            "vehicle_NameAvenger": "Aegis Avenger",
+            "item_NameSHLD_Aspirum": "Aspirum Shield",
+            "custom_key_1": "value1",
         },
-        'contracts': {
-            'contract_001_name': 'Mining Contract',
-            'contract_002_name': 'Delivery Contract',
-            'item_NameSHLD_Aspirum': 'Aspirum Energy Shield',  # Override
+        "contracts": {
+            "contract_001_name": "Mining Contract",
+            "contract_002_name": "Delivery Contract",
+            "item_NameSHLD_Aspirum": "Aspirum Energy Shield",  # Override
         },
-        'ships': {
-            'vehicle_DescHunter': 'Max Speed: 210 m/s',
-            'vehicle_DescAvenger': 'Max Speed: 180 m/s',
+        "ships": {
+            "vehicle_DescHunter": "Max Speed: 210 m/s",
+            "vehicle_DescAvenger": "Max Speed: 180 m/s",
         },
-        'user': {}
+        "user": {},
     }
 
 
 @pytest.fixture
 def mock_game_path(temp_dir):
     """Provide a mock game installation path"""
-    game_path = os.path.join(temp_dir, 'StarCitizen', 'LIVE', 'data', 'Localization', 'english')
+    game_path = os.path.join(
+        temp_dir, "StarCitizen", "LIVE", "data", "Localization", "english"
+    )
     os.makedirs(game_path, exist_ok=True)
 
     # Create a dummy global.ini
-    ini_path = os.path.join(game_path, 'global.ini')
-    with open(ini_path, 'w', encoding='utf-8') as f:
-        f.write('vehicle_NameHunter=Drake Cutlass Black\n')
+    ini_path = os.path.join(game_path, "global.ini")
+    with open(ini_path, "w", encoding="utf-8") as f:
+        f.write("vehicle_NameHunter=Drake Cutlass Black\n")
 
     return game_path
 
@@ -82,11 +84,17 @@ def mock_game_path(temp_dir):
 @pytest.fixture
 def mock_cache_dir(temp_dir):
     """Provide a mock cache directory structure"""
-    cache_dir = os.path.join(temp_dir, 'Documents', 'Smart Citizen', 'cache')
+    cache_dir = os.path.join(temp_dir, "Documents", "Smart Citizen", "cache")
     os.makedirs(cache_dir, exist_ok=True)
 
     # Create subdirectories
-    for subdir in ['backups', 'dataforge', 'dataforge/entity', 'dataforge/entities', 'dataforge/ships']:
+    for subdir in [
+        "backups",
+        "dataforge",
+        "dataforge/entity",
+        "dataforge/entities",
+        "dataforge/ships",
+    ]:
         os.makedirs(os.path.join(cache_dir, subdir), exist_ok=True)
 
     return cache_dir
@@ -95,18 +103,16 @@ def mock_cache_dir(temp_dir):
 @pytest.fixture
 def mock_p4k_path(temp_dir):
     """Provide a mock P4K file path"""
-    p4k_path = os.path.join(temp_dir, 'Data.p4k')
+    p4k_path = os.path.join(temp_dir, "Data.p4k")
     # Create a dummy p4k file (not real, just for path testing)
-    with open(p4k_path, 'wb') as f:
-        f.write(b'DUMMY_P4K_DATA')
+    with open(p4k_path, "wb") as f:
+        f.write(b"DUMMY_P4K_DATA")
     return p4k_path
 
 
 def pytest_configure(config):
     """Configure pytest with custom markers"""
-    config.addinivalue_line(
-        "markers", "unit: Unit test (fast, no I/O)"
-    )
+    config.addinivalue_line("markers", "unit: Unit test (fast, no I/O)")
     config.addinivalue_line(
         "markers", "integration: Integration test (file I/O or external tools)"
     )
@@ -128,17 +134,17 @@ def pytest_collection_modifyitems(config, items):
     """Auto-mark tests by their location"""
     for item in items:
         # Mark all tests in test_core.py as unit tests by default
-        if 'test_core.py' in str(item.fspath):
-            if 'Error' in item.nodeid:
+        if "test_core.py" in str(item.fspath):
+            if "Error" in item.nodeid:
                 item.add_marker(pytest.mark.critical)
-            elif 'Merge' in item.nodeid or 'StringEntry' in item.nodeid:
+            elif "Merge" in item.nodeid or "StringEntry" in item.nodeid:
                 item.add_marker(pytest.mark.critical)
             else:
                 item.add_marker(pytest.mark.unit)
 
         # Mark all tests in test_pak_extraction.py appropriately
-        if 'test_pak_extraction.py' in str(item.fspath):
-            if 'Cache' in item.nodeid or 'Extract' in item.nodeid:
+        if "test_pak_extraction.py" in str(item.fspath):
+            if "Cache" in item.nodeid or "Extract" in item.nodeid:
                 item.add_marker(pytest.mark.critical)
                 item.add_marker(pytest.mark.integration)
             else:
@@ -149,7 +155,7 @@ def pytest_collection_modifyitems(config, items):
 def test_data_dir():
     """Provide path to test data directory"""
     tests_dir = os.path.dirname(__file__)
-    data_dir = os.path.join(tests_dir, 'data')
+    data_dir = os.path.join(tests_dir, "data")
     os.makedirs(data_dir, exist_ok=True)
     return data_dir
 
@@ -184,5 +190,6 @@ def reporter():
 # Suppress warnings that clutter test output
 def pytest_configure(config):
     import warnings
+
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
