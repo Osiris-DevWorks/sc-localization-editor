@@ -2053,8 +2053,12 @@ class MainWindow(QMainWindow):
             try:
                 self._loader_worker.finished.disconnect(self._on_loading_finished)
                 self._loader_worker.error.disconnect(self._on_loading_error)
-            except (TypeError, RuntimeError):
-                pass  # signals already disconnected
+            except (TypeError, RuntimeError) as _disc_err:
+                # TypeError  — signal was never connected (harmless)
+                # RuntimeError — underlying C++ object already deleted (harmless)
+                # Any other exception propagates normally.
+                if "disconnect" not in str(_disc_err).lower() and not isinstance(_disc_err, TypeError):
+                    raise
             if self._loader_worker.isRunning():
                 self._loader_worker.quit()
                 self._loader_worker.wait(5000)  # 5s timeout to avoid deadlock
@@ -2313,10 +2317,25 @@ class MainWindow(QMainWindow):
         # Detach log handler before widgets are destroyed
         self.log_tab.remove_handler()
 
-        # Clean up workers
-        if self._loader_worker:
-            self._loader_worker.quit()
-            self._loader_worker.wait()
+        # Cleanly shut down all background workers before the window is destroyed.
+        # Without this, Qt may tear down the window mid-operation and leave threads
+        # in an undefined state or DataForge temp files half-written.
+        _workers = (
+            self._loader_worker,
+            self._startup_sync_worker,
+            self._update_checker_worker,
+            self._p4k_worker,
+            self._enhancements_worker,
+            self._forge_worker,
+        )
+        for _w in _workers:
+            if _w is not None and _w.isRunning():
+                _w.quit()
+                if not _w.wait(5000):  # 5 s — generous for DataForge, avoids deadlock
+                    logger.warning("Worker %s did not stop within 5 s on close", type(_w).__name__)
+
+        # Flush registry writes
+        AppSettings.settings().sync()
 
         # Save window state
         AppSettings.set_window_geometry(self.saveGeometry().data())
