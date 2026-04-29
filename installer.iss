@@ -207,7 +207,7 @@ end;
 
 procedure MigrateUserDocsFolder();
 begin
-  { Clean break — no migration from upstream SC Localization Editor/Smart Citizen folders. }
+  { No legacy folder migration — fresh install only. }
 end;
 
 procedure CleanPerChannelCaches(UserDataDir: String);
@@ -263,7 +263,7 @@ begin
     Log('Cleaning cached data from: ' + UserDataDir);
     { Current layout — delete \cache under each channel subtree. }
     CleanPerChannelCaches(UserDataDir);
-    { Defensive: pre-0.9.3 flat layout kept cache at \Smart Citizen\cache\.
+    { Defensive: pre-0.9.3 flat layout kept cache at \Open Strings\cache\.
       The channel migrator runs at app launch and should have moved this
       already, but if a user is upgrading from a state where the migrator
       never ran (e.g. they uninstalled before first launching 0.9.3+),

@@ -10,10 +10,8 @@ Focused on the UX and integration paths `pytest` can't reach. Automated coverage
 
 Run against the built `dist/OpenStrings-1.0.0-Setup.exe`.
 
-- [ ] **Fresh install** on a machine that has never had Smart Citizen or SC Localization Editor — app launches, tutorial fires on first show, no legacy registry nodes present
-- [ ] **Upgrade from 0.8.x** (legacy registry `SC Localization Editor`, legacy folder `Documents\SC Localization Editor\`) — `migrate_registry_appname` runs, marker `_migrated_from_legacy_appname` appears under new node, old subtree deleted; folder auto-migrated to `Documents\Smart Citizen\`; `overrides.ini` → `user.ini` rename works; paths/favorites/theme preserved
-- [ ] **Upgrade from 0.9.2** (flat `Documents\Smart Citizen\` layout) — `migrate_game_path_to_channel_layout` splits `GAME_INSTALL_PATH` into `SC_INSTALL_ROOT` + `ACTIVE_CHANNEL`; flat cache/backups/user.ini move into `LIVE/`; marker gates idempotence on relaunch
-- [ ] **Upgrade 0.9.3 → 1.0** (reinstall) — no duplicate migrations, no data loss, no zombie uninstall entry
+- [ ] **Fresh install** — app launches, tutorial fires on first show, no legacy registry nodes present
+- [ ] **Reinstall over existing** — no duplicate migrations, no data loss, no zombie uninstall entry
 - [ ] **OneDrive-redirected Documents** — installer's `IsDocsOnOneDrive` page fires; user redirects to local path; `USER_DATA_DIR` override written; app respects it
 - [ ] **OneDrive + override already set** — installer skips the redirect page (`HasDataDirOverride`)
 - [ ] **Uninstall → reinstall** — preserves `backups/`, registry settings, and `user.ini` across the cycle

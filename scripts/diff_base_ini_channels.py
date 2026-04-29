@@ -120,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("channel_a", help="First channel name (e.g. LIVE)")
     ap.add_argument("channel_b", help="Second channel name (e.g. PTU)")
-    ap.add_argument("--user-data", type=Path, default=None, help="Override Smart Citizen user data root")
+    ap.add_argument("--user-data", type=Path, default=None, help="Override Open Strings user data root")
     ap.add_argument("--out", type=Path, default=None, help="Write the full diff (every key) to this file")
     args = ap.parse_args(argv)
 
