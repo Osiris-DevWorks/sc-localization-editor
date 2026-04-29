@@ -6,6 +6,7 @@ WindowText/Text roles (the default); dim labels mark themselves with
 `setProperty("role", "secondary")` and an app-level QSS rule (installed by
 `apply_theme`) recolors them when the theme changes.
 """
+
 import logging
 import sys
 from pathlib import Path
@@ -17,11 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 # Branded display font used on the main window title + tagline. Loaded from
-# assets/fonts/ at app startup via load_application_fonts(). The family name
-# is what Qt reports after registering the OTF — the Fontspring demo ships
-# with a prefixed family string, which we match here.
-BRAND_FONT_FAMILY = "FONTSPRING DEMO - Hyperspace Race Expanded"
-_BRAND_FONT_FILE = "HyperspaceRace-ExpandedBold.otf"
+# assets/fonts/ at app startup via load_application_fonts(). Orbitron is
+# licensed under the SIL Open Font License 1.1 (OFL-1.1).
+BRAND_FONT_FAMILY = "Orbitron"
+_BRAND_FONT_FILE = "Orbitron-Bold.ttf"
 
 
 def _assets_fonts_dir() -> Path:
@@ -48,6 +48,7 @@ def load_application_fonts() -> None:
     families = QFontDatabase.applicationFontFamilies(font_id)
     logger.info(f"Registered brand font families: {families}")
 
+
 THEME_LIGHT = "light"
 THEME_DARK = "dark"
 THEME_SCLE = "scle"
@@ -60,9 +61,9 @@ DEFAULT_THEME = THEME_SCLE
 # per-theme and surface it via the app-level QSS rule in `_app_stylesheet_for`.
 _SECONDARY_TEXT_COLORS = {
     THEME_LIGHT: "#2A2A2A",
-    THEME_DARK:  "#D5D5D5",
-    THEME_SCLE:  "#D5D5D5",
-    THEME_ODW:   "#D4B876",
+    THEME_DARK: "#D5D5D5",
+    THEME_SCLE: "#D5D5D5",
+    THEME_ODW: "#D4B876",
 }
 
 
@@ -70,32 +71,32 @@ _SECONDARY_TEXT_COLORS = {
 # dark uses Material 300 so buttons read softer against the dark background.
 _BUTTON_COLORS = {
     THEME_LIGHT: {
-        "load":    "#2196F3",
+        "load": "#2196F3",
         "restore": "#FF5722",
-        "apply":   "#4CAF50",
-        "clear":   "#9E9E9E",
-        "open":    "#2196F3",
+        "apply": "#4CAF50",
+        "clear": "#9E9E9E",
+        "open": "#2196F3",
     },
     THEME_DARK: {
-        "load":    "#64B5F6",
+        "load": "#64B5F6",
         "restore": "#FF8A65",
-        "apply":   "#81C784",
-        "clear":   "#BDBDBD",
-        "open":    "#64B5F6",
+        "apply": "#81C784",
+        "clear": "#BDBDBD",
+        "open": "#64B5F6",
     },
     THEME_SCLE: {
-        "load":    "#4FD7E8",   # cube-glow cyan
-        "restore": "#FF8A42",   # pencil-tip orange
-        "apply":   "#4ADE80",   # bright green that pops against navy
-        "clear":   "#5F7A95",   # muted cyan-gray
-        "open":    "#4FD7E8",
+        "load": "#4FD7E8",  # cube-glow cyan
+        "restore": "#FF8A42",  # pencil-tip orange
+        "apply": "#4ADE80",  # bright green that pops against navy
+        "clear": "#5F7A95",  # muted cyan-gray
+        "open": "#4FD7E8",
     },
     THEME_ODW: {
-        "load":    "#D4B876",   # brighter gold (navigate)
-        "restore": "#C77A4D",   # copper (rollback)
-        "apply":   "#A5B989",   # sage green (commit)
-        "clear":   "#7A7D87",   # slate gray (cleanup)
-        "open":    "#D4B876",
+        "load": "#D4B876",  # brighter gold (navigate)
+        "restore": "#C77A4D",  # copper (rollback)
+        "apply": "#A5B989",  # sage green (commit)
+        "clear": "#7A7D87",  # slate gray (cleanup)
+        "open": "#D4B876",
     },
 }
 
@@ -103,6 +104,7 @@ _BUTTON_COLORS = {
 def get_button_color(role: str) -> str:
     """Return the button color for the given role (load/restore/apply/clear/open)."""
     from src.utils.settings import AppSettings
+
     theme = AppSettings.get_theme()
     palette = _BUTTON_COLORS.get(theme, _BUTTON_COLORS[DEFAULT_THEME])
     return palette[role]
@@ -115,6 +117,7 @@ def get_button_text_color() -> str:
     uses lighter button backgrounds — black reads better on those.
     """
     from src.utils.settings import AppSettings
+
     return "white" if AppSettings.get_theme() == THEME_LIGHT else "black"
 
 
@@ -122,27 +125,29 @@ def get_button_text_color() -> str:
 # main window. Each pair ties to the theme's signature accent so the header
 # reads as "of" that theme.
 _TITLE_COLORS = {
-    THEME_LIGHT: "#1565C0",   # rich blue
-    THEME_DARK:  "#64B5F6",   # soft sky blue
-    THEME_SCLE:  "#4FD7E8",   # cube-glow cyan
-    THEME_ODW:   "#C9A961",   # Osiris gold
+    THEME_LIGHT: "#1565C0",  # rich blue
+    THEME_DARK: "#64B5F6",  # soft sky blue
+    THEME_SCLE: "#4FD7E8",  # cube-glow cyan
+    THEME_ODW: "#C9A961",  # Osiris gold
 }
 
 _TAGLINE_COLORS = {
     THEME_LIGHT: "#555555",
-    THEME_DARK:  "#A0A0A0",
-    THEME_SCLE:  "#6FB5D0",   # muted cyan
-    THEME_ODW:   "#A08C5A",   # muted gold
+    THEME_DARK: "#A0A0A0",
+    THEME_SCLE: "#6FB5D0",  # muted cyan
+    THEME_ODW: "#A08C5A",  # muted gold
 }
 
 
 def get_title_color() -> str:
     from src.utils.settings import AppSettings
+
     return _TITLE_COLORS.get(AppSettings.get_theme(), _TITLE_COLORS[DEFAULT_THEME])
 
 
 def get_tagline_color() -> str:
     from src.utils.settings import AppSettings
+
     return _TAGLINE_COLORS.get(AppSettings.get_theme(), _TAGLINE_COLORS[DEFAULT_THEME])
 
 
@@ -152,58 +157,56 @@ def get_tagline_color() -> str:
 # so Fusion's animated busy indicator keeps working.
 _PROGRESS_GROOVE_COLORS = {
     THEME_LIGHT: "#8A8A8A",
-    THEME_DARK:  "#3C3C3F",
-    THEME_SCLE:  "#152538",
-    THEME_ODW:   "#242938",
+    THEME_DARK: "#3C3C3F",
+    THEME_SCLE: "#152538",
+    THEME_ODW: "#242938",
 }
 
 _PROGRESS_CHUNK_COLORS = {
     THEME_LIGHT: "#1565C0",
-    THEME_DARK:  "#3B82F6",
-    THEME_SCLE:  "#4FD7E8",
-    THEME_ODW:   "#D4A017",
+    THEME_DARK: "#3B82F6",
+    THEME_SCLE: "#4FD7E8",
+    THEME_ODW: "#D4A017",
 }
 
 
 def get_progress_groove_color() -> str:
     from src.utils.settings import AppSettings
-    return _PROGRESS_GROOVE_COLORS.get(AppSettings.get_theme(),
-                                       _PROGRESS_GROOVE_COLORS[DEFAULT_THEME])
+
+    return _PROGRESS_GROOVE_COLORS.get(AppSettings.get_theme(), _PROGRESS_GROOVE_COLORS[DEFAULT_THEME])
 
 
 def get_progress_chunk_color() -> str:
     from src.utils.settings import AppSettings
-    return _PROGRESS_CHUNK_COLORS.get(AppSettings.get_theme(),
-                                      _PROGRESS_CHUNK_COLORS[DEFAULT_THEME])
 
-
+    return _PROGRESS_CHUNK_COLORS.get(AppSettings.get_theme(), _PROGRESS_CHUNK_COLORS[DEFAULT_THEME])
 
 
 def _light_palette() -> QPalette:
     """Return a palette matching the Fusion light defaults with adjusted placeholder."""
     p = QPalette()
-    p.setColor(QPalette.ColorRole.Window,          QColor(200, 200, 200))
-    p.setColor(QPalette.ColorRole.WindowText,      QColor(25, 25, 25))
-    p.setColor(QPalette.ColorRole.Base,            QColor(215, 215, 215))
-    p.setColor(QPalette.ColorRole.AlternateBase,   QColor(208, 208, 208))
-    p.setColor(QPalette.ColorRole.ToolTipBase,     QColor(240, 240, 218))
-    p.setColor(QPalette.ColorRole.ToolTipText,     QColor(25, 25, 25))
-    p.setColor(QPalette.ColorRole.Text,            QColor(25, 25, 25))
-    p.setColor(QPalette.ColorRole.Button,          QColor(200, 200, 200))
-    p.setColor(QPalette.ColorRole.ButtonText,      QColor(25, 25, 25))
-    p.setColor(QPalette.ColorRole.BrightText,      QColor(255, 0, 0))
+    p.setColor(QPalette.ColorRole.Window, QColor(200, 200, 200))
+    p.setColor(QPalette.ColorRole.WindowText, QColor(25, 25, 25))
+    p.setColor(QPalette.ColorRole.Base, QColor(215, 215, 215))
+    p.setColor(QPalette.ColorRole.AlternateBase, QColor(208, 208, 208))
+    p.setColor(QPalette.ColorRole.ToolTipBase, QColor(240, 240, 218))
+    p.setColor(QPalette.ColorRole.ToolTipText, QColor(25, 25, 25))
+    p.setColor(QPalette.ColorRole.Text, QColor(25, 25, 25))
+    p.setColor(QPalette.ColorRole.Button, QColor(200, 200, 200))
+    p.setColor(QPalette.ColorRole.ButtonText, QColor(25, 25, 25))
+    p.setColor(QPalette.ColorRole.BrightText, QColor(255, 0, 0))
     # Highlight pulls double duty: text-selection + Fusion's QProgressBar
     # chunk gradient. The chunk gradient widens when Highlight sits at mid
     # luminance (Fusion's lighter()/darker() factors have room to move both
     # ways), so the two scrolling tones read as distinct.
-    p.setColor(QPalette.ColorRole.Highlight,       QColor(21, 101, 192))   # #1565C0
+    p.setColor(QPalette.ColorRole.Highlight, QColor(21, 101, 192))  # #1565C0
     p.setColor(QPalette.ColorRole.HighlightedText, QColor(255, 255, 255))
-    p.setColor(QPalette.ColorRole.Link,            QColor(0, 102, 204))
+    p.setColor(QPalette.ColorRole.Link, QColor(0, 102, 204))
     p.setColor(QPalette.ColorRole.PlaceholderText, QColor(90, 90, 90))
     # Disabled-state overrides — darker than 150-gray so disabled text keeps
     # ~4:1 contrast against the 200-gray window (was 150, which blurred away).
     p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, QColor(100, 100, 100))
-    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text,       QColor(100, 100, 100))
+    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, QColor(100, 100, 100))
     p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, QColor(100, 100, 100))
     return p
 
@@ -211,24 +214,24 @@ def _light_palette() -> QPalette:
 def _dark_palette() -> QPalette:
     """Return a dark palette inspired by the Qt-community "Fusion dark" pattern."""
     p = QPalette()
-    p.setColor(QPalette.ColorRole.Window,          QColor(30, 30, 30))
-    p.setColor(QPalette.ColorRole.WindowText,      QColor(232, 232, 232))
-    p.setColor(QPalette.ColorRole.Base,            QColor(30, 30, 30))
-    p.setColor(QPalette.ColorRole.AlternateBase,   QColor(45, 45, 48))
-    p.setColor(QPalette.ColorRole.ToolTipBase,     QColor(45, 45, 48))
-    p.setColor(QPalette.ColorRole.ToolTipText,     QColor(232, 232, 232))
-    p.setColor(QPalette.ColorRole.Text,            QColor(232, 232, 232))
-    p.setColor(QPalette.ColorRole.Button,          QColor(55, 55, 58))
-    p.setColor(QPalette.ColorRole.ButtonText,      QColor(232, 232, 232))
-    p.setColor(QPalette.ColorRole.BrightText,      QColor(255, 80, 80))
+    p.setColor(QPalette.ColorRole.Window, QColor(30, 30, 30))
+    p.setColor(QPalette.ColorRole.WindowText, QColor(232, 232, 232))
+    p.setColor(QPalette.ColorRole.Base, QColor(30, 30, 30))
+    p.setColor(QPalette.ColorRole.AlternateBase, QColor(45, 45, 48))
+    p.setColor(QPalette.ColorRole.ToolTipBase, QColor(45, 45, 48))
+    p.setColor(QPalette.ColorRole.ToolTipText, QColor(232, 232, 232))
+    p.setColor(QPalette.ColorRole.Text, QColor(232, 232, 232))
+    p.setColor(QPalette.ColorRole.Button, QColor(55, 55, 58))
+    p.setColor(QPalette.ColorRole.ButtonText, QColor(232, 232, 232))
+    p.setColor(QPalette.ColorRole.BrightText, QColor(255, 80, 80))
     # Brighter mid-tone blue so Fusion's indeterminate chunk gradient has
     # a visible light/dark delta against the near-black track.
-    p.setColor(QPalette.ColorRole.Highlight,       QColor(59, 130, 246))   # #3B82F6
+    p.setColor(QPalette.ColorRole.Highlight, QColor(59, 130, 246))  # #3B82F6
     p.setColor(QPalette.ColorRole.HighlightedText, QColor(255, 255, 255))
-    p.setColor(QPalette.ColorRole.Link,            QColor(100, 170, 255))
+    p.setColor(QPalette.ColorRole.Link, QColor(100, 170, 255))
     p.setColor(QPalette.ColorRole.PlaceholderText, QColor(175, 175, 175))
     p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, QColor(150, 150, 150))
-    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text,       QColor(150, 150, 150))
+    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, QColor(150, 150, 150))
     p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, QColor(150, 150, 150))
     return p
 
@@ -237,26 +240,26 @@ def _scle_palette() -> QPalette:
     """Star Citizen Localization Editor branded palette — deep navy + cyan
     highlights inspired by the app's splash artwork."""
     p = QPalette()
-    p.setColor(QPalette.ColorRole.Window,          QColor(13, 24, 38))    # #0D1826 deep navy
-    p.setColor(QPalette.ColorRole.WindowText,      QColor(216, 232, 240)) # #D8E8F0 silver-blue
-    p.setColor(QPalette.ColorRole.Base,            QColor(13, 24, 38))    # match Window for tab consistency
-    p.setColor(QPalette.ColorRole.AlternateBase,   QColor(21, 37, 56))    # #152538
-    p.setColor(QPalette.ColorRole.ToolTipBase,     QColor(21, 37, 56))
-    p.setColor(QPalette.ColorRole.ToolTipText,     QColor(216, 232, 240))
-    p.setColor(QPalette.ColorRole.Text,            QColor(216, 232, 240))
-    p.setColor(QPalette.ColorRole.Button,          QColor(26, 45, 68))    # #1A2D44 raised panel
-    p.setColor(QPalette.ColorRole.ButtonText,      QColor(216, 232, 240))
-    p.setColor(QPalette.ColorRole.BrightText,      QColor(255, 138, 66))  # #FF8A42 orange accent
+    p.setColor(QPalette.ColorRole.Window, QColor(13, 24, 38))  # #0D1826 deep navy
+    p.setColor(QPalette.ColorRole.WindowText, QColor(216, 232, 240))  # #D8E8F0 silver-blue
+    p.setColor(QPalette.ColorRole.Base, QColor(13, 24, 38))  # match Window for tab consistency
+    p.setColor(QPalette.ColorRole.AlternateBase, QColor(21, 37, 56))  # #152538
+    p.setColor(QPalette.ColorRole.ToolTipBase, QColor(21, 37, 56))
+    p.setColor(QPalette.ColorRole.ToolTipText, QColor(216, 232, 240))
+    p.setColor(QPalette.ColorRole.Text, QColor(216, 232, 240))
+    p.setColor(QPalette.ColorRole.Button, QColor(26, 45, 68))  # #1A2D44 raised panel
+    p.setColor(QPalette.ColorRole.ButtonText, QColor(216, 232, 240))
+    p.setColor(QPalette.ColorRole.BrightText, QColor(255, 138, 66))  # #FF8A42 orange accent
     # Pulled down from near-max-brightness #00D4FF to a mid-luminance teal-
     # cyan so Fusion's QProgressBar chunk gradient has room to produce a
     # visible light/dark delta (bright-cyan Highlight capped the lighter()
     # endpoint and the bar read as a single flat color).
-    p.setColor(QPalette.ColorRole.Highlight,       QColor(0, 153, 204))   # #0099CC
-    p.setColor(QPalette.ColorRole.HighlightedText, QColor(10, 18, 32))    # dark on cyan
-    p.setColor(QPalette.ColorRole.Link,            QColor(79, 215, 232))  # #4FD7E8
-    p.setColor(QPalette.ColorRole.PlaceholderText, QColor(111, 181, 208)) # #6FB5D0
+    p.setColor(QPalette.ColorRole.Highlight, QColor(0, 153, 204))  # #0099CC
+    p.setColor(QPalette.ColorRole.HighlightedText, QColor(10, 18, 32))  # dark on cyan
+    p.setColor(QPalette.ColorRole.Link, QColor(79, 215, 232))  # #4FD7E8
+    p.setColor(QPalette.ColorRole.PlaceholderText, QColor(111, 181, 208))  # #6FB5D0
     p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, QColor(88, 120, 144))
-    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text,       QColor(88, 120, 144))
+    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, QColor(88, 120, 144))
     p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, QColor(88, 120, 144))
     return p
 
@@ -265,25 +268,25 @@ def _odw_palette() -> QPalette:
     """Osiris DevWorks branded palette — navy charcoal + antique gold,
     matching the ODW logo."""
     p = QPalette()
-    p.setColor(QPalette.ColorRole.Window,          QColor(26, 31, 46))    # #1A1F2E navy
-    p.setColor(QPalette.ColorRole.WindowText,      QColor(240, 230, 207)) # #F0E6CF cream
-    p.setColor(QPalette.ColorRole.Base,            QColor(26, 31, 46))    # match Window
-    p.setColor(QPalette.ColorRole.AlternateBase,   QColor(36, 41, 56))    # #242938 panel
-    p.setColor(QPalette.ColorRole.ToolTipBase,     QColor(36, 41, 56))
-    p.setColor(QPalette.ColorRole.ToolTipText,     QColor(240, 230, 207))
-    p.setColor(QPalette.ColorRole.Text,            QColor(240, 230, 207))
-    p.setColor(QPalette.ColorRole.Button,          QColor(36, 41, 56))    # raised
-    p.setColor(QPalette.ColorRole.ButtonText,      QColor(240, 230, 207))
-    p.setColor(QPalette.ColorRole.BrightText,      QColor(199, 122, 77))  # #C77A4D copper
+    p.setColor(QPalette.ColorRole.Window, QColor(26, 31, 46))  # #1A1F2E navy
+    p.setColor(QPalette.ColorRole.WindowText, QColor(240, 230, 207))  # #F0E6CF cream
+    p.setColor(QPalette.ColorRole.Base, QColor(26, 31, 46))  # match Window
+    p.setColor(QPalette.ColorRole.AlternateBase, QColor(36, 41, 56))  # #242938 panel
+    p.setColor(QPalette.ColorRole.ToolTipBase, QColor(36, 41, 56))
+    p.setColor(QPalette.ColorRole.ToolTipText, QColor(240, 230, 207))
+    p.setColor(QPalette.ColorRole.Text, QColor(240, 230, 207))
+    p.setColor(QPalette.ColorRole.Button, QColor(36, 41, 56))  # raised
+    p.setColor(QPalette.ColorRole.ButtonText, QColor(240, 230, 207))
+    p.setColor(QPalette.ColorRole.BrightText, QColor(199, 122, 77))  # #C77A4D copper
     # More saturated / mid-luminance gold — the previous muted #C9A961
     # gave Fusion's chunk gradient almost no light/dark spread, so the
     # scrolling bar read as two near-identical shades of gold.
-    p.setColor(QPalette.ColorRole.Highlight,       QColor(212, 160, 23))  # #D4A017
-    p.setColor(QPalette.ColorRole.HighlightedText, QColor(26, 31, 46))    # navy on gold
-    p.setColor(QPalette.ColorRole.Link,            QColor(212, 184, 118)) # #D4B876 brighter gold
+    p.setColor(QPalette.ColorRole.Highlight, QColor(212, 160, 23))  # #D4A017
+    p.setColor(QPalette.ColorRole.HighlightedText, QColor(26, 31, 46))  # navy on gold
+    p.setColor(QPalette.ColorRole.Link, QColor(212, 184, 118))  # #D4B876 brighter gold
     p.setColor(QPalette.ColorRole.PlaceholderText, QColor(160, 140, 90))  # #A08C5A muted gold
     p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, QColor(100, 90, 70))
-    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text,       QColor(100, 90, 70))
+    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, QColor(100, 90, 70))
     p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, QColor(100, 90, 70))
     return p
 
