@@ -1,11 +1,18 @@
 """Enhancements tab for Smart Citizen."""
 import logging
 
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLabel,
-    QPushButton, QCheckBox, QComboBox, QMessageBox
-)
 from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.utils.settings import AppSettings
 

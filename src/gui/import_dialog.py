@@ -1,9 +1,20 @@
 """Conflict resolution dialog for importing INI files into user.ini."""
 
-from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QGroupBox,
-                              QLabel, QPushButton, QTableWidget, QTableWidgetItem,
-                              QComboBox, QDialogButtonBox, QHeaderView, QInputDialog)
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QInputDialog,
+    QLabel,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+)
 
 
 class ImportConflictDialog(QDialog):

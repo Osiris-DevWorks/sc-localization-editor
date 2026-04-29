@@ -1,7 +1,6 @@
 """User INI persistence and import utilities."""
 import logging
 from pathlib import Path
-from typing import Dict, List
 
 from src.models.string_model import StringEntry
 from src.parser.ini_parser import parse_ini_file
@@ -11,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 @timed
-def save_user_ini(entries: List[StringEntry], user_ini_path: Path) -> int:
+def save_user_ini(entries: list[StringEntry], user_ini_path: Path) -> int:
     """Write only user-modified entries to user.ini.
 
     Args:
@@ -48,7 +47,7 @@ def save_user_ini(entries: List[StringEntry], user_ini_path: Path) -> int:
 
 
 @timed
-def save_user_ini_dict(data: Dict[str, str], user_ini_path: Path) -> int:
+def save_user_ini_dict(data: dict[str, str], user_ini_path: Path) -> int:
     """Write a raw key-value dict to user.ini.
 
     Used by the import flow where we have a pre-merged dict rather than

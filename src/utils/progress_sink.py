@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Callable, Optional
+from collections.abc import Callable
 
 ProgressCallback = Callable[[int, int, str], None]
 
@@ -20,7 +20,7 @@ class ProgressSink:
 
     def __init__(
         self,
-        callback: Optional[ProgressCallback] = None,
+        callback: ProgressCallback | None = None,
         total: int = 0,
         min_interval: float = 0.05,
     ) -> None:
@@ -43,7 +43,7 @@ class ProgressSink:
             self._total += delta
         self._emit(force=True)
 
-    def advance(self, delta: int = 1, message: Optional[str] = None) -> None:
+    def advance(self, delta: int = 1, message: str | None = None) -> None:
         with self._lock:
             self._completed += delta
             if message is not None:

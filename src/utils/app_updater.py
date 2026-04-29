@@ -14,7 +14,6 @@ from __future__ import annotations
 import json
 import logging
 import urllib.request
-from typing import Optional
 
 from PyQt6.QtCore import QThread, pyqtSignal
 
@@ -28,7 +27,7 @@ GITHUB_API_URL = (
 REQUEST_TIMEOUT_SECONDS = 10
 
 
-def parse_version(s: str) -> Optional[tuple[int, int, int]]:
+def parse_version(s: str) -> tuple[int, int, int] | None:
     """Parse a ``major.minor.patch`` (optionally ``v``-prefixed) into a tuple.
 
     Returns ``None`` if the input can't be parsed — callers should treat that

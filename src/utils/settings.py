@@ -294,7 +294,7 @@ class AppSettings:
                     AppSettings.GAME_INSTALL_PATH, sc_directory
                 )
                 return sc_directory
-        except (WindowsError, OSError) as e:
+        except OSError as e:
             logger.debug(f"Could not read legacy registry path: {e}")
 
         for candidate in [
@@ -324,7 +324,7 @@ class AppSettings:
             return ""
 
         try:
-            with open(manifest_path, "r", encoding="utf-8") as f:
+            with open(manifest_path, encoding="utf-8") as f:
                 data = json.load(f)
                 version = data.get("Data", {}).get("Version", "")
                 return version
@@ -644,7 +644,7 @@ class AppSettings:
             )
             docs_path = Path(winreg.QueryValueEx(key, "Personal")[0])
             winreg.CloseKey(key)
-        except (WindowsError, OSError):
+        except OSError:
             docs_path = Path.home() / "Documents"
         return docs_path
 

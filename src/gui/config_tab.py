@@ -1,15 +1,23 @@
 """Configuration tab for Smart Citizen."""
 import logging
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
+from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLineEdit,
-    QPushButton, QLabel, QFileDialog, QMessageBox, QComboBox,
+    QComboBox,
+    QFileDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt6.QtCore import pyqtSignal, QTimer
 
-from src.gui.theme import AVAILABLE_THEMES, THEME_LIGHT, THEME_DARK, THEME_SCLE, THEME_ODW
+from src.gui.theme import AVAILABLE_THEMES, THEME_DARK, THEME_LIGHT, THEME_ODW, THEME_SCLE
 from src.utils.settings import AppSettings
 
 logger = logging.getLogger(__name__)
@@ -232,6 +240,7 @@ class ConfigTab(QWidget):
         """Persist and apply the theme. Runs via QTimer.singleShot so we're
         outside the combo's event handling — required for setPalette safety."""
         from PyQt6.QtWidgets import QApplication
+
         from src.gui.theme import apply_theme
         AppSettings.set_theme(theme)
         app = QApplication.instance()
@@ -394,7 +403,7 @@ class ConfigTab(QWidget):
     def preview_merge(self):
         """Show a dry-run summary of the current merge configuration."""
         try:
-            from src.parser.ini_parser import load_sources_from_settings, load_source_files
+            from src.parser.ini_parser import load_source_files, load_sources_from_settings
 
             sources_dict, hierarchy, _enhancements_cats = load_sources_from_settings()
 

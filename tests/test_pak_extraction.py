@@ -207,7 +207,7 @@ class TestStatsGeneration:
     def test_stats_generation_handles_missing_dataforge(self):
         """Test stats generation graceful failure when DataForge cache missing"""
         with tempfile.TemporaryDirectory() as tmpdir:
-            cache_dir = os.path.join(tmpdir, "nonexistent_dataforge")
+            os.path.join(tmpdir, "nonexistent_dataforge")
 
             # Cache doesn't exist - stats generation should handle gracefully
             # (may create empty stats files or skip)

@@ -1,7 +1,6 @@
 """INI file merger for combining base and custom strings."""
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from src.utils.perf import timed
 
@@ -15,10 +14,10 @@ _COMPONENT_CODES = ("shld", "powr", "cool", "qdrv", "jump", "misl", "gmisl", "bo
 
 @timed
 def merge_sources_by_hierarchy(
-    sources_dict: Dict[str, Dict[str, str]],
-    hierarchy: List[str],
-    user_overrides: Optional[Dict[str, str]] = None
-) -> Dict[str, str]:
+    sources_dict: dict[str, dict[str, str]],
+    hierarchy: list[str],
+    user_overrides: dict[str, str] | None = None
+) -> dict[str, str]:
     """Merge multiple INI sources in specified hierarchy order.
 
     Sources earlier in hierarchy have lower priority. Sources later in hierarchy
@@ -57,7 +56,7 @@ def merge_sources_by_hierarchy(
         >>> result["key2"]
         'val2'      # From global (only source for this key)
     """
-    result: Dict[str, str] = {}
+    result: dict[str, str] = {}
 
     # Process each source in hierarchy order
     # Earlier sources are base, later sources overwrite
@@ -80,7 +79,7 @@ def merge_sources_by_hierarchy(
     return result
 
 
-@lru_cache(maxsize=None)
+@cache
 def _get_canonical_key(key: str) -> str:
     """Get the canonical form of a key for variant matching.
 
@@ -131,7 +130,7 @@ def _get_canonical_key(key: str) -> str:
 
 
 @timed
-def sync_key_variants(merged_dict: Dict[str, str]) -> None:
+def sync_key_variants(merged_dict: dict[str, str]) -> None:
     """Sync values across key variants in a merged dictionary.
 
     If item_Name_QDRV_RSI_S02_Hemera has value X, then
@@ -143,7 +142,7 @@ def sync_key_variants(merged_dict: Dict[str, str]) -> None:
         merged_dict: Dictionary of keys to values from merged sources
     """
     # Build a mapping of canonical → list of actual keys with that canonical form
-    canonical_keys: Dict[str, List[str]] = {}
+    canonical_keys: dict[str, list[str]] = {}
 
     for key in list(merged_dict.keys()):
         canonical = _get_canonical_key(key)
@@ -179,7 +178,7 @@ def sync_key_variants(merged_dict: Dict[str, str]) -> None:
 @timed
 def merge_ini_files(
     source_path: str | Path,
-    overrides_dict: Dict[str, str],
+    overrides_dict: dict[str, str],
     output_path: str | Path
 ) -> None:
     """Merge source INI with overrides, preserving all lines.
@@ -205,7 +204,7 @@ def merge_ini_files(
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
-        with open(source_path, 'r', encoding='utf-8') as infile, \
+        with open(source_path, encoding='utf-8') as infile, \
              open(output_path, 'w', encoding='utf-8') as outfile:
 
             for line in infile:
@@ -242,4 +241,4 @@ def merge_ini_files(
                     outfile.write(new_line)
 
     except Exception as e:
-        raise IOError(f"Error merging INI files: {e}")
+        raise OSError(f"Error merging INI files: {e}")

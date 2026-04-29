@@ -5,10 +5,10 @@ same semantics. Report keys where kraken has a BP tag but our output does
 not — those are missing annotations users will feel.
 """
 from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path
-
 
 KRAKEN_BP = re.compile(r"\[BP\]\*?")  # [BP] or [BP]*
 OURS_BP = re.compile(r"\[BP[*?]?\]")  # [BP], [BP*], or [BP?]

@@ -17,12 +17,13 @@ Examples:
   python scripts/discord_notify.py v0.1.0 "Initial release"
 """
 
+import json
 import os
 import sys
-import json
-import urllib.request
 import urllib.error
+import urllib.request
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file in project root

@@ -1,7 +1,6 @@
 import re
 from dataclasses import dataclass
-from functools import lru_cache
-
+from functools import cache
 
 # ── Module-level lookup tables for extract_category() ─────────────────────────
 # All of these used to be re-created on every call. At 87k entries loaded and
@@ -87,7 +86,7 @@ _MISSION_PREFIXES = (
 )
 
 
-@lru_cache(maxsize=None)
+@cache
 def _extract_category_impl(key: str) -> str:
     """Memoized impl of :meth:`StringEntry.extract_category`.
 

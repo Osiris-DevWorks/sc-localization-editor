@@ -18,12 +18,12 @@ the loc-key whose base value matches the title. Keys are looked up by their
 *base.ini* value (stripped of any annotation) against the fixture title.
 """
 from __future__ import annotations
+
 import csv
 import re
 import sys
 from collections import defaultdict
 from pathlib import Path
-
 
 BP_RE = re.compile(r"\s*<EM4>\[BP[*?]?\]</EM4>\s*")
 XP_RE = re.compile(r"\s*<EM4>\[[\d,– \-]+XP\]</EM4>\s*")
@@ -114,7 +114,6 @@ def main() -> int:
 
         # Check the mission_rewards_enhancements.ini for any of those keys
         tagged = False
-        tag_seen = None
         for k in keys:
             mv = mission.get(k)
             if mv is None:
@@ -122,7 +121,6 @@ def main() -> int:
             t = our_bp_tag(mv)
             if t:
                 tagged = True
-                tag_seen = t
                 break
 
         if not tagged:

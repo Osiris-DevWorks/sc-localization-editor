@@ -1,7 +1,7 @@
 """Per-column filter header for the strings table."""
 
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QSize, QRect, QPoint
-from PyQt6.QtWidgets import QHeaderView, QLineEdit, QStyleOptionHeader, QStyle
+from PyQt6.QtCore import QRect, QSize, Qt, QTimer, pyqtSignal
+from PyQt6.QtWidgets import QHeaderView, QLineEdit
 
 
 class FilterHeaderView(QHeaderView):

@@ -55,7 +55,7 @@ def ensure_user_cfg_language() -> bool:
                 user_cfg_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
                 logger.info(f"Added '{language_line}' to user.cfg")
             else:
-                logger.info(f"user.cfg already has language setting")
+                logger.info("user.cfg already has language setting")
         else:
             # File doesn't exist — create it with language setting
             logger.info(f"Creating user.cfg at {user_cfg_path}")

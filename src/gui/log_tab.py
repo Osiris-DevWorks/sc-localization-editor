@@ -3,12 +3,19 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
+from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QPlainTextEdit, QFileDialog, QCheckBox, QLabel, QComboBox
+    QCheckBox,
+    QComboBox,
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QPlainTextEdit,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QObject
-from PyQt6.QtGui import QTextCharFormat, QColor, QFont, QTextCursor
 
 # Maximum lines kept in the viewer before oldest lines are dropped
 _MAX_LINES = 2000

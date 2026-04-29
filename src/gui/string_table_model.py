@@ -8,7 +8,6 @@ virtual method calls across the Python/C++ boundary.
 """
 
 import re as _re
-from typing import Optional
 
 from PyQt6.QtCore import QAbstractTableModel, QModelIndex, Qt
 from PyQt6.QtGui import QColor
@@ -47,8 +46,8 @@ _FAV_BG_LIGHT = QColor("#FFF4C4")  # soft pale gold for light theme
 
 def _fav_row_bg() -> QColor:
     """Return the favorite-row highlight appropriate for the current theme."""
-    from src.utils.settings import AppSettings
     from src.gui.theme import THEME_LIGHT
+    from src.utils.settings import AppSettings
     return _FAV_BG_LIGHT if AppSettings.get_theme() == THEME_LIGHT else _FAV_BG_DARK
 
 
@@ -213,7 +212,7 @@ class StringTableModel(QAbstractTableModel):
     def entry_for_row(self, row: int) -> StringEntry:
         return self._entries[self._filtered_indices[row]]
 
-    def source_row_for_entry_index(self, entry_idx: int) -> Optional[int]:
+    def source_row_for_entry_index(self, entry_idx: int) -> int | None:
         """Reverse lookup: entry index -> model row. O(1) via dict."""
         return self._reverse_index.get(entry_idx)
 

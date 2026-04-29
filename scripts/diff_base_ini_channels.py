@@ -50,7 +50,7 @@ def base_ini_path(user_data_root: Path, channel: str) -> Path:
 
 
 def write_report(
-    out: "list[str] | object",  # list to append, or a TextIO-like .write
+    out: list[str] | object,  # list to append, or a TextIO-like .write
     a_label: str,
     b_label: str,
     a: dict[str, str],
@@ -115,7 +115,7 @@ def write_report(
         emit(f"      {b_label}: {b[k]}")
 
 
-def main(argv: "list[str] | None" = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("channel_a", help="First channel name (e.g. LIVE)")
     ap.add_argument("channel_b", help="Second channel name (e.g. PTU)")

@@ -2,7 +2,6 @@
 import datetime
 import email.utils
 import logging
-import socket
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
@@ -38,7 +37,7 @@ def download_file(url: str, output_path: str | Path) -> Path:
                     if not chunk:
                         break
                     chunks.append(chunk)
-                except socket.timeout:
+                except TimeoutError:
                     logger.warning("Download timeout, retrying...")
                     raise
 
@@ -77,7 +76,7 @@ def download_file_if_changed(url: str, output_path: str | Path) -> bool:
 
     if output_path.exists():
         mtime = output_path.stat().st_mtime
-        dt = datetime.datetime.fromtimestamp(mtime, tz=datetime.timezone.utc)
+        dt = datetime.datetime.fromtimestamp(mtime, tz=datetime.UTC)
         headers["If-Modified-Since"] = email.utils.format_datetime(dt, usegmt=True)
 
     req = Request(url, headers=headers)

@@ -48,9 +48,9 @@ from __future__ import annotations
 import json
 import logging
 import xml.etree.ElementTree as ET
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ _DATAFORGE_RECORDS_SUBPATH = Path("raw") / "libs" / "foundry" / "records"
 def apply_patches(
     patch_root: Path,
     dataforge_cache_dir: Path,
-    progress_callback: Optional[Callable[[str], None]] = None,
+    progress_callback: Callable[[str], None] | None = None,
 ) -> PatchReport:
     """Apply every ``*.patch.json`` under *patch_root* to XMLs in *dataforge_cache_dir*.
 
@@ -149,7 +149,7 @@ def _apply_single_patch(
     patch_file: Path,
     records_root: Path,
     report: PatchReport,
-    progress_callback: Optional[Callable[[str], None]],
+    progress_callback: Callable[[str], None] | None,
 ) -> None:
     with patch_file.open(encoding="utf-8") as f:
         patch = json.load(f)

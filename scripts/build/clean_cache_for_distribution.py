@@ -10,9 +10,9 @@ files for enhancements generation. Users can regenerate the raw cache if needed
 by re-extracting from P4K.
 """
 
-import os
 import shutil
 from pathlib import Path
+
 
 def get_documents_dir():
     """Get Documents directory path."""

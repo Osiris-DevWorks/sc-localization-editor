@@ -19,8 +19,8 @@ and calls ``tour.start()``.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Optional
 
 from PyQt6.QtCore import QEvent, QObject, QPoint, QRect, QRectF, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QPainterPath, QPen
@@ -42,10 +42,10 @@ logger = logging.getLogger(__name__)
 # only exists after a tab is activated) still match.
 @dataclass
 class CoachMarkStep:
-    target: Callable[[], Optional[QWidget]]   # None → step paints dim only, no spotlight
+    target: Callable[[], QWidget | None]   # None → step paints dim only, no spotlight
     title: str
     description: str
-    pre_action: Optional[Callable[[], None]] = None  # e.g. switch to Config tab
+    pre_action: Callable[[], None] | None = None  # e.g. switch to Config tab
     preferred_side: str = "auto"              # "right" | "below" | "above" | "left" | "auto"
 
 
@@ -194,7 +194,7 @@ class CoachMarkOverlay(QWidget):
         self.update()
 
     @staticmethod
-    def _resolve_visible_target(resolver: Callable[[], Optional[QWidget]]) -> Optional[QWidget]:
+    def _resolve_visible_target(resolver: Callable[[], QWidget | None]) -> QWidget | None:
         try:
             w = resolver()
         except Exception:

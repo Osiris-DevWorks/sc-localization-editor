@@ -1,17 +1,16 @@
 """INI file parser for localization strings."""
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
 
-from src.models.string_model import StringEntry
 from src.merger.ini_merger import merge_sources_by_hierarchy
+from src.models.string_model import StringEntry
 from src.utils.perf import timed
 
 logger = logging.getLogger(__name__)
 
 
 @timed
-def parse_ini_file(path: str | Path) -> Dict[str, str]:
+def parse_ini_file(path: str | Path) -> dict[str, str]:
     """Parse INI file line-by-line, preserving efficiency.
 
     Strips any comma-based metadata suffix from keys (e.g., "key,P" → "key").
@@ -24,14 +23,14 @@ def parse_ini_file(path: str | Path) -> Dict[str, str]:
     Returns:
         Dictionary of key-value pairs
     """
-    result: Dict[str, str] = {}
+    result: dict[str, str] = {}
     path = Path(path)
 
     if not path.exists():
         return result
 
     try:
-        with open(path, 'r', encoding='utf-8-sig') as f:
+        with open(path, encoding='utf-8-sig') as f:
             for line in f:
                 line = line.rstrip('\n\r')
 
@@ -61,12 +60,12 @@ def parse_ini_file(path: str | Path) -> Dict[str, str]:
 
 @timed
 def load_source_files(
-    sources_dict: Dict[str, Dict[str, str]],
-    hierarchy: List[str],
-    user_overrides: Optional[Dict[str, str]] = None,
-    custom_path: Optional[str | Path] = None,
-    enhancements_key_categories: Optional[Dict[str, str]] = None,
-) -> List[StringEntry]:
+    sources_dict: dict[str, dict[str, str]],
+    hierarchy: list[str],
+    user_overrides: dict[str, str] | None = None,
+    custom_path: str | Path | None = None,
+    enhancements_key_categories: dict[str, str] | None = None,
+) -> list[StringEntry]:
     """Load source files and build StringEntry list using hierarchy merge.
 
     Merges multiple sources in hierarchy order, then creates StringEntry objects.
@@ -135,7 +134,7 @@ def load_source_files(
     # Separate user overrides from the base merge so we can correctly populate
     # custom_value and original_value independently.
     # User data comes either from the explicit user_overrides param or sources_dict["user"].
-    effective_user_overrides: Dict[str, str] = {}
+    effective_user_overrides: dict[str, str] = {}
     if user_overrides:
         effective_user_overrides = dict(user_overrides)
     elif AppSettings.SOURCE_USER in filtered_sources:
@@ -156,7 +155,7 @@ def load_source_files(
 
     # Track which base source each key came from (for status of non-user entries)
     logger.info("Tracking source origin for each key...")
-    source_origin: Dict[str, str] = {}
+    source_origin: dict[str, str] = {}
     for source_name in base_hierarchy:
         source_data = base_sources[source_name]
         for key in source_data.keys():
@@ -221,7 +220,7 @@ def load_source_files(
 
 
 @timed
-def load_sources_from_settings() -> tuple[Dict[str, Dict[str, str]], List[str], Dict[str, str]]:
+def load_sources_from_settings() -> tuple[dict[str, dict[str, str]], list[str], dict[str, str]]:
     """Load all sources from application settings.
 
     For remote URLs, loads from cached local files if available.
@@ -235,7 +234,7 @@ def load_sources_from_settings() -> tuple[Dict[str, Dict[str, str]], List[str], 
     """
     from src.utils.settings import AppSettings
 
-    sources_dict: Dict[str, Dict[str, str]] = {}
+    sources_dict: dict[str, dict[str, str]] = {}
     hierarchy = AppSettings.get_merge_hierarchy()
 
     # Map source names to their cached file names in Documents cache
@@ -321,10 +320,10 @@ def load_sources_from_settings() -> tuple[Dict[str, Dict[str, str]], List[str], 
         "journal":           "Journal",
         "missile_enhancements": "Ship Items",
     }
-    enhancements_key_categories: Dict[str, str] = {}
+    enhancements_key_categories: dict[str, str] = {}
     enabled_categories = AppSettings.get_enabled_enhancement_categories()
     if enabled_categories:
-        enhancements_combined: Dict[str, str] = {}
+        enhancements_combined: dict[str, str] = {}
         for label, filename in AppSettings.ENHANCEMENTS_FILES.items():
             if label not in enabled_categories:
                 continue
@@ -355,7 +354,7 @@ def load_sources_from_settings() -> tuple[Dict[str, Dict[str, str]], List[str], 
 
 
 @timed
-def load_overrides(target_path: str | Path) -> Dict[str, str]:
+def load_overrides(target_path: str | Path) -> dict[str, str]:
     """Load override strings from target_strings.ini.
 
     Args:

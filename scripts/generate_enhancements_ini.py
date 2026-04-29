@@ -22,9 +22,9 @@ import pickle
 import re
 import sys
 import xml.etree.ElementTree as ET
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Callable, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -1629,7 +1629,7 @@ def scan_contract_generators(
 
                             # Extract per-contract flags (starter = no minStanding requirement)
                             contract_flags = list(handler_flags)  # inherit handler flags
-                            min_standing = contract.get("minStanding", "")
+                            contract.get("minStanding", "")
                             null_uuid = "00000000-0000-0000-0000-000000000000"
                             # A contract with no standing requirement at handler intro level is a starter
                             # (detected by debugName containing "Intro" or being first in a career chain)
@@ -1650,7 +1650,7 @@ def scan_contract_generators(
                             if title_key not in missions:
                                 missions[title_key] = []
                             missions[title_key].append((system_name, success_xp, failure_xp, desc_key, contract_flags, enemies, not_enemies, contract_difficulty, contract_has_bp, contract_bp_chance, contract_bp_variant))
-                        except Exception as e:
+                        except Exception:
                             pass
 
         # Sort variants by system name for consistent output (Stanton first, then others alphabetically)
@@ -1830,8 +1830,8 @@ def scan_crafting_blueprints(
     Returns a dict of localization key → augmented value for commodity names and
     descriptions that are used as crafting materials.
     """
-    from collections import defaultdict
     import os
+    from collections import defaultdict
 
     if not bp_dir.exists():
         logger.info("No crafting blueprints directory found")
@@ -2679,7 +2679,7 @@ def scan_entity_dir(
 
 def main(base_ini_path: Path, forge_dir: Path | None = None,
          categories: set[str] | None = None,
-         progress_callback: Optional[Callable[[int, int, str], None]] = None,
+         progress_callback: Callable[[int, int, str], None] | None = None,
          max_workers: int = 6,
          patches_dir: Path | None = None) -> None:
     import sys as sys_mod
@@ -3446,8 +3446,8 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
     if patches_dir is not None:
         try:
             from src.utils.dataforge_patcher import (
-                load_locstring_workarounds,
                 apply_locstring_workarounds,
+                load_locstring_workarounds,
             )
             workarounds = load_locstring_workarounds(patches_dir)
             if workarounds:

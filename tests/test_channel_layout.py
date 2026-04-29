@@ -29,7 +29,6 @@ def isolated_qsettings(tmp_path, monkeypatch):
     settings_file = tmp_path / "test_registry.ini"
     # Swap out AppSettings.settings() for a QSettings instance backed by our
     # temp file. Scoped per test.
-    original = AppSettings.settings
 
     def _isolated():
         return QSettings(str(settings_file), QSettings.Format.IniFormat)

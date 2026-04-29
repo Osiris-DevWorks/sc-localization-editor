@@ -6,17 +6,16 @@ parser directly, so this module keeps the legacy API available as a thin shim.
 """
 
 from pathlib import Path
-from typing import Dict
 
 from src.parser.ini_parser import load_overrides as _load_overrides
 from src.utils.user_ini_manager import save_user_ini_dict
 
 
-def load_overrides(path: str | Path) -> Dict[str, str]:
+def load_overrides(path: str | Path) -> dict[str, str]:
     """Load overrides from a plain key=value INI file."""
     return _load_overrides(path)
 
 
-def save_overrides(data: Dict[str, str], path: str | Path) -> int:
+def save_overrides(data: dict[str, str], path: str | Path) -> int:
     """Save overrides to a plain key=value INI file."""
     return save_user_ini_dict(data, Path(path))

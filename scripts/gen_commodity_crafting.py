@@ -1,12 +1,15 @@
 """Generate commodity_crafting_enhancements.ini with blueprint usage data."""
+import os
+import re
+import subprocess
+import sys
 import xml.etree.ElementTree as ET
-from pathlib import Path
 from collections import defaultdict
-import subprocess, re, os, sys
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from scripts.generate_enhancements_ini import DEFAULT_BASE_INI, parse_ini, write_ini, APP_CACHE_DIR
+from scripts.generate_enhancements_ini import APP_CACHE_DIR, DEFAULT_BASE_INI, parse_ini, write_ini
 
 forge_dir = Path("C:/Users/aabou/OneDrive/Documents/Smart Citizen/cache/dataforge/raw/libs/foundry/records")
 scitem_dir = forge_dir / "entities" / "scitem"
