@@ -1986,7 +1986,7 @@ def scan_crafting_blueprints(
     base_content = loc.get(journal_content_key, "")
 
     if base_title and base_content:
-        out_journal[journal_title_key] = f"{base_title} <EM4>[SmC]</EM4>"
+        out_journal[journal_title_key] = f"{base_title} <EM4>[OS]</EM4>"
 
         mineral_crafting: dict[str, str] = {}
         for internal_name, items in commodity_items.items():
