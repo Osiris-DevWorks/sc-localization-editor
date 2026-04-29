@@ -1,4 +1,4 @@
-"""Enhancements tab for Smart Citizen."""
+"""Enhancements tab for Open Strings."""
 import logging
 
 from PyQt6.QtCore import pyqtSignal

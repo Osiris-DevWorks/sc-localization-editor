@@ -1,4 +1,4 @@
-"""Main window for Smart Citizen."""
+"""Main window for Open Strings."""
 
 import html as _html_mod
 import logging
@@ -6,8 +6,8 @@ import os
 import re as _re_mod
 from pathlib import Path
 
-from PyQt6.QtCore import QEasingCurve, QModelIndex, QPropertyAnimation, Qt, QTimer, QUrl, pyqtSlot
-from PyQt6.QtGui import QCursor, QDesktopServices, QFont, QIcon, QPixmap
+from PyQt6.QtCore import QModelIndex, Qt, QTimer, QUrl, pyqtSlot
+from PyQt6.QtGui import QDesktopServices, QFont, QIcon
 from PyQt6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -15,7 +15,6 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QDockWidget,
     QFileDialog,
-    QGraphicsOpacityEffect,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -24,7 +23,6 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QProgressDialog,
     QPushButton,
-    QStackedLayout,
     QStatusBar,
     QTableView,
     QTabWidget,
@@ -46,8 +44,6 @@ from src.gui.string_table_model import (
 from src.gui.theme import BRAND_FONT_FAMILY, get_button_color, get_button_text_color, get_tagline_color, get_title_color
 from src.gui.workers import (
     AnimatedProgressDialog,
-    ClickableLabel,
-    ClickableWidget,
     DataForgeExtractWorker,
     EnhancementsGeneratorWorker,
     FileLoaderWorker,
@@ -59,7 +55,6 @@ from src.gui.workers import (
 from src.merger.ini_merger import merge_sources_by_hierarchy
 from src.models.string_model import StringEntry
 from src.parser.ini_parser import load_source_files, load_sources_from_settings
-from src.utils.app_updater import AppUpdateCheckWorker
 from src.utils.perf import timed
 from src.utils.settings import AppSettings
 from src.utils.version import get_version
@@ -119,7 +114,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(f"Smart Citizen v{get_version()}")
+        self.setWindowTitle(f"Open Strings v{get_version()}")
         self.setGeometry(100, 100, 1400, 800)
 
         # Set window icon (taskbar + window title bar + favicon)
@@ -161,23 +156,11 @@ class MainWindow(QMainWindow):
         # Progress dialogs
         self._startup_progress: AnimatedProgressDialog | None = None
         self._loading_progress: QProgressDialog | None = None
-        self._eye_label: QLabel | None = None
-        self._eye_pulse: QPropertyAnimation | None = None
-        self._eye_glow: QGraphicsOpacityEffect | None = None
-        self._eye_fadeout: QPropertyAnimation | None = None
-        self._eye_pulse_monitor: QTimer | None = None
-        self.osiris_button: QWidget
-        self.feedback_label: ClickableLabel
-        self.paypal_button: ClickableLabel
-        self.venmo_button: ClickableLabel
 
-        # App self-update check
-        self._update_check_worker: AppUpdateCheckWorker | None = None
-        self._latest_release_url: str | None = None
         self.help_dock: QDockWidget | None = None
         self._tutorial_tour: TutorialTour | None = None
         self._channel_indicator: QLabel | None = None
-        self._app_version_indicator: ClickableLabel | None = None
+        self._app_version_indicator: QLabel | None = None
 
         # Build UI
         self.setup_ui()
@@ -217,13 +200,13 @@ class MainWindow(QMainWindow):
         main_layout.setSpacing(8)
 
         # Title bar — branded font (Hyperspace Race Expanded Bold)
-        self.title_label = QLabel("SMART CITIZEN")
+        self.title_label = QLabel("OPEN STRINGS")
         title_font = QFont(BRAND_FONT_FAMILY)
         title_font.setPointSize(22)
         self.title_label.setFont(title_font)
         main_layout.addWidget(self.title_label)
 
-        self.tagline_label = QLabel("SMARTER STRINGS FOR STAR CITIZEN")
+        self.tagline_label = QLabel("STRING EDITOR FOR STAR CITIZEN")
         main_layout.addWidget(self.tagline_label)
         self._apply_branding_styles()
 
@@ -260,7 +243,6 @@ class MainWindow(QMainWindow):
         self.config_tab.p4k_extract_requested.connect(self._run_p4k_extraction)
         self.config_tab.import_ini_requested.connect(self._handle_import_ini)
         self.config_tab.channel_changed.connect(self._on_channel_changed)
-        self.config_tab.check_updates_requested.connect(self._on_check_updates_clicked)
         self._config_tab_index = self.tabs.addTab(self.config_tab, "Config")
 
         # Enhancements tab
@@ -279,10 +261,6 @@ class MainWindow(QMainWindow):
         self._previous_tab_index = self.tabs.currentIndex()
 
         main_layout.addWidget(self.tabs)
-
-        # Footer
-        footer_layout = self.create_footer()
-        main_layout.addLayout(footer_layout)
 
         # Help side-panel. Created eagerly (before restore_window_state runs)
         # so Qt's native saveState/restoreState can persist its open/closed
@@ -345,7 +323,7 @@ class MainWindow(QMainWindow):
             f"background-color: {get_button_color('restore')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;"
         )
         self.restore_backup_btn.setToolTip(
-            "Restore a previous global.ini from Documents\\Smart Citizen\\backups\\. Up to 5 timestamped backups are kept; the oldest is pruned when a new one is created."
+            "Restore a previous global.ini from Documents\\Open Strings\\backups\\. Up to 5 timestamped backups are kept; the oldest is pruned when a new one is created."
         )
         self.restore_backup_btn.clicked.connect(self.restore_backup)
         button_layout.addWidget(self.restore_backup_btn)
@@ -390,7 +368,7 @@ class MainWindow(QMainWindow):
             f"background-color: {get_button_color('open')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;"
         )
         self.tutorial_btn.setToolTip(
-            "Start the guided tour of Smart Citizen's workflow — runs automatically on first launch; click here anytime to replay."
+            "Start the guided tour of the workflow — runs automatically on first launch; click here anytime to replay."
         )
         self.tutorial_btn.clicked.connect(self._start_tutorial)
         button_layout.addWidget(self.tutorial_btn)
@@ -459,359 +437,6 @@ class MainWindow(QMainWindow):
         layout.addLayout(filter_layout)
 
         return layout
-
-    def create_footer(self) -> QHBoxLayout:
-        """Create footer with Osiris DevWorks branding and donation buttons."""
-        footer_layout = QHBoxLayout()
-        footer_layout.setContentsMargins(8, 8, 8, 0)
-
-        # Osiris DevWorks logo (left side). Built as a stacked pair so the
-        # Eye of Horus glyph can pulse-glow while a background worker is
-        # running. Base pixmap is the full logo; `osiris-eye-glow.png` is a
-        # same-size pre-rendered overlay with the eye + a baked-in gold halo
-        # stacked on top. We animate the overlay's QGraphicsOpacityEffect
-        # between 0 and 1 — opacity interpolation on a static sprite is
-        # exact float math and never re-renders, so no sub-pixel jitter
-        # (the earlier QGraphicsDropShadowEffect-on-the-fly approach had
-        # the shadow kernel rebuilt every frame and read as visibly shaky).
-        osiris_image_path = get_resource_path(os.path.join("assets", "osiris-devworks.png"))
-        osiris_glow_path = get_resource_path(os.path.join("assets", "osiris-eye-glow.png"))
-
-        if os.path.exists(osiris_image_path) and os.path.exists(osiris_glow_path):
-            self.osiris_button = ClickableWidget()
-            stack = QStackedLayout(self.osiris_button)
-            stack.setStackingMode(QStackedLayout.StackingMode.StackAll)
-            stack.setContentsMargins(0, 0, 0, 0)
-
-            base_label = QLabel()
-            base_pixmap = QPixmap(osiris_image_path)
-            if base_pixmap.height() > 40:
-                base_pixmap = base_pixmap.scaledToHeight(40, Qt.TransformationMode.SmoothTransformation)
-            base_label.setPixmap(base_pixmap)
-
-            self._eye_label = QLabel()
-            glow_pixmap = QPixmap(osiris_glow_path)
-            if glow_pixmap.height() > 40:
-                glow_pixmap = glow_pixmap.scaledToHeight(40, Qt.TransformationMode.SmoothTransformation)
-            self._eye_label.setPixmap(glow_pixmap)
-
-            self._eye_glow = QGraphicsOpacityEffect(self._eye_label)
-            self._eye_glow.setOpacity(0.0)
-            self._eye_label.setGraphicsEffect(self._eye_glow)
-
-            self._eye_pulse = QPropertyAnimation(self._eye_glow, b"opacity", self)
-            self._eye_pulse.setDuration(1800)
-            self._eye_pulse.setKeyValueAt(0.0, 0.0)
-            self._eye_pulse.setKeyValueAt(0.5, 1.0)
-            self._eye_pulse.setKeyValueAt(1.0, 0.0)
-            self._eye_pulse.setEasingCurve(QEasingCurve.Type.InOutSine)
-            self._eye_pulse.setLoopCount(-1)
-
-            # Separate one-shot animation used when work ends mid-pulse —
-            # eases the current opacity down to 0 instead of snapping off.
-            self._eye_fadeout = QPropertyAnimation(self._eye_glow, b"opacity", self)
-            self._eye_fadeout.setEasingCurve(QEasingCurve.Type.InOutSine)
-            self._eye_fadeout.setEndValue(0.0)
-
-            stack.addWidget(base_label)
-            stack.addWidget(self._eye_label)
-
-            # Pin to the scaled logo's natural size — opacity animation
-            # doesn't expand the paint rect the way drop-shadow did, so no
-            # extra padding is needed.
-            self.osiris_button.setFixedSize(base_pixmap.size())
-
-            self.osiris_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-            self.osiris_button.setToolTip("Open the Osiris DevWorks GitHub organization")
-            self.osiris_button.clicked.connect(self.open_osiris_github)
-            footer_layout.addWidget(self.osiris_button)
-
-            # Poll every 300ms and toggle the pulse to match worker state.
-            # Cheaper than wiring into every worker start/finish slot and
-            # robust to every extraction/generation/load entrypoint.
-            self._eye_pulse_monitor = QTimer(self)
-            self._eye_pulse_monitor.setInterval(300)
-            self._eye_pulse_monitor.timeout.connect(self._update_eye_pulse)
-            self._eye_pulse_monitor.start()
-        else:
-            # Fallback to styled text button
-            self.osiris_button = ClickableLabel("Osiris DevWorks")
-            self.osiris_button.setStyleSheet("""
-                QLabel {
-                    background-color: #1a1f2e;
-                    color: #c9a961;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: bold;
-                }
-                QLabel:hover {
-                    background-color: #242938;
-                }
-            """)
-            self._eye_pulse = None
-            self._eye_glow = None
-            self._eye_fadeout = None
-            self.osiris_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-            self.osiris_button.setToolTip("Open the Osiris DevWorks GitHub organization")
-            self.osiris_button.clicked.connect(self.open_osiris_github)
-            footer_layout.addWidget(self.osiris_button)
-
-        # Feedback button — sits immediately to the right of the Osiris logo.
-        # Image link to the dedicated Smart Citizen channel in the Osiris
-        # DevWorks Discord; falls back to a styled text label if the asset
-        # is missing.
-        footer_layout.addSpacing(10)
-        self.feedback_label = ClickableLabel()
-        discord_image_path = get_resource_path(os.path.join("assets", "discord.png"))
-        if os.path.exists(discord_image_path):
-            discord_pixmap = QPixmap(discord_image_path)
-            if discord_pixmap.height() > 40:
-                discord_pixmap = discord_pixmap.scaledToHeight(40, Qt.TransformationMode.SmoothTransformation)
-            self.feedback_label.setPixmap(discord_pixmap)
-        else:
-            self.feedback_label.setText("Feedback, Bugs, & Feature Voting")
-            self.feedback_label.setStyleSheet("font-size: 12px;")
-        self.feedback_label.setToolTip(
-            "Open the Smart Citizen Discord channel for feedback, bug reports, and voting on "
-            "upcoming features (requires joining the Osiris DevWorks Discord)."
-        )
-        self.feedback_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.feedback_label.clicked.connect(self.open_feedback_link)
-        footer_layout.addWidget(self.feedback_label)
-
-        # Stretch to push the donation cluster to the right.
-        footer_layout.addStretch()
-
-        # PayPal button (right side)
-        self.paypal_button = ClickableLabel()
-        paypal_image_path = get_resource_path(os.path.join("assets", "paypal.png"))
-
-        # Try to load PayPal image, fall back to text if not found
-        if os.path.exists(paypal_image_path):
-            paypal_pixmap = QPixmap(paypal_image_path)
-            # Scale to match Osiris button (max height 40px)
-            if paypal_pixmap.height() > 40:
-                paypal_pixmap = paypal_pixmap.scaledToHeight(40, Qt.TransformationMode.SmoothTransformation)
-            self.paypal_button.setPixmap(paypal_pixmap)
-        else:
-            # Fallback to styled text button
-            self.paypal_button.setText("Donate via PayPal")
-            self.paypal_button.setStyleSheet("""
-                QLabel {
-                    background-color: #0070ba;
-                    color: white;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: bold;
-                }
-                QLabel:hover {
-                    background-color: #005ea6;
-                }
-            """)
-
-        self.paypal_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.paypal_button.clicked.connect(self.open_paypal_donation)
-        footer_layout.addWidget(self.paypal_button)
-
-        # Spacer between PayPal and Venmo
-        footer_layout.addSpacing(10)
-
-        # Venmo button (right side)
-        self.venmo_button = ClickableLabel()
-        venmo_image_path = get_resource_path(os.path.join("assets", "venmo.png"))
-
-        # Try to load Venmo image, fall back to text button
-        if os.path.exists(venmo_image_path):
-            venmo_pixmap = QPixmap(venmo_image_path)
-            # Scale to match Osiris button (max height 40px)
-            if venmo_pixmap.height() > 40:
-                venmo_pixmap = venmo_pixmap.scaledToHeight(40, Qt.TransformationMode.SmoothTransformation)
-            self.venmo_button.setPixmap(venmo_pixmap)
-        else:
-            # Fallback to styled text button
-            self.venmo_button.setText("Venmo")
-            self.venmo_button.setStyleSheet("""
-                QLabel {
-                    background-color: #008CFF;
-                    color: white;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: bold;
-                }
-                QLabel:hover {
-                    background-color: #0074D9;
-                }
-            """)
-
-        self.venmo_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.venmo_button.clicked.connect(self.open_venmo_donation)
-        footer_layout.addWidget(self.venmo_button)
-
-        return footer_layout
-
-    def open_osiris_github(self, _event: object | None = None) -> None:
-        """Open the Osiris DevWorks GitHub organization in browser."""
-        QDesktopServices.openUrl(QUrl("https://github.com/Osiris-DevWorks"))
-
-    def open_feedback_link(self, _event: object | None = None) -> None:
-        """Open the dedicated Smart Citizen feedback channel in browser."""
-        feedback_url = "https://discord.com/channels/1438175448420057323/1472394204347895890"
-        QDesktopServices.openUrl(QUrl(feedback_url))
-
-    def open_paypal_donation(self, _event: object | None = None) -> None:
-        """Open PayPal donation link in browser."""
-        paypal_url = "https://paypal.me/RighteousKill"
-        QDesktopServices.openUrl(QUrl(paypal_url))
-
-    def open_venmo_donation(self, _event: object | None = None) -> None:
-        """Open Venmo donation link in browser."""
-        venmo_url = "https://venmo.com/u/Amr-Abouelleil"
-        QDesktopServices.openUrl(QUrl(venmo_url))
-
-    # ── App self-update ─────────────────────────────────────────────────────
-
-    # Auto-check runs on startup but only every 6h to stay under GitHub's
-    # 60-req/hr unauthenticated rate limit.
-    _UPDATE_CHECK_MIN_INTERVAL_SECONDS = 6 * 60 * 60
-
-    def _maybe_auto_check_app_updates(self) -> None:
-        """Kick off an app-update check iff the throttle window has elapsed."""
-        import time
-
-        last = AppSettings.get_last_update_check_epoch()
-        now = int(time.time())
-        if last and now - last < self._UPDATE_CHECK_MIN_INTERVAL_SECONDS:
-            logger.debug(
-                f"Skipping auto update check (last ran {now - last}s ago, "
-                f"throttle {self._UPDATE_CHECK_MIN_INTERVAL_SECONDS}s)"
-            )
-            return
-        self._run_app_update_check(force_dialog=False)
-
-    def _on_check_updates_clicked(self) -> None:
-        """Handle the Config tab's 'Check for Updates' button."""
-        self._run_app_update_check(force_dialog=True)
-
-    def _run_app_update_check(self, force_dialog: bool) -> None:
-        """Spawn a single ``AppUpdateCheckWorker`` — no-op if one is running."""
-        if self._update_check_worker is not None:
-            logger.debug("Update check already in flight; ignoring new request")
-            return
-
-        worker = AppUpdateCheckWorker(self)
-        self._update_check_worker = worker
-        self._force_update_dialog = force_dialog
-
-        worker.update_available.connect(self._on_update_available)
-        worker.up_to_date.connect(self._on_update_up_to_date)
-        worker.check_error.connect(self._on_update_check_error)
-        worker.finished.connect(self._on_update_check_finished)
-
-        self.config_tab.set_check_updates_enabled(False)
-        self.config_tab.set_update_status("Checking…")
-        worker.start()
-
-    @pyqtSlot(str, str, str)
-    def _on_update_available(self, latest: str, url: str, body: str) -> None:
-        current = get_version()
-        self._latest_release_url = url
-        indicator = self._app_version_indicator
-        if indicator is None:
-            self._ensure_app_version_indicator()
-            indicator = self._app_version_indicator
-        if indicator is None:
-            return
-        indicator.setText(f"v{current} · update available")
-        indicator.setStyleSheet("font-size: 11px; padding: 0 8px; color: #c9a961; font-weight: bold;")
-        indicator.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        indicator.setToolTip(f"Open release page for v{latest}")
-        self.config_tab.set_update_status(f"v{latest} available")
-
-        # Truncate long release bodies for the dialog so the modal doesn't
-        # stretch off-screen. Users get the full notes on the release page.
-        excerpt = body.strip()
-        if len(excerpt) > 600:
-            excerpt = excerpt[:600].rstrip() + "…"
-
-        msg = QMessageBox(self)
-        msg.setIcon(QMessageBox.Icon.Information)
-        msg.setWindowTitle("Smart Citizen — Update Available")
-        text = f"A new version is available: v{latest}\nYou are on v{current}."
-        if excerpt:
-            text += f"\n\n—\n{excerpt}"
-        msg.setText(text)
-        open_btn = msg.addButton("Open Release Page", QMessageBox.ButtonRole.AcceptRole)
-        msg.addButton("Later", QMessageBox.ButtonRole.RejectRole)
-        msg.setDefaultButton(open_btn)
-        msg.exec()
-        if msg.clickedButton() is open_btn:
-            QDesktopServices.openUrl(QUrl(url))
-
-    @pyqtSlot(str)
-    def _on_update_up_to_date(self, current: str) -> None:
-        self._latest_release_url = None
-        indicator = self._app_version_indicator
-        if indicator is None:
-            self._ensure_app_version_indicator()
-            indicator = self._app_version_indicator
-        if indicator is None:
-            return
-        indicator.setText(f"v{current} · up to date")
-        indicator.setStyleSheet("font-size: 11px; padding: 0 8px;")
-        indicator.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
-        indicator.setToolTip("")
-        self.config_tab.set_update_status(f"Up to date (v{current})")
-        if getattr(self, "_force_update_dialog", False):
-            QMessageBox.information(
-                self,
-                "Smart Citizen — Up to Date",
-                f"You are on the latest version (v{current}).",
-            )
-
-    @pyqtSlot(str)
-    def _on_update_check_error(self, message: str) -> None:
-        self._latest_release_url = None
-        current = get_version()
-        indicator = self._app_version_indicator
-        if indicator is None:
-            self._ensure_app_version_indicator()
-            indicator = self._app_version_indicator
-        if indicator is None:
-            return
-        indicator.setText(f"v{current} · check failed")
-        indicator.setStyleSheet("font-size: 11px; padding: 0 8px;")
-        indicator.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
-        indicator.setToolTip(message)
-        self.config_tab.set_update_status("Check failed")
-        logger.warning(f"App update check error: {message}")
-        if getattr(self, "_force_update_dialog", False):
-            QMessageBox.warning(
-                self,
-                "Smart Citizen — Update Check Failed",
-                f"Could not check for updates:\n\n{message}",
-            )
-
-    @pyqtSlot()
-    def _on_update_check_finished(self) -> None:
-        import time
-
-        AppSettings.set_last_update_check_epoch(int(time.time()))
-        worker = self._update_check_worker
-        if worker is not None:
-            worker.quit()
-            worker.wait()
-            worker.deleteLater()
-            self._update_check_worker = None
-        self._force_update_dialog = False
-        self.config_tab.set_check_updates_enabled(True)
-
-    def _on_version_label_clicked(self, _event: object | None = None) -> None:
-        """Footer version label click — opens the release page when available."""
-        if self._latest_release_url:
-            QDesktopServices.openUrl(QUrl(self._latest_release_url))
 
     def create_strings_tab(self) -> QWidget:
         """Create strings table tab."""
@@ -895,7 +520,8 @@ class MainWindow(QMainWindow):
             about_path = get_resource_path("ABOUT.md")
             with open(about_path, encoding="utf-8") as f:
                 about_content = f.read()
-            about_content = about_content.replace("# Smart Citizen", f"# Smart Citizen v{get_version()}")
+            about_content = about_content.replace("# Smart Citizen", f"# Open Strings v{get_version()}")
+            about_content = about_content.replace("# Open Strings", f"# Open Strings v{get_version()}")
             self.about_browser.setHtml(self.markdown_to_html(about_content))
         except Exception as e:
             logger.error(f"Error loading ABOUT.md: {e}", exc_info=True)
@@ -1091,7 +717,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(
                 self,
                 "Success",
-                f"Applied to {target_path}\n\n  User edits: {user_count}\n  SCLE enhancements: {enhancement_count}",
+                f"Applied to {target_path}\n\n  User edits: {user_count}\n  Enhancements: {enhancement_count}",
             )
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to apply to game: {e}")
@@ -1866,7 +1492,6 @@ class MainWindow(QMainWindow):
             return
         self._post_tutorial_tasks_started = True
         self._start_startup_sync()
-        self._maybe_auto_check_app_updates()
 
     def _maybe_start_first_run_tutorial(self) -> None:
         """Auto-start the tour on first launch of a version whose tour wasn't seen.
@@ -1907,40 +1532,6 @@ class MainWindow(QMainWindow):
         else:
             super().keyPressEvent(event)
 
-    def _update_eye_pulse(self) -> None:
-        """Toggle the Osiris eye glow animation to mirror worker activity.
-
-        Polled by `_eye_pulse_monitor` instead of wiring into every worker
-        lifecycle slot — polling is cheaper than touching every entrypoint
-        and guarantees we can't forget to stop the pulse on an error path.
-        When work ends mid-pulse we ease the current opacity down to 0
-        instead of snapping it off.
-        """
-        if self._eye_pulse is None or self._eye_glow is None or self._eye_fadeout is None:
-            return
-        running = self._has_long_running_worker()
-        pulse_on = self._eye_pulse.state() == QPropertyAnimation.State.Running
-        fadeout_on = self._eye_fadeout.state() == QPropertyAnimation.State.Running
-
-        if running:
-            # Starting up or resuming — cancel any in-flight fade-out and
-            # rejoin the pulse loop.
-            if fadeout_on:
-                self._eye_fadeout.stop()
-            if not pulse_on:
-                self._eye_pulse.start()
-        elif pulse_on:
-            # Work just ended — stop the loop, then ease from wherever we
-            # are right now down to 0. Duration scales with remaining
-            # opacity so a near-dark eye fades quickly and a bright one
-            # takes the full ~600ms.
-            current = self._eye_glow.opacity()
-            self._eye_pulse.stop()
-            self._eye_fadeout.stop()
-            self._eye_fadeout.setStartValue(current)
-            self._eye_fadeout.setDuration(int(100 + 500 * current))
-            self._eye_fadeout.start()
-
     def _has_long_running_worker(self) -> bool:
         """True while an extract/generate/load worker is running. Status-bar
         refreshes that would otherwise fall back to 'Ready' are suppressed
@@ -1971,21 +1562,11 @@ class MainWindow(QMainWindow):
         self._refresh_channel_indicator()
 
     def _ensure_app_version_indicator(self) -> None:
-        """Install a permanent status-bar widget for the app version + update state.
-
-        Sits immediately next to the SC version text (added before the
-        channel indicator so it lands leftmost in the permanent zone). Text
-        starts as plain ``v{version}`` and is suffixed with the check result
-        ("up to date" / "update available" / "check failed") once the
-        app-update worker reports back. Becomes clickable when an update is
-        available — the click opens the release page.
-        """
+        """Install a permanent status-bar widget showing the app version."""
         if self._app_version_indicator is not None:
             return
-        self._app_version_indicator = ClickableLabel(f"v{get_version()}")
+        self._app_version_indicator = QLabel(f"v{get_version()}")
         self._app_version_indicator.setStyleSheet("font-size: 11px; padding: 0 8px;")
-        self._app_version_indicator.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
-        self._app_version_indicator.clicked.connect(self._on_version_label_clicked)
         self._status_bar().addPermanentWidget(self._app_version_indicator)
 
     def _refresh_channel_indicator(self) -> None:

@@ -41,13 +41,13 @@ VSVersionInfo(
     StringFileInfo(
       [StringTable(
         u'040904B0',
-        [StringStruct(u'CompanyName', u'Osiris DevWorks'),
-         StringStruct(u'FileDescription', u'Smart Citizen - Star Citizen Localization Editor'),
+        [StringStruct(u'CompanyName', u'Joni Hayes'),
+         StringStruct(u'FileDescription', u'Open Strings - Star Citizen Localization Editor'),
          StringStruct(u'FileVersion', u'{file_version_str}'),
-         StringStruct(u'InternalName', u'SmartCitizen'),
-         StringStruct(u'LegalCopyright', u'Copyright 2024-2026 Osiris DevWorks'),
-         StringStruct(u'OriginalFilename', u'SmartCitizen.exe'),
-         StringStruct(u'ProductName', u'Smart Citizen'),
+         StringStruct(u'InternalName', u'OpenStrings'),
+         StringStruct(u'LegalCopyright', u'Copyright 2026 Joni Hayes. Portions Copyright 2024-2026 Osiris DevWorks. GPL-3.0-only.'),
+         StringStruct(u'OriginalFilename', u'OpenStrings.exe'),
+         StringStruct(u'ProductName', u'Open Strings'),
          StringStruct(u'ProductVersion', u'{file_version_str}')]
       )]
     ),

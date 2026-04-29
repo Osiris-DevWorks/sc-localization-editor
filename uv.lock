@@ -326,6 +326,43 @@ wheels = [
 ]
 
 [[package]]
+name = "open-strings"
+version = "1.0.2"
+source = { editable = "." }
+dependencies = [
+    { name = "pyqt6" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "pyinstaller" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-html" },
+    { name = "pytest-mock" },
+    { name = "pytest-qt" },
+    { name = "pytest-xdist" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pyqt6", specifier = ">=6.10.0" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "mypy", specifier = ">=0.990" },
+    { name = "pyinstaller", specifier = ">=6.3.0" },
+    { name = "pytest", specifier = ">=7.0.0" },
+    { name = "pytest-cov", specifier = ">=4.0.0" },
+    { name = "pytest-html", specifier = ">=3.2.0" },
+    { name = "pytest-mock", specifier = ">=3.10.0" },
+    { name = "pytest-qt", specifier = ">=4.2.0" },
+    { name = "pytest-xdist", specifier = ">=3.0.0" },
+    { name = "ruff", specifier = ">=0.4.0" },
+]
+
+[[package]]
 name = "packaging"
 version = "26.2"
 source = { registry = "https://pypi.org/simple" }
@@ -600,43 +637,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/4f/db/cfac1baf10650ab4d1c111714410d2fbb77ac5a616db26775db562c8fab2/setuptools-82.0.1.tar.gz", hash = "sha256:7d872682c5d01cfde07da7bccc7b65469d3dca203318515ada1de5eda35efbf9", size = 1152316, upload-time = "2026-03-09T12:47:17.221Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9d/76/f789f7a86709c6b087c5a2f52f911838cad707cc613162401badc665acfe/setuptools-82.0.1-py3-none-any.whl", hash = "sha256:a59e362652f08dcd477c78bb6e7bd9d80a7995bc73ce773050228a348ce2e5bb", size = 1006223, upload-time = "2026-03-09T12:47:15.026Z" },
-]
-
-[[package]]
-name = "smart-citizen"
-version = "1.0.2"
-source = { editable = "." }
-dependencies = [
-    { name = "pyqt6" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "mypy" },
-    { name = "pyinstaller" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-html" },
-    { name = "pytest-mock" },
-    { name = "pytest-qt" },
-    { name = "pytest-xdist" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "pyqt6", specifier = ">=6.10.0" }]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy", specifier = ">=0.990" },
-    { name = "pyinstaller", specifier = ">=6.3.0" },
-    { name = "pytest", specifier = ">=7.0.0" },
-    { name = "pytest-cov", specifier = ">=4.0.0" },
-    { name = "pytest-html", specifier = ">=3.2.0" },
-    { name = "pytest-mock", specifier = ">=3.10.0" },
-    { name = "pytest-qt", specifier = ">=4.2.0" },
-    { name = "pytest-xdist", specifier = ">=3.0.0" },
-    { name = "ruff", specifier = ">=0.4.0" },
 ]
 
 [[package]]

@@ -1,5 +1,5 @@
 """
-Build script for creating Smart Citizen executable
+Build script for creating Open Strings executable
 
 Usage:
     python build_exe.py                        # build only; prompts for signing if TTY
@@ -84,9 +84,7 @@ def sign_file(signtool: str, file_path: str) -> None:
         "/td",
         "SHA256",
         "/d",
-        "Smart Citizen",
-        "/du",
-        "https://github.com/Osiris-DevWorks/smart-citizen",
+        "Open Strings",
     ]
     if thumb:
         cmd += ["/sha1", thumb]
@@ -124,7 +122,7 @@ def run_signing(file_path: str) -> None:
 # Self-signing helpers
 # ---------------------------------------------------------------------------
 
-_SELF_SIGN_SUBJECT = "CN=Smart Citizen (Self-Signed Build)"
+_SELF_SIGN_SUBJECT = "CN=Open Strings (Self-Signed Build)"
 _SELF_SIGN_STORE = "Cert:\\CurrentUser\\My"
 
 
@@ -202,9 +200,7 @@ def run_self_sign(file_path: str, export_pfx_path: str | None = None) -> None:
             "/fd",
             "SHA256",
             "/d",
-            "Smart Citizen",
-            "/du",
-            "https://github.com/Osiris-DevWorks/smart-citizen",
+            "Open Strings",
             file_path,
         ]
         print(f"  Signing (self-signed): {os.path.basename(file_path)}")
@@ -281,7 +277,7 @@ def prompt_signing(files: list[str]) -> None:
 # CLI
 # ---------------------------------------------------------------------------
 
-parser = argparse.ArgumentParser(description="Build Smart Citizen executable.")
+parser = argparse.ArgumentParser(description="Build Open Strings executable.")
 parser.add_argument(
     "--sign",
     action="store_true",
@@ -357,17 +353,17 @@ print("  - version_info.txt generated")
 print()
 
 try:
-    PyInstaller.__main__.run(["SmartCitizen.spec"])
+    PyInstaller.__main__.run(["OpenStrings.spec"])
     print(f"\n{'=' * 60}")
     print("Build successful!")
     print(f"{'=' * 60}")
-    print(f"Installer dir: dist/SmartCitizen-v{current_version}/")
+    print(f"Installer dir: dist/OpenStrings-v{current_version}/")
     print()
 except Exception as e:
     print(f"\nError building executable: {e}")
     sys.exit(1)
 
-exe_path = os.path.join(root_dir, "dist", "SmartCitizen", "SmartCitizen.exe")
+exe_path = os.path.join(root_dir, "dist", "OpenStrings", "OpenStrings.exe")
 if not os.path.isfile(exe_path):
     print(f"WARNING: built exe not found at expected path: {exe_path}")
 else:

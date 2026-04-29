@@ -52,8 +52,7 @@ def load_application_fonts() -> None:
 THEME_LIGHT = "light"
 THEME_DARK = "dark"
 THEME_SCLE = "scle"
-THEME_ODW = "odw"
-AVAILABLE_THEMES = (THEME_LIGHT, THEME_DARK, THEME_SCLE, THEME_ODW)
+AVAILABLE_THEMES = (THEME_LIGHT, THEME_DARK, THEME_SCLE)
 DEFAULT_THEME = THEME_SCLE
 
 # Secondary/dim text color per theme. A single shade can't stay readable on
@@ -63,7 +62,6 @@ _SECONDARY_TEXT_COLORS = {
     THEME_LIGHT: "#2A2A2A",
     THEME_DARK: "#D5D5D5",
     THEME_SCLE: "#D5D5D5",
-    THEME_ODW: "#D4B876",
 }
 
 
@@ -90,13 +88,6 @@ _BUTTON_COLORS = {
         "apply": "#4ADE80",  # bright green that pops against navy
         "clear": "#5F7A95",  # muted cyan-gray
         "open": "#4FD7E8",
-    },
-    THEME_ODW: {
-        "load": "#D4B876",  # brighter gold (navigate)
-        "restore": "#C77A4D",  # copper (rollback)
-        "apply": "#A5B989",  # sage green (commit)
-        "clear": "#7A7D87",  # slate gray (cleanup)
-        "open": "#D4B876",
     },
 }
 
@@ -128,14 +119,12 @@ _TITLE_COLORS = {
     THEME_LIGHT: "#1565C0",  # rich blue
     THEME_DARK: "#64B5F6",  # soft sky blue
     THEME_SCLE: "#4FD7E8",  # cube-glow cyan
-    THEME_ODW: "#C9A961",  # Osiris gold
 }
 
 _TAGLINE_COLORS = {
     THEME_LIGHT: "#555555",
     THEME_DARK: "#A0A0A0",
     THEME_SCLE: "#6FB5D0",  # muted cyan
-    THEME_ODW: "#A08C5A",  # muted gold
 }
 
 
@@ -159,14 +148,12 @@ _PROGRESS_GROOVE_COLORS = {
     THEME_LIGHT: "#8A8A8A",
     THEME_DARK: "#3C3C3F",
     THEME_SCLE: "#152538",
-    THEME_ODW: "#242938",
 }
 
 _PROGRESS_CHUNK_COLORS = {
     THEME_LIGHT: "#1565C0",
     THEME_DARK: "#3B82F6",
     THEME_SCLE: "#4FD7E8",
-    THEME_ODW: "#D4A017",
 }
 
 
@@ -264,40 +251,11 @@ def _scle_palette() -> QPalette:
     return p
 
 
-def _odw_palette() -> QPalette:
-    """Osiris DevWorks branded palette — navy charcoal + antique gold,
-    matching the ODW logo."""
-    p = QPalette()
-    p.setColor(QPalette.ColorRole.Window, QColor(26, 31, 46))  # #1A1F2E navy
-    p.setColor(QPalette.ColorRole.WindowText, QColor(240, 230, 207))  # #F0E6CF cream
-    p.setColor(QPalette.ColorRole.Base, QColor(26, 31, 46))  # match Window
-    p.setColor(QPalette.ColorRole.AlternateBase, QColor(36, 41, 56))  # #242938 panel
-    p.setColor(QPalette.ColorRole.ToolTipBase, QColor(36, 41, 56))
-    p.setColor(QPalette.ColorRole.ToolTipText, QColor(240, 230, 207))
-    p.setColor(QPalette.ColorRole.Text, QColor(240, 230, 207))
-    p.setColor(QPalette.ColorRole.Button, QColor(36, 41, 56))  # raised
-    p.setColor(QPalette.ColorRole.ButtonText, QColor(240, 230, 207))
-    p.setColor(QPalette.ColorRole.BrightText, QColor(199, 122, 77))  # #C77A4D copper
-    # More saturated / mid-luminance gold — the previous muted #C9A961
-    # gave Fusion's chunk gradient almost no light/dark spread, so the
-    # scrolling bar read as two near-identical shades of gold.
-    p.setColor(QPalette.ColorRole.Highlight, QColor(212, 160, 23))  # #D4A017
-    p.setColor(QPalette.ColorRole.HighlightedText, QColor(26, 31, 46))  # navy on gold
-    p.setColor(QPalette.ColorRole.Link, QColor(212, 184, 118))  # #D4B876 brighter gold
-    p.setColor(QPalette.ColorRole.PlaceholderText, QColor(160, 140, 90))  # #A08C5A muted gold
-    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, QColor(100, 90, 70))
-    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, QColor(100, 90, 70))
-    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, QColor(100, 90, 70))
-    return p
-
-
 def _palette_for(theme: str) -> QPalette:
     if theme == THEME_DARK:
         return _dark_palette()
     if theme == THEME_SCLE:
         return _scle_palette()
-    if theme == THEME_ODW:
-        return _odw_palette()
     return _light_palette()
 
 

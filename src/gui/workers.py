@@ -1,4 +1,4 @@
-"""Worker threads and dialog for smart-citizen GUI operations."""
+"""Worker threads and dialog for Open Strings GUI operations."""
 
 import importlib.util
 import logging

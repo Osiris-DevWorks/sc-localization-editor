@@ -1,4 +1,4 @@
-"""Smart Citizen - Main entry point."""
+"""Open Strings - Main entry point."""
 
 import ctypes
 import logging
@@ -48,21 +48,9 @@ def main():
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[logging.StreamHandler(sys.stdout)],
     )
-    logger.info(f"Starting Smart Citizen v{get_version()}")
+    logger.info(f"Starting Open Strings v{get_version()}")
 
-    # Move HKCU\Software\Osiris DevWorks\SC Localization Editor → Smart Citizen
-    # on first launch after 0.9.2 (idempotent via marker). Must run FIRST —
-    # every subsequent AppSettings call reads QSettings under the new node,
-    # so if the legacy settings haven't been copied over yet the app sees
-    # an empty registry and loses the user's saved paths / theme / etc.
     try:
-        AppSettings.migrate_registry_appname()
-
-        # Rename Documents\SC Localization Editor\ → Documents\Smart Citizen\ on
-        # first run after the 0.9.0 rebrand (idempotent). Must run before any
-        # path-resolving setting is touched.
-        AppSettings.migrate_docs_folder_rename()
-
         # Migrate legacy settings to new data source format
         AppSettings.migrate_legacy_settings()
 
@@ -78,12 +66,9 @@ def main():
 
         # Split the pre-0.9.3 single-channel layout into channel-aware directories
         # (registry: GAME_INSTALL_PATH → SC_INSTALL_ROOT + ACTIVE_CHANNEL;
-        # filesystem: Documents\Smart Citizen\{base.ini,cache,backups,user.ini,...}
-        # → Documents\Smart Citizen\LIVE\{...}). One-shot, marker-gated.
+        # filesystem: Documents\Open Strings\{base.ini,cache,backups,user.ini,...}
+        # → Documents\Open Strings\LIVE\{...}). One-shot, marker-gated.
         AppSettings.migrate_game_path_to_channel_layout()
-
-        # Move user data files from old AppData location to Documents (idempotent)
-        AppSettings.migrate_data_to_documents()
 
         # Always keep user source path in sync with canonical user.ini location
         AppSettings.set_source_path(AppSettings.SOURCE_USER, str(AppSettings.get_user_ini_path()))
@@ -117,7 +102,7 @@ def main():
     # Required on Windows so the taskbar groups the app under its own icon
     # instead of the Python interpreter icon.
     if sys.platform == "win32":
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("OsirisDevWorks.SmartCitizen")
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("JoniHayes.OpenStrings")
 
     app = QApplication(sys.argv)
     load_application_fonts()

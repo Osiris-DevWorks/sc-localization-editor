@@ -1,4 +1,4 @@
-"""Configuration tab for Smart Citizen."""
+"""Configuration tab for Open Strings."""
 
 import logging
 from datetime import datetime
@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from src.gui.theme import AVAILABLE_THEMES, THEME_DARK, THEME_LIGHT, THEME_ODW, THEME_SCLE
+from src.gui.theme import AVAILABLE_THEMES, THEME_DARK, THEME_LIGHT, THEME_SCLE
 from src.utils.settings import AppSettings
 
 logger = logging.getLogger(__name__)
@@ -35,10 +35,6 @@ class ConfigTab(QWidget):
     # has already been persisted via AppSettings.set_active_channel(). Main
     # window listens and triggers a reload against the new channel's data.
     channel_changed = pyqtSignal(str)
-    # Emitted when the user clicks the "Check for Updates" button in Tools.
-    # MainWindow owns the update-check worker and writes results back via
-    # set_update_status() so this tab stays decoupled from the network path.
-    check_updates_requested = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -76,7 +72,6 @@ class ConfigTab(QWidget):
         self.theme_combo.addItem("Default", THEME_SCLE)
         self.theme_combo.addItem("Light", THEME_LIGHT)
         self.theme_combo.addItem("Dark", THEME_DARK)
-        self.theme_combo.addItem("ODW", THEME_ODW)
         current = AppSettings.get_theme()
         idx = self.theme_combo.findData(current)
         if idx >= 0:
@@ -205,17 +200,6 @@ class ConfigTab(QWidget):
         preview_btn.setMaximumWidth(150)
         preview_btn.clicked.connect(self.preview_merge)
         button_layout.addWidget(preview_btn)
-
-        self._check_updates_btn = QPushButton("Check for Updates")
-        self._check_updates_btn.setMaximumWidth(170)
-        self._check_updates_btn.setToolTip("Check GitHub for a newer Smart Citizen release.")
-        self._check_updates_btn.clicked.connect(self.check_updates_requested.emit)
-        button_layout.addWidget(self._check_updates_btn)
-
-        self._update_status_label = QLabel("")
-        self._update_status_label.setProperty("role", "secondary")
-        self._update_status_label.setStyleSheet("font-size: 11px;")
-        button_layout.addWidget(self._update_status_label)
 
         button_layout.addStretch()
         tools_layout.addLayout(button_layout)
@@ -377,22 +361,6 @@ class ConfigTab(QWidget):
                 self._p4k_status_label.setText(f"Data.p4k not found at: {p4k_path}")
             else:
                 self._p4k_status_label.setText("Game install path not configured")
-
-    # ── Updates ──────────────────────────────────────────────────────────────
-
-    def set_update_status(self, text: str) -> None:
-        """Write a short status string next to the 'Check for Updates' button.
-
-        MainWindow calls this from its app-update signal handlers so the
-        result ("Up to date", "v0.9.4 available", "Check failed") sits
-        inline with the button without this tab needing to know about
-        the worker.
-        """
-        self._update_status_label.setText(text)
-
-    def set_check_updates_enabled(self, enabled: bool) -> None:
-        """Toggle the 'Check for Updates' button — disable while a check runs."""
-        self._check_updates_btn.setEnabled(enabled)
 
     # ── Preview ──────────────────────────────────────────────────────────────
 

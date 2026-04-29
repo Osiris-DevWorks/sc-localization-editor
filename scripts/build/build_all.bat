@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo Smart Citizen - Build Script
+echo Open Strings - Build Script
 echo ========================================
 echo.
 
@@ -52,10 +52,10 @@ echo   - Executable created
 echo.
 
 echo Step 3: Verifying onedir build...
-if exist "dist\SmartCitizen\" (
+if exist "dist\OpenStrings\" (
     echo   - Build folder exists: OK
 ) else (
-    echo   - ERROR: Build folder not found at dist\SmartCitizen\
+    echo   - ERROR: Build folder not found at dist\OpenStrings\
     pause
     exit /b 1
 )
@@ -84,7 +84,7 @@ echo.
 
 if "%SIGN_BUILD%"=="1" (
     echo Step 5: Signing installer...
-    for %%f in (dist\SmartCitizen-*-Setup.exe) do (
+    for %%f in (dist\OpenStrings-*-Setup.exe) do (
         if "%SELF_SIGN%"=="1" (
             uv run python scripts\build\build_exe.py --self-sign --sign-file "%%f"
         ) else (
@@ -104,12 +104,12 @@ echo Build Complete!
 echo ========================================
 echo.
 echo Outputs:
-for %%f in (dist\SmartCitizen-*-Setup.exe) do (
+for %%f in (dist\OpenStrings-*-Setup.exe) do (
     echo   [OK] Installer: %%f
 )
 echo.
 echo Next steps:
-echo   1. Test the installer: dist\SmartCitizen-*-Setup.exe
-echo   2. Upload the installer to GitHub releases!
+echo   1. Test the installer: dist\OpenStrings-*-Setup.exe
+echo   2. Distribute the installer.
 echo.
 pause

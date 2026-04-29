@@ -1,16 +1,17 @@
 [project]
-name = "smart-citizen"
+name = "open-strings"
 version = "1.0.2"
-description = "Smart Citizen desktop app"
+description = "Open Strings desktop app"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "GPL-3.0-only"}
+authors = [{name = "Joni Hayes"}]
 dependencies = [
     "PyQt6>=6.10.0",
 ]
 
 [project.scripts]
-smart-citizen = "src.main:main"
+open-strings = "src.main:main"
 
 [build-system]
 requires = ["hatchling"]

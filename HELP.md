@@ -1,8 +1,8 @@
-# Smart Citizen — Quick Start Guide
+# Open Strings — Quick Start Guide
 
 ## First Time Setup
 
-On launch, Smart Citizen reloads any customizations from your previous session and checks for your Star Citizen installation — the installer pre-fills this path, but you can change it in the **Config** tab. All stock localization and DataForge data is sourced **directly from your installed `Data.p4k`** (no downloads, no community mirrors), so extracting once is a required first step after install or after any game patch.
+On launch, Open Strings reloads any customizations from your previous session and checks for your Star Citizen installation — the installer pre-fills this path, but you can change it in the **Config** tab. All stock localization and DataForge data is sourced **directly from your installed `Data.p4k`** (no downloads, no community mirrors), so extracting once is a required first step after install or after any game patch.
 
 ## 1. Extract Base Localization from Data.p4k
 
@@ -15,7 +15,7 @@ When extraction finishes, the extracted `base.ini` is loaded into the table auto
 - Double-click any **Custom Value** cell to edit text.
 - **Default Value** — original text from `Data.p4k`-extracted `base.ini`.
 - **Current Value** — the effective value before your override (base + any imported INI layers).
-- **Custom Value** — your personal edit. Saved automatically on every change and persisted to `Documents\Smart Citizen\<channel>\user.ini` (each Star Citizen channel — LIVE, PTU, EPTU, HOTFIX, TECH-PREVIEW — has its own isolated overrides).
+- **Custom Value** — your personal edit. Saved automatically on every change and persisted to `Documents\Open Strings\<channel>\user.ini` (each Star Citizen channel — LIVE, PTU, EPTU, HOTFIX, TECH-PREVIEW — has its own isolated overrides).
 - Edits are highlighted with a **Modified** status (green).
 
 ## 3. Preview Pane
@@ -57,15 +57,15 @@ Use the **Category** filter to focus on one domain:
 
 ## 7. Apply Changes to Game
 
-Click **Apply to Game** to write your edits to the game installation. A timestamped backup of the current `global.ini` is created in `Documents\Smart Citizen\<channel>\backups\` before anything is overwritten.
+Click **Apply to Game** to write your edits to the game installation. A timestamped backup of the current `global.ini` is created in `Documents\Open Strings\<channel>\backups\` before anything is overwritten.
 
 ## 8. Restore a Backup
 
-Click **Restore Backup** to revert to a previous version. Smart Citizen keeps up to **5 automatic backups** — the oldest is pruned as new ones are created.
+Click **Restore Backup** to revert to a previous version. Open Strings keeps up to **5 automatic backups** — the oldest is pruned as new ones are created.
 
 ## 9. Clear Localization
 
-Click **Clear Localization** to delete the custom `global.ini` from the game directory, reverting the game to its default (vanilla) text. Your saved overrides in `Documents\Smart Citizen\<channel>\user.ini` are untouched and can be re-applied anytime.
+Click **Clear Localization** to delete the custom `global.ini` from the game directory, reverting the game to its default (vanilla) text. Your saved overrides in `Documents\Open Strings\<channel>\user.ini` are untouched and can be re-applied anytime.
 
 ## 10. Import INI
 
@@ -73,7 +73,7 @@ Use **Import INI** in the **Config** tab to fold an existing INI file into your 
 
 ## 11. After Game Updates
 
-When Star Citizen updates, your edits are preserved in `Documents\Smart Citizen\<channel>\user.ini`. Re-run **Extract from Data.p4k** to pull fresh stock strings from the patched game — the table reloads automatically and your customizations re-apply on top.
+When Star Citizen updates, your edits are preserved in `Documents\Open Strings\<channel>\user.ini`. Re-run **Extract from Data.p4k** to pull fresh stock strings from the patched game — the table reloads automatically and your customizations re-apply on top.
 
 ## Enhancements Tab
 
@@ -100,7 +100,6 @@ Pick a theme in the **Config tab → Appearance** section:
 
 - **Default** — SCLE, a deep-navy cyber theme inspired by Star Citizen's mobiGlas UI.
 - **Light / Dark** — classic UI themes.
-- **ODW** — Osiris DevWorks signature, navy charcoal with antique gold.
 
 ## Status Bar
 
@@ -123,15 +122,10 @@ Click the **Tutorial** button on the toolbar at any time to replay the guided to
 
 ## Known Issues
 
-Some mission text anomalies originate in Star Citizen's own data (wrong loc-key references in CIG's contract records). The game reads contracts from its own `Data.p4k` at runtime, so Smart Citizen can't change which loc-key the game looks up — it can only edit the *text* under each loc-key. Where practical, we work around these by merging the intended content into the loc key the game actually reads.
+Some mission text anomalies originate in Star Citizen's own data (wrong loc-key references in CIG's contract records). The game reads contracts from its own `Data.p4k` at runtime, so Open Strings can't change which loc-key the game looks up — it can only edit the *text* under each loc-key. Where practical, we work around these by merging the intended content into the loc key the game actually reads.
 
-- **Jorrit Dossier — "Updated Power Usage Data" shows Energy Anomaly text** — CIG Issue Council [STARC-176797](https://issue-council.robertsspaceindustries.com/projects/STAR-CITIZEN/issues/STARC-176797). CIG's `Hockrow_FacilityDelve_P2M4-Stanton4_Repeat` contract points its `Description` parameter at `@Hockrow_FacilityDelve_P2M1_Repeat_desc` instead of its own `P2M4_Repeat_desc`, so in-game players see P2M1's Energy Anomaly flavor text for a mission titled "Power Usage Data". Smart Citizen works around this in two steps, both declared in `patches/contracts/contractgenerator/mercenary_guild/hockrowagency/hockrowagency_facilitydelve.patch.json`:
+- **Jorrit Dossier — "Updated Power Usage Data" shows Energy Anomaly text** — CIG Issue Council [STARC-176797](https://issue-council.robertsspaceindustries.com/projects/STAR-CITIZEN/issues/STARC-176797). CIG's `Hockrow_FacilityDelve_P2M4-Stanton4_Repeat` contract points its `Description` parameter at `@Hockrow_FacilityDelve_P2M1_Repeat_desc` instead of its own `P2M4_Repeat_desc`, so in-game players see P2M1's Energy Anomaly flavor text for a mission titled "Power Usage Data". Open Strings works around this in two steps, both declared in `patches/contracts/contractgenerator/mercenary_guild/hockrowagency/hockrowagency_facilitydelve.patch.json`:
   1. A DataForge XML edit so our enhancement generator attaches the correct P2M4 blueprint pool (Corbel Smolder, Geist Rogue/Whiteout) to `P2M4_Repeat_desc` instead of collapsing onto P2M1's.
   2. A loc-string workaround that appends `P2M4_Repeat_desc`'s full content (its flavor text plus its own blueprint pool) onto `P2M1_Repeat_desc`, separated by a labeled divider. Because the game reads the bugged pointer and looks up `P2M1_Repeat_desc` for both contracts, the P2M4 contract now displays its intended content. P2M1 players see the P2M4 block as a labeled appendix after their own description — noisier, but both contracts now show the right blueprint pool and the right flavor text.
 
   When CIG corrects STARC-176797, the whole patch file can be deleted and the next regenerate produces clean split descriptions again.
-
-## Feedback, Bugs & Feature Voting
-
-- **Report bugs, share custom configs, and vote on upcoming features** in the dedicated Smart Citizen Discord channel: [Osiris DevWorks Discord — #smart-citizen feedback & voting](https://discord.com/channels/1438175448420057323/1472394204347895890) (requires joining the Osiris DevWorks Discord server first — [invite](https://discord.gg/BNzRegKZ7k)). Feature prioritization is driven by reactions/votes in that channel, so the more demand a request has, the sooner it lands.
-- When reporting a bug, attach the log (Log Tab → **Export**) and mention the Star Citizen version you're on so we can tell stock issues from upstream changes.

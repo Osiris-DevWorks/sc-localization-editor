@@ -227,9 +227,9 @@ uv run python src/main.py
    - Check Log Tab for error messages or exceptions
 3. **Check Windows Registry** for corrupted settings:
    ```
-   regedit → HKEY_CURRENT_USER\Software\Osiris DevWorks\Smart Citizen
+   regedit → HKEY_CURRENT_USER\Software\Joni Hayes\Open Strings
    ```
-4. **Check user data** in `Documents\Smart Citizen\<channel>\`
+4. **Check user data** in `Documents\Open Strings\<channel>\`
 5. **Check backup files** to see what was written to game
 
 ---

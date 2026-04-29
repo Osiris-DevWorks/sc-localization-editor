@@ -1,7 +1,6 @@
 """Settings management using QSettings."""
 
 import logging
-import os
 import winreg
 from pathlib import Path
 
@@ -13,13 +12,8 @@ logger = logging.getLogger(__name__)
 class AppSettings:
     """Wrapper around QSettings for application configuration."""
 
-    ORG_NAME = "Osiris DevWorks"
-    # QSettings registry node — 0.9.2+ uses "Smart Citizen" to match the
-    # product rebrand. Legacy installs at "SC Localization Editor" are
-    # migrated on first launch by migrate_registry_appname().
-    APP_NAME = "Smart Citizen"
-    # The old node name, preserved so the one-shot migration can find it.
-    _LEGACY_APP_NAME = "SC Localization Editor"
+    ORG_NAME = "Joni Hayes"
+    APP_NAME = "Open Strings"
 
     # Settings keys - Favorites
     FAVORITE_PREFIX = "favorite_prefix"
@@ -111,7 +105,7 @@ class AppSettings:
     WINDOW_GEOMETRY = "window_geometry"
     WINDOW_STATE = "window_state"
     # Explicit override for the user-data directory. When set, takes
-    # precedence over the Documents\Smart Citizen\ default. Users who have
+    # precedence over the Documents\Open Strings\ default. Users who have
     # Documents redirected to OneDrive can point this at a local path to
     # avoid slow extraction / rmtree races on OneDrive-synced folders.
     USER_DATA_DIR = "user_data_dir"
@@ -276,18 +270,6 @@ class AppSettings:
         saved = AppSettings.settings().value(AppSettings.GAME_INSTALL_PATH, "")
         if saved:
             return saved
-
-        # Installer-written registry key (older flow).
-        try:
-            reg_path = r"Software\Osiris DevWorks\SC Localization Editor"
-            registry_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_path)
-            sc_directory, _ = winreg.QueryValueEx(registry_key, "sc_directory")
-            winreg.CloseKey(registry_key)
-            if sc_directory:
-                AppSettings.settings().setValue(AppSettings.GAME_INSTALL_PATH, sc_directory)
-                return sc_directory
-        except OSError as e:
-            logger.debug(f"Could not read legacy registry path: {e}")
 
         for candidate in [
             r"C:\Program Files\Roberts Space Industries\StarCitizen\LIVE",
@@ -632,165 +614,6 @@ class AppSettings:
             docs_path = Path.home() / "Documents"
         return docs_path
 
-    # ── Registry appname migration (0.9.0 rebrand) ──────────────────────────
-    # Rebrand moved the product name from "SC Localization Editor" to
-    # "Smart Citizen" in 0.9.0. The Documents folder got renamed back then
-    # (see migrate_docs_folder_rename). The registry node was left alone
-    # to preserve existing users' settings, which meant fresh-eyes readers
-    # kept seeing the old name under HKCU. The helpers below perform a
-    # one-shot copy from the legacy node to the new node, then delete the
-    # old subtree. A marker value (_MIGRATION_MARKER) short-circuits
-    # subsequent runs so this is cheap on every startup.
-
-    _MIGRATION_MARKER = "_migrated_from_legacy_appname"
-
-    @staticmethod
-    def migrate_registry_appname() -> None:
-        r"""Copy HKCU\Software\<ORG>\SC Localization Editor → HKCU\Software\<ORG>\Smart Citizen.
-
-        Must run **before** any ``AppSettings.settings()`` call — QSettings
-        under the new APP_NAME would otherwise read from an empty node and
-        silently lose every saved preference (themes, paths, favorites,
-        window geometry, the USER_DATA_DIR override, etc.).
-
-        Idempotent: a marker value written under the new node on first
-        success prevents re-migration on every startup. Fresh installs
-        (no legacy node present) stamp the marker directly so the check
-        stays cheap.
-        """
-        org = AppSettings.ORG_NAME
-        old_path = rf"SOFTWARE\{org}\{AppSettings._LEGACY_APP_NAME}"
-        new_path = rf"SOFTWARE\{org}\{AppSettings.APP_NAME}"
-
-        # Fast-path: marker already set → nothing to do.
-        if AppSettings._reg_has_marker(new_path, AppSettings._MIGRATION_MARKER):
-            return
-
-        # No legacy node present — this is a fresh install (or an already-
-        # cleaned-up migration where the marker was somehow lost). Stamp
-        # the marker so future runs short-circuit.
-        if not AppSettings._reg_key_exists(old_path):
-            AppSettings._reg_write_marker(new_path, AppSettings._MIGRATION_MARKER)
-            return
-
-        logger.info(f"Migrating registry settings HKCU\\{old_path}  →  HKCU\\{new_path}")
-        try:
-            AppSettings._reg_copy_tree(old_path, new_path)
-            AppSettings._reg_write_marker(new_path, AppSettings._MIGRATION_MARKER)
-            AppSettings._reg_delete_tree(old_path)
-            logger.info("Registry migration complete — legacy node removed")
-        except OSError as e:
-            # Leave the marker unset so we retry next launch. Log loudly
-            # so any partial migration is visible in the Log tab.
-            logger.error(f"Registry migration failed: {e}", exc_info=True)
-
-    @staticmethod
-    def _reg_key_exists(path: str) -> bool:
-        try:
-            k = winreg.OpenKey(winreg.HKEY_CURRENT_USER, path, 0, winreg.KEY_READ)
-            winreg.CloseKey(k)
-            return True
-        except FileNotFoundError:
-            return False
-
-    @staticmethod
-    def _reg_has_marker(path: str, marker: str) -> bool:
-        try:
-            k = winreg.OpenKey(winreg.HKEY_CURRENT_USER, path, 0, winreg.KEY_READ)
-        except FileNotFoundError:
-            return False
-        try:
-            winreg.QueryValueEx(k, marker)
-            return True
-        except FileNotFoundError:
-            return False
-        finally:
-            winreg.CloseKey(k)
-
-    @staticmethod
-    def _reg_write_marker(path: str, marker: str) -> None:
-        k = winreg.CreateKey(winreg.HKEY_CURRENT_USER, path)
-        try:
-            winreg.SetValueEx(k, marker, 0, winreg.REG_SZ, "1")
-        finally:
-            winreg.CloseKey(k)
-
-    @staticmethod
-    def _reg_copy_tree(src_path: str, dst_path: str) -> None:
-        """Recursive copy of every value and subkey from src to dst under HKCU.
-
-        Preserves value types (REG_SZ / REG_DWORD / REG_BINARY / REG_MULTI_SZ
-        / REG_EXPAND_SZ) by passing EnumValue's returned type directly to
-        SetValueEx. Creates dst and its subtree as needed.
-        """
-        src = winreg.OpenKey(winreg.HKEY_CURRENT_USER, src_path, 0, winreg.KEY_READ)
-        dst = winreg.CreateKey(winreg.HKEY_CURRENT_USER, dst_path)
-        try:
-            # Values at this level
-            i = 0
-            while True:
-                try:
-                    name, data, vtype = winreg.EnumValue(src, i)
-                except OSError:
-                    break
-                # Skip the marker if it happens to exist on the source side
-                # (shouldn't, but defensive against manual registry edits).
-                if name != AppSettings._MIGRATION_MARKER:
-                    winreg.SetValueEx(dst, name, 0, vtype, data)
-                i += 1
-            # Recurse into subkeys
-            i = 0
-            while True:
-                try:
-                    sub = winreg.EnumKey(src, i)
-                except OSError:
-                    break
-                AppSettings._reg_copy_tree(f"{src_path}\\{sub}", f"{dst_path}\\{sub}")
-                i += 1
-        finally:
-            winreg.CloseKey(src)
-            winreg.CloseKey(dst)
-
-    @staticmethod
-    def _reg_delete_tree(path: str) -> None:
-        """Depth-first delete of an HKCU subtree (winreg.DeleteKey refuses
-        to remove a key that still has children, so we strip leaves first)."""
-        try:
-            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, path, 0, winreg.KEY_ALL_ACCESS)
-        except FileNotFoundError:
-            return
-        try:
-            while True:
-                try:
-                    sub = winreg.EnumKey(key, 0)
-                except OSError:
-                    break
-                AppSettings._reg_delete_tree(f"{path}\\{sub}")
-        finally:
-            winreg.CloseKey(key)
-        try:
-            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, path)
-        except FileNotFoundError:
-            pass
-
-    @staticmethod
-    def migrate_docs_folder_rename() -> None:
-        r"""Rename legacy Documents\SC Localization Editor\ → Documents\Smart Citizen\.
-
-        Safe to call on every startup — only acts when the old folder exists
-        and the new one does not. The installer handles this on upgrade; this
-        path covers dev runs and anyone who bypassed the installer.
-        """
-        docs = AppSettings._resolve_docs_base()
-        old_dir = docs / "SC Localization Editor"
-        new_dir = docs / "Smart Citizen"
-        if old_dir.exists() and not new_dir.exists():
-            try:
-                old_dir.rename(new_dir)
-                logger.info(f"Renamed data folder: {old_dir} → {new_dir}")
-            except OSError as e:
-                logger.warning(f"Could not rename data folder {old_dir}: {e}")
-
     @staticmethod
     def migrate_game_path_to_channel_layout() -> None:
         r"""One-shot migration to the 0.9.3 channel-aware layout.
@@ -805,7 +628,7 @@ class AppSettings:
         to the stripped channel name (``LIVE`` when the stored path has no
         recognizable channel suffix — matches pre-0.9.3 behavior).
 
-        **Filesystem side:** if ``Documents\Smart Citizen\`` contains the
+        **Filesystem side:** if ``Documents\Open Strings\`` contains the
         old flat layout (``base.ini`` / ``cache\`` / ``backups\`` / ``user.ini``)
         and no ``LIVE\`` (or other channel) subfolder exists, move those
         entries into a new ``LIVE\`` subfolder so every path helper starts
@@ -939,9 +762,9 @@ class AppSettings:
           1. Registry override ``USER_DATA_DIR`` — set by users who want the
              cache/user.ini off a OneDrive-synced Documents folder (extraction
              and rmtree are much slower under OneDrive's sync hooks).
-          2. ``Documents\Smart Citizen\`` via the ``Personal`` shell-folder
+          2. ``Documents\Open Strings\`` via the ``Personal`` shell-folder
              key, which honors OneDrive/folder redirection.
-          3. ``~/Documents/Smart Citizen\`` as a last-ditch fallback.
+          3. ``~/Documents/Open Strings\`` as a last-ditch fallback.
 
         Returns:
             Path to the resolved directory (created if needed).
@@ -956,7 +779,7 @@ class AppSettings:
                 logger.warning(
                     f"USER_DATA_DIR override {override!r} not usable ({e}); falling back to Documents default"
                 )
-        data_dir = AppSettings._resolve_docs_base() / "Smart Citizen"
+        data_dir = AppSettings._resolve_docs_base() / "Open Strings"
         data_dir.mkdir(parents=True, exist_ok=True)
         return data_dir
 
@@ -965,9 +788,8 @@ class AppSettings:
         r"""Override the user data directory. Pass ``None`` or an empty
         string to clear the override and revert to the Documents default.
 
-        Writes to the Osiris DevWorks\SC Localization Editor registry key
-        (same scope as every other AppSettings value), so it survives
-        reinstalls and is per-user.
+        Writes to the per-user QSettings registry node (same scope as every
+        other AppSettings value), so it survives reinstalls.
         """
         if not path:
             AppSettings.settings().remove(AppSettings.USER_DATA_DIR)
@@ -1127,59 +949,6 @@ class AppSettings:
         backups_dir = AppSettings.get_channel_data_dir() / "backups"
         backups_dir.mkdir(parents=True, exist_ok=True)
         return backups_dir
-
-    @staticmethod
-    def migrate_data_to_documents() -> None:
-        """Copy user data files from old AppData location to new Documents location.
-
-        Safe to call on every startup — skips files that already exist at the
-        destination. Handles the upgrade path for users on previous versions.
-        """
-        import shutil
-
-        old_base = (
-            Path(os.environ.get("APPDATA", str(Path.home() / "AppData" / "Roaming")))
-            / "Osiris DevWorks"
-            / "SC Localization Editor"
-        )
-        old_cache = old_base / "cache"
-
-        new_base = AppSettings.get_user_data_dir()
-        new_cache = AppSettings.get_cache_dir()
-
-        # Migrate overrides.ini
-        old_overrides = old_base / "overrides.ini"
-        new_overrides = new_base / "overrides.ini"
-        if old_overrides.exists() and not new_overrides.exists():
-            try:
-                shutil.copy2(old_overrides, new_overrides)
-                logger.info("Migrated overrides.ini to Documents")
-            except Exception as e:
-                logger.warning(f"Could not migrate overrides.ini: {e}")
-
-        # Migrate cache files
-        if old_cache.exists():
-            for ini_file in old_cache.glob("*.ini"):
-                dest = new_cache / ini_file.name
-                if not dest.exists():
-                    try:
-                        shutil.copy2(ini_file, dest)
-                        logger.info(f"Migrated {ini_file.name} to Documents cache")
-                    except Exception as e:
-                        logger.warning(f"Could not migrate {ini_file.name}: {e}")
-
-        # Migrate backup files from old AppData location
-        old_backups = old_base / "backups"
-        if old_backups.exists():
-            new_backups = AppSettings.get_backups_dir()
-            for bak_file in old_backups.glob("global.ini.bak_*"):
-                dest = new_backups / bak_file.name
-                if not dest.exists():
-                    try:
-                        shutil.copy2(bak_file, dest)
-                        logger.info(f"Migrated {bak_file.name} to Documents backups")
-                    except Exception as e:
-                        logger.warning(f"Could not migrate {bak_file.name}: {e}")
 
     @staticmethod
     def get_unp4k_exe_path() -> Path:

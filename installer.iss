@@ -6,15 +6,14 @@
 #undef VersionFile
 
 [Setup]
-AppId={{0CCDDCA2-CD87-4942-A600-F338F6841466}
-AppName=Smart Citizen
+AppId={{B7E4D2A1-9F3C-4A88-B5E2-3D1F7C8A2B40}
+AppName=Open Strings
 AppVersion={#AppVer}
-AppPublisher=Osiris DevWorks
-AppPublisherURL=https://github.com/Osiris-DevWorks/smart-citizen
-DefaultDirName={localappdata}\Osiris DevWorks\Smart Citizen
-DefaultGroupName=Smart Citizen
+AppPublisher=Joni Hayes
+DefaultDirName={localappdata}\Joni Hayes\Open Strings
+DefaultGroupName=Open Strings
 OutputDir=dist
-OutputBaseFilename=SmartCitizen-{#AppVer}-Setup
+OutputBaseFilename=OpenStrings-{#AppVer}-Setup
 Compression=lzma
 SolidCompression=yes
 ArchitecturesAllowed=x64
@@ -39,15 +38,15 @@ SCDirectoryDefaultPath=C:\Program Files\Roberts Space Industries\StarCitizen\LIV
 Type: filesandordirs; Name: "{app}\*"
 
 [Files]
-Source: "dist\SmartCitizen-v{#AppVer}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "dist\OpenStrings-v{#AppVer}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\Smart Citizen"; Filename: "{app}\SmartCitizen-v{#AppVer}.exe"
-Name: "{group}\{cm:UninstallProgram,Smart Citizen}"; Filename: "{uninstallexe}"
-Name: "{commondesktop}\Smart Citizen"; Filename: "{app}\SmartCitizen-v{#AppVer}.exe"
+Name: "{group}\Open Strings"; Filename: "{app}\OpenStrings-v{#AppVer}.exe"
+Name: "{group}\{cm:UninstallProgram,Open Strings}"; Filename: "{uninstallexe}"
+Name: "{commondesktop}\Open Strings"; Filename: "{app}\OpenStrings-v{#AppVer}.exe"
 
 [Run]
-Filename: "{app}\SmartCitizen-v{#AppVer}.exe"; Description: "{cm:LaunchProgram,Smart Citizen}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\OpenStrings-v{#AppVer}.exe"; Description: "{cm:LaunchProgram,Open Strings}"; Flags: nowait postinstall skipifsilent
 
 [Code]
 var
@@ -79,14 +78,10 @@ function HasDataDirOverride(): Boolean;
 var
   Dummy: String;
 begin
-  { Respect existing user choice — if the override is already set in either
-    the new "Smart Citizen" node or the legacy "SC Localization Editor"
-    node, skip the prompt entirely. }
+  { Respect existing user choice — if the override is already set,
+    skip the prompt entirely. }
   Result := RegQueryStringValue(HKCU,
-              'Software\Osiris DevWorks\Smart Citizen',
-              'user_data_dir', Dummy) or
-            RegQueryStringValue(HKCU,
-              'Software\Osiris DevWorks\SC Localization Editor',
+              'Software\Joni Hayes\Open Strings',
               'user_data_dir', Dummy);
 end;
 
@@ -95,7 +90,7 @@ begin
   { Build a sensible default pointing at the local (non-OneDrive) profile.
     %USERPROFILE% is the real NTFS path; \Documents here is the junction
     that Windows keeps even when the shell's Personal has been redirected. }
-  Result := ExpandConstant('{%USERPROFILE}\Documents\Smart Citizen');
+  Result := ExpandConstant('{%USERPROFILE}\Documents\Open Strings');
 end;
 
 function GetUninstallString(): String;
@@ -121,7 +116,7 @@ var
 begin
   { Remove zombie registry entries that point at a non-existent unins000.exe.
     Background: when a user's previous install lived under a non-default path
-    (e.g. Documents\Smart Citizen\) and the folder was manually deleted or
+    (e.g. Documents\Open Strings\) and the folder was manually deleted or
     moved without running the uninstaller, Windows keeps the Uninstall
     registry entry — and "Installed Apps" on Win10/11 then shows the app
     with an Uninstall button that fails ("Windows cannot find …\unins000.exe").
@@ -198,38 +193,20 @@ begin
          in-app data dir setting. If the app is storing cache here, the
          uninstaller MUST clean here too — otherwise stale 2GB+ caches
          survive uninstall.
-      2. userdocs \Smart Citizen — the default. }
+      2. userdocs \Open Strings — the default. }
   if RegQueryStringValue(HKCU,
-    'Software\Osiris DevWorks\Smart Citizen',
+    'Software\Joni Hayes\Open Strings',
     'user_data_dir', OverridePath) and (OverridePath <> '') then
   begin
     Result := OverridePath;
     Exit;
   end;
-  Result := GetDocumentsBase() + '\Smart Citizen';
+  Result := GetDocumentsBase() + '\Open Strings';
 end;
 
 procedure MigrateUserDocsFolder();
-var
-  DocsBase, OldDir, NewDir: String;
 begin
-  { Rebrand: rename Documents\SC Localization Editor\ → Documents\Smart Citizen\
-    if the old folder exists and the new one does not. User data (user.ini,
-    backups, cache) moves with the rename — no copy required. }
-  DocsBase := GetDocumentsBase();
-  OldDir := DocsBase + '\SC Localization Editor';
-  NewDir := DocsBase + '\Smart Citizen';
-  if DirExists(OldDir) and not DirExists(NewDir) then
-  begin
-    MsgBox('Your user data folder will be renamed as part of this update:' + #13#10 + #13#10 +
-           '  ' + OldDir + #13#10 +
-           '  →  ' + NewDir + #13#10 + #13#10 +
-           'Your custom edits, backups, and cached files will move with it — nothing is lost.',
-           mbInformation, MB_OK);
-    Log('Renaming user data folder: ' + OldDir + ' -> ' + NewDir);
-    if not RenameFile(OldDir, NewDir) then
-      Log('WARNING: rename failed; data remains at old location');
-  end;
+  { Clean break — no migration from upstream SC Localization Editor/Smart Citizen folders. }
 end;
 
 procedure CleanPerChannelCaches(UserDataDir: String);
@@ -240,7 +217,7 @@ var
   Deleted: Boolean;
 begin
   { Per-channel layout (0.9.3+): each Star Citizen channel has its own
-    user data subtree at Documents\Smart Citizen\<channel>\. Only \cache
+    user data subtree at Documents\Open Strings\<channel>\. Only \cache
     is disposable — \backups (the user's global.ini safety net) and
     user.ini (their customizations) must survive both install and
     uninstall, so we delete \cache per channel and leave the rest alone.
@@ -299,27 +276,6 @@ begin
   end;
 end;
 
-procedure CleanRegistrySettings();
-var
-  RegPath: String;
-  SavedSCDir: String;
-  HadSCDir: Boolean;
-begin
-  RegPath := 'Software\Osiris DevWorks\SC Localization Editor';
-
-  { Preserve sc_directory so the installer page can pre-fill it }
-  HadSCDir := RegQueryStringValue(HKCU, RegPath, 'sc_directory', SavedSCDir);
-
-  { Delete the entire app registry key }
-  RegDeleteKeyIncludingSubkeys(HKCU, RegPath);
-
-  { Restore sc_directory if it existed }
-  if HadSCDir and (SavedSCDir <> '') then
-  begin
-    RegWriteStringValue(HKCU, RegPath, 'sc_directory', SavedSCDir);
-  end;
-end;
-
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if (CurStep=ssInstall) then
@@ -329,9 +285,7 @@ begin
       UnInstallOldVersion();
     end;
 
-    { Rebrand migration: rename Documents\SC Localization Editor\ to
-      Documents\Smart Citizen\ before we touch any cached data. }
-    MigrateUserDocsFolder();
+      { Rebrand migration: no-op for this fork (clean break) }
 
     { Clear cached data but preserve registry settings (source paths, preferences, etc.) }
     CleanCachedData();
@@ -406,27 +360,13 @@ end;
 procedure InitializeWizard();
 var
   NewRegPath: String;
-  LegacyRegPath: String;
   DefaultPath: String;
   SavedPath: String;
   SCRoot: String;
   ActiveChannel: String;
 begin
-  { Registry path resolution order:
-      1. NEW "Smart Citizen" node (post-0.9.2 rebrand) — every app launch
-         writes here, and the one-shot migrate_registry_appname() in the
-         app's main() deletes the legacy subtree after copying values over.
-         That means any sc_directory we wrote to the legacy node on a
-         previous installer run was subsequently wiped by the app. Writing
-         and reading from the NEW node is the fix.
-      2. LEGACY "SC Localization Editor" node — kept as a read-side
-         fallback so users who upgrade from a version earlier than 0.9.2
-         (and therefore have no NEW node yet) still get their path
-         prefilled on the first reinstall. The installer's CurFinished
-         writes to the NEW node regardless, so subsequent reinstalls
-         resolve via path 1. }
-  NewRegPath := 'Software\Osiris DevWorks\Smart Citizen';
-  LegacyRegPath := 'Software\Osiris DevWorks\SC Localization Editor';
+  { Read saved registry settings from the app's node. }
+  NewRegPath := 'Software\Joni Hayes\Open Strings';
   DefaultPath := '';
 
   { 0.9.3+: the app stores the SC install root (parent of LIVE/PTU/...) in
@@ -442,17 +382,12 @@ begin
     DefaultPath := SCRoot + '\' + ActiveChannel;
   end;
 
-  { Fall back to previously saved sc_directory / game_install_path in the
-    NEW node, then the LEGACY node. }
+  { Fall back to previously saved sc_directory / game_install_path. }
   if DefaultPath = '' then
   begin
     if RegQueryStringValue(HKCU, NewRegPath, 'sc_directory', SavedPath) and (SavedPath <> '') then
       DefaultPath := SavedPath
     else if RegQueryStringValue(HKCU, NewRegPath, 'game_install_path', SavedPath) and (SavedPath <> '') then
-      DefaultPath := SavedPath
-    else if RegQueryStringValue(HKCU, LegacyRegPath, 'sc_directory', SavedPath) and (SavedPath <> '') then
-      DefaultPath := SavedPath
-    else if RegQueryStringValue(HKCU, LegacyRegPath, 'game_install_path', SavedPath) and (SavedPath <> '') then
       DefaultPath := SavedPath
     else if DirExists('C:\Program Files\Roberts Space Industries\StarCitizen\LIVE') then
       DefaultPath := 'C:\Program Files\Roberts Space Industries\StarCitizen\LIVE'
@@ -462,12 +397,7 @@ begin
       DefaultPath := 'C:\Program Files\Roberts Space Industries\StarCitizen';
   end;
 
-  { Normalize the prompt default to the LIVE subfolder: if the resolved
-    path ends in a non-LIVE channel name (because the app persisted
-    game_install_path as the channel-suffixed path while the friend was
-    on a non-LIVE channel), swap the suffix for \LIVE. The page is
-    specifically asking for the LIVE directory; offering a non-LIVE one
-    as the default confuses users whose main SC install is LIVE. }
+  { Normalize the prompt default to the LIVE subfolder. }
   if LowerCase(ExtractFileName(DefaultPath)) = 'ptu' then
     DefaultPath := ExtractFilePath(DefaultPath) + 'LIVE'
   else if LowerCase(ExtractFileName(DefaultPath)) = 'eptu' then
@@ -489,26 +419,17 @@ begin
   SCDirectoryPage.Add('');
   SCDirectoryPage.Values[0] := DefaultPath;
 
-  { Rebrand: if the prior install is still under the old "SC Localization
-    Editor" folder name, override the prefilled app dir (and start-menu
-    group) to the new brand. Any other prior location — including one the
-    user customized — is preserved. }
-  if Pos('SC Localization Editor', WizardForm.DirEdit.Text) > 0 then
-    WizardForm.DirEdit.Text := ExpandConstant('{localappdata}\Osiris DevWorks\Smart Citizen');
-  if Pos('SC Localization Editor', WizardForm.GroupEdit.Text) > 0 then
-    WizardForm.GroupEdit.Text := 'Smart Citizen';
-
   { OneDrive guard rail: when Documents is redirected to OneDrive, offer
-    to store Smart Citizen's cache + user.ini on a local path instead.
+    to store Open Strings' cache + user.ini on a local path instead.
     The page is *always* created (so ShouldSkipPage has something to
     reference) but hidden when it doesn't apply. DataDirPromptShown
     records whether it was actually exposed, so CurFinished only persists
     a value the user was given the chance to see. }
   DataDirPage := CreateInputDirPage(
     SCDirectoryPage.ID,
-    'Smart Citizen Data Location',
+    'Open Strings Data Location',
     'Your Documents folder is synced to OneDrive — pick where to store data.',
-    'Smart Citizen caches 2+ GB of extracted game data and stores your custom edits ' +
+    'Open Strings caches 2+ GB of extracted game data and stores your custom edits ' +
     'under your Documents folder. OneDrive-synced Documents is known to cause problems:'
     + #13#10 + #13#10 +
     '  - DataForge extraction is 3-5x slower because OneDrive, Windows Defender,'
@@ -524,7 +445,7 @@ begin
     'We recommend a local (non-OneDrive) folder. Accept the suggestion below, browse ' +
     'to a different location, or clear the field to keep the OneDrive default.',
     False,
-    'Smart Citizen Data'
+    'Open Strings Data'
   );
   DataDirPage.Add('');
   DataDirPage.Values[0] := SuggestLocalDataDir();
@@ -558,35 +479,21 @@ begin
     FinalPath := SCDirectoryPage.Values[0];
     if FinalPath <> '' then
     begin
-      { Write to the NEW ("Smart Citizen") node so the value survives
-        the app's migrate_registry_appname() — which deletes the legacy
-        subtree after copying values across. Prior installer revs wrote
-        only to the legacy node and lost sc_directory on the next app
-        launch, so reinstalls couldn't pre-fill the path. Writing to the
-        legacy node ALSO (as a compat fallback for very old app versions
-        that don't understand the new node yet) is cheap and keeps
-        downgrade paths working. }
-      RegPath := 'Software\Osiris DevWorks\Smart Citizen';
+      { Write the SC install path to the registry. }
+      RegPath := 'Software\Joni Hayes\Open Strings';
       RegWriteStringValue(HKCU, RegPath, 'sc_directory', FinalPath);
       RegWriteStringValue(HKCU, RegPath, 'game_install_path', FinalPath);
-      RegWriteStringValue(HKCU,
-        'Software\Osiris DevWorks\SC Localization Editor',
-        'sc_directory', FinalPath);
-      Log('Saved sc_directory to registry (Smart Citizen + legacy nodes): ' + FinalPath);
+      Log('Saved sc_directory to registry: ' + FinalPath);
     end;
 
-    { Persist the OneDrive-escape choice. Writes to the NEW (Smart Citizen)
-      node — 0.9.2+ reads user_data_dir from there. If a legacy install's
-      migration runs afterwards and the old node happens to carry its own
-      user_data_dir, that user's prior explicit choice wins (migration
-      overwrites). Otherwise this installer-written value survives. }
+    { Persist the OneDrive-escape choice. }
     if DataDirPromptShown then
     begin
       DataDir := DataDirPage.Values[0];
       if DataDir <> '' then
       begin
         RegWriteStringValue(HKCU,
-          'Software\Osiris DevWorks\Smart Citizen',
+          'Software\Joni Hayes\Open Strings',
           'user_data_dir', DataDir);
         ForceDirectories(DataDir);
         Log('Saved user_data_dir to registry: ' + DataDir);
