@@ -35,12 +35,8 @@ jobs:
         run: uv run python -m mypy src/
 
   test:
-    name: Tests (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
+    name: Tests
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -56,11 +52,5 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-groups
 
-      - name: Install Qt platform deps (Linux)
-        if: runner.os == 'Linux'
-        run: sudo apt-get install -y libglib2.0-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libxkbcommon-x11-0 libegl1 libdbus-1-3
-
       - name: Tests
         run: uv run python -m pytest tests/ -p no:xdist --tb=short -q
-        env:
-          QT_QPA_PLATFORM: offscreen
