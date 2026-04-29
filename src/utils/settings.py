@@ -784,7 +784,7 @@ class AppSettings:
         return data_dir
 
     @staticmethod
-    def set_user_data_dir(path: "str | Path | None") -> None:
+    def set_user_data_dir(path: str | Path | None) -> None:
         r"""Override the user data directory. Pass ``None`` or an empty
         string to clear the override and revert to the Documents default.
 

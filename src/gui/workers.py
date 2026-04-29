@@ -6,9 +6,9 @@ import os
 import sys
 from pathlib import Path
 
-from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtCore import QModelIndex, QThread, pyqtSignal
 from PyQt6.QtGui import QColor, QMouseEvent
-from PyQt6.QtWidgets import QLabel, QProgressBar, QProgressDialog, QStyledItemDelegate, QWidget
+from PyQt6.QtWidgets import QLabel, QProgressBar, QProgressDialog, QStyledItemDelegate, QStyleOptionViewItem, QWidget
 
 from src.utils.settings import AppSettings
 
@@ -41,7 +41,7 @@ class AnimatedProgressDialog(QProgressDialog):
     the bar text since there's no meaningful percentage to show.
     """
 
-    def __init__(self, message: str, parent=None, title: str = "Processing"):
+    def __init__(self, message: str, parent: QWidget | None = None, title: str = "Processing") -> None:
         super().__init__(message, None, 0, 0, parent)
         self.setWindowTitle(title)
         self.setModal(True)
@@ -139,7 +139,7 @@ class FileLoaderWorker(QThread):
     # 3 phase boundaries: sources read → entries built → sort keys computed.
     _PHASE_TOTAL = 3
 
-    def run(self):
+    def run(self) -> None:
         from src.gui.string_table_model import _group_sort_key
         from src.parser.ini_parser import load_source_files, load_sources_from_settings
 
@@ -188,7 +188,7 @@ class StartupSyncWorker(QThread):
     source_error = pyqtSignal(str, str)  # (source_name, error_message)
     finished = pyqtSignal()
 
-    def run(self):
+    def run(self) -> None:
         from src.utils.updater import download_file_if_changed
 
         cache_dir = AppSettings.get_cache_dir()
@@ -228,11 +228,11 @@ class EnhancementsGeneratorWorker(QThread):
     finished = pyqtSignal(bool)
     error = pyqtSignal(str)
 
-    def __init__(self, categories: set[str] | None = None):
+    def __init__(self, categories: set[str] | None = None) -> None:
         super().__init__()
         self.categories = categories
 
-    def run(self):
+    def run(self) -> None:
         from src.utils.dataforge_patcher import apply_patches
 
         try:
@@ -314,13 +314,13 @@ class P4kExtractWorker(QThread):
     finished = pyqtSignal(bool)  # True = success
     error = pyqtSignal(str)  # error message (emitted before finished(False))
 
-    def __init__(self, p4k_path, output_path, unp4k_exe):
+    def __init__(self, p4k_path: Path, output_path: Path, unp4k_exe: Path) -> None:
         super().__init__()
         self._p4k = p4k_path
         self._out = output_path
         self._exe = unp4k_exe
 
-    def run(self):
+    def run(self) -> None:
         from src.utils.pak_extractor import extract_global_ini
 
         try:
@@ -346,14 +346,14 @@ class DataForgeExtractWorker(QThread):
     finished = pyqtSignal(bool)
     error = pyqtSignal(str)
 
-    def __init__(self, p4k_path, unp4k_exe, unforge_exe, cache_dir):
+    def __init__(self, p4k_path: Path, unp4k_exe: Path, unforge_exe: Path, cache_dir: Path) -> None:
         super().__init__()
         self._p4k = p4k_path
         self._unp4k_exe = unp4k_exe
         self._unforge_exe = unforge_exe
         self._cache_dir = cache_dir
 
-    def run(self):
+    def run(self) -> None:
         from src.utils.dataforge_patcher import apply_patches
         from src.utils.pak_extractor import extract_dataforge
 
@@ -410,7 +410,7 @@ class AppUpdateCheckerWorker(QThread):
     _API_URL = "https://api.github.com/repos/jonigirl/open-strings/releases/latest"
     _RELEASES_URL = "https://github.com/jonigirl/open-strings/releases"
 
-    def run(self):
+    def run(self) -> None:
         import json
         import urllib.request
 
@@ -459,7 +459,7 @@ class AppUpdateCheckerWorker(QThread):
 class SelectAllDelegate(QStyledItemDelegate):
     """Custom delegate that selects all text on edit."""
 
-    def createEditor(self, parent, option, index):
+    def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QModelIndex) -> QWidget | None:
         editor = super().createEditor(parent, option, index)
         if editor is not None and hasattr(editor, "selectAll"):
             editor.selectAll()  # type: ignore  # hasattr guard is correct; type checkers can't narrow through hasattr
