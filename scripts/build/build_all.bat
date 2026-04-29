@@ -9,15 +9,23 @@ echo.
 ::   SC_SIGN_THUMB     SHA-1 thumbprint of a cert already in Windows cert store
 ::   SC_SIGN_CERT      Path to a PFX certificate file
 ::   SC_SIGN_PASSWORD  Password for the PFX file (leave unset for password-less certs)
+::   SC_SELF_SIGN      Set to 1 to self-sign with a new temporary cert (no CA required)
 :: ---------------------------------------------------------------------------
 set SIGN_BUILD=0
+set SELF_SIGN=0
 if not "%SC_SIGN_THUMB%"=="" set SIGN_BUILD=1
 if not "%SC_SIGN_CERT%"==""  set SIGN_BUILD=1
+if "%SC_SELF_SIGN%"=="1" (
+    set SIGN_BUILD=1
+    set SELF_SIGN=1
+)
 
-if "%SIGN_BUILD%"=="1" (
-    echo Code signing: ENABLED
+if "%SELF_SIGN%"=="1" (
+    echo Code signing: SELF-SIGNED  ^(integrity only; SmartScreen warning remains^)
+) else if "%SIGN_BUILD%"=="1" (
+    echo Code signing: ENABLED ^(CA cert^)
 ) else (
-    echo Code signing: DISABLED  ^(set SC_SIGN_THUMB or SC_SIGN_CERT to enable^)
+    echo Code signing: DISABLED  ^(set SC_SIGN_THUMB, SC_SIGN_CERT, or SC_SELF_SIGN=1 to enable^)
 )
 echo.
 
@@ -28,7 +36,9 @@ echo   - Old builds removed
 echo.
 
 echo Step 2: Building executable...
-if "%SIGN_BUILD%"=="1" (
+if "%SELF_SIGN%"=="1" (
+    uv run python scripts\build\build_exe.py --self-sign
+) else if "%SIGN_BUILD%"=="1" (
     uv run python scripts\build\build_exe.py --sign
 ) else (
     uv run python scripts\build\build_exe.py
@@ -75,7 +85,11 @@ echo.
 if "%SIGN_BUILD%"=="1" (
     echo Step 5: Signing installer...
     for %%f in (dist\SmartCitizen-*-Setup.exe) do (
-        uv run python scripts\build\build_exe.py --sign-file "%%f"
+        if "%SELF_SIGN%"=="1" (
+            uv run python scripts\build\build_exe.py --self-sign --sign-file "%%f"
+        ) else (
+            uv run python scripts\build\build_exe.py --sign-file "%%f"
+        )
         if errorlevel 1 (
             echo ERROR: Failed to sign installer
             pause
