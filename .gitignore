@@ -35,6 +35,8 @@ ENV/
 .pytest_cache/
 .coverage
 htmlcov/
+coverage_full.txt
+coverage_report.txt
 
 # PyCharm
 *.iml
