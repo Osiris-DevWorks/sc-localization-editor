@@ -10,18 +10,8 @@ if exist dist rmdir /s /q dist
 echo   - Old builds removed
 echo.
 
-echo Step 2: Installing PyInstaller (if needed)...
-.venv\Scripts\python.exe -m pip install pyinstaller --quiet
-if errorlevel 1 (
-    echo WARNING: Could not install PyInstaller
-    echo Please install manually: .venv\Scripts\pip install pyinstaller
-    pause
-)
-echo   - PyInstaller ready
-echo.
-
-echo Step 3: Building executable...
-.venv\Scripts\python.exe scripts\build\build_exe.py
+echo Step 2: Building executable...
+uv run python scripts\build\build_exe.py
 if errorlevel 1 (
     echo ERROR: Failed to build executable
     pause
@@ -30,7 +20,7 @@ if errorlevel 1 (
 echo   - Executable created
 echo.
 
-echo Step 4: Verifying onedir build...
+echo Step 3: Verifying onedir build...
 if exist "dist\SmartCitizen-v*\" (
     echo   - Build folder exists: OK
 ) else (
@@ -40,7 +30,7 @@ if exist "dist\SmartCitizen-v*\" (
 )
 echo.
 
-echo Step 5: Creating installer (requires Inno Setup)...
+echo Step 4: Creating installer (requires Inno Setup)...
 if exist "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" (
     "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
     if errorlevel 1 (

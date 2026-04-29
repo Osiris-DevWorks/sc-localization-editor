@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release tag (e.g. v0.5.2)'
+        description: "Release tag (e.g. v0.5.2)"
         required: true
-        default: 'v0.5.2'
+        default: "v0.5.2"
 
 jobs:
   notify:
@@ -19,10 +19,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: "3.10"
+
+      - name: Set up UV
+        uses: astral-sh/setup-uv@v5
 
       - name: Install dependencies
-        run: pip install python-dotenv
+        run: uv pip install python-dotenv
 
       - name: Get release tag
         id: tag

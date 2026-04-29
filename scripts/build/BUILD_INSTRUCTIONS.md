@@ -5,8 +5,7 @@
 **Build executable (recommended):**
 
 ```bash
-cd scripts/build
-.venv\Scripts\python.exe build_exe.py
+uv run python scripts/build/build_exe.py
 ```
 
 **Build everything (executable + installer):**
@@ -22,8 +21,8 @@ build_all.bat
 
 ### Required Software
 
-1. **Python 3.12+** - Already installed in your `.venv`
-2. **PyInstaller** - Auto-installed by build scripts
+1. **Python 3.12+** and **UV** (`https://docs.astral.sh/uv/getting-started/installation/`) — required
+2. **PyInstaller** — installed automatically by `uv sync`
 
 ### Download Inno Setup (Optional)
 
@@ -39,8 +38,7 @@ For creating the installer, download from: https://jrsoftware.org/isdl.php
 If distributing to users, optionally clean the DataForge cache to reduce user data size:
 
 ```bash
-cd scripts/build
-.venv\Scripts\python.exe clean_cache_for_distribution.py
+uv run python scripts/build/clean_cache_for_distribution.py
 ```
 
 This removes the `raw/` DataForge extraction (keeping the filtered `libs/` which has all necessary stats data).
@@ -56,8 +54,7 @@ useful if you've manually included cache in any distribution package.
 Run the build script from the project root:
 
 ```bash
-cd scripts/build
-.venv\Scripts\python.exe build_exe.py
+uv run python scripts/build/build_exe.py
 ```
 
 This will:

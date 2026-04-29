@@ -7,9 +7,11 @@ This guide explains how to run both manual and automated tests to ensure v0.6.0 
 ## Quick Start
 
 ### Manual Testing
+
 **See**: `TESTING_CHECKLIST_v0.6.0.md`
 
 A comprehensive checklist with 120+ test cases covering:
+
 - Application startup & initialization
 - Core data loading & merging
 - Stats generation & P4K extraction (critical for v0.6.0)
@@ -21,22 +23,22 @@ A comprehensive checklist with 120+ test cases covering:
 **Time required**: 1-2 hours for thorough testing
 
 ### Automated Testing
+
 ```bash
-# Install test dependencies
-pip install pytest pytest-mock
+# Install dependencies
+uv sync
 
 # Run all tests
-pytest tests/ -v
+uv run pytest tests/ -v
 
 # Run only critical tests
-pytest tests/ -v -m critical
+uv run pytest tests/ -v -m critical
 
 # Run only unit tests (fast)
-pytest tests/ -v -m unit
+uv run pytest tests/ -v -m unit
 
 # Run with coverage
-pip install pytest-cov
-pytest tests/ --cov=src --cov-report=html
+uv run pytest tests/ --cov=src --cov-report=html
 ```
 
 ---
@@ -44,9 +46,11 @@ pytest tests/ --cov=src --cov-report=html
 ## Test Structure
 
 ### Unit Tests (`tests/test_core.py`)
+
 **Coverage**: Core functionality that doesn't require GUI or external tools
 
 **Test Classes**:
+
 - `TestIniParsing` - INI file parsing, encoding handling, edge cases
 - `TestMerging` - Multi-source merge logic, hierarchy order, priority
 - `TestStringEntry` - Data model, category extraction, status determination
@@ -55,17 +59,20 @@ pytest tests/ --cov=src --cov-report=html
 - `TestStatsIntegration` - Stats file structure and merging
 
 **Run these tests**:
+
 ```bash
 pytest tests/test_core.py -v
 
 # Quick smoke test (use after code changes)
-pytest tests/test_core.py -v -m unit
+uv run pytest tests/test_core.py -v -m unit
 ```
 
 ### P4K Extraction Tests (`tests/test_pak_extraction.py`)
+
 **Coverage**: P4K extraction pipeline, DataForge caching, stats generation
 
 **Test Classes**:
+
 - `TestDataForgeCache` - Cache freshness detection
 - `TestDataForgeExtraction` - Pipeline stages, error handling
 - `TestStatsGeneration` - Stats file format, merging with base
@@ -75,11 +82,12 @@ pytest tests/test_core.py -v -m unit
 **Critical for v0.6.0**: This test suite validates the stats generation flow that had bugs in earlier versions.
 
 **Run these tests**:
+
 ```bash
-pytest tests/test_pak_extraction.py -v
+uv run pytest tests/test_pak_extraction.py -v
 
 # Run with logging to see what's being tested
-pytest tests/test_pak_extraction.py -v -s
+uv run pytest tests/test_pak_extraction.py -v -s
 ```
 
 ---
@@ -87,11 +95,13 @@ pytest tests/test_pak_extraction.py -v -s
 ## Running Tests by Category
 
 ### Critical Path Tests (must pass before release)
+
 ```bash
-pytest tests/ -v -m critical
+uv run pytest tests/ -v -m critical
 ```
 
 Tests:
+
 - Data loading (ini_parser)
 - Multi-source merging (ini_merger)
 - Category extraction (string_model)
@@ -100,15 +110,17 @@ Tests:
 - Error handling
 
 ### Quick Smoke Test (run after small changes)
+
 ```bash
-pytest tests/test_core.py::TestIniParsing -v
-pytest tests/test_core.py::TestMerging -v
-pytest tests/test_core.py::TestStringEntry -v
+uv run pytest tests/test_core.py::TestIniParsing -v
+uv run pytest tests/test_core.py::TestMerging -v
+uv run pytest tests/test_core.py::TestStringEntry -v
 ```
 
 ### Full Test Suite (run before major releases)
+
 ```bash
-pytest tests/ -v --tb=short
+uv run pytest tests/ -v --tb=short
 ```
 
 ---
@@ -116,15 +128,18 @@ pytest tests/ -v --tb=short
 ## Manual Testing Workflow
 
 ### 1. First Run Test (ensure no crashes on startup)
+
 ```bash
 # Create a clean environment
 rm -rf "%APPDATA%\Local\Python*"  # Clear app cache (optional)
 
 python src/main.py
 ```
+
 **Expected**: App launches cleanly, loads base file, displays table.
 
 ### 2. Core Features Test
+
 - Load base file
 - Verify ~80,000 entries in table
 - Filter by category (Ships, Gear, Missions)
@@ -137,6 +152,7 @@ python src/main.py
 **Time**: ~15 minutes
 
 ### 3. Stats Generation Test (v0.6.0 focus)
+
 1. Set game path in Config tab
 2. Click "Extract DataForge from P4K"
 3. Wait for extraction to complete (~30 seconds - 2 minutes depending on system)
@@ -155,6 +171,7 @@ python src/main.py
 **Time**: ~5-10 minutes
 
 ### 4. Multi-Source & Merge Test
+
 1. Config tab: Verify all sources are configured (Global, Contracts, Ships, Commodities, Gear)
 2. Click "Preview Merge" - verify dialog shows merge order and key counts
 3. Drag a source to reorder hierarchy (e.g., move Contracts above Global)
@@ -164,6 +181,7 @@ python src/main.py
 **Time**: ~5 minutes
 
 ### 5. Error Handling Test
+
 1. Set a source URL to invalid path (e.g., `https://invalid.url/file.ini`)
 2. Click "Save Configuration & Merge"
 3. Verify error dialog appears with helpful message
@@ -173,6 +191,7 @@ python src/main.py
 **Time**: ~5 minutes
 
 ### 6. Extended Stability Test
+
 - Keep app open for 15+ minutes
 - Perform multiple edits (at least 5)
 - Filter, search, apply multiple times
@@ -185,15 +204,15 @@ python src/main.py
 
 ## Test Coverage Goals
 
-| Component | Target Coverage | Current |
-|-----------|-----------------|---------|
-| `ini_parser.py` | 95% | _ |
-| `ini_merger.py` | 95% | _ |
-| `string_model.py` | 90% | _ |
-| `overrides_manager.py` | 90% | _ |
-| `pak_extractor.py` | 80% | _ |
-| `updater.py` | 70% | _ |
-| GUI (`main_window.py`) | Manual only | ✓ |
+| Component              | Target Coverage | Current |
+| ---------------------- | --------------- | ------- |
+| `ini_parser.py`        | 95%             | \_      |
+| `ini_merger.py`        | 95%             | \_      |
+| `string_model.py`      | 90%             | \_      |
+| `overrides_manager.py` | 90%             | \_      |
+| `pak_extractor.py`     | 80%             | \_      |
+| `updater.py`           | 70%             | \_      |
+| GUI (`main_window.py`) | Manual only     | ✓       |
 
 ---
 
@@ -202,17 +221,20 @@ python src/main.py
 ### If a unit test fails:
 
 1. **Read the error message** - it usually tells you exactly what's wrong
+
    ```bash
    pytest tests/test_core.py::TestMerging::test_merge_multiple_sources_respects_order -v
    ```
 
 2. **Check the assertion** - look at the line number in the traceback
+
    ```python
    # Example: assert result['key2'] == 'contracts_value2' failed
    # Means the merge order wasn't respected
    ```
 
 3. **Add debugging output**:
+
    ```bash
    pytest tests/test_core.py -v -s  # -s shows print() output
    ```
@@ -238,12 +260,14 @@ python src/main.py
 ## Continuous Testing
 
 ### Before Each Commit
+
 ```bash
 # Quick validation
 pytest tests/test_core.py -v --tb=short
 ```
 
 ### Before Each Release
+
 ```bash
 # Full suite + coverage
 pytest tests/ -v --cov=src --cov-report=html --cov-report=term
@@ -257,14 +281,18 @@ pytest tests/ -v --cov=src --cov-report=html --cov-report=term
 ## Known Issues & Workarounds
 
 ### Issue: "ModuleNotFoundError: No module named 'src'"
+
 **Solution**: Run pytest from project root:
+
 ```bash
 cd C:\Users\aabou\PycharmProjects\sc-localization-editor
 pytest tests/ -v
 ```
 
 ### Issue: "ImportError: cannot import name 'StringEntry'"
+
 **Solution**: Ensure `src/` is in Python path:
+
 ```bash
 # pytest.ini already sets this, but if running manually:
 set PYTHONPATH=%CD%\src
@@ -272,14 +300,19 @@ pytest tests/ -v
 ```
 
 ### Issue: P4K extraction tests fail (tools not in assets/)
+
 **Solution**: These tests are mocked and don't require real tools. If you see:
+
 ```
 FileNotFoundError: unp4k.exe not found
 ```
+
 This is expected and tested in `TestDataForgeExtraction::test_extract_dataforge_handles_missing_tools`.
 
 ### Issue: Tests timeout
+
 **Solution**: Some P4K extraction tests can be slow. Skip them:
+
 ```bash
 pytest tests/ -v -m "not slow"
 ```
@@ -300,6 +333,7 @@ When adding new features, add tests:
    - GUI → Manual testing checklist (for now)
 
 3. **Follow the pattern**:
+
    ```python
    class TestNewFeature:
        @pytest.mark.unit
@@ -307,10 +341,10 @@ When adding new features, add tests:
            """Test description"""
            # Arrange
            input_data = {"key": "value"}
-           
+
            # Act
            result = some_function(input_data)
-           
+
            # Assert
            assert result == expected_value
    ```
@@ -326,33 +360,38 @@ When adding new features, add tests:
 
 Use this template to document test runs:
 
-```markdown
+````markdown
 # Test Results - v0.6.0 - [DATE]
 
 **Tester**: [Name]  
 **Environment**: Windows 10/11, Python 3.10, PyQt6
 
 ## Automated Tests
+
 ```bash
 pytest tests/ -v --tb=short
 ```
+````
 
 **Results**:
-- Total: __ tests
-- Passed: __ ✓
-- Failed: __ ✗
-- Skipped: __
+
+- Total: \_\_ tests
+- Passed: \_\_ ✓
+- Failed: \_\_ ✗
+- Skipped: \_\_
 
 **Failed Tests**:
 (List any failures with reproduction steps)
 
 ## Manual Tests
+
 **Checklist**: TESTING_CHECKLIST_v0.6.0.md  
 **Total Checks**: 120+  
-**Passed**: __  
-**Failed**: __  
+**Passed**: **  
+**Failed**: **
 
 ## Critical Path Tests
+
 - [x] Application startup
 - [x] Data loading
 - [x] Multi-source merge
@@ -362,10 +401,12 @@ pytest tests/ -v --tb=short
 - [ ] Clear localization
 
 ## Summary
+
 - **Overall Status**: ✓ PASS / ✗ FAIL
 - **Ready for Release**: YES / NO
-- **Notes**: 
-```
+- **Notes**:
+
+````
 
 ---
 
@@ -392,7 +433,7 @@ jobs:
           python-version: '3.10'
       - run: pip install -r requirements.txt pytest pytest-mock
       - run: pytest tests/ -v --tb=short
-```
+````
 
 ---
 

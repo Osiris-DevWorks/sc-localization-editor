@@ -13,33 +13,28 @@ Smart Citizen (formerly SC Localization Editor) is a Windows-only PyQt6 GUI appl
 ## Quick Commands
 
 ```bash
-# Setup (production deps only)
-pip install -r requirements.txt
-
-# Setup (with dev/test tools: pytest, flake8, black, mypy, etc.)
-pip install -r requirements-dev.txt
+# Setup (install all deps including dev)
+uv sync
 
 # Run
-python src/main.py
+uv run python src/main.py
 
 # Testing
-pytest tests/                                    # Run all tests
-pytest tests/test_core.py                       # Run single file
-pytest tests/test_core.py::TestIniParsing       # Run single class
-pytest tests/test_core.py::TestIniParsing::test_parse_basic_ini  # Run single test
-pytest tests/ -v                                # Verbose output
-pytest tests/ --cov=src --cov-report=html      # Coverage report (HTML)
-pytest tests/ -n auto                           # Parallel execution (pytest-xdist)
+uv run pytest tests/                                    # Run all tests
+uv run pytest tests/test_core.py                       # Run single file
+uv run pytest tests/test_core.py::TestIniParsing       # Run single class
+uv run pytest tests/ -v                                # Verbose output
+uv run pytest tests/ --cov=src --cov-report=html      # Coverage report (HTML)
+uv run pytest tests/ -n auto                           # Parallel execution (pytest-xdist)
 
 # Code Quality
-black src/ tests/ scripts/                      # Format code
-flake8 src/ tests/ scripts/                     # Lint (use flake8 config if present)
-isort src/ tests/ scripts/                      # Sort imports
-mypy src/                                       # Type checking
+uv run ruff check src/ tests/ scripts/                 # Lint
+uv run ruff format src/ tests/ scripts/                # Format
+uv run mypy src/                                       # Type checking
 
 # Building
-cd scripts/build && python build_exe.py         # Build exe (PyInstaller)
-cd scripts/build && build_all.bat               # Build exe + installer (requires Inno Setup)
+uv run python scripts/build/build_exe.py               # Build exe (PyInstaller)
+cd scripts/build && build_all.bat                      # Build exe + installer (requires Inno Setup)
 
 # Data Generation
 python scripts/generate_enhancements_ini.py [base_ini_path [dataforge_cache_dir]]

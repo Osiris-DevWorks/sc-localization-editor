@@ -30,6 +30,7 @@ dev = [
     "pytest-xdist>=3.0.0",
     "sphinx>=5.0.0",
     "sphinx-rtd-theme>=1.0.0",
+    "pyinstaller>=6.3.0",
 ]
 
 [tool.ruff]

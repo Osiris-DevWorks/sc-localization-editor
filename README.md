@@ -38,7 +38,8 @@ Download the **`SmartCitizen-{VERSION}-Setup.exe`** installer and run it. The ap
 
 **Prerequisites**:
 
-- Python 3.9+ (recommended 3.10+)
+- Python 3.12+
+- [UV](https://docs.astral.sh/uv/getting-started/installation/)
 - Windows 10/11 (the app uses Windows Registry and is Win32-only)
 
 **Installation**:
@@ -50,15 +51,11 @@ Download the **`SmartCitizen-{VERSION}-Setup.exe`** installer and run it. The ap
    cd smart-citizen
    ```
 
-2. **Install dependencies**
+2. **Install dependencies and run**
 
    ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Run the application**
-   ```bash
-   python src/main.py
+   uv sync
+   uv run python src/main.py
    ```
 
 ## Usage
@@ -114,13 +111,13 @@ Each channel is fully isolated — you can run a different customization set on 
 ### Development Run
 
 ```bash
-python src/main.py
+uv run python src/main.py
 ```
 
 ### Create Executable
 
 ```bash
-python scripts/build/build_exe.py
+uv run python scripts/build/build_exe.py
 ```
 
 This creates a PyInstaller onedir at `dist/SmartCitizen-v{VERSION}\` containing `SmartCitizen-v{VERSION}.exe`. VERSION comes from `VERSION.TXT`.
