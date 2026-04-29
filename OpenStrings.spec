@@ -22,10 +22,15 @@ a = Analysis(
     # plumbing is otherwise intact. dataforge_patcher survives by accident
     # because main_window.py also imports it for apply_patches; listed here
     # as belt + suspenders so a future main_window refactor can't break it.
+    # `concurrent.futures` is a stdlib subpackage used directly by
+    # generate_enhancements_ini.py; PyInstaller doesn't include it
+    # automatically when the script is a data file rather than an analyzed
+    # module, causing a ModuleNotFoundError at enhancements generation time.
     hiddenimports=[
         'PyQt6.QtCore', 'PyQt6.QtGui', 'PyQt6.QtWidgets',
         'src.utils.progress_sink',
         'src.utils.dataforge_patcher',
+        'concurrent.futures',
     ],
     hookspath=[],
     hooksconfig={},
