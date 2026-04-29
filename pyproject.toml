@@ -4,6 +4,7 @@ version = "1.0.2"
 description = "Smart Citizen desktop app"
 readme = "README.md"
 requires-python = ">=3.12"
+license = {text = "GPL-3.0-only"}
 dependencies = [
     "PyQt6>=6.10.0",
 ]

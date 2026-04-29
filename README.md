@@ -1,6 +1,6 @@
 # Smart Citizen
 
-*Smarter Strings for Star Citizen*
+_Smarter Strings for Star Citizen_
 
 A Windows desktop app for customizing Star Citizen's localization strings. Layer auto-generated stat and crafting enhancements on top of stock text, edit any in-game string in a sortable filterable table, and apply the result to your game install with a single click and an automatic backup.
 
@@ -12,7 +12,7 @@ A Windows desktop app for customizing Star Citizen's localization strings. Layer
 - **Multi-Channel Star Citizen Support**: LIVE / PTU / EPTU / HOTFIX / TECH-PREVIEW each get their own isolated workspace — independent `user.ini`, cache, backups, DataForge extraction, and enhancement INIs. Switch channels from the Config tab without restarting.
 - **Multi-Source Merge System**: Configurable sources (stock, contracts, components, ships, commodities, gear, user) merge in a drag-and-drop priority order, with user overrides always applied last so your edits never get overwritten.
 - **Sourced from Data.p4k**: All stock localization and DataForge entity data is extracted directly from your installed game — no community mirrors, no version drift, no network required after install.
-- **Inline Editing & Live Preview**: Double-click any cell in the *Custom Value* column to edit. A preview pane next to the toolbar renders the selected string with the game's loc-tokens (line breaks, EM3/EM4 emphasis, mission placeholders) translated to styled HTML so you see roughly how it will appear in-game.
+- **Inline Editing & Live Preview**: Double-click any cell in the _Custom Value_ column to edit. A preview pane next to the toolbar renders the selected string with the game's loc-tokens (line breaks, EM3/EM4 emphasis, mission placeholders) translated to styled HTML so you see roughly how it will appear in-game.
 - **Persistent Edits**: Your customizations are saved to `user.ini` per channel and automatically re-applied across game updates.
 - **Auto-Generated Enhancements**: Stat overlays for ships, ship components, ship weapons, FPS weapons, missions (with `[BP]`/`[BP?]` blueprint reward tags + structured detail blocks), journal entries, and commodity crafting cross-references — all togglable per category in the Enhancements tab.
 - **Declarative CIG Data-Bug Patches**: A patch system applies fixes to known DataForge bugs at extraction time so the in-game text reads correctly without waiting on CIG.
@@ -29,6 +29,7 @@ A Windows desktop app for customizing Star Citizen's localization strings. Layer
 ## Quick Start
 
 ### Using the Release
+
 Grab the latest release here: [Smart Citizen Releases](https://github.com/Osiris-DevWorks/smart-citizen/releases)
 
 Download the **`SmartCitizen-{VERSION}-Setup.exe`** installer and run it. The app auto-detects your Star Citizen installation.
@@ -36,18 +37,21 @@ Download the **`SmartCitizen-{VERSION}-Setup.exe`** installer and run it. The ap
 ### For Developers
 
 **Prerequisites**:
+
 - Python 3.9+ (recommended 3.10+)
 - Windows 10/11 (the app uses Windows Registry and is Win32-only)
 
 **Installation**:
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/Osiris-DevWorks/smart-citizen.git
    cd smart-citizen
    ```
 
 2. **Install dependencies**
+
    ```bash
    pip install -r requirements.txt
    ```
@@ -60,11 +64,13 @@ Download the **`SmartCitizen-{VERSION}-Setup.exe`** installer and run it. The ap
 ## Usage
 
 ### First Run
+
 1. The app creates `Documents\Smart Citizen\<channel>\` (one subdir per Star Citizen channel) for user data — cache, backups, `user.ini`.
 2. Open the Config tab and click **Extract from Data.p4k** to unpack stock localization plus DataForge entity data from your installed game. When extraction finishes, sources merge by hierarchy and the strings load into the table automatically.
 3. The guided tutorial auto-runs the first time you launch a new version, walking you through the rest.
 
 ### Standard Workflow
+
 1. **Find & Edit**:
    - Use the **Search** box to find strings, the **Category** filter to narrow by domain (Ships, Ship Items, Missions, Gear, Commodities, Journal, Other), and per-column filter boxes for fine-grained narrowing.
    - Double-click the **Custom Value** column to edit. The preview pane shows the rendered result.
@@ -72,16 +78,19 @@ Download the **`SmartCitizen-{VERSION}-Setup.exe`** installer and run it. The ap
 3. **Restore** (if needed): Click **Restore Backup** to revert to a previous version.
 
 ### After Star Citizen Updates
+
 1. Re-run **Extract from Data.p4k** in the Config tab to pull fresh stock strings and DataForge entity data from the patched game. The table reloads automatically and your customizations re-apply on top.
 2. Click **Apply to Game** to push the updated merge into the new build.
 
 ## Configuration
 
 All settings are stored in Windows Registry under:
+
 - **Organization**: Osiris DevWorks
 - **Application**: Smart Citizen
 
 The Config tab lets you set:
+
 - **Star Citizen install path** (the SC root folder containing `LIVE/`, `PTU/`, etc. — auto-detected at install time)
 - **Active channel** (LIVE / PTU / EPTU / HOTFIX / TECH-PREVIEW)
 - **Theme**
@@ -103,23 +112,29 @@ Each channel is fully isolated — you can run a different customization set on 
 ## Building & Release
 
 ### Development Run
+
 ```bash
 python src/main.py
 ```
 
 ### Create Executable
+
 ```bash
 python scripts/build/build_exe.py
 ```
+
 This creates a PyInstaller onedir at `dist/SmartCitizen-v{VERSION}\` containing `SmartCitizen-v{VERSION}.exe`. VERSION comes from `VERSION.TXT`.
 
 ### Create Installer (Windows)
+
 Requires [Inno Setup 6](https://jrsoftware.org/isdl.php):
+
 ```bash
 powershell -NoProfile -Command "& 'C:\Users\<you>\AppData\Local\Programs\Inno Setup 6\ISCC.exe' installer.iss"
 ```
 
 Outputs:
+
 - `dist/SmartCitizen-v{VERSION}\` — Standalone executable (onedir, distributed via the installer)
 - `dist/SmartCitizen-{VERSION}-Setup.exe` — Installer (this is what users download)
 
@@ -154,6 +169,7 @@ For a deeper guide to architecture and conventions, see `CLAUDE.md` at the repo 
 ## Game Installation Path
 
 After applying localization, the relevant path inside your Star Citizen install looks like:
+
 ```
 StarCitizen/
 └── LIVE/                    (or PTU/, EPTU/, HOTFIX/, TECH-PREVIEW/)
@@ -170,7 +186,7 @@ StarCitizen/
 > **Made by the Community** — This is an unofficial Star Citizen fan project, not affiliated with the Cloud Imperium group of companies. All content in this repository not authored by its host or users is the property of its respective owners.
 
 - The ability to customize your localization using extracted `global.ini` files is **authorized by CIG** to support community translations until officially integrated.
-  - *[Star Citizen: Community Localization Update](https://robertsspaceindustries.com/spectrum/community/SC/forum/1/thread/star-citizen-community-localization-update) 2023-10-11*
+  - _[Star Citizen: Community Localization Update](https://robertsspaceindustries.com/spectrum/community/SC/forum/1/thread/star-citizen-community-localization-update) 2023-10-11_
 - Use at your own discretion as a third-party contribution.
 - [RSI Terms of Service](https://robertsspaceindustries.com/en/tos)
 - [Translation & Fan Localization Statement](https://support.robertsspaceindustries.com/hc/en-us/articles/360006895793-Star-Citizen-Fankit-and-Fandom-FAQ#h_01JNKSPM7MRSB1WNBW6FGD2H98)
@@ -185,11 +201,18 @@ StarCitizen/
 
 ## License
 
-This project is provided as-is for community use. See LICENSE file for details.
+Smart Citizen is licensed under the **[GNU General Public License v3.0](LICENSE)** (GPL-3.0-only).
+
+This is required for compatibility with [PyQt6](https://riverbankcomputing.com/software/pyqt/), which is GPL-3.0-only. You are free to use, modify, and distribute this software under the same terms.
+
+Bundled third-party components:
+
+- **unp4k / unforge** ([dolkensp/unp4k](https://github.com/dolkensp/unp4k)) — MIT License
 
 ## Support & Community
 
 ### Feedback, Bugs & Feature Voting
+
 All bug reports, feature requests, and prioritization happen in the dedicated `#smart-citizen` channel on the Osiris DevWorks Discord. Reactions and polls drive what lands next.
 
 - **[Discord Server Invite](https://discord.gg/BNzRegKZ7k)** — join the server first, then jump into the [Smart Citizen feedback channel](https://discord.com/channels/1438175448420057323/1472394204347895890).
