@@ -80,3 +80,26 @@ def test_no_callback_is_noop():
     sink.advance()
     sink.advance()
     assert sink.snapshot()[:2] == (2, 3)
+
+
+def test_add_total_increments_and_forces_emit():
+    events: list[tuple[int, int, str]] = []
+    sink = ProgressSink(callback=lambda c, t, m: events.append((c, t, m)), total=0, min_interval=10.0)
+    sink.add_total(3)
+    assert events[-1] == (0, 3, "")
+
+
+def test_set_message_updates_message_and_emits():
+    events: list[tuple[int, int, str]] = []
+    sink = ProgressSink(callback=lambda c, t, m: events.append((c, t, m)), total=5, min_interval=0.0)
+    sink.set_message("hello")
+    assert events[-1][2] == "hello"
+
+
+def test_duplicate_payload_suppressed_without_force():
+    events: list[tuple[int, int, str]] = []
+    sink = ProgressSink(callback=lambda c, t, m: events.append((c, t, m)), total=5, min_interval=0.0)
+    sink.set_message("x")
+    count_after_first = len(events)
+    sink.set_message("x")
+    assert len(events) == count_after_first

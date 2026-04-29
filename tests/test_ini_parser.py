@@ -219,3 +219,16 @@ class TestLoadSourceFiles:
         entries = load_source_files(sources, ["global"], custom_path=override_file)
         hawk = next(e for e in entries if e.key == "vehicle_NameHawk")
         assert hawk.custom_value == "Legacy Override"
+
+    def test_journal_key_gets_journal_category(self):
+        sources = {"global": {"mission_journal_001": "Journal entry"}}
+        entries = load_source_files(sources, ["global"])
+        e = next(e for e in entries if e.key == "mission_journal_001")
+        assert e.category == "Journal"
+
+    def test_enhancements_key_categories_overrides_category(self):
+        sources = {"global": {"vehicle_NameHunter": "Cutlass"}}
+        enhancements = {"vehicle_NameHunter": "CustomCategory"}
+        entries = load_source_files(sources, ["global"], enhancements_key_categories=enhancements)
+        e = next(e for e in entries if e.key == "vehicle_NameHunter")
+        assert e.category == "CustomCategory"

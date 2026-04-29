@@ -468,7 +468,7 @@ class AppUpdateCheckerWorker(QThread):
 class SelectAllDelegate(QStyledItemDelegate):
     """Custom delegate that selects all text on edit."""
 
-    def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QModelIndex) -> QWidget | None:
+    def createEditor(self, parent: QWidget | None, option: QStyleOptionViewItem, index: QModelIndex) -> QWidget | None:
         editor = super().createEditor(parent, option, index)
         if editor is not None and hasattr(editor, "selectAll"):
             editor.selectAll()  # type: ignore  # hasattr guard is correct; type checkers can't narrow through hasattr

@@ -15,7 +15,7 @@ import os
 import tempfile
 
 import pytest
-from src.merger.ini_merger import merge_sources_by_hierarchy
+from src.merger.ini_merger import _get_canonical_key, merge_ini_files, merge_sources_by_hierarchy, sync_key_variants
 from src.models.string_model import StringEntry
 from src.parser.ini_parser import parse_ini_file
 from src.utils.overrides_manager import load_overrides, save_overrides
@@ -450,6 +450,101 @@ class TestStatsIntegration:
 
 
 # Pytest configuration
+
+
+@pytest.mark.unit
+class TestMergeIniFiles:
+    def test_raises_file_not_found_for_missing_source(self, tmp_path):
+        with pytest.raises(FileNotFoundError):
+            merge_ini_files(tmp_path / "missing.ini", {}, tmp_path / "out.ini")
+
+    def test_comment_and_blank_lines_preserved(self, tmp_path):
+        src = tmp_path / "src.ini"
+        src.write_text("; comment\n\nkey=val\n", encoding="utf-8")
+        out = tmp_path / "out.ini"
+        merge_ini_files(src, {}, out)
+        content = out.read_text(encoding="utf-8")
+        assert "; comment" in content
+        assert "\n\n" in content
+
+    def test_line_without_equals_preserved(self, tmp_path):
+        src = tmp_path / "src.ini"
+        src.write_text("no_equals_here\nkey=val\n", encoding="utf-8")
+        out = tmp_path / "out.ini"
+        merge_ini_files(src, {}, out)
+        content = out.read_text(encoding="utf-8")
+        assert "no_equals_here" in content
+
+    def test_override_value_written_for_matching_key(self, tmp_path):
+        src = tmp_path / "src.ini"
+        src.write_text("key=original\n", encoding="utf-8")
+        out = tmp_path / "out.ini"
+        merge_ini_files(src, {"key": "override"}, out)
+        assert "key=override" in out.read_text(encoding="utf-8")
+
+    def test_original_value_written_for_unmatched_key(self, tmp_path):
+        src = tmp_path / "src.ini"
+        src.write_text("other=original\n", encoding="utf-8")
+        out = tmp_path / "out.ini"
+        merge_ini_files(src, {"key": "override"}, out)
+        assert "other=original" in out.read_text(encoding="utf-8")
+
+    def test_comma_suffix_stripped_from_output_key(self, tmp_path):
+        src = tmp_path / "src.ini"
+        src.write_text("vehicle_Name,P=Cutlass\n", encoding="utf-8")
+        out = tmp_path / "out.ini"
+        merge_ini_files(src, {}, out)
+        content = out.read_text(encoding="utf-8")
+        assert "vehicle_Name=" in content
+        assert ",P" not in content
+
+    def test_creates_output_parent_directories(self, tmp_path):
+        src = tmp_path / "src.ini"
+        src.write_text("k=v\n", encoding="utf-8")
+        deep_out = tmp_path / "a" / "b" / "out.ini"
+        merge_ini_files(src, {}, deep_out)
+        assert deep_out.exists()
+
+
+@pytest.mark.unit
+class TestGetCanonicalKey:
+    def test_scitem_suffix_canonical_matches_without(self):
+        canonical_with = _get_canonical_key("item_nameSHLD_foo_SCItem")
+        canonical_without = _get_canonical_key("item_nameSHLD_foo")
+        assert canonical_with == canonical_without
+
+    def test_lowercase_produces_same_canonical(self):
+        assert _get_canonical_key("item_nameSHLD_foo") == _get_canonical_key("item_NAMESHLD_FOO")
+
+    def test_key_without_component_code_returns_stripped_lowercase(self):
+        result = _get_canonical_key("vehicle_NameHunter")
+        assert result == "vehiclenamehunter"
+
+
+@pytest.mark.unit
+class TestSyncKeyVariants:
+    def test_all_scitem_variants_get_same_value(self):
+        merged = {
+            "item_nameSHLD_foo_SCItem": "value_a",
+            "item_name_SHLD_foo_SCItem": "value_b",
+        }
+        sync_key_variants(merged)
+        assert len(set(merged.values())) == 1
+
+    def test_non_scitem_variant_value_wins(self):
+        merged = {
+            "item_nameSHLD_foo": "canonical_value",
+            "item_nameSHLD_foo_SCItem": "scitem_value",
+        }
+        sync_key_variants(merged)
+        assert merged["item_nameSHLD_foo"] == "canonical_value"
+        assert merged["item_nameSHLD_foo_SCItem"] == "canonical_value"
+
+    def test_no_variants_leaves_dict_unchanged(self):
+        merged = {"vehicle_NameHunter": "Cutlass", "items_commodities_Gold": "Gold"}
+        sync_key_variants(merged)
+        assert merged["vehicle_NameHunter"] == "Cutlass"
+        assert merged["items_commodities_Gold"] == "Gold"
 
 
 if __name__ == "__main__":
