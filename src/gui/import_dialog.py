@@ -28,9 +28,7 @@ class ImportConflictDialog(QDialog):
         "Custom...",
     ]
 
-    def __init__(self, conflicts: dict[str, tuple[str, str]],
-                 auto_add_count: int, excluded_count: int,
-                 parent=None):
+    def __init__(self, conflicts: dict[str, tuple[str, str]], auto_add_count: int, excluded_count: int, parent=None):
         super().__init__(parent)
         self._conflicts = conflicts
         self._auto_add_count = auto_add_count
@@ -52,11 +50,9 @@ class ImportConflictDialog(QDialog):
         # Summary label
         summary_parts = []
         if self._auto_add_count > 0:
-            summary_parts.append(
-                f"{self._auto_add_count} keys will be added automatically.")
+            summary_parts.append(f"{self._auto_add_count} keys will be added automatically.")
         if self._excluded_count > 0:
-            summary_parts.append(
-                f"{self._excluded_count} keys excluded (not in base.ini).")
+            summary_parts.append(f"{self._excluded_count} keys excluded (not in base.ini).")
         if summary_parts:
             summary_label = QLabel("  ".join(summary_parts))
             summary_label.setWordWrap(True)
@@ -82,16 +78,17 @@ class ImportConflictDialog(QDialog):
 
         # Conflict table
         self._table = QTableWidget(conflict_count, 4)
-        self._table.setHorizontalHeaderLabels(
-            ["Key", "Current Value", "Imported Value", "Resolution"])
-        self._table.verticalHeader().setVisible(False)
+        self._table.setHorizontalHeaderLabels(["Key", "Current Value", "Imported Value", "Resolution"])
+        if (vheader := self._table.verticalHeader()) is not None:
+            vheader.setVisible(False)
         self._table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
 
         header = self._table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        if header is not None:
+            header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+            header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+            header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
 
         max_display_len = 120
 
@@ -108,8 +105,7 @@ class ImportConflictDialog(QDialog):
             if len(current_display) > max_display_len:
                 current_display = current_display[:max_display_len] + "..."
             current_item = QTableWidgetItem(current_display)
-            current_item.setFlags(
-                current_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            current_item.setFlags(current_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             current_item.setToolTip(current_value)
             self._table.setItem(row, 1, current_item)
 
@@ -118,8 +114,7 @@ class ImportConflictDialog(QDialog):
             if len(imported_display) > max_display_len:
                 imported_display = imported_display[:max_display_len] + "..."
             imported_item = QTableWidgetItem(imported_display)
-            imported_item.setFlags(
-                imported_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            imported_item.setFlags(imported_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             imported_item.setToolTip(imported_value)
             self._table.setItem(row, 2, imported_item)
 
@@ -128,17 +123,14 @@ class ImportConflictDialog(QDialog):
             combo.addItems(self.RESOLUTION_OPTIONS)
             self._combos[key] = combo
             self._previous_combo_index[key] = 0
-            combo.currentIndexChanged.connect(
-                lambda index, k=key: self._on_resolution_changed(k, index))
+            combo.currentIndexChanged.connect(lambda index, k=key: self._on_resolution_changed(k, index))
             self._table.setCellWidget(row, 3, combo)
 
         group_layout.addWidget(self._table)
         layout.addWidget(group)
 
         # Dialog buttons
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok
-            | QDialogButtonBox.StandardButton.Cancel)
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
@@ -148,10 +140,7 @@ class ImportConflictDialog(QDialog):
         if index == 4:  # Custom...
             current_val, imported_val = self._conflicts[key]
             initial = self._custom_values.get(key, imported_val)
-            text, ok = QInputDialog.getText(
-                self, "Custom Value",
-                f"Enter custom value for key:\n{key}",
-                text=initial)
+            text, ok = QInputDialog.getText(self, "Custom Value", f"Enter custom value for key:\n{key}", text=initial)
             if ok:
                 self._custom_values[key] = text
                 self._previous_combo_index[key] = index

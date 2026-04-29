@@ -15,7 +15,7 @@ from src.utils.settings import AppSettings
 logger = logging.getLogger(__name__)
 
 
-def get_resource_path(relative_path):
+def get_resource_path(relative_path: str) -> str:
     """Get absolute path to resource, works for dev and for PyInstaller."""
     base_path = getattr(sys, "_MEIPASS", None)
     if base_path is None:
@@ -237,7 +237,7 @@ class EnhancementsGeneratorWorker(QThread):
 
         try:
             if getattr(sys, "frozen", False):
-                script_path = Path(sys._MEIPASS) / "scripts" / "generate_enhancements_ini.py"
+                script_path = Path(getattr(sys, "_MEIPASS", "")) / "scripts" / "generate_enhancements_ini.py"
             else:
                 script_path = Path(__file__).parent.parent.parent / "scripts" / "generate_enhancements_ini.py"
 
@@ -272,6 +272,8 @@ class EnhancementsGeneratorWorker(QThread):
                 del sys.modules[module_name]
 
             spec = importlib.util.spec_from_file_location(module_name, script_path)
+            if spec is None or spec.loader is None:
+                raise FileNotFoundError(f"Cannot load module spec for {script_path}")
             mod = importlib.util.module_from_spec(spec)
             sys.modules[module_name] = mod
             spec.loader.exec_module(mod)
@@ -395,6 +397,6 @@ class SelectAllDelegate(QStyledItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = super().createEditor(parent, option, index)
-        if hasattr(editor, "selectAll"):
+        if editor is not None and hasattr(editor, "selectAll"):
             editor.selectAll()
         return editor

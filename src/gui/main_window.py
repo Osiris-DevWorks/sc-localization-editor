@@ -291,7 +291,8 @@ class MainWindow(QMainWindow):
         # first-launch users aren't surprised by a panel they didn't ask for;
         # restoreState will reopen it if the user had it open last session.
         self._ensure_help_dock()
-        self.help_dock.hide()
+        if self.help_dock is not None:
+            self.help_dock.hide()
 
         # App-version indicator sits immediately next to the SC-version
         # text in the status bar message area. Added BEFORE the channel
@@ -1024,7 +1025,7 @@ class MainWindow(QMainWindow):
                             break
                 # Otherwise check if it's a local file that exists
                 elif source_path and Path(source_path).exists():
-                    base_file = source_path
+                    base_file = Path(source_path)
                     break
 
             if not base_file:
@@ -1062,7 +1063,7 @@ class MainWindow(QMainWindow):
                 else:
                     restore_note = "\n\nNo backup was available to restore."
 
-                self.statusBar().showMessage("Apply failed — validation error")
+                self.statusBar().showMessage("Apply failed — validation error")  # type: ignore[union-attr]
                 QMessageBox.critical(
                     self,
                     "Validation Failed",
@@ -1084,7 +1085,7 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(0, ensure_user_cfg_language)
 
             logger.info(f"Applied to game: {target_path}")
-            self.statusBar().showMessage(
+            self.statusBar().showMessage(  # type: ignore[union-attr]
                 f"Applied to game | {user_count} user edits | {enhancement_count} enhancements"
             )
             QMessageBox.information(
@@ -1206,7 +1207,7 @@ class MainWindow(QMainWindow):
         try:
             global_ini.unlink()
             logger.info(f"Deleted {global_ini}")
-            self.statusBar().showMessage("Localization cleared — game reverted to vanilla text")
+            self.statusBar().showMessage("Localization cleared — game reverted to vanilla text")  # type: ignore[union-attr]
             QMessageBox.information(
                 self,
                 "Done",
@@ -1358,7 +1359,7 @@ class MainWindow(QMainWindow):
                 )
                 return
 
-            self.statusBar().showMessage("Merging sources...")
+            self.statusBar().showMessage("Merging sources...")  # type: ignore[union-attr]
 
             try:
                 # Load synchronously in main thread
@@ -1382,7 +1383,7 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 logger.exception(f"Error during merge: {e}")
                 QMessageBox.critical(self, "Error", f"Failed to merge sources: {e}")
-                self.statusBar().showMessage("Merge failed")
+                self.statusBar().showMessage("Merge failed")  # type: ignore[union-attr]
 
         except Exception as e:
             logger.exception(f"Error in perform_merge_and_reload: {e}")
@@ -1441,7 +1442,7 @@ class MainWindow(QMainWindow):
                     source = source.replace("https://github.com/", "https://raw.githubusercontent.com/")
                     source = source.replace("/blob/", "/")
 
-                self.statusBar().showMessage("Downloading INI file...")
+                self.statusBar().showMessage("Downloading INI file...")  # type: ignore[union-attr]
                 try:
                     temp_file = tempfile.NamedTemporaryFile(suffix=".ini", delete=False)
                     temp_file.close()
@@ -2705,8 +2706,8 @@ class MainWindow(QMainWindow):
             self._loader_worker.wait()
 
         # Save window state
-        AppSettings.set_window_geometry(self.saveGeometry())
-        AppSettings.set_window_state(self.saveState())
+        AppSettings.set_window_geometry(self.saveGeometry().data())
+        AppSettings.set_window_state(self.saveState().data())
 
         event.accept()
 

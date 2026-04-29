@@ -1,9 +1,11 @@
 """Configuration tab for Smart Citizen."""
+
 import logging
 from datetime import datetime
 from pathlib import Path
 
 from PyQt6.QtCore import QTimer, pyqtSignal
+from PyQt6.QtGui import QStandardItemModel
 from PyQt6.QtWidgets import (
     QComboBox,
     QFileDialog,
@@ -68,7 +70,9 @@ class ConfigTab(QWidget):
         appearance_layout.addWidget(theme_label)
 
         self.theme_combo = QComboBox()
-        self.theme_combo.setToolTip("Switch the app theme. Takes effect immediately across the main window, toolbar, tabs, and Help panel.")
+        self.theme_combo.setToolTip(
+            "Switch the app theme. Takes effect immediately across the main window, toolbar, tabs, and Help panel."
+        )
         self.theme_combo.addItem("Default", THEME_SCLE)
         self.theme_combo.addItem("Light", THEME_LIGHT)
         self.theme_combo.addItem("Dark", THEME_DARK)
@@ -88,8 +92,7 @@ class ConfigTab(QWidget):
         game_layout = QVBoxLayout(game_group)
 
         game_desc = QLabel(
-            "Path to your Star Citizen install root (the directory containing "
-            "LIVE, PTU, EPTU, HOTFIX, TECH-PREVIEW)."
+            "Path to your Star Citizen install root (the directory containing LIVE, PTU, EPTU, HOTFIX, TECH-PREVIEW)."
         )
         game_desc.setProperty("role", "secondary")
         game_desc.setStyleSheet("font-size: 11px; margin-bottom: 5px;")
@@ -99,9 +102,7 @@ class ConfigTab(QWidget):
         game_input_layout = QHBoxLayout()
         self.game_path_input = QLineEdit()
         self.game_path_input.setText(AppSettings.get_sc_install_root())
-        self.game_path_input.setPlaceholderText(
-            r"C:\Program Files\Roberts Space Industries\StarCitizen"
-        )
+        self.game_path_input.setPlaceholderText(r"C:\Program Files\Roberts Space Industries\StarCitizen")
         self.game_path_input.setToolTip(
             "Star Citizen install root — the directory that contains LIVE/, "
             "PTU/, EPTU/, HOTFIX/, and/or TECH-PREVIEW/. Auto-detected at "
@@ -207,9 +208,7 @@ class ConfigTab(QWidget):
 
         self._check_updates_btn = QPushButton("Check for Updates")
         self._check_updates_btn.setMaximumWidth(170)
-        self._check_updates_btn.setToolTip(
-            "Check GitHub for a newer Smart Citizen release."
-        )
+        self._check_updates_btn.setToolTip("Check GitHub for a newer Smart Citizen release.")
         self._check_updates_btn.clicked.connect(self.check_updates_requested.emit)
         button_layout.addWidget(self._check_updates_btn)
 
@@ -242,6 +241,7 @@ class ConfigTab(QWidget):
         from PyQt6.QtWidgets import QApplication
 
         from src.gui.theme import apply_theme
+
         AppSettings.set_theme(theme)
         app = QApplication.instance()
         if isinstance(app, QApplication):
@@ -263,16 +263,12 @@ class ConfigTab(QWidget):
         AppSettings.set_sc_install_root(game_path)
         # Keep the legacy GAME_INSTALL_PATH in sync for any caller that still
         # reads it — e.g. unsynchronized callers during an in-progress upgrade.
-        AppSettings.set_game_install_path(
-            AppSettings.get_channel_install_path() if game_path else ""
-        )
+        AppSettings.set_game_install_path(AppSettings.get_channel_install_path() if game_path else "")
         self._populate_channel_combo()
         self._refresh_p4k_status()
 
     def _browse_game_path(self):
-        path = QFileDialog.getExistingDirectory(
-            self, "Select Star Citizen Installation Root"
-        )
+        path = QFileDialog.getExistingDirectory(self, "Select Star Citizen Installation Root")
         if path:
             self.game_path_input.setText(path)
             self._save_game_path()
@@ -301,14 +297,15 @@ class ConfigTab(QWidget):
                 is_available = channel in available_lookup
                 # Qt combo-item disable: set Qt.ItemFlag.NoItemFlags on the
                 # item via the model, then a tooltip explains why.
-                item = self.channel_combo.model().item(i)
+                item = None
+                model = self.channel_combo.model()
+                if isinstance(model, QStandardItemModel):
+                    item = model.item(i)
                 if item is not None and not is_available and root:
                     from PyQt6.QtCore import Qt
+
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
-                    item.setToolTip(
-                        f"{channel} isn't installed — no Data.p4k at "
-                        f"{Path(root) / channel / 'Data.p4k'}"
-                    )
+                    item.setToolTip(f"{channel} isn't installed — no Data.p4k at {Path(root) / channel / 'Data.p4k'}")
                 if channel == active:
                     active_index = i
             self.channel_combo.setCurrentIndex(active_index)
@@ -316,9 +313,7 @@ class ConfigTab(QWidget):
             # If the stored active channel is unavailable, surface that with
             # a hint label so the user knows why things might not work.
             if root and active not in available_lookup:
-                self._channel_hint_label.setText(
-                    f"⚠ {active} isn't installed under this root — pick another channel"
-                )
+                self._channel_hint_label.setText(f"⚠ {active} isn't installed under this root — pick another channel")
                 self._channel_hint_label.setStyleSheet("font-size: 10px; color: #ff9800;")
             else:
                 self._channel_hint_label.setText("")
@@ -336,14 +331,19 @@ class ConfigTab(QWidget):
         # Qt normally prevents this, but some desktop environments can
         # still produce a currentIndexChanged here if the model's item
         # flags were bypassed.
-        item = self.channel_combo.model().item(index)
+        item = None
+        model = self.channel_combo.model()
+        if isinstance(model, QStandardItemModel):
+            item = model.item(index)
         if item is not None:
             from PyQt6.QtCore import Qt
+
             if not (item.flags() & Qt.ItemFlag.ItemIsEnabled):
                 QMessageBox.warning(
-                    self, "Channel Not Installed",
+                    self,
+                    "Channel Not Installed",
                     f"{channel} isn't installed under the current root. "
-                    "Install it via the RSI Launcher or pick a different channel."
+                    "Install it via the RSI Launcher or pick a different channel.",
                 )
                 # Revert the combo to the active channel.
                 self._populate_channel_combo()
@@ -359,20 +359,16 @@ class ConfigTab(QWidget):
 
     def _refresh_p4k_status(self):
         p4k_path = AppSettings.get_p4k_path()
-        base_ini = AppSettings.get_cache_dir() / 'base.ini'
+        base_ini = AppSettings.get_cache_dir() / "base.ini"
 
         if p4k_path.exists():
             self._p4k_status_dot.setStyleSheet("color: #4caf50; font-size: 14px;")
             if base_ini.exists():
                 try:
-                    last_str = datetime.fromtimestamp(
-                        base_ini.stat().st_mtime
-                    ).strftime("%Y-%m-%d %H:%M")
+                    last_str = datetime.fromtimestamp(base_ini.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
                 except Exception:
                     last_str = "unknown"
-                self._p4k_status_label.setText(
-                    f"Data.p4k found  |  base.ini last updated: {last_str}"
-                )
+                self._p4k_status_label.setText(f"Data.p4k found  |  base.ini last updated: {last_str}")
             else:
                 self._p4k_status_label.setText("Data.p4k found  |  base.ini not yet extracted")
         else:
@@ -420,7 +416,8 @@ class ConfigTab(QWidget):
             # original baseline source. Without this, the User row in the
             # preview always reads 0 unless the user added a brand-new key.
             from src.utils.settings import AppSettings as _AS
-            source_counts = {}
+
+            source_counts: dict[str, int] = {}
             for entry in entries:
                 contributing = _AS.SOURCE_USER if entry.custom_value else entry.source_file
                 source_counts[contributing] = source_counts.get(contributing, 0) + 1
@@ -430,7 +427,7 @@ class ConfigTab(QWidget):
                 text += f"  {i}. {name.capitalize()} ({source_counts.get(name, 0)} keys)\n"
 
             text += f"\nTotal Keys: {len(entries)}\nStatus Breakdown:\n"
-            status_counts = {}
+            status_counts: dict[str, int] = {}
             for entry in entries:
                 status_counts[entry.status] = status_counts.get(entry.status, 0) + 1
             for status, count in status_counts.items():

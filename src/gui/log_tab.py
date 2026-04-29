@@ -1,4 +1,5 @@
 """Log tab — in-app log viewer with export capability."""
+
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -22,18 +23,18 @@ _MAX_LINES = 2000
 
 # Colours per level
 _LEVEL_COLORS = {
-    logging.DEBUG:    "#888888",
-    logging.INFO:     "#cccccc",
-    logging.WARNING:  "#ff9800",
-    logging.ERROR:    "#f44336",
+    logging.DEBUG: "#888888",
+    logging.INFO: "#cccccc",
+    logging.WARNING: "#ff9800",
+    logging.ERROR: "#f44336",
     logging.CRITICAL: "#f44336",
 }
 
 _LEVEL_NAMES = {
-    logging.DEBUG:    "DEBUG",
-    logging.INFO:     "INFO",
-    logging.WARNING:  "WARNING",
-    logging.ERROR:    "ERROR",
+    logging.DEBUG: "DEBUG",
+    logging.INFO: "INFO",
+    logging.WARNING: "WARNING",
+    logging.ERROR: "ERROR",
     logging.CRITICAL: "CRITICAL",
 }
 
@@ -44,7 +45,8 @@ class _LogEmitter(QObject):
     Lives on the main thread; the handler posts records to it via a signal
     so Qt's event loop delivers them safely regardless of which thread logs.
     """
-    record_emitted = pyqtSignal(str, int)   # formatted message, levelno
+
+    record_emitted = pyqtSignal(str, int)  # formatted message, levelno
 
 
 class _QtLogHandler(logging.Handler):
@@ -71,8 +73,7 @@ class LogTab(QWidget):
         self._emitter = _LogEmitter()
         self._handler = _QtLogHandler(self._emitter)
         self._handler.setFormatter(
-            logging.Formatter("%(asctime)s  %(levelname)-8s  %(name)s — %(message)s",
-                              datefmt="%H:%M:%S")
+            logging.Formatter("%(asctime)s  %(levelname)-8s  %(name)s — %(message)s", datefmt="%H:%M:%S")
         )
         self._emitter.record_emitted.connect(self._append_record)
         self.setup_ui()
@@ -90,22 +91,26 @@ class LogTab(QWidget):
 
         toolbar.addWidget(QLabel("Min level:"))
         self._level_combo = QComboBox()
-        self._level_combo.setToolTip("Minimum severity to display. Entries below the selected level are hidden (DEBUG < INFO < WARNING < ERROR).")
+        self._level_combo.setToolTip(
+            "Minimum severity to display. Entries below the selected level are hidden (DEBUG < INFO < WARNING < ERROR)."
+        )
         for level, name in [
-            (logging.DEBUG,   "DEBUG"),
-            (logging.INFO,    "INFO"),
+            (logging.DEBUG, "DEBUG"),
+            (logging.INFO, "INFO"),
             (logging.WARNING, "WARNING"),
-            (logging.ERROR,   "ERROR"),
+            (logging.ERROR, "ERROR"),
         ]:
             self._level_combo.addItem(name, userData=level)
-        self._level_combo.setCurrentIndex(1)   # default: INFO
+        self._level_combo.setCurrentIndex(1)  # default: INFO
         self._level_combo.currentIndexChanged.connect(self._on_level_changed)
         toolbar.addWidget(self._level_combo)
 
         toolbar.addSpacing(16)
 
         self._autoscroll_cb = QCheckBox("Auto-scroll")
-        self._autoscroll_cb.setToolTip("Automatically scroll to the newest log entry as it arrives. Turn off to pin the view while inspecting older lines.")
+        self._autoscroll_cb.setToolTip(
+            "Automatically scroll to the newest log entry as it arrives. Turn off to pin the view while inspecting older lines."
+        )
         self._autoscroll_cb.setChecked(True)
         toolbar.addWidget(self._autoscroll_cb)
 
@@ -128,9 +133,7 @@ class LogTab(QWidget):
         self._view.setReadOnly(True)
         self._view.setMaximumBlockCount(_MAX_LINES)
         self._view.setFont(QFont("Consolas", 9))
-        self._view.setStyleSheet(
-            "QPlainTextEdit { background: #1e1e1e; color: #cccccc; border: none; }"
-        )
+        self._view.setStyleSheet("QPlainTextEdit { background: #1e1e1e; color: #cccccc; border: none; }")
         # Disable the default word-wrap so long lines scroll horizontally
         self._view.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         layout.addWidget(self._view)
@@ -145,7 +148,7 @@ class LogTab(QWidget):
 
     def _install_handler(self):
         root = logging.getLogger()
-        self._on_level_changed()   # sync handler level with combo
+        self._on_level_changed()  # sync handler level with combo
         root.addHandler(self._handler)
 
     def remove_handler(self):
@@ -172,7 +175,8 @@ class LogTab(QWidget):
         cursor.movePosition(QTextCursor.MoveOperation.End)
         cursor.insertText(msg + "\n", fmt)
 
-        self._line_count = self._view.document().blockCount()
+        if (doc := self._view.document()) is not None:
+            self._line_count = doc.blockCount()
         self._status_label.setText(f"{self._line_count} lines")
 
         if self._autoscroll_cb.isChecked():
@@ -187,8 +191,7 @@ class LogTab(QWidget):
     def _export(self):
         default_name = f"sc_loc_editor_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
         path, _ = QFileDialog.getSaveFileName(
-            self, "Export log", default_name,
-            "Log files (*.log);;Text files (*.txt);;All files (*)"
+            self, "Export log", default_name, "Log files (*.log);;Text files (*.txt);;All files (*)"
         )
         if not path:
             return
@@ -196,4 +199,5 @@ class LogTab(QWidget):
             Path(path).write_text(self._view.toPlainText(), encoding="utf-8")
         except Exception as e:
             from PyQt6.QtWidgets import QMessageBox
+
             QMessageBox.critical(self, "Export failed", str(e))

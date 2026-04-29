@@ -140,9 +140,7 @@ class AppSettings:
     @staticmethod
     def get_enhancements_enabled() -> bool:
         """Check whether enhancements are enabled (default: True)."""
-        return AppSettings.settings().value(
-            AppSettings.ENHANCEMENTS_ENABLED, True, type=bool
-        )
+        return AppSettings.settings().value(AppSettings.ENHANCEMENTS_ENABLED, True, type=bool)
 
     @staticmethod
     def set_enhancements_enabled(enabled: bool) -> None:
@@ -152,16 +150,12 @@ class AppSettings:
     @staticmethod
     def get_enhancement_category_enabled(key: str) -> bool:
         """Check if a specific enhancement category is enabled (default: True)."""
-        return AppSettings.settings().value(
-            f"enhancements/categories/{key}/enabled", True, type=bool
-        )
+        return AppSettings.settings().value(f"enhancements/categories/{key}/enabled", True, type=bool)
 
     @staticmethod
     def set_enhancement_category_enabled(key: str, enabled: bool) -> None:
         """Enable or disable a specific enhancement category."""
-        AppSettings.settings().setValue(
-            f"enhancements/categories/{key}/enabled", enabled
-        )
+        AppSettings.settings().setValue(f"enhancements/categories/{key}/enabled", enabled)
 
     @staticmethod
     def get_enabled_enhancement_categories() -> set[str]:
@@ -290,9 +284,7 @@ class AppSettings:
             sc_directory, _ = winreg.QueryValueEx(registry_key, "sc_directory")
             winreg.CloseKey(registry_key)
             if sc_directory:
-                AppSettings.settings().setValue(
-                    AppSettings.GAME_INSTALL_PATH, sc_directory
-                )
+                AppSettings.settings().setValue(AppSettings.GAME_INSTALL_PATH, sc_directory)
                 return sc_directory
         except OSError as e:
             logger.debug(f"Could not read legacy registry path: {e}")
@@ -340,9 +332,7 @@ class AppSettings:
     @staticmethod
     def get_auto_write_enabled() -> bool:
         """Get auto-write to game enabled flag."""
-        return AppSettings.settings().value(
-            AppSettings.AUTO_WRITE_ENABLED, False, type=bool
-        )
+        return AppSettings.settings().value(AppSettings.AUTO_WRITE_ENABLED, False, type=bool)
 
     @staticmethod
     def set_auto_write_enabled(enabled: bool) -> None:
@@ -437,7 +427,7 @@ class AppSettings:
         return default
 
     @staticmethod
-    def set_merge_hierarchy(hierarchy: list) -> None:
+    def set_merge_hierarchy(hierarchy: list[str]) -> None:
         """Set the merge hierarchy (ordered list of source names).
 
         Args:
@@ -520,9 +510,7 @@ class AppSettings:
         # (Pre-1.0 the marker was the contracts source — that key may still
         # exist on upgraders but the dedicated retired-source migrator below
         # will remove it on the same launch.)
-        if settings.value(
-            f"{AppSettings.DATA_SOURCES_PREFIX}/{AppSettings.SOURCE_GLOBAL}/path"
-        ):
+        if settings.value(f"{AppSettings.DATA_SOURCES_PREFIX}/{AppSettings.SOURCE_GLOBAL}/path"):
             return
 
         # Global: locally-cached base.ini, populated by P4K extraction.
@@ -537,9 +525,7 @@ class AppSettings:
 
         # Default hierarchy: global → user. The enhancements source is
         # auto-inserted between them at load time when its files exist.
-        AppSettings.set_merge_hierarchy(
-            [AppSettings.SOURCE_GLOBAL, AppSettings.SOURCE_USER]
-        )
+        AppSettings.set_merge_hierarchy([AppSettings.SOURCE_GLOBAL, AppSettings.SOURCE_USER])
 
     @staticmethod
     def migrate_remove_retired_url_sources() -> bool:
@@ -628,9 +614,7 @@ class AppSettings:
             local_path = str(AppSettings.get_cache_dir() / "base.ini")
             AppSettings.set_source_path(AppSettings.SOURCE_GLOBAL, local_path)
             AppSettings.set_source_auto_update(AppSettings.SOURCE_GLOBAL, False)
-            logger.info(
-                "Migrated global source from remote URL to local P4K cache path"
-            )
+            logger.info("Migrated global source from remote URL to local P4K cache path")
             return True
         return False
 
@@ -689,9 +673,7 @@ class AppSettings:
             AppSettings._reg_write_marker(new_path, AppSettings._MIGRATION_MARKER)
             return
 
-        logger.info(
-            f"Migrating registry settings HKCU\\{old_path}  →  HKCU\\{new_path}"
-        )
+        logger.info(f"Migrating registry settings HKCU\\{old_path}  →  HKCU\\{new_path}")
         try:
             AppSettings._reg_copy_tree(old_path, new_path)
             AppSettings._reg_write_marker(new_path, AppSettings._MIGRATION_MARKER)
@@ -774,9 +756,7 @@ class AppSettings:
         """Depth-first delete of an HKCU subtree (winreg.DeleteKey refuses
         to remove a key that still has children, so we strip leaves first)."""
         try:
-            key = winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER, path, 0, winreg.KEY_ALL_ACCESS
-            )
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, path, 0, winreg.KEY_ALL_ACCESS)
         except FileNotFoundError:
             return
         try:
@@ -849,9 +829,7 @@ class AppSettings:
                 tail = legacy_path.name.upper()
                 channels_upper = {c.upper(): c for c in AppSettings.AVAILABLE_CHANNELS}
                 if tail in channels_upper:
-                    settings.setValue(
-                        AppSettings.SC_INSTALL_ROOT, str(legacy_path.parent)
-                    )
+                    settings.setValue(AppSettings.SC_INSTALL_ROOT, str(legacy_path.parent))
                     settings.setValue(AppSettings.ACTIVE_CHANNEL, channels_upper[tail])
                     logger.info(
                         f"Migrated GAME_INSTALL_PATH {legacy!r} → "
@@ -860,9 +838,7 @@ class AppSettings:
                     )
                 else:
                     settings.setValue(AppSettings.SC_INSTALL_ROOT, legacy)
-                    settings.setValue(
-                        AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL
-                    )
+                    settings.setValue(AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL)
                     logger.info(
                         f"Migrated GAME_INSTALL_PATH {legacy!r} (no channel suffix) → "
                         f"SC_INSTALL_ROOT={legacy}, ACTIVE_CHANNEL={AppSettings.DEFAULT_CHANNEL}"
@@ -899,9 +875,7 @@ class AppSettings:
                 f"{[p.name for p in populated_channel_dirs]}; skipping filesystem migration"
             )
         else:
-            target_channel = settings.value(
-                AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL
-            )
+            target_channel = settings.value(AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL)
             target_dir = root / target_channel
             moved = []
             skipped = []
@@ -931,9 +905,7 @@ class AppSettings:
                                     try:
                                         child.rename(dest / child.name)
                                     except OSError as move_err:
-                                        logger.warning(
-                                            f"Could not merge {child} into {dest}: {move_err}"
-                                        )
+                                        logger.warning(f"Could not merge {child} into {dest}: {move_err}")
                                 try:
                                     entry.rmdir()  # now empty
                                 except OSError:
@@ -942,26 +914,17 @@ class AppSettings:
                                 continue
                             # File-vs-file or mismatched-type collision —
                             # skip with a warning; user keeps both copies.
-                            logger.warning(
-                                f"Migration skipped {entry} — target {dest} already exists"
-                            )
+                            logger.warning(f"Migration skipped {entry} — target {dest} already exists")
                             skipped.append(entry.name)
                             continue
                         entry.rename(dest)
                         moved.append(entry.name)
                     except OSError as move_err:
-                        logger.warning(
-                            f"Could not move {entry} into {target_dir}: {move_err}"
-                        )
+                        logger.warning(f"Could not move {entry} into {target_dir}: {move_err}")
                 if moved:
-                    logger.info(
-                        f"Migrated flat user-data layout into {target_dir}: "
-                        f"moved {moved}"
-                    )
+                    logger.info(f"Migrated flat user-data layout into {target_dir}: moved {moved}")
                 if skipped:
-                    logger.debug(
-                        f"Skipped (already channel dirs or collisions): {skipped}"
-                    )
+                    logger.debug(f"Skipped (already channel dirs or collisions): {skipped}")
             except OSError as e:
                 logger.warning(f"Channel-layout filesystem migration failed: {e}")
 
@@ -991,8 +954,7 @@ class AppSettings:
                 return override_path
             except OSError as e:
                 logger.warning(
-                    f"USER_DATA_DIR override {override!r} not usable ({e}); "
-                    f"falling back to Documents default"
+                    f"USER_DATA_DIR override {override!r} not usable ({e}); falling back to Documents default"
                 )
         data_dir = AppSettings._resolve_docs_base() / "Smart Citizen"
         data_dir.mkdir(parents=True, exist_ok=True)
@@ -1023,23 +985,17 @@ class AppSettings:
         safer than raising, since path helpers downstream depend on this and
         a bad value would break every subsequent call.
         """
-        value = AppSettings.settings().value(
-            AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL
-        )
+        value = AppSettings.settings().value(AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL)
         if value in AppSettings.AVAILABLE_CHANNELS:
             return value
-        logger.warning(
-            f"Unknown active_channel {value!r}; defaulting to {AppSettings.DEFAULT_CHANNEL}"
-        )
+        logger.warning(f"Unknown active_channel {value!r}; defaulting to {AppSettings.DEFAULT_CHANNEL}")
         return AppSettings.DEFAULT_CHANNEL
 
     @staticmethod
     def set_active_channel(channel: str) -> None:
         """Persist the active channel name. Must be a member of AVAILABLE_CHANNELS."""
         if channel not in AppSettings.AVAILABLE_CHANNELS:
-            raise ValueError(
-                f"Unknown channel {channel!r}; expected one of {AppSettings.AVAILABLE_CHANNELS}"
-            )
+            raise ValueError(f"Unknown channel {channel!r}; expected one of {AppSettings.AVAILABLE_CHANNELS}")
         AppSettings.settings().setValue(AppSettings.ACTIVE_CHANNEL, channel)
         AppSettings.settings().sync()
 
@@ -1065,9 +1021,7 @@ class AppSettings:
         legacy = AppSettings.settings().value(AppSettings.GAME_INSTALL_PATH, "")
         if legacy:
             legacy_path = Path(legacy)
-            if legacy_path.name.upper() in (
-                c.upper() for c in AppSettings.AVAILABLE_CHANNELS
-            ):
+            if legacy_path.name.upper() in (c.upper() for c in AppSettings.AVAILABLE_CHANNELS):
                 return str(legacy_path.parent)
             return legacy  # assume it was already a root
 
@@ -1098,11 +1052,7 @@ class AppSettings:
         if not root:
             return list(AppSettings.AVAILABLE_CHANNELS)
         root_path = Path(root)
-        return [
-            channel
-            for channel in AppSettings.AVAILABLE_CHANNELS
-            if (root_path / channel / "Data.p4k").exists()
-        ]
+        return [channel for channel in AppSettings.AVAILABLE_CHANNELS if (root_path / channel / "Data.p4k").exists()]
 
     @staticmethod
     def get_channel_install_path() -> str:
@@ -1277,9 +1227,7 @@ class AppSettings:
             return Path(channel_path) / "Data.p4k"
 
         game_path = Path(AppSettings.get_game_install_path())
-        if game_path.name.upper() in {
-            c.upper() for c in AppSettings.AVAILABLE_CHANNELS
-        }:
+        if game_path.name.upper() in {c.upper() for c in AppSettings.AVAILABLE_CHANNELS}:
             return game_path / "Data.p4k"
         return game_path / AppSettings.get_active_channel() / "Data.p4k"
 
@@ -1296,23 +1244,12 @@ class AppSettings:
         """
         channel_path = AppSettings.get_channel_install_path()
         if channel_path:
-            return (
-                Path(channel_path) / "data" / "Localization" / "english" / "global.ini"
-            )
+            return Path(channel_path) / "data" / "Localization" / "english" / "global.ini"
 
         game_path = Path(AppSettings.get_game_install_path())
-        if game_path.name.upper() in {
-            c.upper() for c in AppSettings.AVAILABLE_CHANNELS
-        }:
+        if game_path.name.upper() in {c.upper() for c in AppSettings.AVAILABLE_CHANNELS}:
             return game_path / "data" / "Localization" / "english" / "global.ini"
-        return (
-            game_path
-            / AppSettings.get_active_channel()
-            / "data"
-            / "Localization"
-            / "english"
-            / "global.ini"
-        )
+        return game_path / AppSettings.get_active_channel() / "data" / "Localization" / "english" / "global.ini"
 
     @staticmethod
     def ensure_user_ini_file() -> None:
