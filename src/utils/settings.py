@@ -42,11 +42,8 @@ class AppSettings:
     # under a common install root, each with its own Data.p4k. We store the
     # root directory + the active channel name separately so the rest of the
     # app can resolve channel-specific paths from a single source of truth.
-    # Legacy installs with ``GAME_INSTALL_PATH = {root}\LIVE`` are migrated
-    # by ``migrate_game_path_to_channel_layout`` on first launch.
     SC_INSTALL_ROOT = "sc_install_root"
     ACTIVE_CHANNEL = "active_channel"
-    CHANNEL_LAYOUT_MIGRATED = "_channel_layout_migrated"  # one-shot marker
 
     # Channel names are the folder names Star Citizen uses under its install
     # root. Order here drives the combo box order in the Config tab.
@@ -96,12 +93,8 @@ class AppSettings:
         "journal": ["journal"],
     }
 
-    # Settings keys - Legacy (kept for migration)
-    BASE_GLOBAL_PATH = "base_global_path"
-    VEHICLES_PATH = "vehicles_path"
-    LAST_OVERRIDES_PATH = "last_overrides_path"
+    # Settings keys - Legacy
     GAME_INSTALL_PATH = "game_install_path"
-    AUTO_WRITE_ENABLED = "auto_write_enabled"
     WINDOW_GEOMETRY = "window_geometry"
     WINDOW_STATE = "window_state"
     # Explicit override for the user-data directory. When set, takes
@@ -118,11 +111,6 @@ class AppSettings:
 
     # Available data sources
     SOURCE_GLOBAL = "global"
-    SOURCE_CONTRACTS = "contracts"
-    SOURCE_COMPONENTS = "components"
-    SOURCE_SHIPS = "ships"
-    SOURCE_COMMODITIES = "commodities"
-    SOURCE_GEAR = "gear"
     SOURCE_USER = "user"
     AVAILABLE_SOURCES = [SOURCE_GLOBAL, SOURCE_USER]
 
@@ -211,42 +199,6 @@ class AppSettings:
         AppSettings.settings().sync()
 
     @staticmethod
-    def get_base_global_path() -> str:
-        """Get legacy base global path (for backward compatibility).
-
-        This is deprecated. Use get_source_path(SOURCE_GLOBAL) instead.
-        """
-        return AppSettings.settings().value(AppSettings.BASE_GLOBAL_PATH, "")
-
-    @staticmethod
-    def set_base_global_path(path: str) -> None:
-        """Set legacy base global path (for backward compatibility).
-
-        This is deprecated. Use set_source_path(SOURCE_GLOBAL, path) instead.
-        """
-        AppSettings.settings().setValue(AppSettings.BASE_GLOBAL_PATH, path)
-
-    @staticmethod
-    def get_vehicles_path() -> str:
-        """Get path to vehicles.ini."""
-        return AppSettings.settings().value(AppSettings.VEHICLES_PATH, "")
-
-    @staticmethod
-    def set_vehicles_path(path: str) -> None:
-        """Set path to vehicles.ini."""
-        AppSettings.settings().setValue(AppSettings.VEHICLES_PATH, path)
-
-    @staticmethod
-    def get_last_overrides_path() -> str:
-        """Get last directory used for overrides."""
-        return AppSettings.settings().value(AppSettings.LAST_OVERRIDES_PATH, "")
-
-    @staticmethod
-    def set_last_overrides_path(path: str) -> None:
-        """Set last directory used for overrides."""
-        AppSettings.settings().setValue(AppSettings.LAST_OVERRIDES_PATH, path)
-
-    @staticmethod
     def get_game_install_path() -> str:
         """Return the install path of the **active channel**.
 
@@ -258,9 +210,7 @@ class AppSettings:
 
         Falls back to the legacy ``GAME_INSTALL_PATH`` stored value, and
         then to the installer-written registry key, for users whose
-        settings haven't been through :meth:`migrate_game_path_to_channel_layout`
-        yet (should be a vanishingly small window — the migrator runs at
-        ``main()`` startup).
+        settings haven't yet been written (new install first-launch only).
         """
         root = AppSettings.settings().value(AppSettings.SC_INSTALL_ROOT, "")
         if root:
@@ -312,16 +262,6 @@ class AppSettings:
         AppSettings.settings().setValue(AppSettings.GAME_INSTALL_PATH, path)
 
     @staticmethod
-    def get_auto_write_enabled() -> bool:
-        """Get auto-write to game enabled flag."""
-        return AppSettings.settings().value(AppSettings.AUTO_WRITE_ENABLED, False, type=bool)
-
-    @staticmethod
-    def set_auto_write_enabled(enabled: bool) -> None:
-        """Set auto-write to game enabled flag."""
-        AppSettings.settings().setValue(AppSettings.AUTO_WRITE_ENABLED, enabled)
-
-    @staticmethod
     def get_window_geometry() -> bytes:
         """Get saved window geometry."""
         return AppSettings.settings().value(AppSettings.WINDOW_GEOMETRY, b"")
@@ -346,7 +286,7 @@ class AppSettings:
         """Get path/URL for a data source.
 
         Args:
-            source_name: One of SOURCE_GLOBAL, SOURCE_CONTRACTS, SOURCE_COMPONENTS, SOURCE_SHIPS, SOURCE_USER
+            source_name: One of SOURCE_GLOBAL, SOURCE_USER
 
         Returns:
             Path or URL string, empty string if not set
@@ -359,7 +299,7 @@ class AppSettings:
         """Set path/URL for a data source.
 
         Args:
-            source_name: One of SOURCE_GLOBAL, SOURCE_CONTRACTS, SOURCE_COMPONENTS, SOURCE_SHIPS, SOURCE_USER
+            source_name: One of SOURCE_GLOBAL, SOURCE_USER
             path: File path or URL
         """
         key = f"{AppSettings.DATA_SOURCES_PREFIX}/{source_name}/path"
@@ -370,10 +310,10 @@ class AppSettings:
         """Check if a data source is enabled.
 
         Args:
-            source_name: One of SOURCE_GLOBAL, SOURCE_CONTRACTS, SOURCE_COMPONENTS, SOURCE_SHIPS, SOURCE_USER
+            source_name: One of SOURCE_GLOBAL, SOURCE_USER
 
         Returns:
-            True if enabled, False otherwise. Defaults to True for Global and User, False for others.
+            True if enabled, False otherwise. Defaults to True for both.
         """
         key = f"{AppSettings.DATA_SOURCES_PREFIX}/{source_name}/enabled"
         # Default: Global and User always enabled, others disabled
@@ -385,7 +325,7 @@ class AppSettings:
         """Enable or disable a data source.
 
         Args:
-            source_name: One of SOURCE_GLOBAL, SOURCE_CONTRACTS, SOURCE_COMPONENTS, SOURCE_SHIPS, SOURCE_USER
+            source_name: One of SOURCE_GLOBAL, SOURCE_USER
             enabled: True to enable, False to disable
         """
         key = f"{AppSettings.DATA_SOURCES_PREFIX}/{source_name}/enabled"
@@ -422,7 +362,7 @@ class AppSettings:
         """Check if auto-update is enabled for a source.
 
         Args:
-            source_name: One of SOURCE_GLOBAL, SOURCE_CONTRACTS, SOURCE_COMPONENTS, SOURCE_SHIPS
+            source_name: One of SOURCE_GLOBAL, SOURCE_USER
             (SOURCE_USER does not support auto-update)
 
         Returns:
@@ -438,7 +378,7 @@ class AppSettings:
         """Enable or disable auto-update for a source.
 
         Args:
-            source_name: One of SOURCE_GLOBAL, SOURCE_CONTRACTS, SOURCE_COMPONENTS, SOURCE_SHIPS
+            source_name: One of SOURCE_GLOBAL, SOURCE_USER
             enabled: True to auto-update, False to disable
         """
         if source_name == AppSettings.SOURCE_USER:
@@ -446,32 +386,12 @@ class AppSettings:
         key = f"{AppSettings.SOURCE_AUTO_UPDATE_PREFIX}/{source_name}"
         AppSettings.settings().setValue(key, enabled)
 
-    # One-shot marker for migrate_remove_retired_url_sources(). Versioned
-    # so the migration can pick up new retired source names in later
-    # releases without being blocked by an earlier run's marker. Always bump
-    # the version when expanding RETIRED_URL_SOURCE_NAMES — the prior marker
-    # stays in the registry but is ignored.
-    RETIRED_URL_SOURCES_PRUNED = "_retired_url_sources_pruned_v2"
-
-    # Sources that were retired in 0.7.0 when the app moved to local Data.p4k
-    # extraction + locally-generated *_enhancements.ini files. New installs
-    # don't get them; existing installs with these sources still in their
-    # registry get them pruned by migrate_remove_retired_url_sources().
-    RETIRED_URL_SOURCE_NAMES = (
-        SOURCE_CONTRACTS,
-        SOURCE_COMPONENTS,
-        SOURCE_SHIPS,
-        SOURCE_COMMODITIES,
-        SOURCE_GEAR,
-    )
-
     @staticmethod
-    def migrate_legacy_settings() -> None:
-        """Initialize default sources for a fresh install.
+    def ensure_default_settings() -> None:
+        """Seed default source settings on first launch if the registry is empty.
 
-        Despite the name, this is the "set defaults if no settings exist"
-        function — it short-circuits if the global source has already been
-        registered. It seeds only the two sources the app actually uses:
+        Idempotent — short-circuits if the global source is already registered.
+        Seeds only the two sources the app uses:
 
           * ``global`` — locally-cached ``base.ini`` from Data.p4k extraction
           * ``user``   — per-channel ``user.ini`` (created lazily on first edit)
@@ -479,19 +399,10 @@ class AppSettings:
         The ``enhancements`` source is dynamically injected by
         :func:`load_sources_from_settings` based on which enhancement
         categories the user has enabled — it doesn't need a registry entry.
-
-        The 0.x defaults registered four extra URL-based sources
-        (contracts/components/ships/commodities) pointing at a ``data/``
-        folder that was retired in 0.7.0. Those are no longer registered for
-        new installs, and existing installs are cleaned up by
-        :func:`migrate_remove_retired_url_sources`.
         """
         settings = AppSettings.settings()
 
-        # Idempotence: check the global source registration as the marker.
-        # (Pre-1.0 the marker was the contracts source — that key may still
-        # exist on upgraders but the dedicated retired-source migrator below
-        # will remove it on the same launch.)
+        # Idempotent — return immediately if the global source is already registered.
         if settings.value(f"{AppSettings.DATA_SOURCES_PREFIX}/{AppSettings.SOURCE_GLOBAL}/path"):
             return
 
@@ -510,97 +421,6 @@ class AppSettings:
         AppSettings.set_merge_hierarchy([AppSettings.SOURCE_GLOBAL, AppSettings.SOURCE_USER])
 
     @staticmethod
-    def migrate_remove_retired_url_sources() -> bool:
-        """One-shot prune of the four URL-based sources retired in 0.7.0.
-
-        Pre-1.0 ``migrate_legacy_settings()`` registered ``contracts``,
-        ``components``, ``ships``, and ``commodities`` pointing at a
-        ``data/<name>.ini`` folder in the GitHub repo. That folder was
-        retired in 0.7.0 when the app switched to local Data.p4k extraction
-        + locally-generated ``*_enhancements.ini``, so those URLs have been
-        404-ing silently for ~10 versions and produce zero-key rows in the
-        Merge Preview.
-
-        For each retired source name:
-          * if its registered path is a URL (the original default state),
-            delete the source's registry entries and remove it from the
-            merge hierarchy;
-          * if its path is a local file (rare — user manually re-pointed
-            it at their own INI), leave it alone.
-
-        Marker-gated via :data:`RETIRED_URL_SOURCES_PRUNED` so this runs
-        exactly once per user.
-
-        Returns:
-            True if any source was actually removed, False if the migration
-            had already run or there was nothing to clean up.
-        """
-        settings = AppSettings.settings()
-        if settings.value(AppSettings.RETIRED_URL_SOURCES_PRUNED, False, type=bool):
-            return False
-
-        # First pass: figure out which retired sources to prune. A source is
-        # eligible if EITHER its registry path is a URL (the original default
-        # state) OR it's in the merge hierarchy with no path stored at all
-        # (orphan hierarchy entry — happens when an even earlier version
-        # added the name to the hierarchy without a per-source registration).
-        # Sources with a local-file path are preserved (rare user override).
-        prior_hierarchy = AppSettings.get_merge_hierarchy()
-        in_hierarchy = set(prior_hierarchy)
-        prune: list[str] = []
-        for source_name in AppSettings.RETIRED_URL_SOURCE_NAMES:
-            path = AppSettings.get_source_path(source_name)
-            if path and not (path.startswith("http://") or path.startswith("https://")):
-                logger.info(
-                    f"Skipping retired-source prune for {source_name}: "
-                    f"path is local ({path}), not a URL — preserving user override"
-                )
-                continue
-            if not path and source_name not in in_hierarchy:
-                # No path AND not in hierarchy — nothing to prune for this one.
-                continue
-            prune.append(source_name)
-
-        for source_name in prune:
-            # Nuke every key under data_sources/<name>/... (no-op if no path
-            # was registered, which is fine — Qt's remove() on a missing key
-            # is idempotent).
-            settings.remove(f"{AppSettings.DATA_SOURCES_PREFIX}/{source_name}")
-
-        if prune:
-            new_hierarchy = [s for s in prior_hierarchy if s not in prune]
-            if new_hierarchy != prior_hierarchy:
-                AppSettings.set_merge_hierarchy(new_hierarchy)
-            logger.info(
-                f"Pruned retired URL-based sources: {prune} — "
-                f"these defunct defaults from pre-0.7.0 produce no data and "
-                f"have been removed from the merge hierarchy"
-            )
-
-        settings.setValue(AppSettings.RETIRED_URL_SOURCES_PRUNED, True)
-        return bool(prune)
-
-    @staticmethod
-    def migrate_global_to_p4k_local() -> bool:
-        """Migrate global source from any remote URL to local cached base.ini (v0.6.0+).
-
-        For existing users whose Global source still points to MrKraken, BeltaKoda,
-        or any other remote URL: switch to local cache path and disable auto-update
-        so the file is managed by P4K extraction instead of remote download.
-
-        Returns:
-            True if migration was performed, False if already using local path.
-        """
-        current_path = AppSettings.get_source_path(AppSettings.SOURCE_GLOBAL)
-        if current_path.startswith("http"):
-            local_path = str(AppSettings.get_cache_dir() / "base.ini")
-            AppSettings.set_source_path(AppSettings.SOURCE_GLOBAL, local_path)
-            AppSettings.set_source_auto_update(AppSettings.SOURCE_GLOBAL, False)
-            logger.info("Migrated global source from remote URL to local P4K cache path")
-            return True
-        return False
-
-    @staticmethod
     def _resolve_docs_base() -> Path:
         """Resolve the real Documents root (honors OneDrive redirection)."""
         try:
@@ -613,146 +433,6 @@ class AppSettings:
         except OSError:
             docs_path = Path.home() / "Documents"
         return docs_path
-
-    @staticmethod
-    def migrate_game_path_to_channel_layout() -> None:
-        r"""One-shot migration to the 0.9.3 channel-aware layout.
-
-        Two orthogonal bits of migration happen here; both are idempotent
-        and short-circuited by a single marker (:data:`CHANNEL_LAYOUT_MIGRATED`)
-        so every subsequent launch no-ops cheaply.
-
-        **Registry side:** if ``GAME_INSTALL_PATH`` is set but ``SC_INSTALL_ROOT``
-        isn't, split the stored path on a trailing ``\{CHANNEL}`` suffix and
-        record the parent as ``SC_INSTALL_ROOT``. ``ACTIVE_CHANNEL`` is set
-        to the stripped channel name (``LIVE`` when the stored path has no
-        recognizable channel suffix — matches pre-0.9.3 behavior).
-
-        **Filesystem side:** if ``Documents\Open Strings\`` contains the
-        old flat layout (``base.ini`` / ``cache\`` / ``backups\`` / ``user.ini``)
-        and no ``LIVE\`` (or other channel) subfolder exists, move those
-        entries into a new ``LIVE\`` subfolder so every path helper starts
-        resolving channel-scoped. Skips anything that looks like a channel
-        directory, the migration marker, and the registry mirror files,
-        leaving unrelated files untouched.
-
-        Failures during the filesystem move are logged but not raised — the
-        app degrades to "user re-runs Extract" at worst rather than
-        crashing at startup.
-        """
-        settings = AppSettings.settings()
-        if settings.value(AppSettings.CHANNEL_LAYOUT_MIGRATED, False, type=bool):
-            return
-
-        # --- Registry: split GAME_INSTALL_PATH into SC_INSTALL_ROOT + ACTIVE_CHANNEL
-        if not settings.value(AppSettings.SC_INSTALL_ROOT, ""):
-            legacy = settings.value(AppSettings.GAME_INSTALL_PATH, "")
-            if legacy:
-                legacy_path = Path(legacy)
-                tail = legacy_path.name.upper()
-                channels_upper = {c.upper(): c for c in AppSettings.AVAILABLE_CHANNELS}
-                if tail in channels_upper:
-                    settings.setValue(AppSettings.SC_INSTALL_ROOT, str(legacy_path.parent))
-                    settings.setValue(AppSettings.ACTIVE_CHANNEL, channels_upper[tail])
-                    logger.info(
-                        f"Migrated GAME_INSTALL_PATH {legacy!r} → "
-                        f"SC_INSTALL_ROOT={legacy_path.parent}, "
-                        f"ACTIVE_CHANNEL={channels_upper[tail]}"
-                    )
-                else:
-                    settings.setValue(AppSettings.SC_INSTALL_ROOT, legacy)
-                    settings.setValue(AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL)
-                    logger.info(
-                        f"Migrated GAME_INSTALL_PATH {legacy!r} (no channel suffix) → "
-                        f"SC_INSTALL_ROOT={legacy}, ACTIVE_CHANNEL={AppSettings.DEFAULT_CHANNEL}"
-                    )
-
-        if not settings.value(AppSettings.ACTIVE_CHANNEL, ""):
-            settings.setValue(AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL)
-
-        # --- Filesystem: move flat layout into a {active_channel}/ subfolder
-        root = AppSettings.get_user_data_dir()
-        channel_names_upper = {c.upper() for c in AppSettings.AVAILABLE_CHANNELS}
-
-        # Whether a channel subfolder has any *real* content (files or nested
-        # dirs) vs. just being an empty shell auto-created by a path helper's
-        # ``mkdir(exist_ok=True)`` — the latter shouldn't block migration.
-        def _has_content(p: Path) -> bool:
-            try:
-                for sub in p.rglob("*"):
-                    if sub.is_file():
-                        return True
-            except OSError:
-                return False
-            return False
-
-        populated_channel_dirs = [
-            p
-            for p in (root.iterdir() if root.exists() else [])
-            if p.is_dir() and p.name.upper() in channel_names_upper and _has_content(p)
-        ]
-
-        if populated_channel_dirs:
-            logger.info(
-                f"Populated channel subfolders already present under {root}: "
-                f"{[p.name for p in populated_channel_dirs]}; skipping filesystem migration"
-            )
-        else:
-            target_channel = settings.value(AppSettings.ACTIVE_CHANNEL, AppSettings.DEFAULT_CHANNEL)
-            target_dir = root / target_channel
-            moved = []
-            skipped = []
-            try:
-                target_dir.mkdir(parents=True, exist_ok=True)
-                for entry in list(root.iterdir()):
-                    if entry == target_dir:
-                        continue
-                    # Skip anything that matches another channel name — either
-                    # a populated sibling channel dir (bail above caught that)
-                    # or an empty shell for a different channel (we leave
-                    # alone; the current active channel is the only migration
-                    # target).
-                    if entry.is_dir() and entry.name.upper() in channel_names_upper:
-                        skipped.append(entry.name)
-                        continue
-                    try:
-                        # If the target already has an entry of the same name
-                        # (e.g. empty ``LIVE\cache\`` auto-created by a path
-                        # helper before the migrator ran), merge by moving
-                        # the flat entry's contents into the existing target
-                        # and then removing the now-empty flat dir.
-                        dest = target_dir / entry.name
-                        if dest.exists():
-                            if entry.is_dir() and dest.is_dir():
-                                for child in list(entry.iterdir()):
-                                    try:
-                                        child.rename(dest / child.name)
-                                    except OSError as move_err:
-                                        logger.warning(f"Could not merge {child} into {dest}: {move_err}")
-                                try:
-                                    entry.rmdir()  # now empty
-                                except OSError:
-                                    pass
-                                moved.append(f"{entry.name}/* → {dest}")
-                                continue
-                            # File-vs-file or mismatched-type collision —
-                            # skip with a warning; user keeps both copies.
-                            logger.warning(f"Migration skipped {entry} — target {dest} already exists")
-                            skipped.append(entry.name)
-                            continue
-                        entry.rename(dest)
-                        moved.append(entry.name)
-                    except OSError as move_err:
-                        logger.warning(f"Could not move {entry} into {target_dir}: {move_err}")
-                if moved:
-                    logger.info(f"Migrated flat user-data layout into {target_dir}: moved {moved}")
-                if skipped:
-                    logger.debug(f"Skipped (already channel dirs or collisions): {skipped}")
-            except OSError as e:
-                logger.warning(f"Channel-layout filesystem migration failed: {e}")
-
-        settings.setValue(AppSettings.CHANNEL_LAYOUT_MIGRATED, True)
-        settings.sync()
 
     @staticmethod
     def get_user_data_dir() -> Path:

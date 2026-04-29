@@ -104,26 +104,6 @@ class TestSimpleGetterSetters:
         AppSettings.settings().setValue(AppSettings.LAST_UPDATE_CHECK_EPOCH, "not-a-number")
         assert AppSettings.get_last_update_check_epoch() == 0
 
-    def test_base_global_path_roundtrip(self, isolated_qsettings):
-        assert AppSettings.get_base_global_path() == ""
-        AppSettings.set_base_global_path(r"C:\some\path\base.ini")
-        assert AppSettings.get_base_global_path() == r"C:\some\path\base.ini"
-
-    def test_vehicles_path_roundtrip(self, isolated_qsettings):
-        assert AppSettings.get_vehicles_path() == ""
-        AppSettings.set_vehicles_path(r"C:\vehicles.ini")
-        assert AppSettings.get_vehicles_path() == r"C:\vehicles.ini"
-
-    def test_last_overrides_path_roundtrip(self, isolated_qsettings):
-        assert AppSettings.get_last_overrides_path() == ""
-        AppSettings.set_last_overrides_path(r"C:\overrides")
-        assert AppSettings.get_last_overrides_path() == r"C:\overrides"
-
-    def test_auto_write_enabled_roundtrip(self, isolated_qsettings):
-        assert AppSettings.get_auto_write_enabled() is False
-        AppSettings.set_auto_write_enabled(True)
-        assert AppSettings.get_auto_write_enabled() is True
-
     def test_window_geometry_roundtrip(self, isolated_qsettings):
         assert AppSettings.get_window_geometry() == b""
         AppSettings.set_window_geometry(b"\x01\x02\x03")
