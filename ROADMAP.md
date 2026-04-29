@@ -11,7 +11,8 @@
 - [x] Add Check for Updates — checks `jonigirl/open-strings` GitHub releases on startup (6-hour interval) and via toolbar button
 - [x] Change journal annotation tag from `[SmC]` to `[OS]`
 
-## Future
+## 1.1.1 — Maintenance
 
-_(no items planned yet)_
-
+- [ ] Test and verify compatibility with Star Citizen 4.8
+- [ ] Review and update localization tag handling for any 4.8 changes
+- [ ] General app testing and fixes as needed
