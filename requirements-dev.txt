@@ -3,7 +3,6 @@
 # Main application requirements (from requirements.txt)
 PyQt6>=6.10.0
 PyInstaller>=6.3.0
-pyperclip>=1.8.2
 
 # Testing
 pytest>=7.0.0

@@ -859,7 +859,7 @@ class AppSettings:
 
         # --- Filesystem: move flat layout into a {active_channel}/ subfolder
         root = AppSettings.get_user_data_dir()
-        channels_upper = {c.upper() for c in AppSettings.AVAILABLE_CHANNELS}
+        channel_names_upper = {c.upper() for c in AppSettings.AVAILABLE_CHANNELS}
 
         # Whether a channel subfolder has any *real* content (files or nested
         # dirs) vs. just being an empty shell auto-created by a path helper's
@@ -875,7 +875,7 @@ class AppSettings:
 
         populated_channel_dirs = [
             p for p in (root.iterdir() if root.exists() else [])
-            if p.is_dir() and p.name.upper() in channels_upper and _has_content(p)
+            if p.is_dir() and p.name.upper() in channel_names_upper and _has_content(p)
         ]
 
         if populated_channel_dirs:
@@ -898,7 +898,7 @@ class AppSettings:
                     # or an empty shell for a different channel (we leave
                     # alone; the current active channel is the only migration
                     # target).
-                    if entry.is_dir() and entry.name.upper() in channels_upper:
+                    if entry.is_dir() and entry.name.upper() in channel_names_upper:
                         skipped.append(entry.name)
                         continue
                     try:
@@ -1168,7 +1168,7 @@ class AppSettings:
         ) / "Osiris DevWorks" / "SC Localization Editor"
         old_cache = old_base / "cache"
 
-        new_base  = AppSettings.get_user_data_dir()
+        new_base = AppSettings.get_user_data_dir()
         new_cache = AppSettings.get_cache_dir()
 
         # Migrate overrides.ini
@@ -1177,7 +1177,7 @@ class AppSettings:
         if old_overrides.exists() and not new_overrides.exists():
             try:
                 shutil.copy2(old_overrides, new_overrides)
-                logger.info(f"Migrated overrides.ini to Documents")
+                logger.info("Migrated overrides.ini to Documents")
             except Exception as e:
                 logger.warning(f"Could not migrate overrides.ini: {e}")
 
@@ -1209,8 +1209,9 @@ class AppSettings:
     def get_unp4k_exe_path() -> Path:
         """Resolve bundled unp4k.exe — works both frozen (PyInstaller) and in dev."""
         import sys
-        if getattr(sys, 'frozen', False):
-            base = Path(sys._MEIPASS)
+        meipass = getattr(sys, "_MEIPASS", None)
+        if getattr(sys, 'frozen', False) and meipass is not None:
+            base = Path(meipass)
         else:
             # src/utils/settings.py → src/utils → src → project root
             base = Path(__file__).parent.parent.parent
@@ -1220,8 +1221,9 @@ class AppSettings:
     def get_unforge_exe_path() -> Path:
         """Resolve bundled unforge.exe — works both frozen (PyInstaller) and in dev."""
         import sys
-        if getattr(sys, 'frozen', False):
-            base = Path(sys._MEIPASS)
+        meipass = getattr(sys, "_MEIPASS", None)
+        if getattr(sys, 'frozen', False) and meipass is not None:
+            base = Path(meipass)
         else:
             base = Path(__file__).parent.parent.parent
         return base / 'assets' / 'unp4k' / 'unforge.exe'

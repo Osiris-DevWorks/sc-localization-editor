@@ -219,9 +219,9 @@ class EnhancementsTab(QWidget):
                 self.favorite_prefix_combo.setCurrentIndex(i)
                 break
 
-        self.favorite_prefix_combo.view().setMinimumWidth(
-            self.favorite_prefix_combo.sizeHint().width() + 20
-        )
+        combo_view = self.favorite_prefix_combo.view()
+        if combo_view is not None:
+            combo_view.setMinimumWidth(self.favorite_prefix_combo.sizeHint().width() + 20)
         prefix_row.addWidget(self.favorite_prefix_combo)
 
         apply_prefix_btn = QPushButton("Apply")

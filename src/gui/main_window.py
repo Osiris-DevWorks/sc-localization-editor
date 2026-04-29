@@ -7,23 +7,34 @@ from typing import Optional
 
 from PyQt6.QtCore import Qt, QTimer, pyqtSlot, QThread, pyqtSignal, QModelIndex, QPropertyAnimation, QEasingCurve
 from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QComboBox, QCheckBox,
     QFileDialog, QMessageBox, QTabWidget,
-    QHeaderView, QStatusBar, QFrame, QStyledItemDelegate,
+    QHeaderView, QStatusBar, QStyledItemDelegate,
     QAbstractItemView, QMenu, QProgressDialog, QProgressBar, QTextBrowser,
     QTableView, QStackedLayout, QGraphicsOpacityEffect,
     QDockWidget,
 )
-from PyQt6.QtGui import QColor, QFont, QCursor, QPixmap, QIcon
+from PyQt6.QtGui import QColor, QFont, QCursor, QPixmap, QIcon, QMouseEvent
 from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QDesktopServices
 
 from src.gui.filter_header import FilterHeaderView
 from src.gui.string_table_model import (
-    StringTableModel, COL_STAR, COL_CUSTOM, COL_STATUS,
-    status_color,
+    StringTableModel, COL_STAR, COL_CUSTOM,
 )
+from src.models.string_model import StringEntry
+from src.parser.ini_parser import load_source_files, load_sources_from_settings
+from src.utils.settings import AppSettings
+from src.merger.ini_merger import merge_sources_by_hierarchy
+from src.utils.version import get_version
+from src.utils.perf import timed
+from src.utils.app_updater import AppUpdateCheckWorker
+from src.gui.config_tab import ConfigTab
+from src.gui.theme import get_button_color, get_button_text_color, get_title_color, get_tagline_color, BRAND_FONT_FAMILY
+from src.gui.enhancements_tab import EnhancementsTab
+from src.gui.log_tab import LogTab
+from src.gui.coach_mark import CoachMarkStep, TutorialTour
 
 
 class AnimatedProgressDialog(QProgressDialog):
@@ -75,8 +86,8 @@ class AnimatedProgressDialog(QProgressDialog):
                 from src.gui.theme import get_progress_groove_color, get_progress_chunk_color
                 chunk = QColor(get_progress_chunk_color())
                 light = chunk.lighter(135).name()
-                dark  = chunk.darker(125).name()
-                mid   = chunk.name()
+                dark = chunk.darker(125).name()
+                mid = chunk.name()
                 self._bar.setStyleSheet(
                     "QProgressBar {"
                     f" background-color: {get_progress_groove_color()};"
@@ -97,28 +108,34 @@ class AnimatedProgressDialog(QProgressDialog):
         if message:
             self.setLabelText(message)
 
-from src.models.string_model import StringEntry
-from src.parser.ini_parser import load_source_files, load_sources_from_settings, parse_ini_file
-from src.utils.settings import AppSettings
-from src.merger.ini_merger import merge_sources_by_hierarchy
-from src.utils.version import get_version
-from src.utils.perf import timed
-from src.utils.app_updater import AppUpdateCheckWorker
-from src.gui.config_tab import ConfigTab
-from src.gui.theme import get_button_color, get_button_text_color, get_title_color, get_tagline_color, BRAND_FONT_FAMILY
-from src.gui.enhancements_tab import EnhancementsTab
-from src.gui.log_tab import LogTab
-from src.gui.coach_mark import CoachMarkStep, TutorialTour
+
+class ClickableLabel(QLabel):
+    """QLabel variant that exposes a clicked signal."""
+
+    clicked = pyqtSignal()
+
+    def mousePressEvent(self, event: QMouseEvent | None) -> None:
+        self.clicked.emit()
+        super().mousePressEvent(event)
+
+
+class ClickableWidget(QWidget):
+    """QWidget variant that exposes a clicked signal."""
+
+    clicked = pyqtSignal()
+
+    def mousePressEvent(self, event: QMouseEvent | None) -> None:
+        self.clicked.emit()
+        super().mousePressEvent(event)
+
 
 logger = logging.getLogger(__name__)
 
 
 def get_resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller."""
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
+    base_path = getattr(sys, "_MEIPASS", None)
+    if base_path is None:
         # If not running as PyInstaller bundle, use the project root
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -463,7 +480,7 @@ class MainWindow(QMainWindow):
         # Data
         self.entries: list[StringEntry] = []
         self.filtered_row_indices: list[int] = []
-        self.default_values: dict = {}  # Store default values from cached base source
+        self.default_values: dict[str, str] = {}  # Store default values from cached base source
 
         # File loader worker
         self._loader_worker: Optional[FileLoaderWorker] = None
@@ -481,6 +498,7 @@ class MainWindow(QMainWindow):
 
         # DataForge extraction worker
         self._forge_worker: Optional[DataForgeExtractWorker] = None
+        self._forge_progress_dialog: Optional[AnimatedProgressDialog] = None
 
         # Track whether we've prompted for enhancements on startup (prevents duplicate dialogs)
         self._enhancements_prompted_on_startup = False
@@ -493,10 +511,23 @@ class MainWindow(QMainWindow):
         # Progress dialogs
         self._startup_progress: Optional[AnimatedProgressDialog] = None
         self._loading_progress: Optional[QProgressDialog] = None
+        self._eye_label: Optional[QLabel] = None
+        self._eye_pulse: Optional[QPropertyAnimation] = None
+        self._eye_glow: Optional[QGraphicsOpacityEffect] = None
+        self._eye_fadeout: Optional[QPropertyAnimation] = None
+        self._eye_pulse_monitor: Optional[QTimer] = None
+        self.osiris_button: QWidget
+        self.feedback_label: ClickableLabel
+        self.paypal_button: ClickableLabel
+        self.venmo_button: ClickableLabel
 
         # App self-update check
         self._update_check_worker: Optional[AppUpdateCheckWorker] = None
         self._latest_release_url: Optional[str] = None
+        self.help_dock: Optional[QDockWidget] = None
+        self._tutorial_tour: Optional[TutorialTour] = None
+        self._channel_indicator: Optional[QLabel] = None
+        self._app_version_indicator: Optional[ClickableLabel] = None
 
         # Build UI
         self.setup_ui()
@@ -517,6 +548,14 @@ class MainWindow(QMainWindow):
         ensure_user_cfg_language()
 
         logger.info("MainWindow initialized")
+
+    def _status_bar(self) -> QStatusBar:
+        """Return the window status bar, creating it if needed."""
+        status_bar = self.statusBar()
+        if status_bar is None:
+            status_bar = QStatusBar(self)
+            self.setStatusBar(status_bar)
+        return status_bar
 
     def setup_ui(self):
         """Build user interface."""
@@ -752,10 +791,10 @@ class MainWindow(QMainWindow):
         # (the earlier QGraphicsDropShadowEffect-on-the-fly approach had
         # the shadow kernel rebuilt every frame and read as visibly shaky).
         osiris_image_path = get_resource_path(os.path.join("assets", "osiris-devworks.png"))
-        osiris_glow_path  = get_resource_path(os.path.join("assets", "osiris-eye-glow.png"))
+        osiris_glow_path = get_resource_path(os.path.join("assets", "osiris-eye-glow.png"))
 
         if os.path.exists(osiris_image_path) and os.path.exists(osiris_glow_path):
-            self.osiris_button = QWidget()
+            self.osiris_button = ClickableWidget()
             stack = QStackedLayout(self.osiris_button)
             stack.setStackingMode(QStackedLayout.StackingMode.StackAll)
             stack.setContentsMargins(0, 0, 0, 0)
@@ -800,7 +839,7 @@ class MainWindow(QMainWindow):
 
             self.osiris_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             self.osiris_button.setToolTip("Open the Osiris DevWorks GitHub organization")
-            self.osiris_button.mousePressEvent = self.open_osiris_github
+            self.osiris_button.clicked.connect(self.open_osiris_github)
             footer_layout.addWidget(self.osiris_button)
 
             # Poll every 300ms and toggle the pulse to match worker state.
@@ -812,7 +851,7 @@ class MainWindow(QMainWindow):
             self._eye_pulse_monitor.start()
         else:
             # Fallback to styled text button
-            self.osiris_button = QLabel("Osiris DevWorks")
+            self.osiris_button = ClickableLabel("Osiris DevWorks")
             self.osiris_button.setStyleSheet("""
                 QLabel {
                     background-color: #1a1f2e;
@@ -831,7 +870,7 @@ class MainWindow(QMainWindow):
             self._eye_fadeout = None
             self.osiris_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             self.osiris_button.setToolTip("Open the Osiris DevWorks GitHub organization")
-            self.osiris_button.mousePressEvent = self.open_osiris_github
+            self.osiris_button.clicked.connect(self.open_osiris_github)
             footer_layout.addWidget(self.osiris_button)
 
         # Feedback button — sits immediately to the right of the Osiris logo.
@@ -839,7 +878,7 @@ class MainWindow(QMainWindow):
         # DevWorks Discord; falls back to a styled text label if the asset
         # is missing.
         footer_layout.addSpacing(10)
-        self.feedback_label = QLabel()
+        self.feedback_label = ClickableLabel()
         discord_image_path = get_resource_path(os.path.join("assets", "discord.png"))
         if os.path.exists(discord_image_path):
             discord_pixmap = QPixmap(discord_image_path)
@@ -854,14 +893,14 @@ class MainWindow(QMainWindow):
             "upcoming features (requires joining the Osiris DevWorks Discord)."
         )
         self.feedback_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.feedback_label.mousePressEvent = self.open_feedback_link
+        self.feedback_label.clicked.connect(self.open_feedback_link)
         footer_layout.addWidget(self.feedback_label)
 
         # Stretch to push the donation cluster to the right.
         footer_layout.addStretch()
 
         # PayPal button (right side)
-        self.paypal_button = QLabel()
+        self.paypal_button = ClickableLabel()
         paypal_image_path = get_resource_path(os.path.join("assets", "paypal.png"))
 
         # Try to load PayPal image, fall back to text if not found
@@ -889,14 +928,14 @@ class MainWindow(QMainWindow):
             """)
 
         self.paypal_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.paypal_button.mousePressEvent = self.open_paypal_donation
+        self.paypal_button.clicked.connect(self.open_paypal_donation)
         footer_layout.addWidget(self.paypal_button)
 
         # Spacer between PayPal and Venmo
         footer_layout.addSpacing(10)
 
         # Venmo button (right side)
-        self.venmo_button = QLabel()
+        self.venmo_button = ClickableLabel()
         venmo_image_path = get_resource_path(os.path.join("assets", "venmo.png"))
 
         # Try to load Venmo image, fall back to text button
@@ -924,26 +963,26 @@ class MainWindow(QMainWindow):
             """)
 
         self.venmo_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.venmo_button.mousePressEvent = self.open_venmo_donation
+        self.venmo_button.clicked.connect(self.open_venmo_donation)
         footer_layout.addWidget(self.venmo_button)
 
         return footer_layout
 
-    def open_osiris_github(self, event):
+    def open_osiris_github(self, _event: object | None = None) -> None:
         """Open the Osiris DevWorks GitHub organization in browser."""
         QDesktopServices.openUrl(QUrl("https://github.com/Osiris-DevWorks"))
 
-    def open_feedback_link(self, event):
+    def open_feedback_link(self, _event: object | None = None) -> None:
         """Open the dedicated Smart Citizen feedback channel in browser."""
         feedback_url = "https://discord.com/channels/1438175448420057323/1472394204347895890"
         QDesktopServices.openUrl(QUrl(feedback_url))
 
-    def open_paypal_donation(self, event):
+    def open_paypal_donation(self, _event: object | None = None) -> None:
         """Open PayPal donation link in browser."""
         paypal_url = "https://paypal.me/RighteousKill"
         QDesktopServices.openUrl(QUrl(paypal_url))
 
-    def open_venmo_donation(self, event):
+    def open_venmo_donation(self, _event: object | None = None) -> None:
         """Open Venmo donation link in browser."""
         venmo_url = "https://venmo.com/u/Amr-Abouelleil"
         QDesktopServices.openUrl(QUrl(venmo_url))
@@ -994,12 +1033,18 @@ class MainWindow(QMainWindow):
     def _on_update_available(self, latest: str, url: str, body: str) -> None:
         current = get_version()
         self._latest_release_url = url
-        self._app_version_indicator.setText(f"v{current} · update available")
-        self._app_version_indicator.setStyleSheet(
+        indicator = self._app_version_indicator
+        if indicator is None:
+            self._ensure_app_version_indicator()
+            indicator = self._app_version_indicator
+        if indicator is None:
+            return
+        indicator.setText(f"v{current} · update available")
+        indicator.setStyleSheet(
             "font-size: 11px; padding: 0 8px; color: #c9a961; font-weight: bold;"
         )
-        self._app_version_indicator.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self._app_version_indicator.setToolTip(f"Open release page for v{latest}")
+        indicator.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        indicator.setToolTip(f"Open release page for v{latest}")
         self.config_tab.set_update_status(f"v{latest} available")
 
         # Truncate long release bodies for the dialog so the modal doesn't
@@ -1025,10 +1070,16 @@ class MainWindow(QMainWindow):
     @pyqtSlot(str)
     def _on_update_up_to_date(self, current: str) -> None:
         self._latest_release_url = None
-        self._app_version_indicator.setText(f"v{current} · up to date")
-        self._app_version_indicator.setStyleSheet("font-size: 11px; padding: 0 8px;")
-        self._app_version_indicator.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
-        self._app_version_indicator.setToolTip("")
+        indicator = self._app_version_indicator
+        if indicator is None:
+            self._ensure_app_version_indicator()
+            indicator = self._app_version_indicator
+        if indicator is None:
+            return
+        indicator.setText(f"v{current} · up to date")
+        indicator.setStyleSheet("font-size: 11px; padding: 0 8px;")
+        indicator.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+        indicator.setToolTip("")
         self.config_tab.set_update_status(f"Up to date (v{current})")
         if getattr(self, "_force_update_dialog", False):
             QMessageBox.information(
@@ -1041,10 +1092,16 @@ class MainWindow(QMainWindow):
     def _on_update_check_error(self, message: str) -> None:
         self._latest_release_url = None
         current = get_version()
-        self._app_version_indicator.setText(f"v{current} · check failed")
-        self._app_version_indicator.setStyleSheet("font-size: 11px; padding: 0 8px;")
-        self._app_version_indicator.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
-        self._app_version_indicator.setToolTip(message)
+        indicator = self._app_version_indicator
+        if indicator is None:
+            self._ensure_app_version_indicator()
+            indicator = self._app_version_indicator
+        if indicator is None:
+            return
+        indicator.setText(f"v{current} · check failed")
+        indicator.setStyleSheet("font-size: 11px; padding: 0 8px;")
+        indicator.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+        indicator.setToolTip(message)
         self.config_tab.set_update_status("Check failed")
         logger.warning(f"App update check error: {message}")
         if getattr(self, "_force_update_dialog", False):
@@ -1067,7 +1124,7 @@ class MainWindow(QMainWindow):
         self._force_update_dialog = False
         self.config_tab.set_check_updates_enabled(True)
 
-    def _on_version_label_clicked(self, _event) -> None:
+    def _on_version_label_clicked(self, _event: object | None = None) -> None:
         """Footer version label click — opens the release page when available."""
         if self._latest_release_url:
             QDesktopServices.openUrl(QUrl(self._latest_release_url))
@@ -1098,7 +1155,9 @@ class MainWindow(QMainWindow):
         self.table.customContextMenuRequested.connect(self.show_context_menu)
 
         # Hide row numbers
-        self.table.verticalHeader().setVisible(False)
+        vertical_header = self.table.verticalHeader()
+        if vertical_header is not None:
+            vertical_header.setVisible(False)
 
         # Set column widths
         header = self.filter_header
@@ -1119,9 +1178,9 @@ class MainWindow(QMainWindow):
 
         # Hook selection after the model is attached so selectionModel() exists.
         # Drives the top-right preview pane created in setup_ui().
-        self.table.selectionModel().currentRowChanged.connect(
-            self._on_preview_row_changed
-        )
+        selection_model = self.table.selectionModel()
+        if selection_model is not None:
+            selection_model.currentRowChanged.connect(self._on_preview_row_changed)
 
         # Status label
         self.table_status_label = QLabel("No data loaded")
@@ -1571,7 +1630,7 @@ class MainWindow(QMainWindow):
 
         msg = f"Deleted {len(deleted)} item(s) from cache."
         if failed:
-            msg += f"\n\nFailed to delete:\n" + "\n".join(failed)
+            msg += "\n\nFailed to delete:\n" + "\n".join(failed)
         QMessageBox.information(self, "Cache Cleared", msg)
 
         # Re-sync all remote sources so they're available for the next Apply.
@@ -1897,7 +1956,7 @@ class MainWindow(QMainWindow):
         next launch because saveState/restoreState are already wired into
         restore_window_state. An objectName is required for that mapping.
         """
-        if getattr(self, "help_dock", None) is not None:
+        if self.help_dock is not None:
             return self.help_dock
 
         dock = QDockWidget("Help", self)
@@ -2064,7 +2123,7 @@ class MainWindow(QMainWindow):
 
     def _start_tutorial(self) -> None:
         """Launch the guided tour. Safe to call repeatedly; a running tour is ignored."""
-        if getattr(self, "_tutorial_tour", None) is not None and self._tutorial_tour.is_running():
+        if self._tutorial_tour is not None and self._tutorial_tour.is_running():
             return
         try:
             self._tutorial_tour = TutorialTour(self, self._build_tutorial_steps())
@@ -2148,7 +2207,7 @@ class MainWindow(QMainWindow):
         When work ends mid-pulse we ease the current opacity down to 0
         instead of snapping it off.
         """
-        if self._eye_pulse is None or self._eye_glow is None:
+        if self._eye_pulse is None or self._eye_glow is None or self._eye_fadeout is None:
             return
         running = self._has_long_running_worker()
         pulse_on   = self._eye_pulse.state()   == QPropertyAnimation.State.Running
@@ -2195,12 +2254,11 @@ class MainWindow(QMainWindow):
         widgets). The label's text is refreshed by :meth:`_refresh_channel_indicator`
         whenever the channel changes.
         """
-        if getattr(self, "_channel_indicator", None) is not None:
+        if self._channel_indicator is not None:
             return
-        from PyQt6.QtWidgets import QLabel as _QLabel
-        self._channel_indicator = _QLabel()
+        self._channel_indicator = QLabel()
         self._channel_indicator.setStyleSheet("font-size: 11px; font-weight: bold; padding: 0 8px;")
-        self.statusBar().addPermanentWidget(self._channel_indicator)
+        self._status_bar().addPermanentWidget(self._channel_indicator)
         self._refresh_channel_indicator()
 
     def _ensure_app_version_indicator(self) -> None:
@@ -2213,18 +2271,17 @@ class MainWindow(QMainWindow):
         app-update worker reports back. Becomes clickable when an update is
         available — the click opens the release page.
         """
-        if getattr(self, "_app_version_indicator", None) is not None:
+        if self._app_version_indicator is not None:
             return
-        from PyQt6.QtWidgets import QLabel as _QLabel
-        self._app_version_indicator = _QLabel(f"v{get_version()}")
+        self._app_version_indicator = ClickableLabel(f"v{get_version()}")
         self._app_version_indicator.setStyleSheet("font-size: 11px; padding: 0 8px;")
         self._app_version_indicator.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
-        self._app_version_indicator.mousePressEvent = self._on_version_label_clicked
-        self.statusBar().addPermanentWidget(self._app_version_indicator)
+        self._app_version_indicator.clicked.connect(self._on_version_label_clicked)
+        self._status_bar().addPermanentWidget(self._app_version_indicator)
 
     def _refresh_channel_indicator(self) -> None:
         """Update the status-bar channel label to reflect AppSettings.get_active_channel()."""
-        if getattr(self, "_channel_indicator", None) is None:
+        if self._channel_indicator is None:
             return
         self._channel_indicator.setText(f"Channel: {AppSettings.get_active_channel()}")
 
@@ -2291,7 +2348,7 @@ class MainWindow(QMainWindow):
         # stale. Returns True if extraction was started, in which case the
         # finished handler will trigger the reload itself (don't double-run).
         if self._check_p4k_freshness():
-            self.statusBar().showMessage(
+            self._status_bar().showMessage(
                 f"Switched to {channel} — extracting Data.p4k…"
             )
             return
@@ -2301,7 +2358,7 @@ class MainWindow(QMainWindow):
         # offer to re-extract if so (background — doesn't block reload).
         self._maybe_prompt_dataforge_refresh()
 
-        self.statusBar().showMessage(f"Switched to {channel} — reloading sources…")
+        self._status_bar().showMessage(f"Switched to {channel} — reloading sources…")
         self.perform_merge_and_reload()
 
     def _update_status_bar(self):
@@ -2345,12 +2402,13 @@ class MainWindow(QMainWindow):
             # and why the version's blank.
             parts.append(f"SC {active_channel} (manifest missing)")
 
+        status_bar = self._status_bar()
         if parts:
-            self.statusBar().showMessage("  |  ".join(parts))
+            status_bar.showMessage("  |  ".join(parts))
         elif not self._has_long_running_worker():
             # Don't overwrite a progress message with "Ready" while a worker
             # is still running — the user reads the empty state as "done".
-            self.statusBar().showMessage("Ready")
+            status_bar.showMessage("Ready")
 
     def _set_source_status(self, source_name: str, status: str) -> None:
         """Set sync status for a specific source and update status bar.
@@ -2380,7 +2438,7 @@ class MainWindow(QMainWindow):
             self._on_startup_sync_finished()
             return
 
-        self.statusBar().showMessage("Starting up — syncing sources...")
+        self._status_bar().showMessage("Starting up — syncing sources...")
         self._startup_progress = AnimatedProgressDialog(
             "Syncing sources...", parent=self, title="Starting Up"
         )
@@ -2393,7 +2451,7 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot(str)
     def _on_startup_source_starting(self, source_name: str):
-        self.statusBar().showMessage(f"Syncing {source_name}...")
+        self._status_bar().showMessage(f"Syncing {source_name}...")
         if self._startup_progress is not None:
             self._startup_progress.setLabelText(f"Syncing {source_name}...")
 
@@ -2746,10 +2804,11 @@ class MainWindow(QMainWindow):
     @pyqtSlot(str)
     def _on_loading_error(self, error_msg: str):
         """Handle file loading error."""
-        self._loading_progress.close()
-        self._loading_progress = None
+        if self._loading_progress is not None:
+            self._loading_progress.close()
+            self._loading_progress = None
         QMessageBox.critical(self, "Error", f"Failed to load sources: {error_msg}")
-        if self._loader_worker:
+        if self._loader_worker is not None:
             self._loader_worker.quit()
             self._loader_worker.wait()
             self._loader_worker = None
@@ -2777,24 +2836,27 @@ class MainWindow(QMainWindow):
         if categories is None:
             categories = AppSettings.get_enabled_enhancement_categories()
 
+        status_bar = self._status_bar()
         self._enhancements_worker = EnhancementsGeneratorWorker(categories=categories)
         self.enhancements_tab.set_operation_running("Generating enhancements…")
-        self.statusBar().showMessage("Generating enhancements in background…")
+        status_bar.showMessage("Generating enhancements in background…")
 
         # Show animated progress dialog
-        self._enhancements_progress_dialog = AnimatedProgressDialog(
+        progress_dialog = AnimatedProgressDialog(
             "Generating enhanced localizations from DataForge…\n\nThis may take a few minutes on the first run.",
             parent=self,
             title="Generating Enhancements",
         )
+        self._enhancements_progress_dialog = progress_dialog
 
-        self._enhancements_worker.progress.connect(self.enhancements_tab.set_operation_progress)
-        self._enhancements_worker.progress.connect(self.statusBar().showMessage)
-        self._enhancements_worker.progress.connect(self._enhancements_progress_dialog.setLabelText)
-        self._enhancements_worker.progress_pct.connect(self._enhancements_progress_dialog.set_progress)
-        self._enhancements_worker.error.connect(self._on_enhancements_generation_error)
-        self._enhancements_worker.finished.connect(self._on_enhancements_generation_finished)
-        self._enhancements_worker.start()
+        worker = self._enhancements_worker
+        worker.progress.connect(self.enhancements_tab.set_operation_progress)
+        worker.progress.connect(status_bar.showMessage)
+        worker.progress.connect(progress_dialog.setLabelText)
+        worker.progress_pct.connect(progress_dialog.set_progress)
+        worker.error.connect(self._on_enhancements_generation_error)
+        worker.finished.connect(self._on_enhancements_generation_finished)
+        worker.start()
 
     def _on_enhancements_generation_error(self, message: str):
         logger.error(f"Enhancements generation error: {message}")
@@ -2809,17 +2871,20 @@ class MainWindow(QMainWindow):
             self._enhancements_progress_dialog.close()
             self._enhancements_progress_dialog = None
 
-        self._enhancements_worker.quit()
-        self._enhancements_worker.wait()
-        self._enhancements_worker = None
+        worker = self._enhancements_worker
+        if worker is not None:
+            worker.quit()
+            worker.wait()
+            self._enhancements_worker = None
         self.enhancements_tab.set_operation_idle()
         self.enhancements_tab.refresh_enhancements_status()
 
+        status_bar = self._status_bar()
         if success:
-            self.statusBar().showMessage("Enhancements generated — reloading entries…")
+            status_bar.showMessage("Enhancements generated — reloading entries…")
             self._show_loading_progress("Reloading strings with updated enhancements…")
         else:
-            self.statusBar().showMessage("Enhancement generation failed — check the Log tab for details")
+            status_bar.showMessage("Enhancement generation failed — check the Log tab for details")
 
     def _run_dataforge_extraction(self):
         """Launch DataForgeExtractWorker in the background (non-blocking)."""
@@ -2831,42 +2896,48 @@ class MainWindow(QMainWindow):
         unforge_exe = AppSettings.get_unforge_exe_path()
         forge_dir   = AppSettings.get_dataforge_cache_dir()
 
+        status_bar = self._status_bar()
         self._forge_worker = DataForgeExtractWorker(p4k_path, unp4k_exe, unforge_exe, forge_dir)
         self.enhancements_tab.set_operation_running("Extracting DataForge from Data.p4k…")
-        self.statusBar().showMessage("Extracting DataForge in background — this takes several minutes…")
+        status_bar.showMessage("Extracting DataForge in background — this takes several minutes…")
 
-        self._forge_progress_dialog = AnimatedProgressDialog(
+        progress_dialog = AnimatedProgressDialog(
             "Extracting DataForge from Data.p4k — this takes several minutes…",
             parent=self,
             title="DataForge Extraction",
         )
+        self._forge_progress_dialog = progress_dialog
 
-        self._forge_worker.progress.connect(self.enhancements_tab.set_operation_progress)
-        self._forge_worker.progress.connect(self.statusBar().showMessage)
-        self._forge_worker.progress.connect(self._forge_progress_dialog.setLabelText)
-        self._forge_worker.progress_pct.connect(self._forge_progress_dialog.set_progress)
-        self._forge_worker.error.connect(self._on_dataforge_extract_error)
-        self._forge_worker.finished.connect(self._on_dataforge_extract_finished)
-        self._forge_worker.start()
+        worker = self._forge_worker
+        worker.progress.connect(self.enhancements_tab.set_operation_progress)
+        worker.progress.connect(status_bar.showMessage)
+        worker.progress.connect(progress_dialog.setLabelText)
+        worker.progress_pct.connect(progress_dialog.set_progress)
+        worker.error.connect(self._on_dataforge_extract_error)
+        worker.finished.connect(self._on_dataforge_extract_finished)
+        worker.start()
 
     def _on_dataforge_extract_error(self, message: str):
         logger.error(f"DataForge extraction error: {message}")
 
     def _on_dataforge_extract_finished(self, success: bool):
-        if getattr(self, "_forge_progress_dialog", None) is not None:
+        if self._forge_progress_dialog is not None:
             self._forge_progress_dialog.close()
             self._forge_progress_dialog = None
-        self._forge_worker.quit()
-        self._forge_worker.wait()
-        self._forge_worker = None
+        worker = self._forge_worker
+        if worker is not None:
+            worker.quit()
+            worker.wait()
+            self._forge_worker = None
         self.enhancements_tab.refresh_forge_status()
 
+        status_bar = self._status_bar()
         if success:
-            self.statusBar().showMessage("DataForge extracted — generating enhancements…")
+            status_bar.showMessage("DataForge extracted — generating enhancements…")
             self._run_enhancements_generation()
         else:
             self.enhancements_tab.set_operation_idle()
-            self.statusBar().showMessage("DataForge extraction failed — check the Log tab for details")
+            status_bar.showMessage("DataForge extraction failed — check the Log tab for details")
 
     def _run_p4k_extraction(self):
         """Launch P4kExtractWorker with a progress dialog; reload sources on success."""
@@ -2889,10 +2960,13 @@ class MainWindow(QMainWindow):
 
     def _on_p4k_extract_finished(self, success: bool):
         """Handle P4K extraction completion."""
-        self._p4k_progress.close()
-        self._p4k_worker.quit()
-        self._p4k_worker.wait()
-        self._p4k_worker = None
+        if self._p4k_progress is not None:
+            self._p4k_progress.close()
+        worker = self._p4k_worker
+        if worker is not None:
+            worker.quit()
+            worker.wait()
+            self._p4k_worker = None
 
         if success:
             # Lock Global source to the local cache path with auto-update off,
@@ -3068,12 +3142,12 @@ class MainWindow(QMainWindow):
             return
 
         text_to_copy = "\n".join(lines)
-        try:
-            import pyperclip
-            pyperclip.copy(text_to_copy)
-            QMessageBox.information(self, "Copy Filtered", f"Copied {len(lines) - 1} rows to clipboard.")
-        except Exception as e:
-            QMessageBox.warning(self, "Copy Error", f"Failed to copy to clipboard: {e}")
+        clipboard = QApplication.clipboard()
+        if clipboard is None:
+            QMessageBox.warning(self, "Copy Error", "Clipboard is not available.")
+            return
+        clipboard.setText(text_to_copy)
+        QMessageBox.information(self, "Copy Filtered", f"Copied {len(lines) - 1} rows to clipboard.")
 
     def show_context_menu(self, position):
         """Show right-click context menu."""
@@ -3125,22 +3199,18 @@ class MainWindow(QMainWindow):
         """Copy the clicked cell's text to clipboard."""
         text = proxy_index.data(Qt.ItemDataRole.DisplayRole)
         if text:
-            import pyperclip
-            try:
-                pyperclip.copy(text)
-            except Exception:
-                pass
+            clipboard = QApplication.clipboard()
+            if clipboard is not None:
+                clipboard.setText(str(text))
 
     def copy_key(self, proxy_row: int):
         """Copy key to clipboard."""
         entry_idx = self._entry_index_for_row(proxy_row)
         if entry_idx < len(self.entries):
-            import pyperclip
-            try:
-                pyperclip.copy(self.entries[entry_idx].key)
-                self.statusBar().showMessage(f"Copied: {self.entries[entry_idx].key}")
-            except ImportError:
-                self.statusBar().showMessage("pyperclip not installed")
+            clipboard = QApplication.clipboard()
+            if clipboard is not None:
+                clipboard.setText(self.entries[entry_idx].key)
+                self._status_bar().showMessage(f"Copied: {self.entries[entry_idx].key}")
 
     @pyqtSlot(QModelIndex)
     def _on_cell_clicked(self, proxy_index: QModelIndex):

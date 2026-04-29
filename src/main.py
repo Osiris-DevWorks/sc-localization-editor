@@ -5,6 +5,11 @@ import os
 import sys
 from pathlib import Path
 
+# Allow `python src\main.py` from the repo root by ensuring the project root
+# is importable before resolving `from src...` imports below.
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 # ── Force Qt to look for platform plugins in OUR bundled Qt6/plugins directory
 # ── BEFORE we import anything from PyQt6. The most common source of the
 # ── "No Qt platform plugin could be initialized" crash on user machines is a
@@ -14,10 +19,12 @@ from pathlib import Path
 # ── these env vars but only if they're not already set — we override
 # ── unconditionally so the frozen build always uses its own plugins.
 if getattr(sys, "frozen", False):
-    _bundled_plugins = os.path.join(sys._MEIPASS, "PyQt6", "Qt6", "plugins")
-    if os.path.isdir(_bundled_plugins):
-        os.environ["QT_PLUGIN_PATH"] = _bundled_plugins
-        os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = os.path.join(_bundled_plugins, "platforms")
+    _meipass = getattr(sys, "_MEIPASS", None)
+    if _meipass is not None:
+        _bundled_plugins = os.path.join(_meipass, "PyQt6", "Qt6", "plugins")
+        if os.path.isdir(_bundled_plugins):
+            os.environ["QT_PLUGIN_PATH"] = _bundled_plugins
+            os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = os.path.join(_bundled_plugins, "platforms")
 
 from PyQt6.QtWidgets import QApplication
 

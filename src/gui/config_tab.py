@@ -235,11 +235,12 @@ class ConfigTab(QWidget):
         from src.gui.theme import apply_theme
         AppSettings.set_theme(theme)
         app = QApplication.instance()
-        if app is not None:
+        if isinstance(app, QApplication):
             apply_theme(app, theme)
         mw = self.window()
-        if hasattr(mw, "refresh_action_buttons"):
-            mw.refresh_action_buttons()
+        refresh_action_buttons = getattr(mw, "refresh_action_buttons", None)
+        if callable(refresh_action_buttons):
+            refresh_action_buttons()
 
     # ── Game path ────────────────────────────────────────────────────────────
 

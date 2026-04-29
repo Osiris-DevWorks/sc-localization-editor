@@ -191,6 +191,5 @@ Discord notification is automatic via GitHub Actions (`scripts/discord_notify.py
 
 - **PyQt6** (>=6.10.0) — GUI framework
 - **pyinstaller** (>=6.3.0) — Executable builder
-- **pyperclip** (>=1.8.2) — Clipboard access
 
 Windows-only (uses Windows Registry via QSettings). Python 3.9+, recommended 3.10+.

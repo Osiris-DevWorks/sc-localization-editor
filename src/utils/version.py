@@ -10,8 +10,9 @@ def get_version() -> str:
         Version string (e.g., "0.5.0"), or "0.1.0" if file not found
     """
     # When running from a PyInstaller bundle, data files land in sys._MEIPASS
-    if getattr(sys, 'frozen', False):
-        base_path = Path(sys._MEIPASS)
+    meipass = getattr(sys, "_MEIPASS", None)
+    if getattr(sys, 'frozen', False) and meipass is not None:
+        base_path = Path(meipass)
     else:
         base_path = Path(__file__).parent.parent.parent
 

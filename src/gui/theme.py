@@ -7,7 +7,6 @@ WindowText/Text roles (the default); dim labels mark themselves with
 `apply_theme`) recolors them when the theme changes.
 """
 import logging
-import os
 import sys
 from pathlib import Path
 
@@ -27,8 +26,9 @@ _BRAND_FONT_FILE = "HyperspaceRace-ExpandedBold.otf"
 
 def _assets_fonts_dir() -> Path:
     """Resolve the assets/fonts directory for both dev and PyInstaller builds."""
-    if getattr(sys, "frozen", False):
-        base = Path(sys._MEIPASS)
+    meipass = getattr(sys, "_MEIPASS", None)
+    if getattr(sys, "frozen", False) and meipass is not None:
+        base = Path(meipass)
     else:
         base = Path(__file__).resolve().parent.parent.parent
     return base / "assets" / "fonts"
@@ -360,7 +360,8 @@ def apply_theme(app: QApplication, theme: str) -> None:
     # But the style hint value itself survives the slicing, so we probe it
     # directly — our proxy overrides SH_ToolTip_WakeUpDelay to our chosen
     # constant, and no stock style produces exactly that number.
-    current_delay = app.style().styleHint(QStyle.StyleHint.SH_ToolTip_WakeUpDelay)
+    style = app.style()
+    current_delay = None if style is None else style.styleHint(QStyle.StyleHint.SH_ToolTip_WakeUpDelay)
     if current_delay != _TOOLTIP_WAKE_UP_DELAY_MS:
         # QProxyStyle(str) resolves the base style by name, so this still
         # gives us the Fusion look — just with our tooltip-delay override.

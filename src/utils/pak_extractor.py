@@ -158,17 +158,29 @@ def _copy_filtered_records(src_libs: Path, dst_libs: Path) -> tuple[int, int]:
     return copied, skipped
 
 
-def _get_subprocess_kwargs() -> dict:
-    """Return subprocess kwargs to suppress window on Windows."""
-    kwargs = {
-        "capture_output": True,
-        "text": True,
-    }
-    # On Windows, suppress the subprocess window completely
+def _run_subprocess(
+    args: list[str],
+    *,
+    cwd: str | None = None,
+    timeout: int | float | None = None,
+) -> subprocess.CompletedProcess[str]:
+    """Run a subprocess with stdout/stderr capture and no console window."""
     if sys.platform == "win32":
-        # CREATE_NO_WINDOW = 0x08000000
-        kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW if hasattr(subprocess, "CREATE_NO_WINDOW") else 0x08000000
-    return kwargs
+        return subprocess.run(
+            args,
+            cwd=cwd,
+            timeout=timeout,
+            capture_output=True,
+            text=True,
+            creationflags=int(getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)),
+        )
+    return subprocess.run(
+        args,
+        cwd=cwd,
+        timeout=timeout,
+        capture_output=True,
+        text=True,
+    )
 
 
 @timed
@@ -211,11 +223,10 @@ def extract_global_ini(
             progress_pct_callback(0, TOTAL_PHASES, "Launching unp4k…")
 
         logger.info(f"Running unp4k: {unp4k_exe} {p4k_path} global.ini (cwd={tmp_dir})")
-        result = subprocess.run(
+        result = _run_subprocess(
             [str(unp4k_exe), str(p4k_path), "global.ini"],
             cwd=tmp_dir,
             timeout=300,
-            **_get_subprocess_kwargs()
         )
 
         if result.returncode != 0:
@@ -295,11 +306,10 @@ def extract_dataforge(
         if progress_pct_callback:
             progress_pct_callback(0, TOTAL_PHASES, "Extracting Game2.dcb from Data.p4k…")
         logger.info(f"Running unp4k to extract .dcb: {unp4k_exe} {p4k_path} .dcb")
-        result = subprocess.run(
+        result = _run_subprocess(
             [str(unp4k_exe), str(p4k_path), ".dcb"],
             cwd=tmp_dir,
             timeout=600,
-            **_get_subprocess_kwargs()
         )
         if result.returncode != 0:
             raise RuntimeError(f"unp4k.exe failed (code {result.returncode}):\n{result.stderr or result.stdout}")
@@ -322,10 +332,9 @@ def extract_dataforge(
         if progress_pct_callback:
             progress_pct_callback(1, TOTAL_PHASES, "Converting DataForge database…")
         logger.info(f"Running unforge: {unforge_exe} {dcb_path}")
-        result = subprocess.run(
+        result = _run_subprocess(
             [str(unforge_exe), str(dcb_path)],
             timeout=1800,   # 30 minutes max
-            **_get_subprocess_kwargs()
         )
         # Always log unforge's output at INFO (truncated). A zero-length
         # stdout + sub-second runtime is typically a silent failure — e.g.
@@ -418,14 +427,35 @@ def extract_dataforge(
 
 
 @timed
-def dataforge_cache_is_fresh(p4k_path: Path, dataforge_cache_dir: Path) -> bool:
+def dataforge_cache_is_fresh(p4k_path: Path | str, dataforge_cache_dir: Path | str) -> bool:
     """Return True if the cached DataForge XMLs are up-to-date with the p4k.
 
     Requires both a matching mtime stamp AND actual XML content in the cache
     so a stamp-only remnant from a failed/partial extraction returns False.
     """
+    p4k_path = Path(p4k_path)
+    dataforge_cache_dir = Path(dataforge_cache_dir)
+
+    legacy_cache_dir = dataforge_cache_dir
+    legacy_p4k_path = p4k_path
+    legacy_order = (
+        legacy_p4k_path.suffix.lower() != ".p4k"
+        and legacy_cache_dir.suffix.lower() == ".p4k"
+    )
+    if legacy_order:
+        p4k_path = legacy_cache_dir
+        dataforge_cache_dir = legacy_p4k_path
+
     stamp = dataforge_cache_dir / ".p4k_mtime"
     libs_dir = dataforge_cache_dir / "raw" / "libs"
+    if legacy_order and not stamp.exists():
+        try:
+            return (
+                dataforge_cache_dir.exists()
+                and dataforge_cache_dir.stat().st_mtime >= p4k_path.stat().st_mtime
+            )
+        except Exception:
+            return False
     if not stamp.exists() or not libs_dir.exists():
         return False
     # Verify there is at least one XML file — guards against empty extractions

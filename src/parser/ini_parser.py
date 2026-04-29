@@ -24,7 +24,7 @@ def parse_ini_file(path: str | Path) -> Dict[str, str]:
     Returns:
         Dictionary of key-value pairs
     """
-    result = {}
+    result: Dict[str, str] = {}
     path = Path(path)
 
     if not path.exists():

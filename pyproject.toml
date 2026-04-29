@@ -1,0 +1,25 @@
+[project]
+name = "smart-citizen"
+version = "1.0.2"
+description = "Smart Citizen desktop app"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "PyQt6>=6.10.0",
+]
+
+[dependency-groups]
+dev = [
+    "black>=22.0.0",
+    "flake8>=5.0.0",
+    "isort>=5.11.0",
+    "mypy>=0.990",
+    "pyinstaller>=6.3.0",
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-html>=3.2.0",
+    "pytest-mock>=3.10.0",
+    "pytest-xdist>=3.0.0",
+    "sphinx>=5.0.0",
+    "sphinx-rtd-theme>=1.0.0",
+]
