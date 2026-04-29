@@ -33,6 +33,8 @@ venv/
 ENV/
 *.pyc
 .pytest_cache/
+.coverage
+htmlcov/
 
 # PyCharm
 *.iml
