@@ -1,40 +1,57 @@
 """Main window for Smart Citizen."""
+
 import logging
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
-from PyQt6.QtCore import Qt, QTimer, pyqtSlot, QThread, pyqtSignal, QModelIndex, QPropertyAnimation, QEasingCurve
+from PyQt6.QtCore import QEasingCurve, QModelIndex, QPropertyAnimation, Qt, QThread, QTimer, QUrl, pyqtSignal, pyqtSlot
+from PyQt6.QtGui import QColor, QCursor, QDesktopServices, QFont, QIcon, QMouseEvent, QPixmap
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QComboBox, QCheckBox,
-    QFileDialog, QMessageBox, QTabWidget,
-    QHeaderView, QStatusBar, QStyledItemDelegate,
-    QAbstractItemView, QMenu, QProgressDialog, QProgressBar, QTextBrowser,
-    QTableView, QStackedLayout, QGraphicsOpacityEffect,
+    QAbstractItemView,
+    QApplication,
+    QCheckBox,
+    QComboBox,
     QDockWidget,
+    QFileDialog,
+    QGraphicsOpacityEffect,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMainWindow,
+    QMenu,
+    QMessageBox,
+    QProgressBar,
+    QProgressDialog,
+    QPushButton,
+    QStackedLayout,
+    QStatusBar,
+    QStyledItemDelegate,
+    QTableView,
+    QTabWidget,
+    QTextBrowser,
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt6.QtGui import QColor, QFont, QCursor, QPixmap, QIcon, QMouseEvent
-from PyQt6.QtCore import QUrl
-from PyQt6.QtGui import QDesktopServices
 
+from src.gui.coach_mark import CoachMarkStep, TutorialTour
+from src.gui.config_tab import ConfigTab
+from src.gui.enhancements_tab import EnhancementsTab
 from src.gui.filter_header import FilterHeaderView
+from src.gui.log_tab import LogTab
 from src.gui.string_table_model import (
-    StringTableModel, COL_STAR, COL_CUSTOM,
+    COL_CUSTOM,
+    COL_STAR,
+    StringTableModel,
 )
+from src.gui.theme import BRAND_FONT_FAMILY, get_button_color, get_button_text_color, get_tagline_color, get_title_color
+from src.merger.ini_merger import merge_sources_by_hierarchy
 from src.models.string_model import StringEntry
 from src.parser.ini_parser import load_source_files, load_sources_from_settings
-from src.utils.settings import AppSettings
-from src.merger.ini_merger import merge_sources_by_hierarchy
-from src.utils.version import get_version
-from src.utils.perf import timed
 from src.utils.app_updater import AppUpdateCheckWorker
-from src.gui.config_tab import ConfigTab
-from src.gui.theme import get_button_color, get_button_text_color, get_title_color, get_tagline_color, BRAND_FONT_FAMILY
-from src.gui.enhancements_tab import EnhancementsTab
-from src.gui.log_tab import LogTab
-from src.gui.coach_mark import CoachMarkStep, TutorialTour
+from src.utils.perf import timed
+from src.utils.settings import AppSettings
+from src.utils.version import get_version
 
 
 class AnimatedProgressDialog(QProgressDialog):
@@ -83,7 +100,8 @@ class AnimatedProgressDialog(QProgressDialog):
                 # something upstream had set a custom format string.
                 self._bar.setFormat("%p%")
                 self._bar.setTextVisible(True)
-                from src.gui.theme import get_progress_groove_color, get_progress_chunk_color
+                from src.gui.theme import get_progress_chunk_color, get_progress_groove_color
+
                 chunk = QColor(get_progress_chunk_color())
                 light = chunk.lighter(135).name()
                 dark = chunk.darker(125).name()
@@ -215,6 +233,7 @@ class FileLoaderWorker(QThread):
 
     def run(self):
         from src.gui.string_table_model import _group_sort_key
+
         try:
             logger.info("FileLoaderWorker starting...")
             self.progress_pct.emit(0, self._PHASE_TOTAL, "Reading source files...")
@@ -228,7 +247,9 @@ class FileLoaderWorker(QThread):
 
             self.progress_pct.emit(1, self._PHASE_TOTAL, "Creating StringEntry objects...")
             self.progress.emit("Creating StringEntry objects...")
-            entries = load_source_files(sources_dict, hierarchy, enhancements_key_categories=enhancements_key_categories)
+            entries = load_source_files(
+                sources_dict, hierarchy, enhancements_key_categories=enhancements_key_categories
+            )
             logger.info(f"load_source_files returned {len(entries)} entries")
 
             default_values = dict(sources_dict.get("global", {}))
@@ -253,18 +274,18 @@ class StartupSyncWorker(QThread):
     failure. Always emits finished so loading proceeds even when sources fail.
     """
 
-    source_starting = pyqtSignal(str)        # source_name (about to sync)
-    source_synced = pyqtSignal(str, bool)    # (source_name, was_updated)
-    source_error = pyqtSignal(str, str)      # (source_name, error_message)
+    source_starting = pyqtSignal(str)  # source_name (about to sync)
+    source_synced = pyqtSignal(str, bool)  # (source_name, was_updated)
+    source_error = pyqtSignal(str, str)  # (source_name, error_message)
     finished = pyqtSignal()
 
     def run(self):
-        from src.utils.updater import download_file_if_changed
         from src.utils.settings import AppSettings
+        from src.utils.updater import download_file_if_changed
 
         cache_dir = AppSettings.get_cache_dir()
         cache_mapping = {
-            AppSettings.SOURCE_GLOBAL:      "base.ini",
+            AppSettings.SOURCE_GLOBAL: "base.ini",
         }
 
         for source_name in [
@@ -306,17 +327,19 @@ class EnhancementsGeneratorWorker(QThread):
     def run(self):
         import importlib.util
         import sys as sys_module
+
         from src.utils.dataforge_patcher import apply_patches
+
         try:
-            if getattr(sys, 'frozen', False):
-                script_path = Path(sys._MEIPASS) / 'scripts' / 'generate_enhancements_ini.py'
+            if getattr(sys, "frozen", False):
+                script_path = Path(sys._MEIPASS) / "scripts" / "generate_enhancements_ini.py"
             else:
-                script_path = Path(__file__).parent.parent.parent / 'scripts' / 'generate_enhancements_ini.py'
+                script_path = Path(__file__).parent.parent.parent / "scripts" / "generate_enhancements_ini.py"
 
             if not script_path.exists():
                 raise FileNotFoundError(f"Enhancements generator script not found: {script_path}")
 
-            base_ini  = AppSettings.get_cache_dir() / 'base.ini'
+            base_ini = AppSettings.get_cache_dir() / "base.ini"
             forge_dir = AppSettings.get_dataforge_cache_dir()
 
             # Re-apply DataForge patches before generation. apply_patches is
@@ -328,7 +351,8 @@ class EnhancementsGeneratorWorker(QThread):
             self.progress_pct.emit(0, 0, "Applying DataForge patches…")
             self.progress.emit("Applying DataForge patches…")
             patch_report = apply_patches(
-                _resolve_patches_dir(), forge_dir,
+                _resolve_patches_dir(),
+                forge_dir,
                 progress_callback=self.progress.emit,
             )
             logger.info(f"DataForge patches: {patch_report.summary_line()}")
@@ -359,9 +383,13 @@ class EnhancementsGeneratorWorker(QThread):
             def _on_progress(completed: int, total: int, message: str) -> None:
                 self.progress_pct.emit(completed, total, message)
 
-            mod.main(base_ini, forge_dir, categories=self.categories,
-                     progress_callback=_on_progress,
-                     patches_dir=_resolve_patches_dir())
+            mod.main(
+                base_ini,
+                forge_dir,
+                categories=self.categories,
+                progress_callback=_on_progress,
+                patches_dir=_resolve_patches_dir(),
+            )
             logger.info("Enhancements generation worker: mod.main() completed successfully")
 
             self.finished.emit(True)
@@ -374,10 +402,10 @@ class EnhancementsGeneratorWorker(QThread):
 class P4kExtractWorker(QThread):
     """Worker thread for extracting global.ini from Data.p4k via unp4k.exe."""
 
-    progress = pyqtSignal(str)   # status message
+    progress = pyqtSignal(str)  # status message
     progress_pct = pyqtSignal(int, int, str)  # (completed, total, message)
     finished = pyqtSignal(bool)  # True = success
-    error = pyqtSignal(str)      # error message (emitted before finished(False))
+    error = pyqtSignal(str)  # error message (emitted before finished(False))
 
     def __init__(self, p4k_path, output_path, unp4k_exe):
         super().__init__()
@@ -387,9 +415,12 @@ class P4kExtractWorker(QThread):
 
     def run(self):
         from src.utils.pak_extractor import extract_global_ini
+
         try:
             extract_global_ini(
-                self._p4k, self._out, self._exe,
+                self._p4k,
+                self._out,
+                self._exe,
                 progress_callback=self.progress.emit,
                 progress_pct_callback=lambda c, t, m: self.progress_pct.emit(c, t, m),
             )
@@ -410,14 +441,15 @@ class DataForgeExtractWorker(QThread):
 
     def __init__(self, p4k_path, unp4k_exe, unforge_exe, cache_dir):
         super().__init__()
-        self._p4k       = p4k_path
+        self._p4k = p4k_path
         self._unp4k_exe = unp4k_exe
         self._unforge_exe = unforge_exe
         self._cache_dir = cache_dir
 
     def run(self):
-        from src.utils.pak_extractor import extract_dataforge
         from src.utils.dataforge_patcher import apply_patches
+        from src.utils.pak_extractor import extract_dataforge
+
         try:
             extract_dataforge(
                 self._p4k,
@@ -441,8 +473,7 @@ class DataForgeExtractWorker(QThread):
             self.progress_pct.emit(0, 0, "Applying DataForge patches…")
             self.progress.emit("Applying DataForge patches…")
             patch_root = _resolve_patches_dir()
-            report = apply_patches(patch_root, self._cache_dir,
-                                   progress_callback=self.progress.emit)
+            report = apply_patches(patch_root, self._cache_dir, progress_callback=self.progress.emit)
             logger.info(f"DataForge patches: {report.summary_line()}")
             if report.errors:
                 for err in report.errors:
@@ -459,7 +490,7 @@ class SelectAllDelegate(QStyledItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = super().createEditor(parent, option, index)
-        if hasattr(editor, 'selectAll'):
+        if hasattr(editor, "selectAll"):
             editor.selectAll()
         return editor
 
@@ -483,22 +514,22 @@ class MainWindow(QMainWindow):
         self.default_values: dict[str, str] = {}  # Store default values from cached base source
 
         # File loader worker
-        self._loader_worker: Optional[FileLoaderWorker] = None
+        self._loader_worker: FileLoaderWorker | None = None
 
         # Startup sync worker
-        self._startup_sync_worker: Optional[StartupSyncWorker] = None
+        self._startup_sync_worker: StartupSyncWorker | None = None
 
         # P4K extraction worker and progress dialog
-        self._p4k_worker: Optional[P4kExtractWorker] = None
-        self._p4k_progress: Optional[QProgressDialog] = None
+        self._p4k_worker: P4kExtractWorker | None = None
+        self._p4k_progress: QProgressDialog | None = None
 
         # Enhancements generation worker
-        self._enhancements_worker: Optional[EnhancementsGeneratorWorker] = None
-        self._enhancements_progress_dialog: Optional[AnimatedProgressDialog] = None
+        self._enhancements_worker: EnhancementsGeneratorWorker | None = None
+        self._enhancements_progress_dialog: AnimatedProgressDialog | None = None
 
         # DataForge extraction worker
-        self._forge_worker: Optional[DataForgeExtractWorker] = None
-        self._forge_progress_dialog: Optional[AnimatedProgressDialog] = None
+        self._forge_worker: DataForgeExtractWorker | None = None
+        self._forge_progress_dialog: AnimatedProgressDialog | None = None
 
         # Track whether we've prompted for enhancements on startup (prevents duplicate dialogs)
         self._enhancements_prompted_on_startup = False
@@ -509,25 +540,25 @@ class MainWindow(QMainWindow):
         self._source_status: dict[str, str] = {}  # source_name -> status_string
 
         # Progress dialogs
-        self._startup_progress: Optional[AnimatedProgressDialog] = None
-        self._loading_progress: Optional[QProgressDialog] = None
-        self._eye_label: Optional[QLabel] = None
-        self._eye_pulse: Optional[QPropertyAnimation] = None
-        self._eye_glow: Optional[QGraphicsOpacityEffect] = None
-        self._eye_fadeout: Optional[QPropertyAnimation] = None
-        self._eye_pulse_monitor: Optional[QTimer] = None
+        self._startup_progress: AnimatedProgressDialog | None = None
+        self._loading_progress: QProgressDialog | None = None
+        self._eye_label: QLabel | None = None
+        self._eye_pulse: QPropertyAnimation | None = None
+        self._eye_glow: QGraphicsOpacityEffect | None = None
+        self._eye_fadeout: QPropertyAnimation | None = None
+        self._eye_pulse_monitor: QTimer | None = None
         self.osiris_button: QWidget
         self.feedback_label: ClickableLabel
         self.paypal_button: ClickableLabel
         self.venmo_button: ClickableLabel
 
         # App self-update check
-        self._update_check_worker: Optional[AppUpdateCheckWorker] = None
-        self._latest_release_url: Optional[str] = None
-        self.help_dock: Optional[QDockWidget] = None
-        self._tutorial_tour: Optional[TutorialTour] = None
-        self._channel_indicator: Optional[QLabel] = None
-        self._app_version_indicator: Optional[ClickableLabel] = None
+        self._update_check_worker: AppUpdateCheckWorker | None = None
+        self._latest_release_url: str | None = None
+        self.help_dock: QDockWidget | None = None
+        self._tutorial_tour: TutorialTour | None = None
+        self._channel_indicator: QLabel | None = None
+        self._app_version_indicator: ClickableLabel | None = None
 
         # Build UI
         self.setup_ui()
@@ -545,7 +576,8 @@ class MainWindow(QMainWindow):
 
         # Ensure user.cfg has language setting
         from src.utils.user_cfg import ensure_user_cfg_language
-        ensure_user_cfg_language()
+
+        QTimer.singleShot(0, ensure_user_cfg_language)
 
         logger.info("MainWindow initialized")
 
@@ -588,9 +620,7 @@ class MainWindow(QMainWindow):
         self.preview_pane = QTextBrowser()
         self.preview_pane.setReadOnly(True)
         self.preview_pane.setOpenExternalLinks(False)
-        self.preview_pane.setPlaceholderText(
-            "Select a row to preview its rendered text."
-        )
+        self.preview_pane.setPlaceholderText("Select a row to preview its rendered text.")
         self.preview_pane.setMinimumWidth(420)
         self.preview_pane.setMaximumHeight(200)
 
@@ -671,35 +701,53 @@ class MainWindow(QMainWindow):
 
         # Blue group — read / navigate
         self.open_loc_dir_btn = QPushButton("Open Localization Dir")
-        self.open_loc_dir_btn.setStyleSheet(f"background-color: {get_button_color('open')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;")
+        self.open_loc_dir_btn.setStyleSheet(
+            f"background-color: {get_button_color('open')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;"
+        )
         self.open_loc_dir_btn.setToolTip("Open the game's localization directory in Windows Explorer")
         self.open_loc_dir_btn.clicked.connect(self.open_localization_dir)
         button_layout.addWidget(self.open_loc_dir_btn)
 
         # Green — commit
         self.apply_btn = QPushButton("Apply to Game")
-        self.apply_btn.setStyleSheet(f"background-color: {get_button_color('apply')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;")
-        self.apply_btn.setToolTip("Write the merged table contents to the game's global.ini. A timestamped backup of the current global.ini is created first.")
+        self.apply_btn.setStyleSheet(
+            f"background-color: {get_button_color('apply')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;"
+        )
+        self.apply_btn.setToolTip(
+            "Write the merged table contents to the game's global.ini. A timestamped backup of the current global.ini is created first."
+        )
         self.apply_btn.clicked.connect(self.apply_to_game)
         button_layout.addWidget(self.apply_btn)
 
         # Red-orange — rollback
         self.restore_backup_btn = QPushButton("Restore Backup")
-        self.restore_backup_btn.setStyleSheet(f"background-color: {get_button_color('restore')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;")
-        self.restore_backup_btn.setToolTip("Restore a previous global.ini from Documents\\Smart Citizen\\backups\\. Up to 5 timestamped backups are kept; the oldest is pruned when a new one is created.")
+        self.restore_backup_btn.setStyleSheet(
+            f"background-color: {get_button_color('restore')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;"
+        )
+        self.restore_backup_btn.setToolTip(
+            "Restore a previous global.ini from Documents\\Smart Citizen\\backups\\. Up to 5 timestamped backups are kept; the oldest is pruned when a new one is created."
+        )
         self.restore_backup_btn.clicked.connect(self.restore_backup)
         button_layout.addWidget(self.restore_backup_btn)
 
         # Gray group — cleanup
         self.clear_loc_btn = QPushButton("Clear Localization")
-        self.clear_loc_btn.setStyleSheet(f"background-color: {get_button_color('clear')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;")
-        self.clear_loc_btn.setToolTip("Delete the applied global.ini from the game's localization directory, reverting to vanilla game text")
+        self.clear_loc_btn.setStyleSheet(
+            f"background-color: {get_button_color('clear')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;"
+        )
+        self.clear_loc_btn.setToolTip(
+            "Delete the applied global.ini from the game's localization directory, reverting to vanilla game text"
+        )
         self.clear_loc_btn.clicked.connect(self.clear_localization)
         button_layout.addWidget(self.clear_loc_btn)
 
         self.clear_cache_btn = QPushButton("Clear Cache")
-        self.clear_cache_btn.setStyleSheet(f"background-color: {get_button_color('clear')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;")
-        self.clear_cache_btn.setToolTip("Delete all cached source files (base.ini, contracts.ini, etc.) from the local cache directory")
+        self.clear_cache_btn.setStyleSheet(
+            f"background-color: {get_button_color('clear')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;"
+        )
+        self.clear_cache_btn.setToolTip(
+            "Delete all cached source files (base.ini, contracts.ini, etc.) from the local cache directory"
+        )
         self.clear_cache_btn.clicked.connect(self.clear_cache)
         button_layout.addWidget(self.clear_cache_btn)
 
@@ -707,7 +755,9 @@ class MainWindow(QMainWindow):
         # right; uses the 'open' role so it shares the blue/cyan/gold
         # information-action palette with Open Localization Dir.
         self.help_btn = QPushButton("Help")
-        self.help_btn.setStyleSheet(f"background-color: {get_button_color('open')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;")
+        self.help_btn.setStyleSheet(
+            f"background-color: {get_button_color('open')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;"
+        )
         self.help_btn.setCheckable(True)
         self.help_btn.setToolTip("Toggle the Help side-panel")
         self.help_btn.clicked.connect(self.show_help)
@@ -716,8 +766,12 @@ class MainWindow(QMainWindow):
         # Tutorial — shares the 'open' blue/cyan/gold info-action role with
         # Help so the two read as a pair. Always restartable on demand.
         self.tutorial_btn = QPushButton("Tutorial")
-        self.tutorial_btn.setStyleSheet(f"background-color: {get_button_color('open')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;")
-        self.tutorial_btn.setToolTip("Start the guided tour of Smart Citizen's workflow — runs automatically on first launch; click here anytime to replay.")
+        self.tutorial_btn.setStyleSheet(
+            f"background-color: {get_button_color('open')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;"
+        )
+        self.tutorial_btn.setToolTip(
+            "Start the guided tour of Smart Citizen's workflow — runs automatically on first launch; click here anytime to replay."
+        )
         self.tutorial_btn.clicked.connect(self._start_tutorial)
         button_layout.addWidget(self.tutorial_btn)
 
@@ -731,7 +785,9 @@ class MainWindow(QMainWindow):
         filter_layout.addWidget(QLabel("Category:"))
         self.category_combo = QComboBox()
         self.category_combo.setMinimumWidth(200)
-        self.category_combo.setToolTip("Filter rows by domain (Ships, Ship Items, Missions, Gear, Commodities, Journal, Other). Categories are derived from the loc-key prefix.")
+        self.category_combo.setToolTip(
+            "Filter rows by domain (Ships, Ship Items, Missions, Gear, Commodities, Journal, Other). Categories are derived from the loc-key prefix."
+        )
         self.category_combo.currentTextChanged.connect(self.apply_filters)
         filter_layout.addWidget(self.category_combo)
 
@@ -739,17 +795,23 @@ class MainWindow(QMainWindow):
         self.status_combo = QComboBox()
         self.status_combo.addItems(["All", "Modified", "Unmodified", "New"])
         self.status_combo.setMaximumWidth(120)
-        self.status_combo.setToolTip("Filter by modification status. Modified = you've set a Custom Value; New = key exists only in enhancements/user.ini, not in the base file; Unmodified = default text only.")
+        self.status_combo.setToolTip(
+            "Filter by modification status. Modified = you've set a Custom Value; New = key exists only in enhancements/user.ini, not in the base file; Unmodified = default text only."
+        )
         self.status_combo.currentTextChanged.connect(self.apply_filters)
         filter_layout.addWidget(self.status_combo)
 
         self.hide_unmodified_check = QCheckBox("Hide Unmodified")
-        self.hide_unmodified_check.setToolTip("Show only rows where you've set a Custom Value. Same as the Status filter's Modified option but togglable on its own.")
+        self.hide_unmodified_check.setToolTip(
+            "Show only rows where you've set a Custom Value. Same as the Status filter's Modified option but togglable on its own."
+        )
         self.hide_unmodified_check.stateChanged.connect(self.apply_filters)
         filter_layout.addWidget(self.hide_unmodified_check)
 
         self.favorites_only_check = QCheckBox("★ Favorites Only")
-        self.favorites_only_check.setToolTip("Show only rows you've starred as favorites. Favorites get a configurable prefix prepended to their name so they sort to the top of the in-game list.")
+        self.favorites_only_check.setToolTip(
+            "Show only rows you've starred as favorites. Favorites get a configurable prefix prepended to their name so they sort to the top of the in-game list."
+        )
         self.favorites_only_check.stateChanged.connect(self.apply_filters)
         filter_layout.addWidget(self.favorites_only_check)
 
@@ -761,7 +823,9 @@ class MainWindow(QMainWindow):
 
         self.clear_filters_btn = QPushButton("Clear Filters")
         self.clear_filters_btn.setMaximumWidth(100)
-        self.clear_filters_btn.setToolTip("Reset every filter (category, status, search, per-column boxes, checkboxes) so the full table is shown.")
+        self.clear_filters_btn.setToolTip(
+            "Reset every filter (category, status, search, per-column boxes, checkboxes) so the full table is shown."
+        )
         self.clear_filters_btn.clicked.connect(self.clear_filters)
         filter_layout.addWidget(self.clear_filters_btn)
 
@@ -996,6 +1060,7 @@ class MainWindow(QMainWindow):
     def _maybe_auto_check_app_updates(self) -> None:
         """Kick off an app-update check iff the throttle window has elapsed."""
         import time
+
         last = AppSettings.get_last_update_check_epoch()
         now = int(time.time())
         if last and now - last < self._UPDATE_CHECK_MIN_INTERVAL_SECONDS:
@@ -1040,9 +1105,7 @@ class MainWindow(QMainWindow):
         if indicator is None:
             return
         indicator.setText(f"v{current} · update available")
-        indicator.setStyleSheet(
-            "font-size: 11px; padding: 0 8px; color: #c9a961; font-weight: bold;"
-        )
+        indicator.setStyleSheet("font-size: 11px; padding: 0 8px; color: #c9a961; font-weight: bold;")
         indicator.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         indicator.setToolTip(f"Open release page for v{latest}")
         self.config_tab.set_update_status(f"v{latest} available")
@@ -1114,6 +1177,7 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def _on_update_check_finished(self) -> None:
         import time
+
         AppSettings.set_last_update_check_epoch(int(time.time()))
         worker = self._update_check_worker
         if worker is not None:
@@ -1162,11 +1226,11 @@ class MainWindow(QMainWindow):
         # Set column widths
         header = self.filter_header
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # Category
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)           # Key
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)           # Default Value
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)           # Current Value
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Key
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)  # Default Value
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)  # Current Value
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)  # ★
-        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)           # Custom Value
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)  # Custom Value
         header.setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)  # Status
 
         # Set custom delegate for editing Custom Value column (col 5)
@@ -1205,21 +1269,18 @@ class MainWindow(QMainWindow):
         scrollbars) tracks the theme — widget-local palette can otherwise
         lag behind QApplication.setPalette."""
         from PyQt6.QtWidgets import QApplication
+
         self.about_browser.setPalette(QApplication.palette())
         try:
             about_path = get_resource_path("ABOUT.md")
-            with open(about_path, 'r', encoding='utf-8') as f:
+            with open(about_path, encoding="utf-8") as f:
                 about_content = f.read()
-            about_content = about_content.replace(
-                "# Smart Citizen",
-                f"# Smart Citizen v{get_version()}"
-            )
+            about_content = about_content.replace("# Smart Citizen", f"# Smart Citizen v{get_version()}")
             self.about_browser.setHtml(self.markdown_to_html(about_content))
         except Exception as e:
             logger.error(f"Error loading ABOUT.md: {e}", exc_info=True)
             self.about_browser.setHtml(
-                f"<h1>About</h1><p>Unable to load about information.</p>"
-                f"<p style='color: gray;'>{str(e)}</p>"
+                f"<h1>About</h1><p>Unable to load about information.</p><p style='color: gray;'>{str(e)}</p>"
             )
 
     @pyqtSlot()
@@ -1245,7 +1306,9 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 logger.warning(f"Failed to load default values from {cache_file}: {e}")
         else:
-            logger.debug(f"Cache file not found: {cache_file}. Default values will be empty until sources are downloaded.")
+            logger.debug(
+                f"Cache file not found: {cache_file}. Default values will be empty until sources are downloaded."
+            )
 
     @pyqtSlot()
     @timed
@@ -1274,10 +1337,7 @@ class MainWindow(QMainWindow):
                 backup_dir = AppSettings.get_backups_dir()
 
                 # Find all existing backups
-                backup_files = sorted(
-                    backup_dir.glob("global.ini.bak_*"),
-                    key=lambda f: f.stat().st_mtime
-                )
+                backup_files = sorted(backup_dir.glob("global.ini.bak_*"), key=lambda f: f.stat().st_mtime)
 
                 # Delete oldest backup if we already have 5
                 if len(backup_files) >= 5:
@@ -1299,16 +1359,19 @@ class MainWindow(QMainWindow):
             active_source_names = set(AppSettings.AVAILABLE_SOURCES)
             active_source_names.add("enhancements")
             missing_sources = [
-                name for name in hierarchy
+                name
+                for name in hierarchy
                 if name in active_source_names
-                and name != AppSettings.SOURCE_USER and name != "enhancements"
+                and name != AppSettings.SOURCE_USER
+                and name != "enhancements"
                 and name not in sources_dict
                 and AppSettings.is_source_enabled(name)
             ]
             if missing_sources:
                 names = ", ".join(missing_sources)
                 reply = QMessageBox.warning(
-                    self, "Missing Sources",
+                    self,
+                    "Missing Sources",
                     f"The following enabled sources could not be loaded:\n\n  {names}\n\n"
                     "Their customizations will NOT be included in the applied file.\n\n"
                     "Apply anyway?",
@@ -1319,11 +1382,7 @@ class MainWindow(QMainWindow):
                     return
 
             # Build user overrides dict from entries with custom_value
-            user_overrides_dict = {
-                entry.key: entry.custom_value
-                for entry in self.entries
-                if entry.custom_value
-            }
+            user_overrides_dict = {entry.key: entry.custom_value for entry in self.entries if entry.custom_value}
 
             # Merge all sources in hierarchy order, with user edits on top
             merged_dict = merge_sources_by_hierarchy(sources_dict, hierarchy, user_overrides_dict)
@@ -1334,10 +1393,10 @@ class MainWindow(QMainWindow):
             for source_name in hierarchy:
                 source_path = AppSettings.get_source_path(source_name)
                 # Check if it's a URL (remote source) - use cache
-                if source_path and (source_path.startswith('http://') or source_path.startswith('https://')):
+                if source_path and (source_path.startswith("http://") or source_path.startswith("https://")):
                     # Map source name to cache file
                     cache_mapping = {
-                        AppSettings.SOURCE_GLOBAL:      "base.ini",
+                        AppSettings.SOURCE_GLOBAL: "base.ini",
                     }
                     if source_name in cache_mapping:
                         cache_file = AppSettings.get_cache_dir() / cache_mapping[source_name]
@@ -1354,6 +1413,7 @@ class MainWindow(QMainWindow):
 
             # Use merger to preserve original file structure
             from src.merger.ini_merger import merge_ini_files
+
             merge_ini_files(str(base_file), merged_dict, str(target_path))
 
             # Validate written file against stock base. Pass the already-parsed
@@ -1361,11 +1421,7 @@ class MainWindow(QMainWindow):
             # sources_dict["global"] holds the parsed base.ini from
             # load_sources_from_settings() above; fall back to on-disk read if
             # the global source wasn't loaded (e.g. missing cache).
-            stock_keys_hint = (
-                set(sources_dict["global"].keys())
-                if AppSettings.SOURCE_GLOBAL in sources_dict
-                else None
-            )
+            stock_keys_hint = set(sources_dict["global"].keys()) if AppSettings.SOURCE_GLOBAL in sources_dict else None
             validation_msg = self._validate_applied_file(target_path, stock_keys=stock_keys_hint)
 
             if validation_msg:
@@ -1389,36 +1445,33 @@ class MainWindow(QMainWindow):
 
                 self.statusBar().showMessage("Apply failed — validation error")
                 QMessageBox.critical(
-                    self, "Validation Failed",
-                    f"The written file failed validation and has been deleted.\n\n"
-                    f"{validation_msg}"
-                    f"{restore_note}"
+                    self,
+                    "Validation Failed",
+                    f"The written file failed validation and has been deleted.\n\n{validation_msg}{restore_note}",
                 )
                 return
 
             # Save user overrides to AppData
             from src.utils.user_ini_manager import save_user_ini
+
             user_count = save_user_ini(self.entries, AppSettings.get_user_ini_path())
 
             # Count enhancement entries
-            enhancement_count = sum(
-                1 for entry in self.entries
-                if entry.source_file == "enhancements"
-            )
+            enhancement_count = sum(1 for entry in self.entries if entry.source_file == "enhancements")
 
             # Ensure user.cfg has language setting
             from src.utils.user_cfg import ensure_user_cfg_language
-            ensure_user_cfg_language()
+
+            QTimer.singleShot(0, ensure_user_cfg_language)
 
             logger.info(f"Applied to game: {target_path}")
             self.statusBar().showMessage(
                 f"Applied to game | {user_count} user edits | {enhancement_count} enhancements"
             )
             QMessageBox.information(
-                self, "Success",
-                f"Applied to {target_path}\n\n"
-                f"  User edits: {user_count}\n"
-                f"  SCLE enhancements: {enhancement_count}"
+                self,
+                "Success",
+                f"Applied to {target_path}\n\n  User edits: {user_count}\n  SCLE enhancements: {enhancement_count}",
             )
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to apply to game: {e}")
@@ -1510,13 +1563,17 @@ class MainWindow(QMainWindow):
         loc_dir = global_ini.parent
 
         if not global_ini.exists():
-            QMessageBox.information(self, "Nothing to Clear",
+            QMessageBox.information(
+                self,
+                "Nothing to Clear",
                 "No custom global.ini found in the game's localization directory.\n"
-                "The game is already using vanilla text.")
+                "The game is already using vanilla text.",
+            )
             return
 
         reply = QMessageBox.question(
-            self, "Clear Localization",
+            self,
+            "Clear Localization",
             f"This will delete the custom global.ini from:\n{loc_dir}\n\n"
             "The game will revert to its default (vanilla) localization text.\n\n"
             "Your overrides are preserved in the app and can be re-applied at any time.\n\n"
@@ -1531,10 +1588,13 @@ class MainWindow(QMainWindow):
             global_ini.unlink()
             logger.info(f"Deleted {global_ini}")
             self.statusBar().showMessage("Localization cleared — game reverted to vanilla text")
-            QMessageBox.information(self, "Done",
+            QMessageBox.information(
+                self,
+                "Done",
                 "Custom localization removed.\n"
                 "The game will now use its default text.\n\n"
-                "To re-apply your overrides and stat descriptions, click Apply to Game.")
+                "To re-apply your overrides and stat descriptions, click Apply to Game.",
+            )
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to delete global.ini: {e}")
             logger.error(f"Error clearing localization: {e}")
@@ -1542,8 +1602,8 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def clear_cache(self):
         """Delete cached source files from the cache directory. Optionally clear DataForge cache."""
-        import shutil
         from PyQt6.QtWidgets import QApplication
+
         cache_dir = AppSettings.get_cache_dir()
         cached_files = list(cache_dir.glob("*.ini")) + list(cache_dir.glob("*.txt"))
 
@@ -1561,7 +1621,9 @@ class MainWindow(QMainWindow):
         msg += "base.ini will need to be re-extracted from Data.p4k before strings can be loaded."
 
         reply = QMessageBox.question(
-            self, "Clear Cache", msg,
+            self,
+            "Clear Cache",
+            msg,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
@@ -1589,7 +1651,8 @@ class MainWindow(QMainWindow):
         if has_dataforge:
             progress.close()  # Close progress dialog while asking user
             reply = QMessageBox.question(
-                self, "Clear DataForge Cache?",
+                self,
+                "Clear DataForge Cache?",
                 "Also clear the DataForge entity cache?\n\n"
                 "⚠️  Warning: Recreating the DataForge cache takes 5–10 minutes on first run.\n\n"
                 "The DataForge cache contains extracted entity data used for generating\n"
@@ -1614,6 +1677,7 @@ class MainWindow(QMainWindow):
                 # and outlasts OneDrive/Defender/indexer locks that commonly
                 # reject the first attempt with WinError 5.
                 from src.utils.pak_extractor import _robust_rmtree
+
                 _robust_rmtree(dataforge_dir)
                 deleted.append("dataforge/")
                 logger.info("Deleted DataForge cache directory")
@@ -1649,9 +1713,9 @@ class MainWindow(QMainWindow):
 
         if not loc_dir.exists():
             QMessageBox.warning(
-                self, "Directory Not Found",
-                f"Localization directory not found:\n{loc_dir}\n\n"
-                "Check your game install path in the Config tab."
+                self,
+                "Directory Not Found",
+                f"Localization directory not found:\n{loc_dir}\n\nCheck your game install path in the Config tab.",
             )
             return
 
@@ -1670,7 +1734,9 @@ class MainWindow(QMainWindow):
             sources_dict, hierarchy, enhancements_key_categories = load_sources_from_settings()
 
             if not sources_dict or not hierarchy:
-                QMessageBox.warning(self, "Warning", "No sources configured. Please configure data sources in Config tab.")
+                QMessageBox.warning(
+                    self, "Warning", "No sources configured. Please configure data sources in Config tab."
+                )
                 return
 
             self.statusBar().showMessage("Merging sources...")
@@ -1678,7 +1744,9 @@ class MainWindow(QMainWindow):
             try:
                 # Load synchronously in main thread
                 logger.info("Merging configured sources...")
-                entries = load_source_files(sources_dict, hierarchy, enhancements_key_categories=enhancements_key_categories)
+                entries = load_source_files(
+                    sources_dict, hierarchy, enhancements_key_categories=enhancements_key_categories
+                )
                 logger.info(f"Merge complete: {len(entries)} entries")
                 self.entries = entries
                 self.default_values = dict(sources_dict.get("global", {}))
@@ -1707,9 +1775,7 @@ class MainWindow(QMainWindow):
     def _apply_branding_styles(self):
         """Apply per-theme colors to the title + tagline header labels."""
         self.title_label.setStyleSheet(f"color: {get_title_color()};")
-        self.tagline_label.setStyleSheet(
-            f"font-size: 11px; letter-spacing: 2px; color: {get_tagline_color()};"
-        )
+        self.tagline_label.setStyleSheet(f"font-size: 11px; letter-spacing: 2px; color: {get_tagline_color()};")
 
     def refresh_action_buttons(self):
         """Re-apply theme-dependent stylesheets on the toolbar action buttons
@@ -1732,14 +1798,15 @@ class MainWindow(QMainWindow):
 
     def _handle_import_ini(self):
         """Handle Import INI button: get source, validate, resolve conflicts, merge."""
-        from PyQt6.QtWidgets import (
-            QDialog, QVBoxLayout, QHBoxLayout, QLineEdit,
-            QPushButton, QLabel, QDialogButtonBox, QFileDialog
-        )
-        from src.parser.ini_parser import parse_ini_file
-        from src.utils.user_ini_manager import save_user_ini_dict
         import tempfile
         import urllib.request
+
+        from PyQt6.QtWidgets import (
+            QDialog,
+        )
+
+        from src.parser.ini_parser import parse_ini_file
+        from src.utils.user_ini_manager import save_user_ini_dict
 
         # Step 1: Get source path/URL from user
         source = self._get_import_source()
@@ -1749,15 +1816,15 @@ class MainWindow(QMainWindow):
         temp_file = None
         try:
             # Step 2: Resolve to local file
-            if source.startswith('http://') or source.startswith('https://'):
+            if source.startswith("http://") or source.startswith("https://"):
                 # Auto-convert GitHub web URLs to raw URLs
-                if source.startswith('https://github.com/'):
-                    source = source.replace('https://github.com/', 'https://raw.githubusercontent.com/')
-                    source = source.replace('/blob/', '/')
+                if source.startswith("https://github.com/"):
+                    source = source.replace("https://github.com/", "https://raw.githubusercontent.com/")
+                    source = source.replace("/blob/", "/")
 
                 self.statusBar().showMessage("Downloading INI file...")
                 try:
-                    temp_file = tempfile.NamedTemporaryFile(suffix='.ini', delete=False)
+                    temp_file = tempfile.NamedTemporaryFile(suffix=".ini", delete=False)
                     temp_file.close()
                     urllib.request.urlretrieve(source, temp_file.name)
                     resolved_path = temp_file.name
@@ -1778,17 +1845,18 @@ class MainWindow(QMainWindow):
 
             # Step 4: Validate against base.ini keys
             if not self.default_values:
-                QMessageBox.warning(self, "No Base Data",
-                    "Base INI not loaded yet. Extract from Data.p4k first.")
+                QMessageBox.warning(self, "No Base Data", "Base INI not loaded yet. Extract from Data.p4k first.")
                 return
 
             valid_keys = {k: v for k, v in imported.items() if k in self.default_values}
             excluded_count = len(imported) - len(valid_keys)
 
             if not valid_keys:
-                QMessageBox.warning(self, "No Valid Keys",
-                    f"None of the {len(imported)} imported keys exist in base.ini.\n"
-                    f"All keys were excluded.")
+                QMessageBox.warning(
+                    self,
+                    "No Valid Keys",
+                    f"None of the {len(imported)} imported keys exist in base.ini.\nAll keys were excluded.",
+                )
                 return
 
             # Step 5: Load current user.ini
@@ -1808,21 +1876,26 @@ class MainWindow(QMainWindow):
 
             # Step 7: Handle cases
             if not auto_add and not conflicts:
-                QMessageBox.information(self, "Nothing to Import",
-                    "All imported keys already exist in user.ini with the same values.")
+                QMessageBox.information(
+                    self, "Nothing to Import", "All imported keys already exist in user.ini with the same values."
+                )
                 return
 
             if not conflicts:
-                reply = QMessageBox.question(self, "Import INI",
+                reply = QMessageBox.question(
+                    self,
+                    "Import INI",
                     f"{len(auto_add)} new keys will be added to user.ini.\n"
                     f"{excluded_count} keys excluded (not in base.ini).\n\n"
                     "Proceed?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                )
                 if reply != QMessageBox.StandardButton.Yes:
                     return
                 resolutions = {}
             else:
                 from src.gui.import_dialog import ImportConflictDialog
+
                 dialog = ImportConflictDialog(conflicts, len(auto_add), excluded_count, self)
                 if dialog.exec() != QDialog.DialogCode.Accepted:
                     return
@@ -1840,11 +1913,14 @@ class MainWindow(QMainWindow):
             self._show_loading_progress("Reloading with imported data...")
 
             # Step 11: Summary
-            QMessageBox.information(self, "Import Complete",
+            QMessageBox.information(
+                self,
+                "Import Complete",
                 f"Import successful.\n\n"
                 f"  Added: {len(auto_add)} keys\n"
                 f"  Conflicts resolved: {len(resolutions)} keys\n"
-                f"  Excluded: {excluded_count} keys")
+                f"  Excluded: {excluded_count} keys",
+            )
 
         except Exception as e:
             logger.exception(f"Import failed: {e}")
@@ -1859,8 +1935,14 @@ class MainWindow(QMainWindow):
     def _get_import_source(self) -> str | None:
         """Show dialog to get a file path or URL for import."""
         from PyQt6.QtWidgets import (
-            QDialog, QVBoxLayout, QHBoxLayout, QLineEdit,
-            QPushButton, QLabel, QDialogButtonBox, QFileDialog
+            QDialog,
+            QDialogButtonBox,
+            QFileDialog,
+            QHBoxLayout,
+            QLabel,
+            QLineEdit,
+            QPushButton,
+            QVBoxLayout,
         )
 
         dialog = QDialog(self)
@@ -1876,17 +1958,17 @@ class MainWindow(QMainWindow):
         input_row.addWidget(line_edit)
 
         browse_btn = QPushButton("Browse...")
+
         def browse():
-            path, _ = QFileDialog.getOpenFileName(
-                dialog, "Select INI File", "", "INI Files (*.ini);;All Files (*)")
+            path, _ = QFileDialog.getOpenFileName(dialog, "Select INI File", "", "INI Files (*.ini);;All Files (*)")
             if path:
                 line_edit.setText(path)
+
         browse_btn.clicked.connect(browse)
         input_row.addWidget(browse_btn)
         layout.addLayout(input_row)
 
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -1910,7 +1992,7 @@ class MainWindow(QMainWindow):
             self,
             "Select Backup File to Restore",
             str(backup_dir),
-            "Backup Files (*.bak_*);;INI Files (*.ini);;All Files (*)"
+            "Backup Files (*.bak_*);;INI Files (*.ini);;All Files (*)",
         )
 
         if not backup_file:
@@ -1932,7 +2014,9 @@ class MainWindow(QMainWindow):
             self.load_default_values()
             self.update_category_combo()
             self._model.set_data_source(
-                self.entries, self.default_values, AppSettings.get_favorite_prefix(),
+                self.entries,
+                self.default_values,
+                AppSettings.get_favorite_prefix(),
             )
             self.apply_filters()
 
@@ -1961,10 +2045,7 @@ class MainWindow(QMainWindow):
 
         dock = QDockWidget("Help", self)
         dock.setObjectName("helpDock")  # needed by restoreState
-        dock.setAllowedAreas(
-            Qt.DockWidgetArea.RightDockWidgetArea
-            | Qt.DockWidgetArea.LeftDockWidgetArea
-        )
+        dock.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea | Qt.DockWidgetArea.LeftDockWidgetArea)
         dock.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetClosable
             | QDockWidget.DockWidgetFeature.DockWidgetMovable
@@ -1997,10 +2078,11 @@ class MainWindow(QMainWindow):
         if not hasattr(self, "help_browser"):
             return
         from PyQt6.QtWidgets import QApplication
+
         self.help_browser.setPalette(QApplication.palette())
         try:
             help_path = get_resource_path("HELP.md")
-            with open(help_path, "r", encoding="utf-8") as f:
+            with open(help_path, encoding="utf-8") as f:
                 help_markdown = f.read()
             self.help_browser.setHtml(self.markdown_to_html(help_markdown))
         except Exception as e:
@@ -2051,10 +2133,12 @@ class MainWindow(QMainWindow):
             target:     Callable[[], QWidget | None]
             pre_action: Optional[Callable[[], None]]
         """
+
         def _switch_to(tab_index: int):
             def _action():
                 if hasattr(self, "tabs"):
                     self.tabs.setCurrentIndex(tab_index)
+
             return _action
 
         strings_tab = getattr(self, "_strings_tab_index", 0)
@@ -2062,13 +2146,16 @@ class MainWindow(QMainWindow):
         enh_tab = getattr(self, "_enhancements_tab_index", 2)
 
         return {
-            "welcome":      {"target": lambda: None,                                            "pre_action": None},
-            "extract":      {"target": lambda: self.config_tab._extract_btn,                    "pre_action": _switch_to(config_tab)},
-            "edit":         {"target": lambda: self.table,                                      "pre_action": _switch_to(strings_tab)},
-            "preview":      {"target": lambda: self.preview_pane,                               "pre_action": _switch_to(strings_tab)},
-            "apply":        {"target": lambda: self.apply_btn,                                  "pre_action": None},
-            "enhancements": {"target": lambda: self.enhancements_tab._generate_enhancements_btn, "pre_action": _switch_to(enh_tab)},
-            "help":         {"target": lambda: self.help_btn,                                   "pre_action": _switch_to(strings_tab)},
+            "welcome": {"target": lambda: None, "pre_action": None},
+            "extract": {"target": lambda: self.config_tab._extract_btn, "pre_action": _switch_to(config_tab)},
+            "edit": {"target": lambda: self.table, "pre_action": _switch_to(strings_tab)},
+            "preview": {"target": lambda: self.preview_pane, "pre_action": _switch_to(strings_tab)},
+            "apply": {"target": lambda: self.apply_btn, "pre_action": None},
+            "enhancements": {
+                "target": lambda: self.enhancements_tab._generate_enhancements_btn,
+                "pre_action": _switch_to(enh_tab),
+            },
+            "help": {"target": lambda: self.help_btn, "pre_action": _switch_to(strings_tab)},
         }
 
     def _build_tutorial_steps(self) -> list[CoachMarkStep]:
@@ -2101,23 +2188,22 @@ class MainWindow(QMainWindow):
                 continue
             w = wiring.get(step_id)
             if w is None:
-                logger.warning(
-                    f"Tutorial step id {step_id!r} has no wiring entry in "
-                    f"_tutorial_step_wiring(); skipped"
-                )
+                logger.warning(f"Tutorial step id {step_id!r} has no wiring entry in _tutorial_step_wiring(); skipped")
                 continue
             title = raw.get("title", "")
             description = raw.get("description", "")
             if not title or not description:
                 logger.warning(f"Tutorial step {step_id!r} missing title/description; skipped")
                 continue
-            steps.append(CoachMarkStep(
-                target=w["target"],
-                title=title,
-                description=description,
-                pre_action=w.get("pre_action"),
-                preferred_side=raw.get("preferred_side", "auto"),
-            ))
+            steps.append(
+                CoachMarkStep(
+                    target=w["target"],
+                    title=title,
+                    description=description,
+                    pre_action=w.get("pre_action"),
+                    preferred_side=raw.get("preferred_side", "auto"),
+                )
+            )
 
         return steps
 
@@ -2192,7 +2278,10 @@ class MainWindow(QMainWindow):
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts."""
-        if event.key() == Qt.Key.Key_C and event.modifiers() == Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier:
+        if (
+            event.key() == Qt.Key.Key_C
+            and event.modifiers() == Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier
+        ):
             # Ctrl+Shift+C: Copy filtered rows
             self.copy_filtered_to_clipboard()
         else:
@@ -2210,7 +2299,7 @@ class MainWindow(QMainWindow):
         if self._eye_pulse is None or self._eye_glow is None or self._eye_fadeout is None:
             return
         running = self._has_long_running_worker()
-        pulse_on   = self._eye_pulse.state()   == QPropertyAnimation.State.Running
+        pulse_on = self._eye_pulse.state() == QPropertyAnimation.State.Running
         fadeout_on = self._eye_fadeout.state() == QPropertyAnimation.State.Running
 
         if running:
@@ -2316,8 +2405,7 @@ class MainWindow(QMainWindow):
             if stored != canonical:
                 AppSettings.set_source_path(source_name, canonical)
                 logger.info(
-                    f"Re-synced {source_name} source path for channel {channel}: "
-                    f"{stored or '(unset)'} → {canonical}"
+                    f"Re-synced {source_name} source path for channel {channel}: {stored or '(unset)'} → {canonical}"
                 )
 
         self._refresh_channel_indicator()
@@ -2348,9 +2436,7 @@ class MainWindow(QMainWindow):
         # stale. Returns True if extraction was started, in which case the
         # finished handler will trigger the reload itself (don't double-run).
         if self._check_p4k_freshness():
-            self._status_bar().showMessage(
-                f"Switched to {channel} — extracting Data.p4k…"
-            )
+            self._status_bar().showMessage(f"Switched to {channel} — extracting Data.p4k…")
             return
 
         # base.ini is present and fresh for the new channel. Check whether
@@ -2439,9 +2525,7 @@ class MainWindow(QMainWindow):
             return
 
         self._status_bar().showMessage("Starting up — syncing sources...")
-        self._startup_progress = AnimatedProgressDialog(
-            "Syncing sources...", parent=self, title="Starting Up"
-        )
+        self._startup_progress = AnimatedProgressDialog("Syncing sources...", parent=self, title="Starting Up")
         self._startup_sync_worker = StartupSyncWorker()
         self._startup_sync_worker.source_starting.connect(self._on_startup_source_starting)
         self._startup_sync_worker.source_synced.connect(self._on_startup_source_synced)
@@ -2512,7 +2596,7 @@ class MainWindow(QMainWindow):
         """
         unp4k_exe = AppSettings.get_unp4k_exe_path()
         p4k_path = AppSettings.get_p4k_path()
-        base_ini = AppSettings.get_cache_dir() / 'base.ini'
+        base_ini = AppSettings.get_cache_dir() / "base.ini"
 
         if not unp4k_exe.exists() or not p4k_path.exists():
             return False  # silently skip — unp4k not bundled yet or game path not set
@@ -2537,7 +2621,9 @@ class MainWindow(QMainWindow):
             )
 
         reply = QMessageBox.question(
-            self, "Extract from Data.p4k", msg,
+            self,
+            "Extract from Data.p4k",
+            msg,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if reply == QMessageBox.StandardButton.Yes:
@@ -2587,7 +2673,8 @@ class MainWindow(QMainWindow):
             return
 
         reply = QMessageBox.question(
-            self, "DataForge Cache Outdated",
+            self,
+            "DataForge Cache Outdated",
             "Your DataForge entity cache is older than the current Data.p4k.\n\n"
             "Re-extract DataForge and regenerate enhancements now?\n\n"
             "This takes 5–10 minutes and runs in the background — you can keep "
@@ -2605,15 +2692,14 @@ class MainWindow(QMainWindow):
         extraction and we already prompted, runs generation with saved selections.
         """
         cache_dir = AppSettings.get_cache_dir()
-        if not (cache_dir / 'base.ini').exists():
+        if not (cache_dir / "base.ini").exists():
             return
         if self._enhancements_worker is not None or self._forge_worker is not None:
             return
 
         # Only check enabled categories
         enabled = AppSettings.get_enabled_enhancement_categories()
-        missing = [key for key in enabled
-                   if not (cache_dir / AppSettings.ENHANCEMENTS_FILES[key]).exists()]
+        missing = [key for key in enabled if not (cache_dir / AppSettings.ENHANCEMENTS_FILES[key]).exists()]
         if not missing:
             return
 
@@ -2641,10 +2727,7 @@ class MainWindow(QMainWindow):
         Returns:
             Set of selected category keys, or None if user clicked Skip.
         """
-        from PyQt6.QtWidgets import (
-            QDialog, QVBoxLayout, QLabel, QCheckBox,
-            QPushButton, QHBoxLayout
-        )
+        from PyQt6.QtWidgets import QCheckBox, QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
         # Collapse the missing-file list down to the set of category checkboxes
         # the user will actually see. The dialog is category-shaped, not
@@ -2663,11 +2746,13 @@ class MainWindow(QMainWindow):
 
         n = len(missing_checkbox_keys)
         noun = "category is" if n == 1 else "categories are"
-        layout.addWidget(QLabel(
-            f"{n} enhancement {noun} missing.\n"
-            "Select which to generate.\n"
-            "You can change this later in the Enhancements tab."
-        ))
+        layout.addWidget(
+            QLabel(
+                f"{n} enhancement {noun} missing.\n"
+                "Select which to generate.\n"
+                "You can change this later in the Enhancements tab."
+            )
+        )
 
         layout.addSpacing(8)
 
@@ -2685,8 +2770,7 @@ class MainWindow(QMainWindow):
         layout.addSpacing(8)
 
         info = QLabel(
-            "DataForge data will be extracted automatically if not already cached.\n"
-            "First run takes ~5-10 minutes."
+            "DataForge data will be extracted automatically if not already cached.\nFirst run takes ~5-10 minutes."
         )
         info.setProperty("role", "secondary")
         info.setStyleSheet("font-size: 11px;")
@@ -2819,8 +2903,9 @@ class MainWindow(QMainWindow):
             return  # already running
 
         from src.utils.pak_extractor import dataforge_cache_is_fresh
+
         forge_dir = AppSettings.get_dataforge_cache_dir()
-        p4k_path  = AppSettings.get_p4k_path()
+        p4k_path = AppSettings.get_p4k_path()
 
         if dataforge_cache_is_fresh(p4k_path, forge_dir):
             self._run_enhancements_generation()
@@ -2891,10 +2976,10 @@ class MainWindow(QMainWindow):
         if self._forge_worker is not None:
             return
 
-        p4k_path    = AppSettings.get_p4k_path()
-        unp4k_exe   = AppSettings.get_unp4k_exe_path()
+        p4k_path = AppSettings.get_p4k_path()
+        unp4k_exe = AppSettings.get_unp4k_exe_path()
         unforge_exe = AppSettings.get_unforge_exe_path()
-        forge_dir   = AppSettings.get_dataforge_cache_dir()
+        forge_dir = AppSettings.get_dataforge_cache_dir()
 
         status_bar = self._status_bar()
         self._forge_worker = DataForgeExtractWorker(p4k_path, unp4k_exe, unforge_exe, forge_dir)
@@ -2942,14 +3027,12 @@ class MainWindow(QMainWindow):
     def _run_p4k_extraction(self):
         """Launch P4kExtractWorker with a progress dialog; reload sources on success."""
         p4k_path = AppSettings.get_p4k_path()
-        output_path = AppSettings.get_cache_dir() / 'base.ini'
+        output_path = AppSettings.get_cache_dir() / "base.ini"
         unp4k_exe = AppSettings.get_unp4k_exe_path()
 
         self._p4k_worker = P4kExtractWorker(p4k_path, output_path, unp4k_exe)
         self._p4k_progress = AnimatedProgressDialog(
-            "Extracting global.ini from Data.p4k...",
-            parent=self,
-            title="P4K Extraction"
+            "Extracting global.ini from Data.p4k...", parent=self, title="P4K Extraction"
         )
 
         self._p4k_worker.progress.connect(self._p4k_progress.setLabelText)
@@ -2971,7 +3054,7 @@ class MainWindow(QMainWindow):
         if success:
             # Lock Global source to the local cache path with auto-update off,
             # so future startups don't overwrite the extracted file from a remote URL.
-            local_path = str(AppSettings.get_cache_dir() / 'base.ini')
+            local_path = str(AppSettings.get_cache_dir() / "base.ini")
             AppSettings.set_source_path(AppSettings.SOURCE_GLOBAL, local_path)
             AppSettings.set_source_auto_update(AppSettings.SOURCE_GLOBAL, False)
             # Refresh the config tab P4K status
@@ -2989,6 +3072,7 @@ class MainWindow(QMainWindow):
         if self.entries and not (self._loader_worker and self._loader_worker.isRunning()):
             try:
                 from src.utils.user_ini_manager import save_user_ini
+
                 save_user_ini(self.entries, AppSettings.get_user_ini_path())
             except Exception as e:
                 logger.error(f"Failed to auto-save overrides on exit: {e}")
@@ -3230,7 +3314,7 @@ class MainWindow(QMainWindow):
         prefix = AppSettings.get_favorite_prefix()
 
         if entry.custom_value.startswith(prefix):
-            new_value = entry.custom_value[len(prefix):]
+            new_value = entry.custom_value[len(prefix) :]
             entry.custom_value = new_value if new_value != entry.original_value else ""
         else:
             base = entry.custom_value if entry.custom_value else entry.original_value
@@ -3260,8 +3344,9 @@ class MainWindow(QMainWindow):
         # Pull directly from the application palette so this is stable even when
         # called synchronously right after QApplication.setPalette (widget-local
         # palettes can lag one event-loop tick behind the app palette).
-        from PyQt6.QtWidgets import QApplication
         from PyQt6.QtGui import QPalette
+        from PyQt6.QtWidgets import QApplication
+
         palette = QApplication.palette()
         text_color = palette.color(QPalette.ColorRole.Text).name()
         base_color = palette.color(QPalette.ColorRole.Base).name()
@@ -3276,16 +3361,16 @@ class MainWindow(QMainWindow):
         html += f"p {{ font-size: 15px; margin: 10px 0; color: {text_color}; }}"
         html += f"li {{ font-size: 15px; margin: 5px 0; color: {text_color}; }}"
         html += f"a {{ color: {link_color}; text-decoration: underline; font-weight: 500; }}"
-        html += f"a:hover {{ text-decoration: underline; opacity: 0.8; cursor: pointer; }}"
-        html += f"code {{ background-color: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 14px; }}"
-        html += f"pre {{ background-color: rgba(0,0,0,0.05); padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 14px; }}"
-        html += f"ul {{ margin-left: 20px; font-size: 15px; }}"
-        html += f"ol {{ margin-left: 20px; font-size: 15px; }}"
-        html += f"strong {{ font-weight: bold; }}"
+        html += "a:hover { text-decoration: underline; opacity: 0.8; cursor: pointer; }"
+        html += "code { background-color: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 14px; }"
+        html += "pre { background-color: rgba(0,0,0,0.05); padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 14px; }"
+        html += "ul { margin-left: 20px; font-size: 15px; }"
+        html += "ol { margin-left: 20px; font-size: 15px; }"
+        html += "strong { font-weight: bold; }"
         html += f"blockquote {{ border-left: 4px solid {link_color}; padding-left: 15px; font-style: italic; font-size: 15px; }}"
         html += "</style></head><body>"
 
-        lines = markdown_text.split('\n')
+        lines = markdown_text.split("\n")
         in_code_block = False
         in_list = False
         list_type = None
@@ -3293,7 +3378,7 @@ class MainWindow(QMainWindow):
 
         for line in lines:
             # Code blocks
-            if line.strip().startswith('```'):
+            if line.strip().startswith("```"):
                 if in_code_block:
                     html += "</pre>"
                     in_code_block = False
@@ -3307,7 +3392,7 @@ class MainWindow(QMainWindow):
                 continue
 
             # Headers
-            if line.startswith('# '):
+            if line.startswith("# "):
                 if in_list:
                     html += f"</{list_type}>"
                     in_list = False
@@ -3315,7 +3400,7 @@ class MainWindow(QMainWindow):
                 anchor_id = self.create_anchor_id(header_text)
                 html += f"<h1 id='{anchor_id}'>{self._convert_markdown_inline(header_text)}</h1>"
                 prev_blank = False
-            elif line.startswith('## '):
+            elif line.startswith("## "):
                 if in_list:
                     html += f"</{list_type}>"
                     in_list = False
@@ -3323,7 +3408,7 @@ class MainWindow(QMainWindow):
                 anchor_id = self.create_anchor_id(header_text)
                 html += f"<h2 id='{anchor_id}'>{self._convert_markdown_inline(header_text)}</h2>"
                 prev_blank = False
-            elif line.startswith('### '):
+            elif line.startswith("### "):
                 if in_list:
                     html += f"</{list_type}>"
                     in_list = False
@@ -3332,27 +3417,27 @@ class MainWindow(QMainWindow):
                 html += f"<h3 id='{anchor_id}'>{self._convert_markdown_inline(header_text)}</h3>"
                 prev_blank = False
             # Lists
-            elif line.strip().startswith('- ') or line.strip().startswith('* '):
-                if not in_list or list_type != 'ul':
+            elif line.strip().startswith("- ") or line.strip().startswith("* "):
+                if not in_list or list_type != "ul":
                     if in_list:
                         html += f"</{list_type}>"
                     html += "<ul>"
                     in_list = True
-                    list_type = 'ul'
+                    list_type = "ul"
                 list_text = line.strip()[2:].strip()
                 list_text = self._convert_markdown_inline(list_text)
                 html += f"<li>{list_text}</li>"
                 prev_blank = False
-            elif line.strip() and line[0].isdigit() and '. ' in line:
-                if not in_list or list_type != 'ol':
+            elif line.strip() and line[0].isdigit() and ". " in line:
+                if not in_list or list_type != "ol":
                     if in_list:
                         html += f"</{list_type}>"
                     html += "<ol>"
                     in_list = True
-                    list_type = 'ol'
+                    list_type = "ol"
                 list_text = line.strip()
                 # Remove number and period
-                list_text = list_text[list_text.index('. ') + 2:].strip()
+                list_text = list_text[list_text.index(". ") + 2 :].strip()
                 list_text = self._convert_markdown_inline(list_text)
                 html += f"<li>{list_text}</li>"
                 prev_blank = False
@@ -3387,8 +3472,9 @@ class MainWindow(QMainWindow):
     def _convert_markdown_links(self, text: str) -> str:
         """Convert markdown links [text](url) to HTML links."""
         import re
+
         # Match [text](url) pattern
-        pattern = r'\[([^\]]+)\]\(([^\)]+)\)'
+        pattern = r"\[([^\]]+)\]\(([^\)]+)\)"
         replacement = r'<a href="\2">\1</a>'
         return re.sub(pattern, replacement, text)
 

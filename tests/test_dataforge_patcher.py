@@ -1,12 +1,11 @@
 """Tests for src.utils.dataforge_patcher."""
+
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-import pytest
-
-from utils.dataforge_patcher import (
+from src.utils.dataforge_patcher import (
     LocstringWorkaround,
     apply_locstring_workarounds,
     apply_patches,
@@ -69,10 +68,14 @@ def test_apply_edit_rewrites_attribute(tmp_path: Path):
     records = _records_root(tmp_path)
     target = _write_target(records, "contracts/hockrowagency.xml", _CONTRACT_XML)
     patches = tmp_path / "patches"
-    _write_patch(patches, "hockrow.patch.json", {
-        "target": "contracts/hockrowagency.xml",
-        "edits": [_P2M4_EDIT],
-    })
+    _write_patch(
+        patches,
+        "hockrow.patch.json",
+        {
+            "target": "contracts/hockrowagency.xml",
+            "edits": [_P2M4_EDIT],
+        },
+    )
 
     report = apply_patches(patches, tmp_path / "dataforge")
 
@@ -86,10 +89,14 @@ def test_apply_edit_is_idempotent(tmp_path: Path):
     records = _records_root(tmp_path)
     _write_target(records, "contracts/hockrowagency.xml", _CONTRACT_XML)
     patches = tmp_path / "patches"
-    _write_patch(patches, "hockrow.patch.json", {
-        "target": "contracts/hockrowagency.xml",
-        "edits": [_P2M4_EDIT],
-    })
+    _write_patch(
+        patches,
+        "hockrow.patch.json",
+        {
+            "target": "contracts/hockrowagency.xml",
+            "edits": [_P2M4_EDIT],
+        },
+    )
 
     first = apply_patches(patches, tmp_path / "dataforge")
     second = apply_patches(patches, tmp_path / "dataforge")
@@ -103,14 +110,20 @@ def test_apply_edit_is_idempotent(tmp_path: Path):
 
 def test_expected_mismatch_skips_with_warning(tmp_path: Path):
     records = _records_root(tmp_path)
-    target = _write_target(records, "contracts/hockrowagency.xml",
-                           _CONTRACT_XML.replace("@Hockrow_FacilityDelve_P2M1_Repeat_desc",
-                                                 "@UpstreamAlreadyFixed_desc"))
+    target = _write_target(
+        records,
+        "contracts/hockrowagency.xml",
+        _CONTRACT_XML.replace("@Hockrow_FacilityDelve_P2M1_Repeat_desc", "@UpstreamAlreadyFixed_desc"),
+    )
     patches = tmp_path / "patches"
-    _write_patch(patches, "hockrow.patch.json", {
-        "target": "contracts/hockrowagency.xml",
-        "edits": [_P2M4_EDIT],
-    })
+    _write_patch(
+        patches,
+        "hockrow.patch.json",
+        {
+            "target": "contracts/hockrowagency.xml",
+            "edits": [_P2M4_EDIT],
+        },
+    )
 
     report = apply_patches(patches, tmp_path / "dataforge")
 
@@ -124,10 +137,14 @@ def test_expected_mismatch_skips_with_warning(tmp_path: Path):
 def test_missing_target_file_records_error(tmp_path: Path):
     _records_root(tmp_path)  # records dir exists but target file doesn't
     patches = tmp_path / "patches"
-    _write_patch(patches, "missing.patch.json", {
-        "target": "does/not/exist.xml",
-        "edits": [_P2M4_EDIT],
-    })
+    _write_patch(
+        patches,
+        "missing.patch.json",
+        {
+            "target": "does/not/exist.xml",
+            "edits": [_P2M4_EDIT],
+        },
+    )
 
     report = apply_patches(patches, tmp_path / "dataforge")
 
@@ -147,13 +164,19 @@ def test_no_xpath_match_records_no_match(tmp_path: Path):
     records = _records_root(tmp_path)
     _write_target(records, "contracts/hockrowagency.xml", _CONTRACT_XML)
     patches = tmp_path / "patches"
-    _write_patch(patches, "hockrow.patch.json", {
-        "target": "contracts/hockrowagency.xml",
-        "edits": [{
-            **_P2M4_EDIT,
-            "xpath": ".//Contract[@debugName='DoesNotExist']//ContractStringParam[@param='Description']",
-        }],
-    })
+    _write_patch(
+        patches,
+        "hockrow.patch.json",
+        {
+            "target": "contracts/hockrowagency.xml",
+            "edits": [
+                {
+                    **_P2M4_EDIT,
+                    "xpath": ".//Contract[@debugName='DoesNotExist']//ContractStringParam[@param='Description']",
+                }
+            ],
+        },
+    )
 
     report = apply_patches(patches, tmp_path / "dataforge")
 
@@ -165,10 +188,14 @@ def test_unrelated_elements_left_alone(tmp_path: Path):
     records = _records_root(tmp_path)
     target = _write_target(records, "contracts/hockrowagency.xml", _CONTRACT_XML)
     patches = tmp_path / "patches"
-    _write_patch(patches, "hockrow.patch.json", {
-        "target": "contracts/hockrowagency.xml",
-        "edits": [_P2M4_EDIT],
-    })
+    _write_patch(
+        patches,
+        "hockrow.patch.json",
+        {
+            "target": "contracts/hockrowagency.xml",
+            "edits": [_P2M4_EDIT],
+        },
+    )
 
     apply_patches(patches, tmp_path / "dataforge")
 
@@ -195,18 +222,22 @@ def test_malformed_patch_recorded_as_error(tmp_path: Path):
 
 def test_load_workarounds_from_patch_json(tmp_path: Path):
     patches = tmp_path / "patches"
-    _write_patch(patches, "hockrow.patch.json", {
-        "target": "dummy.xml",
-        "edits": [_P2M4_EDIT],
-        "locstring_workarounds": [
-            {
-                "description": "merge P2M4 onto P2M1",
-                "target": "Hockrow_FacilityDelve_P2M1_Repeat_desc",
-                "append_from": "Hockrow_FacilityDelve_P2M4_Repeat_desc",
-                "separator": "\\n\\n<EM3>sep</EM3>\\n",
-            }
-        ],
-    })
+    _write_patch(
+        patches,
+        "hockrow.patch.json",
+        {
+            "target": "dummy.xml",
+            "edits": [_P2M4_EDIT],
+            "locstring_workarounds": [
+                {
+                    "description": "merge P2M4 onto P2M1",
+                    "target": "Hockrow_FacilityDelve_P2M1_Repeat_desc",
+                    "append_from": "Hockrow_FacilityDelve_P2M4_Repeat_desc",
+                    "separator": "\\n\\n<EM3>sep</EM3>\\n",
+                }
+            ],
+        },
+    )
 
     ws = load_locstring_workarounds(patches)
 
@@ -219,15 +250,19 @@ def test_load_workarounds_from_patch_json(tmp_path: Path):
 
 def test_load_workarounds_skips_malformed(tmp_path: Path):
     patches = tmp_path / "patches"
-    _write_patch(patches, "a.patch.json", {
-        "target": "x.xml",
-        "edits": [],
-        "locstring_workarounds": [
-            {"target": "k1", "append_from": "k2"},        # valid
-            {"target": "k3"},                              # missing append_from
-            {"append_from": "k4"},                         # missing target
-        ],
-    })
+    _write_patch(
+        patches,
+        "a.patch.json",
+        {
+            "target": "x.xml",
+            "edits": [],
+            "locstring_workarounds": [
+                {"target": "k1", "append_from": "k2"},  # valid
+                {"target": "k3"},  # missing append_from
+                {"append_from": "k4"},  # missing target
+            ],
+        },
+    )
 
     ws = load_locstring_workarounds(patches)
 

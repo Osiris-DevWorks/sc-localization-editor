@@ -47,6 +47,7 @@ exe = EXE(
     a.datas,
     [],
     name='SmartCitizen',
+    version='version_info.txt',
     icon='assets/logo.ico',
     debug=False,
     bootloader_ignore_signals=False,

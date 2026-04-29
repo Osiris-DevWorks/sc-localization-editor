@@ -5,9 +5,9 @@ tested manually against real GitHub. These cover the version parsing and
 comparison logic, which is where silent regressions would hurt (we'd either
 stop nagging when we should, or start nagging on valid data).
 """
-import pytest
 
-from utils.app_updater import parse_version, is_newer
+import pytest
+from src.utils.app_updater import is_newer, parse_version
 
 
 class TestParseVersion:

@@ -7,20 +7,14 @@ Covers:
   migration (both registry side and filesystem side), is idempotent, and
   merges into empty channel shells left by eager path-helper mkdir calls.
 """
+
 from __future__ import annotations
 
-import os
-import sys
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from PyQt6.QtCore import QSettings
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-
-from utils.settings import AppSettings
-
+from src.utils.settings import AppSettings
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -63,9 +57,7 @@ def fake_user_data_dir(tmp_path, monkeypatch):
     touch the real ``Documents\\Smart Citizen\\``."""
     user_dir = tmp_path / "Smart Citizen"
     user_dir.mkdir(parents=True)
-    monkeypatch.setattr(
-        AppSettings, "get_user_data_dir", staticmethod(lambda: user_dir)
-    )
+    monkeypatch.setattr(AppSettings, "get_user_data_dir", staticmethod(lambda: user_dir))
     return user_dir
 
 
@@ -76,9 +68,7 @@ def fake_user_data_dir(tmp_path, monkeypatch):
 
 class TestChannelConstants:
     def test_channels_defined(self):
-        assert set(AppSettings.AVAILABLE_CHANNELS) == {
-            "LIVE", "PTU", "EPTU", "HOTFIX", "TECH-PREVIEW"
-        }
+        assert set(AppSettings.AVAILABLE_CHANNELS) == {"LIVE", "PTU", "EPTU", "HOTFIX", "TECH-PREVIEW"}
 
     def test_default_is_live(self):
         assert AppSettings.DEFAULT_CHANNEL == "LIVE"
@@ -108,38 +98,28 @@ class TestActiveChannel:
 
 
 class TestChannelScopedPaths:
-    def test_cache_dir_nests_under_active_channel(
-        self, isolated_qsettings, fake_user_data_dir
-    ):
+    def test_cache_dir_nests_under_active_channel(self, isolated_qsettings, fake_user_data_dir):
         AppSettings.set_active_channel("PTU")
         cache = AppSettings.get_cache_dir()
         assert cache == fake_user_data_dir / "PTU" / "cache"
         assert cache.exists()
 
-    def test_backups_dir_nests_under_active_channel(
-        self, isolated_qsettings, fake_user_data_dir
-    ):
+    def test_backups_dir_nests_under_active_channel(self, isolated_qsettings, fake_user_data_dir):
         AppSettings.set_active_channel("EPTU")
         backups = AppSettings.get_backups_dir()
         assert backups == fake_user_data_dir / "EPTU" / "backups"
 
-    def test_user_ini_path_nests_under_active_channel(
-        self, isolated_qsettings, fake_user_data_dir
-    ):
+    def test_user_ini_path_nests_under_active_channel(self, isolated_qsettings, fake_user_data_dir):
         AppSettings.set_active_channel("LIVE")
         ini_path = AppSettings.get_user_ini_path()
         assert ini_path == fake_user_data_dir / "LIVE" / "user.ini"
 
-    def test_dataforge_cache_dir_nests_under_active_channel(
-        self, isolated_qsettings, fake_user_data_dir
-    ):
+    def test_dataforge_cache_dir_nests_under_active_channel(self, isolated_qsettings, fake_user_data_dir):
         AppSettings.set_active_channel("TECH-PREVIEW")
         df = AppSettings.get_dataforge_cache_dir()
         assert df == fake_user_data_dir / "TECH-PREVIEW" / "cache" / "dataforge"
 
-    def test_switching_channel_changes_all_paths(
-        self, isolated_qsettings, fake_user_data_dir
-    ):
+    def test_switching_channel_changes_all_paths(self, isolated_qsettings, fake_user_data_dir):
         """Critical contract: every path helper tracks get_active_channel()."""
         AppSettings.set_active_channel("LIVE")
         live_cache = AppSettings.get_cache_dir()
@@ -165,9 +145,7 @@ class TestSCInstallRoot:
         AppSettings.set_sc_install_root(str(fake_sc_root))
         assert AppSettings.get_sc_install_root() == str(fake_sc_root)
 
-    def test_channel_install_path_composes_root_and_channel(
-        self, isolated_qsettings, fake_sc_root
-    ):
+    def test_channel_install_path_composes_root_and_channel(self, isolated_qsettings, fake_sc_root):
         AppSettings.set_sc_install_root(str(fake_sc_root))
         AppSettings.set_active_channel("PTU")
         assert Path(AppSettings.get_channel_install_path()) == fake_sc_root / "PTU"
@@ -190,9 +168,7 @@ class TestSCInstallRoot:
 
 
 class TestAvailableChannels:
-    def test_reports_only_channels_with_p4k(
-        self, isolated_qsettings, fake_sc_root
-    ):
+    def test_reports_only_channels_with_p4k(self, isolated_qsettings, fake_sc_root):
         AppSettings.set_sc_install_root(str(fake_sc_root))
         # fake_sc_root fixture ships LIVE + PTU Data.p4k; EPTU/TECH-PREVIEW are missing.
         available = AppSettings.get_available_channels()
@@ -204,13 +180,9 @@ class TestAvailableChannels:
         Stub get_sc_install_root to avoid the auto-detect fallback that
         otherwise picks up the real machine's StarCitizen install."""
         monkeypatch.setattr(AppSettings, "get_sc_install_root", staticmethod(lambda: ""))
-        assert AppSettings.get_available_channels() == list(
-            AppSettings.AVAILABLE_CHANNELS
-        )
+        assert AppSettings.get_available_channels() == list(AppSettings.AVAILABLE_CHANNELS)
 
-    def test_empty_list_when_root_set_but_no_channels_installed(
-        self, isolated_qsettings, tmp_path
-    ):
+    def test_empty_list_when_root_set_but_no_channels_installed(self, isolated_qsettings, tmp_path):
         empty_root = tmp_path / "empty_sc"
         empty_root.mkdir()
         AppSettings.set_sc_install_root(str(empty_root))
@@ -230,10 +202,7 @@ class TestMigrateGamePathToChannelLayout:
             r"C:\Program Files\Roberts Space Industries\StarCitizen\LIVE",
         )
         AppSettings.migrate_game_path_to_channel_layout()
-        assert (
-            s.value(AppSettings.SC_INSTALL_ROOT, "")
-            == r"C:\Program Files\Roberts Space Industries\StarCitizen"
-        )
+        assert s.value(AppSettings.SC_INSTALL_ROOT, "") == r"C:\Program Files\Roberts Space Industries\StarCitizen"
         assert s.value(AppSettings.ACTIVE_CHANNEL, "") == "LIVE"
         assert s.value(AppSettings.CHANNEL_LAYOUT_MIGRATED, False, type=bool)
 
@@ -247,26 +216,20 @@ class TestMigrateGamePathToChannelLayout:
         assert s.value(AppSettings.SC_INSTALL_ROOT, "") == r"D:\Games\StarCitizen"
         assert s.value(AppSettings.ACTIVE_CHANNEL, "") == "PTU"
 
-    def test_registry_no_channel_suffix_defaults_to_live(
-        self, isolated_qsettings, tmp_path
-    ):
+    def test_registry_no_channel_suffix_defaults_to_live(self, isolated_qsettings, tmp_path):
         s = AppSettings.settings()
         s.setValue(AppSettings.GAME_INSTALL_PATH, r"D:\SomeWeirdPath")
         AppSettings.migrate_game_path_to_channel_layout()
         assert s.value(AppSettings.SC_INSTALL_ROOT, "") == r"D:\SomeWeirdPath"
         assert s.value(AppSettings.ACTIVE_CHANNEL, "") == "LIVE"
 
-    def test_registry_no_legacy_path_sets_default_channel(
-        self, isolated_qsettings
-    ):
+    def test_registry_no_legacy_path_sets_default_channel(self, isolated_qsettings):
         """First-time-ever user: no legacy path at all. Migrator should
         still set ACTIVE_CHANNEL so downstream callers get a real value."""
         AppSettings.migrate_game_path_to_channel_layout()
         assert AppSettings.settings().value(AppSettings.ACTIVE_CHANNEL, "") == "LIVE"
 
-    def test_filesystem_moves_flat_layout_into_live(
-        self, isolated_qsettings, fake_user_data_dir
-    ):
+    def test_filesystem_moves_flat_layout_into_live(self, isolated_qsettings, fake_user_data_dir):
         # Flat pre-0.9.3 layout.
         (fake_user_data_dir / "user.ini").write_text("k=v")
         (fake_user_data_dir / "base.ini").write_text("stock=strings")
@@ -287,15 +250,13 @@ class TestMigrateGamePathToChannelLayout:
         assert not (fake_user_data_dir / "user.ini").exists()
         assert not (fake_user_data_dir / "cache").exists()
 
-    def test_filesystem_merges_into_empty_live_shell(
-        self, isolated_qsettings, fake_user_data_dir
-    ):
+    def test_filesystem_merges_into_empty_live_shell(self, isolated_qsettings, fake_user_data_dir):
         """A previous app-start may have touched ``get_cache_dir()`` which
         auto-creates ``LIVE\\cache\\``. An empty LIVE shell shouldn't block
         the migrator — flat data must still move in, merged with any empty
         same-named subfolders under LIVE."""
         (fake_user_data_dir / "LIVE").mkdir()
-        (fake_user_data_dir / "LIVE" / "cache").mkdir()   # empty shell
+        (fake_user_data_dir / "LIVE" / "cache").mkdir()  # empty shell
         (fake_user_data_dir / "LIVE" / "backups").mkdir()  # empty shell
         # Flat data that should be folded into LIVE.
         (fake_user_data_dir / "user.ini").write_text("k=v")
@@ -309,9 +270,7 @@ class TestMigrateGamePathToChannelLayout:
         # ``LIVE/cache/`` shell.
         assert (fake_user_data_dir / "LIVE" / "cache" / "base.ini").read_text() == "stock"
 
-    def test_skips_when_populated_channel_dir_exists(
-        self, isolated_qsettings, fake_user_data_dir
-    ):
+    def test_skips_when_populated_channel_dir_exists(self, isolated_qsettings, fake_user_data_dir):
         """A populated LIVE dir means the user already has channel-aware
         layout; don't touch sibling flat data (which could be partial
         leftovers the user is intentionally keeping)."""

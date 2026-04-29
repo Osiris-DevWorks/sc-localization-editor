@@ -53,6 +53,7 @@ Thumbs.db
 build/
 dist/
 *.manifest
+version_info.txt
 
 # Allow current spec and build scripts (needed for builds from any computer)
 !SmartCitizen.spec

@@ -8,18 +8,12 @@ Tests cover:
 """
 
 import csv
-import os
 import re
-import sys
-import tempfile
 from pathlib import Path
 
 import pytest
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-
-from merger.ini_merger import merge_sources_by_hierarchy, merge_ini_files
-from parser.ini_parser import parse_ini_file
+from src.merger.ini_merger import merge_ini_files, merge_sources_by_hierarchy
+from src.parser.ini_parser import parse_ini_file
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 ENHANCEMENTS_INI = FIXTURES_DIR / "mission_rewards_enhancements.ini"
@@ -34,7 +28,7 @@ REP_XP_RE = re.compile(r"(?:<EM4>)?Reputation XP:(?:</EM4>)?\s*\+([\d,]+)")
 
 def _load_csv_missions():
     """Load the missions CSV fixture into a list of dicts."""
-    with open(MISSIONS_CSV, "r", encoding="utf-8-sig") as f:
+    with open(MISSIONS_CSV, encoding="utf-8-sig") as f:
         return list(csv.DictReader(f))
 
 
@@ -130,9 +124,7 @@ class TestMissionGlobalIniGeneration:
         global_data = parse_ini_file(generated_global_ini)
 
         for key, expected in enhancements_data.items():
-            assert global_data[key] == expected, (
-                f"Key {key}: expected enhancement value, got base placeholder"
-            )
+            assert global_data[key] == expected, f"Key {key}: expected enhancement value, got base placeholder"
 
 
 class TestMissionTitleStructure:
@@ -153,9 +145,7 @@ class TestMissionTitleStructure:
                 # Could be a single number or a range like "100–500"
                 parts = re.split(r"[–\-]", xp_str)
                 for part in parts:
-                    assert part.isdigit(), (
-                        f"Non-numeric XP in title {key}: '{m.group(1)}'"
-                    )
+                    assert part.isdigit(), f"Non-numeric XP in title {key}: '{m.group(1)}'"
 
     def test_title_descs_paired(self):
         """Every title key should have a corresponding desc key (same prefix)."""
@@ -199,7 +189,7 @@ class TestMissionDescStructure:
             stats_count += 1
             for marker in markers:
                 if marker in value:
-                    stats_section = value[value.index(marker):]
+                    stats_section = value[value.index(marker) :]
                     break
             # At least one recognizable line: stats (Reputation XP, Tier XP),
             # flags (Mission Type), or encounter data (Enemies, Non-hostiles)
@@ -210,9 +200,7 @@ class TestMissionDescStructure:
                 or "Enemies" in stats_section
                 or "Non-hostiles" in stats_section
             )
-            assert has_content, (
-                f"Stats block in {key} has no recognizable content"
-            )
+            assert has_content, f"Stats block in {key} has no recognizable content"
         assert stats_count > 0, "No desc entries contain stats blocks"
 
     def test_reputation_xp_format(self):
@@ -234,12 +222,14 @@ class TestMissionCsvAlignment:
         rows = _load_csv_missions()
         assert len(rows) == 1288, f"Expected 1288 CSV rows, got {len(rows)}"
         expected_cols = {
-            "system", "title", "faction", "mission_type",
-            "base_xp", "reward",
+            "system",
+            "title",
+            "faction",
+            "mission_type",
+            "base_xp",
+            "reward",
         }
-        assert expected_cols.issubset(rows[0].keys()), (
-            f"Missing CSV columns: {expected_cols - rows[0].keys()}"
-        )
+        assert expected_cols.issubset(rows[0].keys()), f"Missing CSV columns: {expected_cols - rows[0].keys()}"
 
     def test_ini_xp_values_found_in_csv(self):
         """XP values from INI title tags should all appear in the CSV base_xp column."""
@@ -264,9 +254,7 @@ class TestMissionCsvAlignment:
 
         unmatched = ini_xp_values - csv_xp_values
         # Allow small discrepancy (range endpoints may not all appear individually)
-        assert len(unmatched) <= len(ini_xp_values) * 0.15, (
-            f"Too many INI XP values not found in CSV: {unmatched}"
-        )
+        assert len(unmatched) <= len(ini_xp_values) * 0.15, f"Too many INI XP values not found in CSV: {unmatched}"
 
     def test_csv_xp_coverage_in_ini(self):
         """CSV missions with base XP should have corresponding XP tags in the INI."""
@@ -281,10 +269,7 @@ class TestMissionCsvAlignment:
                 ini_xp_values.add(xp_str.replace(",", ""))
 
         # Check CSV base_xp values appear in INI
-        csv_with_xp = [
-            row for row in csv_rows
-            if row["base_xp"].strip() and row["base_xp"].strip() != "—"
-        ]
+        csv_with_xp = [row for row in csv_rows if row["base_xp"].strip() and row["base_xp"].strip() != "—"]
         matched = 0
         for row in csv_with_xp:
             normalized = row["base_xp"].strip().replace(",", "")
@@ -292,10 +277,7 @@ class TestMissionCsvAlignment:
                 matched += 1
 
         coverage = matched / len(csv_with_xp) if csv_with_xp else 0
-        assert coverage > 0.5, (
-            f"Only {coverage:.0%} of CSV XP values found in INI "
-            f"({matched}/{len(csv_with_xp)})"
-        )
+        assert coverage > 0.5, f"Only {coverage:.0%} of CSV XP values found in INI ({matched}/{len(csv_with_xp)})"
 
     def test_title_xp_matches_desc_xp(self):
         """When a title has [N XP] and its desc has Reputation XP, they should be consistent."""
@@ -312,7 +294,7 @@ class TestMissionCsvAlignment:
 
             prefix = _key_prefix(title_key)
             # Find matching desc suffix (Title_001 → Desc_001)
-            suffix = title_key[title_key.index("_Title_"):]
+            suffix = title_key[title_key.index("_Title_") :]
             desc_key_candidate = prefix + suffix.replace("_Title_", "_Desc_")
 
             if desc_key_candidate in descs:
@@ -321,11 +303,6 @@ class TestMissionCsvAlignment:
                     title_xp_norm = title_xp.replace(",", "")
                     desc_xp_norm = desc_xp.replace(",", "")
                     if title_xp_norm != desc_xp_norm:
-                        mismatches.append(
-                            f"{title_key}: title=[{title_xp} XP] vs desc=+{desc_xp}"
-                        )
+                        mismatches.append(f"{title_key}: title=[{title_xp} XP] vs desc=+{desc_xp}")
 
-        assert len(mismatches) <= 5, (
-            f"{len(mismatches)} title/desc XP mismatches:\n" +
-            "\n".join(mismatches[:10])
-        )
+        assert len(mismatches) <= 5, f"{len(mismatches)} title/desc XP mismatches:\n" + "\n".join(mismatches[:10])
