@@ -402,6 +402,29 @@ class AppSettings:
         """
         settings = AppSettings.settings()
 
+        # Always auto-seed SC install root if it's missing — runs unconditionally
+        # so a partial registry clean (sources present, path gone) still recovers.
+        if not settings.value(AppSettings.SC_INSTALL_ROOT, ""):
+            # Check the two standard C: locations first, then scan all fixed
+            # drives for users who installed SC on a non-default drive.
+            _sc_candidates = [
+                r"C:\Program Files\Roberts Space Industries\StarCitizen",
+                r"C:\Program Files (x86)\Roberts Space Industries\StarCitizen",
+            ]
+            try:
+                import string
+
+                drives = [f"{d}:\\" for d in string.ascii_uppercase if Path(f"{d}:\\").exists()]
+                for drive in drives:
+                    for sub in ["Roberts Space Industries\\StarCitizen", "StarCitizen"]:
+                        _sc_candidates.append(str(Path(drive) / sub))
+            except Exception:
+                pass
+            for candidate in _sc_candidates:
+                if Path(candidate).exists():
+                    AppSettings.set_sc_install_root(candidate)
+                    break
+
         # Idempotent — return immediately if the global source is already registered.
         if settings.value(f"{AppSettings.DATA_SOURCES_PREFIX}/{AppSettings.SOURCE_GLOBAL}/path"):
             return
@@ -419,18 +442,6 @@ class AppSettings:
         # Default hierarchy: global → user. The enhancements source is
         # auto-inserted between them at load time when its files exist.
         AppSettings.set_merge_hierarchy([AppSettings.SOURCE_GLOBAL, AppSettings.SOURCE_USER])
-
-        # Auto-detect and save the SC install root on first launch so the
-        # Config tab shows the path immediately without requiring the user
-        # to browse for it manually.
-        if not settings.value(AppSettings.SC_INSTALL_ROOT, ""):
-            for candidate in [
-                r"C:\Program Files\Roberts Space Industries\StarCitizen",
-                r"C:\Program Files (x86)\Roberts Space Industries\StarCitizen",
-            ]:
-                if Path(candidate).exists():
-                    AppSettings.set_sc_install_root(candidate)
-                    break
 
     @staticmethod
     def _resolve_docs_base() -> Path:
