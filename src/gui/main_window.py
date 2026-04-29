@@ -2128,11 +2128,17 @@ class MainWindow(QMainWindow):
         if self._loading_progress is not None:
             self._loading_progress.close()
             self._loading_progress = None
-        QMessageBox.critical(self, "Error", f"Failed to load sources: {error_msg}")
         if self._loader_worker is not None:
             self._loader_worker.quit()
             self._loader_worker.wait()
             self._loader_worker = None
+        if "No sources configured" in error_msg or "file not found" in error_msg.lower():
+            self._status_bar().showMessage(
+                'Base localization file not found — use "Extract from Data.p4k" in the Config tab to get started.'
+            )
+            self.tabs.setCurrentIndex(self._config_tab_index)
+            return
+        QMessageBox.critical(self, "Error", f"Failed to load sources: {error_msg}")
 
     def _run_enhancements_pipeline(self):
         """Entry point for the enhancements button: extract DataForge if needed, then generate enhancements."""

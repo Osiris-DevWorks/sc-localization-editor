@@ -420,6 +420,18 @@ class AppSettings:
         # auto-inserted between them at load time when its files exist.
         AppSettings.set_merge_hierarchy([AppSettings.SOURCE_GLOBAL, AppSettings.SOURCE_USER])
 
+        # Auto-detect and save the SC install root on first launch so the
+        # Config tab shows the path immediately without requiring the user
+        # to browse for it manually.
+        if not settings.value(AppSettings.SC_INSTALL_ROOT, ""):
+            for candidate in [
+                r"C:\Program Files\Roberts Space Industries\StarCitizen",
+                r"C:\Program Files (x86)\Roberts Space Industries\StarCitizen",
+            ]:
+                if Path(candidate).exists():
+                    AppSettings.set_sc_install_root(candidate)
+                    break
+
     @staticmethod
     def _resolve_docs_base() -> Path:
         """Resolve the real Documents root (honors OneDrive redirection)."""

@@ -412,6 +412,7 @@ class AppUpdateCheckerWorker(QThread):
 
     def run(self) -> None:
         import json
+        import urllib.error
         import urllib.request
 
         from src.utils.version import get_version
@@ -435,6 +436,14 @@ class AppUpdateCheckerWorker(QThread):
             update_available = self._is_newer(tag, current)
             AppSettings.set_last_update_check_epoch(int(__import__("time").time()))
             self.finished.emit(update_available, tag, release_url)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                # No releases published yet — not an error worth surfacing.
+                logger.debug("Update check: no releases found (404)")
+                self.finished.emit(False, "", self._RELEASES_URL)
+            else:
+                logger.warning(f"Update check failed: {e}")
+                self.error.emit(str(e))
         except Exception as e:
             logger.warning(f"Update check failed: {e}")
             self.error.emit(str(e))
