@@ -282,7 +282,7 @@ _TOOLTIP_WAKE_UP_DELAY_MS = 800
 _TOOLTIP_FALL_ASLEEP_DELAY_MS = 0
 
 
-class _SmartCitizenProxyStyle(QProxyStyle):
+class _OpenStringsProxyStyle(QProxyStyle):
     """Fusion style with a longer, consistent tooltip wake-up delay.
 
     Qt exposes tooltip timing only via the :class:`QStyle` ``SH_ToolTip_*``
@@ -326,7 +326,7 @@ def apply_theme(app: QApplication, theme: str) -> None:
     if current_delay != _TOOLTIP_WAKE_UP_DELAY_MS:
         # QProxyStyle(str) resolves the base style by name, so this still
         # gives us the Fusion look — just with our tooltip-delay override.
-        app.setStyle(_SmartCitizenProxyStyle("Fusion"))
+        app.setStyle(_OpenStringsProxyStyle("Fusion"))
     app.setPalette(_palette_for(theme))
     app.setStyleSheet(_app_stylesheet_for(theme))
     logger.info(f"Applied theme: {theme}")

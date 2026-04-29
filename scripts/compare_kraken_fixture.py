@@ -6,14 +6,14 @@ Usage:
 
 Defaults:
     fixture_path = tests/fixtures/kraken_4.7.ini
-    ours_path    = %USERPROFILE%/OneDrive/Documents/Smart Citizen/cache/mission_rewards_enhancements.ini
+    ours_path    = Documents/Open Strings/cache/mission_rewards_enhancements.ini
+                   (resolved via registry Shell Folders key; honours OneDrive redirection)
 
 Prints a summary report to stdout. Research/reporting only; makes no changes.
 """
 from __future__ import annotations
 
 import io
-import os
 import re
 import sys
 from pathlib import Path
@@ -30,7 +30,23 @@ except Exception:
 # --- Config ---------------------------------------------------------------
 
 DEFAULT_FIXTURE = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "kraken_4.7.ini"
-DEFAULT_OURS = Path(os.path.expanduser("~")) / "OneDrive" / "Documents" / "Smart Citizen" / "cache" / "mission_rewards_enhancements.ini"
+
+
+def _get_documents_dir() -> Path:
+    try:
+        import winreg
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
+        )
+        docs = Path(winreg.QueryValueEx(key, "Personal")[0])
+        winreg.CloseKey(key)
+        return docs
+    except Exception:
+        return Path.home() / "Documents"
+
+
+DEFAULT_OURS = _get_documents_dir() / "Open Strings" / "cache" / "mission_rewards_enhancements.ini"
 
 # The ground-truth fixture uses EM4 "Potential Blueprints" (title case).
 # Our output uses EM3 "POTENTIAL BLUEPRINTS" (all caps).

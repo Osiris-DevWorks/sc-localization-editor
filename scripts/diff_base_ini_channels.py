@@ -1,7 +1,7 @@
 """Diff the cached base.ini between two Star Citizen channels.
 
-Smart Citizen extracts each channel's stock localization (LIVE / PTU / EPTU /
-HOTFIX / TECH-PREVIEW) into ``Documents\\Smart Citizen\\<channel>\\cache\\base.ini``.
+Open Strings extracts each channel's stock localization (LIVE / PTU / EPTU /
+HOTFIX / TECH-PREVIEW) into ``Documents\\Open Strings\\<channel>\\cache\\base.ini``.
 This tool diffs two of those files and reports added / removed / changed loc
 keys, both as a category-bucket summary and (optionally) as a full
 machine-readable list.
@@ -11,7 +11,7 @@ Usage:
     python scripts/diff_base_ini_channels.py LIVE PTU --out diff.txt
     python scripts/diff_base_ini_channels.py LIVE PTU --user-data "D:/..."
 
-The user data root defaults to ``%USERPROFILE%\\Documents\\Smart Citizen`` which
+The user data root defaults to ``%USERPROFILE%\\Documents\\Open Strings`` which
 matches a standard install. Pass ``--user-data`` to override (e.g. for a
 OneDrive-redirected Documents folder).
 """
@@ -42,7 +42,7 @@ def parse_ini(path: Path) -> dict[str, str]:
 
 
 def default_user_data_root() -> Path:
-    return Path(os.environ.get("USERPROFILE", "~")).expanduser() / "Documents" / "Smart Citizen"
+    return Path(os.environ.get("USERPROFILE", "~")).expanduser() / "Documents" / "Open Strings"
 
 
 def base_ini_path(user_data_root: Path, channel: str) -> Path:

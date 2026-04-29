@@ -1,14 +1,14 @@
-# Smart Citizen 1.0 Pre-Release Test Plan
+# Open Strings 1.0 Pre-Release Test Plan
 
 Focused on the UX and integration paths `pytest` can't reach. Automated coverage already exists for parsing/merging/missions/patcher/pak-filtering/channel layout/progress — don't duplicate.
 
-**Before starting:** `pytest tests/ -n auto` must pass green. Build a fresh `SmartCitizen-1.0.0-Setup.exe` and drive the tests below against that installer (not the dev checkout).
+**Before starting:** `pytest tests/ -n auto` must pass green. Build a fresh `OpenStrings-1.0.0-Setup.exe` and drive the tests below against that installer (not the dev checkout).
 
 ---
 
 ## 1. Install & upgrade matrix
 
-Run against the built `dist/SmartCitizen-1.0.0-Setup.exe`.
+Run against the built `dist/OpenStrings-1.0.0-Setup.exe`.
 
 - [ ] **Fresh install** on a machine that has never had Smart Citizen or SC Localization Editor — app launches, tutorial fires on first show, no legacy registry nodes present
 - [ ] **Upgrade from 0.8.x** (legacy registry `SC Localization Editor`, legacy folder `Documents\SC Localization Editor\`) — `migrate_registry_appname` runs, marker `_migrated_from_legacy_appname` appears under new node, old subtree deleted; folder auto-migrated to `Documents\Smart Citizen\`; `overrides.ini` → `user.ini` rename works; paths/favorites/theme preserved
@@ -17,7 +17,7 @@ Run against the built `dist/SmartCitizen-1.0.0-Setup.exe`.
 - [ ] **OneDrive-redirected Documents** — installer's `IsDocsOnOneDrive` page fires; user redirects to local path; `USER_DATA_DIR` override written; app respects it
 - [ ] **OneDrive + override already set** — installer skips the redirect page (`HasDataDirOverride`)
 - [ ] **Uninstall → reinstall** — preserves `backups/`, registry settings, and `user.ini` across the cycle
-- [ ] **Uninstall** does NOT delete `Documents\Smart Citizen\backups\`
+- [ ] **Uninstall** does NOT delete `Documents\Open Strings\backups\`
 
 ## 2. Per-channel end-to-end
 
@@ -28,7 +28,7 @@ For **each channel you have installed** (minimum: LIVE; ideally also PTU):
 - [ ] `Channel: {NAME}` shown in status bar; SC-version string carries suffix (e.g. `SC v4.7.176-PTU`)
 - [ ] Switching channels triggers the enhancement-categories prompt **every** switch (not just first)
 - [ ] Switching to an **un-extracted** channel prompts to extract, doesn't load stale data
-- [ ] `Documents\Smart Citizen\{channel}\` has its own `cache/`, `backups/`, `dataforge/`, `user.ini` — zero cross-contamination
+- [ ] `Documents\Open Strings\{channel}\` has its own `cache/`, `backups/`, `dataforge/`, `user.ini` — zero cross-contamination
 - [ ] **PTU DataForge extraction succeeds** (validates bundled `unforge.exe` v4.0.83 PTU DCB fix)
 - [ ] `⚠` hint appears when the stored active channel's P4K is missing
 

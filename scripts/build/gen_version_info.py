@@ -2,11 +2,16 @@
 Generate a PyInstaller PE version resource file (version_info.txt)
 from the project's VERSION.TXT.
 
+Also asserts that pyproject.toml version matches VERSION.TXT so they
+cannot silently drift before a build.
+
 Usage (from repo root):
     python scripts/build/gen_version_info.py
 """
 
+import datetime
 import os
+import re
 
 
 def _parse_version(version_str):
@@ -17,13 +22,37 @@ def _parse_version(version_str):
     return tuple(parts[:4])
 
 
+def _check_pyproject_version(root_dir: str, version_str: str) -> None:
+    """Assert pyproject.toml version matches VERSION.TXT. Aborts the build if not."""
+    pyproject_path = os.path.join(root_dir, "pyproject.toml")
+    if not os.path.exists(pyproject_path):
+        return
+    with open(pyproject_path, encoding="utf-8") as f:
+        content = f.read()
+    match = re.search(r'^version\s*=\s*"([^"]+)"', content, re.MULTILINE)
+    if not match:
+        print("WARNING: Could not find version in pyproject.toml — skipping sync check.")
+        return
+    pyproject_ver = match.group(1)
+    if pyproject_ver != version_str:
+        raise SystemExit(
+            f"\nVersion mismatch — build aborted.\n"
+            f"  VERSION.TXT  : {version_str}\n"
+            f"  pyproject.toml: {pyproject_ver}\n"
+            "Update both files to the same version before building."
+        )
+
+
 def generate(root_dir):
     version_file = os.path.join(root_dir, "VERSION.TXT")
     with open(version_file, encoding="utf-8") as f:
         version_str = f.read().strip()
 
+    _check_pyproject_version(root_dir, version_str)
+
     v = _parse_version(version_str)
     file_version_str = "{}.{}.{}.{}".format(*v)
+    year = datetime.date.today().year
 
     content = f"""\
 VSVersionInfo(
@@ -45,7 +74,7 @@ VSVersionInfo(
          StringStruct(u'FileDescription', u'Open Strings - Star Citizen Localization Editor'),
          StringStruct(u'FileVersion', u'{file_version_str}'),
          StringStruct(u'InternalName', u'OpenStrings'),
-         StringStruct(u'LegalCopyright', u'Copyright 2026 Joni Hayes. Portions Copyright 2024-2026 Osiris DevWorks. GPL-3.0-only.'),
+         StringStruct(u'LegalCopyright', u'Copyright {year} Joni Hayes. Portions Copyright 2024-{year} Osiris DevWorks. GPL-3.0-only.'),
          StringStruct(u'OriginalFilename', u'OpenStrings.exe'),
          StringStruct(u'ProductName', u'Open Strings'),
          StringStruct(u'ProductVersion', u'{file_version_str}')]

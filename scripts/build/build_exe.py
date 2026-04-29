@@ -142,15 +142,28 @@ def create_self_signed_cert(export_pfx_path: str | None = None) -> tuple[str, st
         f"-HashAlgorithm SHA256; "
         f"Write-Output $cert.Thumbprint"
     )
+    # Use pwsh (PowerShell 7).
+    ps_exe = "pwsh"
     result = subprocess.run(
-        ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_create],
+        [ps_exe, "-NoProfile", "-NonInteractive", "-Command", ps_create],
         capture_output=True,
         text=True,
     )
     if result.returncode != 0:
-        raise RuntimeError(f"New-SelfSignedCertificate failed:\n{result.stderr.strip()}")
+        detail = (result.stdout + result.stderr).strip()
+        raise RuntimeError(f"New-SelfSignedCertificate failed:\n{detail}")
 
-    thumb = result.stdout.strip().splitlines()[-1].strip()
+    lines = [l.strip() for l in result.stdout.strip().splitlines() if l.strip()]
+    if not lines:
+        detail = result.stderr.strip()
+        raise RuntimeError(
+            "New-SelfSignedCertificate produced no output."
+            + (f"\n{detail}" if detail else "")
+            + "\nThis usually means the current user lacks permission to write to the "
+            "certificate store. Try running the build as Administrator, or use "
+            "--sign with a PFX file instead."
+        )
+    thumb = lines[-1]
     if not thumb:
         raise RuntimeError("Could not read thumbprint from New-SelfSignedCertificate output.")
     print(f"  - Certificate created (thumbprint: {thumb[:16]}...)")
@@ -164,7 +177,7 @@ def create_self_signed_cert(export_pfx_path: str | None = None) -> tuple[str, st
             f"-ProtectTo $env:USERNAME"
         )
         exp = subprocess.run(
-            ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_export],
+            [ps_exe, "-NoProfile", "-NonInteractive", "-Command", ps_export],
             capture_output=True,
             text=True,
         )
@@ -357,7 +370,7 @@ try:
     print(f"\n{'=' * 60}")
     print("Build successful!")
     print(f"{'=' * 60}")
-    print(f"Installer dir: dist/OpenStrings-v{current_version}/")
+    print("Executable: dist/OpenStrings/OpenStrings.exe")
     print()
 except Exception as e:
     print(f"\nError building executable: {e}")

@@ -1,4 +1,4 @@
-# Testing Guide — Smart Citizen
+# Testing Guide — Open Strings
 
 This guide explains how to run both manual and automated tests.
 
@@ -138,7 +138,7 @@ uv run python src/main.py
 1. Set game path in Config tab
 2. Click "Extract DataForge from P4K" in the Enhancements tab
 3. Wait for extraction to complete (~30 seconds - 2 minutes depending on system)
-4. Verify enhancement INI files in `Documents\Smart Citizen\<channel>\cache\`:
+4. Verify enhancement INI files in `Documents\Open Strings\<channel>\cache\`:
    - `ships_desc_enhancements.ini`
    - `components_desc_enhancements.ini`
    - `ship_weapons_desc_enhancements.ini`

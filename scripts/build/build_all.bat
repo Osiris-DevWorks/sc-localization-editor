@@ -1,4 +1,7 @@
 @echo off
+:: Always run from the project root regardless of where this script is invoked from
+cd /d "%~dp0..\.."
+
 echo ========================================
 echo Open Strings - Build Script
 echo ========================================

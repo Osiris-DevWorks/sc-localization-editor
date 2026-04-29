@@ -2,7 +2,7 @@
 generate_enhancements_ini.py
 ────────────────────────────
 Generates enhancement-augmented INI files for use as additional sources in
-SC Localization Editor.
+Open Strings.
 
 All enhancements are sourced directly from the game's DataForge entity XML files
 (extracted from Data.p4k via unp4k + unforge).  No external JSON sources.
@@ -48,7 +48,7 @@ def _get_documents_dir() -> Path:
         return Path.home() / "Documents"
 
 
-APP_CACHE_DIR = _get_documents_dir() / "Smart Citizen" / "cache"
+APP_CACHE_DIR = _get_documents_dir() / "Open Strings" / "cache"
 DEFAULT_BASE_INI = APP_CACHE_DIR / "base.ini"
 DEFAULT_FORGE_DIR = APP_CACHE_DIR / "dataforge"
 

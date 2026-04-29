@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from scripts.generate_enhancements_ini import APP_CACHE_DIR, DEFAULT_BASE_INI, parse_ini, write_ini
 
-forge_dir = Path("C:/Users/aabou/OneDrive/Documents/Smart Citizen/cache/dataforge/raw/libs/foundry/records")
+forge_dir = APP_CACHE_DIR / "dataforge" / "raw" / "libs" / "foundry" / "records"
 scitem_dir = forge_dir / "entities" / "scitem"
 bp_dir = forge_dir / "crafting" / "blueprints" / "crafting"
 

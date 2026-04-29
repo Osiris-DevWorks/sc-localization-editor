@@ -1,4 +1,4 @@
-# Build Instructions for Smart Citizen
+# Build Instructions for Open Strings
 
 ## Quick Start
 
@@ -62,12 +62,12 @@ This will:
 - Clean previous builds
 - Package the application into an onedir bundle
 - Include all necessary data files
-- Create `dist/SmartCitizen-{VERSION}/SmartCitizen.exe`
+- Create `dist/OpenStrings-{VERSION}/OpenStrings.exe`
 
 **Testing the build:**
 
 ```bash
-dist\SmartCitizen-{VERSION}\SmartCitizen.exe
+dist\OpenStrings-{VERSION}\OpenStrings.exe
 ```
 
 ---
@@ -99,14 +99,14 @@ This runs both build_exe.py and Inno Setup automatically.
 The installer will be created in the project root as:
 
 ```
-SmartCitizen-v0.1.0-Setup.exe
+OpenStrings-v0.1.0-Setup.exe
 ```
 
 ---
 
 ## Step 3: Test the Installer
 
-1. Run the installer: `SmartCitizen-{VERSION}-Setup.exe`
+1. Run the installer: `OpenStrings-{VERSION}-Setup.exe`
 2. Follow the installation wizard
 3. Test the installed application:
    - Launch the app
@@ -185,22 +185,22 @@ uv run python scripts/build/build_exe.py --sign
 uv run python scripts/build/build_exe.py --self-sign
 
 # Sign any arbitrary file (CA cert)
-uv run python scripts/build/build_exe.py --sign-file dist\SmartCitizen-1.0.0-Setup.exe
+uv run python scripts/build/build_exe.py --sign-file dist\OpenStrings-1.0.0-Setup.exe
 
 # Sign any arbitrary file (self-signed)
-uv run python scripts/build/build_exe.py --self-sign --sign-file dist\SmartCitizen-1.0.0-Setup.exe
+uv run python scripts/build/build_exe.py --self-sign --sign-file dist\OpenStrings-1.0.0-Setup.exe
 ```
 
 ### What gets signed
 
-- `dist/SmartCitizen/SmartCitizen.exe` — the PyInstaller app (signed before installer is built)
-- `dist/SmartCitizen-{version}-Setup.exe` — the Inno Setup installer
+- `dist/OpenStrings/OpenStrings.exe` — the PyInstaller app (signed before installer is built)
+- `dist/OpenStrings-{version}-Setup.exe` — the Inno Setup installer
 
 ---
 
 The installer includes:
 
-- ✅ Main executable (`SmartCitizen.exe`)
+- ✅ Main executable (`OpenStrings.exe`)
 - ✅ Data files (default global.ini)
 - ✅ Start menu shortcuts
 - ✅ User config setup

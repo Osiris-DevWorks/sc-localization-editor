@@ -16,8 +16,8 @@ OutputDir=dist
 OutputBaseFilename=OpenStrings-{#AppVer}-Setup
 Compression=lzma
 SolidCompression=yes
-ArchitecturesAllowed=x64
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
 DisableDirPage=no
 AllowUNCPath=no
@@ -38,15 +38,15 @@ SCDirectoryDefaultPath=C:\Program Files\Roberts Space Industries\StarCitizen\LIV
 Type: filesandordirs; Name: "{app}\*"
 
 [Files]
-Source: "dist\OpenStrings-v{#AppVer}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "dist\OpenStrings\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\Open Strings"; Filename: "{app}\OpenStrings-v{#AppVer}.exe"
+Name: "{group}\Open Strings"; Filename: "{app}\OpenStrings.exe"
 Name: "{group}\{cm:UninstallProgram,Open Strings}"; Filename: "{uninstallexe}"
-Name: "{commondesktop}\Open Strings"; Filename: "{app}\OpenStrings-v{#AppVer}.exe"
+Name: "{userdesktop}\Open Strings"; Filename: "{app}\OpenStrings.exe"
 
 [Run]
-Filename: "{app}\OpenStrings-v{#AppVer}.exe"; Description: "{cm:LaunchProgram,Open Strings}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\OpenStrings.exe"; Description: "{cm:LaunchProgram,Open Strings}"; Flags: nowait postinstall skipifsilent
 
 [Code]
 var

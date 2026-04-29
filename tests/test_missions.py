@@ -1,5 +1,5 @@
 """
-Mission enhancements tests for Smart Citizen
+Mission enhancements tests for Open Strings
 
 Tests cover:
 - Generating global.ini from mission enhancements via the merge pipeline

@@ -1,5 +1,5 @@
 """
-Pytest configuration and fixtures for Smart Citizen tests
+Pytest configuration and fixtures for Open Strings tests
 
 Provides:
 - Temporary directories for file-based tests
@@ -82,7 +82,7 @@ def mock_game_path(temp_dir):
 @pytest.fixture
 def mock_cache_dir(temp_dir):
     """Provide a mock cache directory structure"""
-    cache_dir = os.path.join(temp_dir, "Documents", "Smart Citizen", "LIVE", "cache")
+    cache_dir = os.path.join(temp_dir, "Documents", "Open Strings", "LIVE", "cache")
     os.makedirs(cache_dir, exist_ok=True)
 
     # Create subdirectories

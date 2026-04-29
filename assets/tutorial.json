@@ -3,7 +3,7 @@
   "steps": [
     {
       "id": "welcome",
-      "title": "Welcome to Smart Citizen",
+      "title": "Welcome to Open Strings",
       "description": "This quick tour covers the core workflow of customizing strings and applying the result back to Star Citizen. Many of these steps run automatically, but can be done manually if needed. You can skip anytime.",
       "preferred_side": "auto"
     },
@@ -40,7 +40,7 @@
     {
       "id": "help",
       "title": "6. Help & feedback",
-      "description": "The Help button opens a side-panel with the full guide, a Known Issues list, and a feedback link to the Smart Citizen Discord channel. That's everything you need to get started — good luck, citizen.",
+      "description": "The Help button opens a side-panel with the full guide, a Known Issues list, and a feedback link. That's everything you need to get started — good luck, citizen.",
       "preferred_side": "below"
     }
   ]

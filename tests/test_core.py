@@ -1,5 +1,5 @@
 """
-Core functionality tests for Smart Citizen
+Core functionality tests for Open Strings
 
 Tests cover:
 - Data loading and parsing

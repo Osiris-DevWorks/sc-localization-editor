@@ -520,7 +520,6 @@ class MainWindow(QMainWindow):
             about_path = get_resource_path("ABOUT.md")
             with open(about_path, encoding="utf-8") as f:
                 about_content = f.read()
-            about_content = about_content.replace("# Smart Citizen", f"# Open Strings v{get_version()}")
             about_content = about_content.replace("# Open Strings", f"# Open Strings v{get_version()}")
             self.about_browser.setHtml(self.markdown_to_html(about_content))
         except Exception as e:
@@ -1317,7 +1316,7 @@ class MainWindow(QMainWindow):
 
         Mirrors _render_about_html — forces the browser's palette to the app
         palette so its viewport/scrollbar chrome tracks theme swaps, then
-        reloads HELP.md (bundled via SmartCitizen.spec). Falls back to a
+        reloads HELP.md (bundled via OpenStrings.spec). Falls back to a
         short stub if the file is missing so a misconfigured build still
         shows something usable instead of a blank panel.
         """
@@ -1353,7 +1352,7 @@ class MainWindow(QMainWindow):
         """Toggle the Help side-panel.
 
         Help content lives in HELP.md at the project root (bundled into the
-        PyInstaller onedir via SmartCitizen.spec). The first call creates the
+        PyInstaller onedir via OpenStrings.spec). The first call creates the
         dock lazily; subsequent calls flip visibility so users can keep the
         guide open as a reference while editing without juggling a modal
         dialog.

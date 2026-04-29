@@ -42,7 +42,7 @@ def get_documents_dir() -> Path:
 
 
 def get_default_cache_dir() -> Path:
-    return get_documents_dir() / "Smart Citizen" / "cache"
+    return get_documents_dir() / "Open Strings" / "cache"
 
 
 def parse_ini(path: Path) -> dict[str, str]:
