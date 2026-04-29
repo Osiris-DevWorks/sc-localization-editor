@@ -51,9 +51,9 @@ def load_application_fonts() -> None:
 
 THEME_LIGHT = "light"
 THEME_DARK = "dark"
-THEME_SCLE = "scle"
-AVAILABLE_THEMES = (THEME_LIGHT, THEME_DARK, THEME_SCLE)
-DEFAULT_THEME = THEME_SCLE
+THEME_OS_DARK = "os-dark"
+AVAILABLE_THEMES = (THEME_LIGHT, THEME_DARK, THEME_OS_DARK)
+DEFAULT_THEME = THEME_OS_DARK
 
 # Secondary/dim text color per theme. A single shade can't stay readable on
 # both #C8C8C8 (light window) and #0D1826 (scle navy) — so we resolve it
@@ -61,7 +61,7 @@ DEFAULT_THEME = THEME_SCLE
 _SECONDARY_TEXT_COLORS = {
     THEME_LIGHT: "#2A2A2A",
     THEME_DARK: "#D5D5D5",
-    THEME_SCLE: "#D5D5D5",
+    THEME_OS_DARK: "#D5D5D5",
 }
 
 
@@ -82,7 +82,7 @@ _BUTTON_COLORS = {
         "clear": "#BDBDBD",
         "open": "#64B5F6",
     },
-    THEME_SCLE: {
+    THEME_OS_DARK: {
         "load": "#4FD7E8",  # cube-glow cyan
         "restore": "#FF8A42",  # pencil-tip orange
         "apply": "#4ADE80",  # bright green that pops against navy
@@ -118,13 +118,13 @@ def get_button_text_color() -> str:
 _TITLE_COLORS = {
     THEME_LIGHT: "#1565C0",  # rich blue
     THEME_DARK: "#64B5F6",  # soft sky blue
-    THEME_SCLE: "#4FD7E8",  # cube-glow cyan
+    THEME_OS_DARK: "#4FD7E8",  # cube-glow cyan
 }
 
 _TAGLINE_COLORS = {
     THEME_LIGHT: "#555555",
     THEME_DARK: "#A0A0A0",
-    THEME_SCLE: "#6FB5D0",  # muted cyan
+    THEME_OS_DARK: "#6FB5D0",  # muted cyan
 }
 
 
@@ -147,13 +147,13 @@ def get_tagline_color() -> str:
 _PROGRESS_GROOVE_COLORS = {
     THEME_LIGHT: "#8A8A8A",
     THEME_DARK: "#3C3C3F",
-    THEME_SCLE: "#152538",
+    THEME_OS_DARK: "#152538",
 }
 
 _PROGRESS_CHUNK_COLORS = {
     THEME_LIGHT: "#1565C0",
     THEME_DARK: "#3B82F6",
-    THEME_SCLE: "#4FD7E8",
+    THEME_OS_DARK: "#4FD7E8",
 }
 
 
@@ -223,9 +223,8 @@ def _dark_palette() -> QPalette:
     return p
 
 
-def _scle_palette() -> QPalette:
-    """Star Citizen Localization Editor branded palette — deep navy + cyan
-    highlights inspired by the app's splash artwork."""
+def _os_dark_palette() -> QPalette:
+    """Open Strings branded palette — deep navy + cyan highlights."""
     p = QPalette()
     p.setColor(QPalette.ColorRole.Window, QColor(13, 24, 38))  # #0D1826 deep navy
     p.setColor(QPalette.ColorRole.WindowText, QColor(216, 232, 240))  # #D8E8F0 silver-blue
@@ -254,8 +253,8 @@ def _scle_palette() -> QPalette:
 def _palette_for(theme: str) -> QPalette:
     if theme == THEME_DARK:
         return _dark_palette()
-    if theme == THEME_SCLE:
-        return _scle_palette()
+    if theme == THEME_OS_DARK:
+        return _os_dark_palette()
     return _light_palette()
 
 

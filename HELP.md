@@ -98,7 +98,7 @@ When Star Citizen updates, your edits are preserved in `Documents\Open Strings\<
 
 Pick a theme in the **Config tab → Appearance** section:
 
-- **Default** — SCLE, a deep-navy cyber theme inspired by Star Citizen's mobiGlas UI.
+- **Default** — a deep-navy cyber theme inspired by Star Citizen's mobiGlas UI.
 - **Light / Dark** — classic UI themes.
 
 ## Status Bar
@@ -122,7 +122,7 @@ Click the **Tutorial** button on the toolbar at any time to replay the guided to
 
 ## Known Issues
 
-Some mission text anomalies originate in Star Citizen's own data (wrong loc-key references in CIG's contract records). The game reads contracts from its own `Data.p4k` at runtime, so Open Strings can't change which loc-key the game looks up — it can only edit the *text* under each loc-key. Where practical, we work around these by merging the intended content into the loc key the game actually reads.
+Some mission text anomalies originate in Star Citizen's own data (wrong loc-key references in CIG's contract records). The game reads contracts from its own `Data.p4k` at runtime, so Open Strings can't change which loc-key the game looks up — it can only edit the _text_ under each loc-key. Where practical, we work around these by merging the intended content into the loc key the game actually reads.
 
 - **Jorrit Dossier — "Updated Power Usage Data" shows Energy Anomaly text** — CIG Issue Council [STARC-176797](https://issue-council.robertsspaceindustries.com/projects/STAR-CITIZEN/issues/STARC-176797). CIG's `Hockrow_FacilityDelve_P2M4-Stanton4_Repeat` contract points its `Description` parameter at `@Hockrow_FacilityDelve_P2M1_Repeat_desc` instead of its own `P2M4_Repeat_desc`, so in-game players see P2M1's Energy Anomaly flavor text for a mission titled "Power Usage Data". Open Strings works around this in two steps, both declared in `patches/contracts/contractgenerator/mercenary_guild/hockrowagency/hockrowagency_facilitydelve.patch.json`:
   1. A DataForge XML edit so our enhancement generator attaches the correct P2M4 blueprint pool (Corbel Smolder, Geist Rogue/Whiteout) to `P2M4_Repeat_desc` instead of collapsing onto P2M1's.

@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from src.gui.theme import AVAILABLE_THEMES, THEME_DARK, THEME_LIGHT, THEME_SCLE
+from src.gui.theme import AVAILABLE_THEMES, THEME_DARK, THEME_LIGHT, THEME_OS_DARK
 from src.utils.settings import AppSettings
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ class ConfigTab(QWidget):
         self.theme_combo.setToolTip(
             "Switch the app theme. Takes effect immediately across the main window, toolbar, tabs, and Help panel."
         )
-        self.theme_combo.addItem("Default", THEME_SCLE)
+        self.theme_combo.addItem("Default", THEME_OS_DARK)
         self.theme_combo.addItem("Light", THEME_LIGHT)
         self.theme_combo.addItem("Dark", THEME_DARK)
         current = AppSettings.get_theme()
