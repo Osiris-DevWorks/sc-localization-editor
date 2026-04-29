@@ -402,25 +402,13 @@ class AppSettings:
         """
         settings = AppSettings.settings()
 
-        # Always auto-seed SC install root if it's missing — runs unconditionally
-        # so a partial registry clean (sources present, path gone) still recovers.
+        # Auto-seed SC install root only if missing and SC is at a standard location.
+        # Non-standard install paths must be set via Browse in the Config tab.
         if not settings.value(AppSettings.SC_INSTALL_ROOT, ""):
-            # Check the two standard C: locations first, then scan all fixed
-            # drives for users who installed SC on a non-default drive.
-            _sc_candidates = [
+            for candidate in [
                 r"C:\Program Files\Roberts Space Industries\StarCitizen",
                 r"C:\Program Files (x86)\Roberts Space Industries\StarCitizen",
-            ]
-            try:
-                import string
-
-                drives = [f"{d}:\\" for d in string.ascii_uppercase if Path(f"{d}:\\").exists()]
-                for drive in drives:
-                    for sub in ["Roberts Space Industries\\StarCitizen", "StarCitizen"]:
-                        _sc_candidates.append(str(Path(drive) / sub))
-            except Exception:
-                pass
-            for candidate in _sc_candidates:
+            ]:
                 if Path(candidate).exists():
                     AppSettings.set_sc_install_root(candidate)
                     break
