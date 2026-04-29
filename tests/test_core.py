@@ -1,11 +1,11 @@
 """
-Core functionality tests for SC Localization Editor v0.6.0
+Core functionality tests for Smart Citizen
 
 Tests cover:
 - Data loading and parsing
 - Multi-source merging
 - Category extraction
-- Stats integration
+- Overrides persistence
 - Error handling
 """
 
@@ -21,6 +21,7 @@ from src.parser.ini_parser import parse_ini_file
 from src.utils.overrides_manager import load_overrides, save_overrides
 
 
+@pytest.mark.unit
 class TestIniParsing:
     """Test INI file parsing functionality"""
 
@@ -109,6 +110,8 @@ class TestIniParsing:
             os.unlink(f.name_temp)
 
 
+@pytest.mark.unit
+@pytest.mark.critical
 class TestMerging:
     """Test multi-source merging functionality"""
 
@@ -182,6 +185,7 @@ class TestMerging:
         assert result["key2"] == "value2"
 
 
+@pytest.mark.unit
 class TestStringEntry:
     """Test StringEntry model and category extraction"""
 
@@ -338,13 +342,14 @@ class TestStringEntry:
         assert entry.status == "Unmodified"
 
 
-class TestOverridesManagement:
+@pytest.mark.unit
+class TestUserIniManagement:
     """Test overrides persistence"""
 
     def test_save_and_load_overrides(self):
         """Test saving and loading overrides"""
         with tempfile.TemporaryDirectory() as tmpdir:
-            overrides_path = os.path.join(tmpdir, "overrides.ini")
+            overrides_path = os.path.join(tmpdir, "user.ini")
 
             overrides = {
                 "vehicle_NameHunter": "My Cutlass",
@@ -363,7 +368,7 @@ class TestOverridesManagement:
     def test_load_nonexistent_overrides_returns_empty(self):
         """Test loading non-existent overrides file returns empty dict"""
         with tempfile.TemporaryDirectory() as tmpdir:
-            overrides_path = os.path.join(tmpdir, "nonexistent.ini")
+            overrides_path = os.path.join(tmpdir, "user.ini")
 
             loaded = load_overrides(overrides_path)
             assert loaded == {}
@@ -371,7 +376,7 @@ class TestOverridesManagement:
     def test_overrides_with_special_characters(self):
         """Test that overrides preserve special characters"""
         with tempfile.TemporaryDirectory() as tmpdir:
-            overrides_path = os.path.join(tmpdir, "overrides.ini")
+            overrides_path = os.path.join(tmpdir, "user.ini")
 
             overrides = {"key1": "Value with = equals", "key2": "Value; with semicolon", "key3": "Value with émojis 🚀"}
 
@@ -381,6 +386,7 @@ class TestOverridesManagement:
             assert loaded == overrides
 
 
+@pytest.mark.unit
 class TestErrorHandling:
     """Test error handling and edge cases"""
 
@@ -425,22 +431,9 @@ class TestErrorHandling:
         assert result["key2"] == ""
 
 
+@pytest.mark.unit
 class TestStatsIntegration:
-    """Test stats INI file generation and integration"""
-
-    def test_stats_file_exists_after_generation(self):
-        """Test that stats files are created in cache directory"""
-        # This would require actual DataForge extraction
-        # For now, test structure
-        expected_stats_files = [
-            "ships_desc_stats.ini",
-            "components_desc_stats.ini",
-            "ship_weapons_desc_stats.ini",
-            "fps_weapons_desc_stats.ini",
-        ]
-
-        for filename in expected_stats_files:
-            assert filename.endswith(".ini")
+    """Test that stats-style enhancements merge correctly."""
 
     def test_stats_entries_merge_correctly(self):
         """Test that stats entries merge with base sources"""
@@ -457,10 +450,6 @@ class TestStatsIntegration:
 
 
 # Pytest configuration
-def pytest_configure(config):
-    """Configure pytest markers"""
-    config.addinivalue_line("markers", "integration: mark test as an integration test")
-    config.addinivalue_line("markers", "slow: mark test as slow running")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
-# Testing Guide - SC Localization Editor v0.6.0
+# Testing Guide — Smart Citizen
 
-This guide explains how to run both manual and automated tests to ensure v0.6.0 is stable.
+This guide explains how to run both manual and automated tests.
 
 ---
 
@@ -8,19 +8,7 @@ This guide explains how to run both manual and automated tests to ensure v0.6.0 
 
 ### Manual Testing
 
-**See**: `TESTING_CHECKLIST_v0.6.0.md`
-
-A comprehensive checklist with 120+ test cases covering:
-
-- Application startup & initialization
-- Core data loading & merging
-- Stats generation & P4K extraction (critical for v0.6.0)
-- Table functionality & editing
-- Apply & backup system
-- Auto-update system
-- Error handling & edge cases
-
-**Time required**: 1-2 hours for thorough testing
+Run the app (`uv run python src/main.py`) and work through the manual workflow in the section below.
 
 ### Automated Testing
 
@@ -54,9 +42,9 @@ uv run pytest tests/ --cov=src --cov-report=html
 - `TestIniParsing` - INI file parsing, encoding handling, edge cases
 - `TestMerging` - Multi-source merge logic, hierarchy order, priority
 - `TestStringEntry` - Data model, category extraction, status determination
-- `TestOverridesManagement` - Saving/loading custom edits
+- `TestUserIniManagement` - Saving/loading custom edits to user.ini
 - `TestErrorHandling` - Error handling, graceful failures
-- `TestStatsIntegration` - Stats file structure and merging
+- `TestStatsIntegration` - Enhancement entry merging
 
 **Run these tests**:
 
@@ -69,17 +57,14 @@ uv run pytest tests/test_core.py -v -m unit
 
 ### P4K Extraction Tests (`tests/test_pak_extraction.py`)
 
-**Coverage**: P4K extraction pipeline, DataForge caching, stats generation
+**Coverage**: P4K extraction pipeline, DataForge cache, filtered-copy helper
 
 **Test Classes**:
 
 - `TestDataForgeCache` - Cache freshness detection
-- `TestDataForgeExtraction` - Pipeline stages, error handling
-- `TestStatsGeneration` - Stats file format, merging with base
-- `TestStatsErrorHandling` - Corrupted files, missing files, graceful failures
-- `TestIntegrationP4KToStats` - Full pipeline integration
-
-**Critical for v0.6.0**: This test suite validates the stats generation flow that had bugs in earlier versions.
+- `TestDataForgeExtraction` - Pipeline error handling (mocked subprocess)
+- `TestDataForgeKeepList` - Keep-list / generator read-path contract (regression)
+- `TestCopyFilteredRecords` - Filtered cache copy helper
 
 **Run these tests**:
 
@@ -130,10 +115,7 @@ uv run pytest tests/ -v --tb=short
 ### 1. First Run Test (ensure no crashes on startup)
 
 ```bash
-# Create a clean environment
-rm -rf "%APPDATA%\Local\Python*"  # Clear app cache (optional)
-
-python src/main.py
+uv run python src/main.py
 ```
 
 **Expected**: App launches cleanly, loads base file, displays table.
@@ -151,32 +133,27 @@ python src/main.py
 
 **Time**: ~15 minutes
 
-### 3. Stats Generation Test (v0.6.0 focus)
+### 3. Enhancement Generation Test
 
 1. Set game path in Config tab
-2. Click "Extract DataForge from P4K"
+2. Click "Extract DataForge from P4K" in the Enhancements tab
 3. Wait for extraction to complete (~30 seconds - 2 minutes depending on system)
-4. Verify files in `Documents\SC Localization Editor\cache\dataforge\`:
-   - `entity/`, `entities/`, `entityclasses/`, `ships/`, `weapons/` subdirectories exist
-   - XML files present in those directories
-5. Verify stats INI files in cache:
-   - `ships_desc_stats.ini`
-   - `components_desc_stats.ini`
-   - `ship_weapons_desc_stats.ini`
-   - `fps_weapons_desc_stats.ini`
-6. Search for `vehicle_Desc` and verify entries show stats (e.g., "Max Speed: 210 m/s")
-7. Toggle "Stats enabled" OFF in Config tab, save, and verify stats disappear from display
-8. Toggle back ON and verify stats reappear
+4. Verify enhancement INI files in `Documents\Smart Citizen\<channel>\cache\`:
+   - `ships_desc_enhancements.ini`
+   - `components_desc_enhancements.ini`
+   - `ship_weapons_desc_enhancements.ini`
+   - `fps_weapons_desc_enhancements.ini`
+   - `mission_rewards_enhancements.ini`
+5. Search for `vehicle_Desc` and verify entries show stats (e.g., "Max Speed: 210 m/s")
 
 **Time**: ~5-10 minutes
 
 ### 4. Multi-Source & Merge Test
 
 1. Config tab: Verify all sources are configured (Global, Contracts, Ships, Commodities, Gear)
-2. Click "Preview Merge" - verify dialog shows merge order and key counts
-3. Drag a source to reorder hierarchy (e.g., move Contracts above Global)
-4. Click "Save Configuration & Merge"
-5. Verify table updates with new merge order
+2. Drag a source to reorder hierarchy (e.g., move Contracts above Global)
+3. Click "Save Configuration & Merge"
+4. Verify table updates with new merge order
 
 **Time**: ~5 minutes
 
@@ -247,12 +224,12 @@ python src/main.py
 ### If a manual test fails:
 
 1. **Note exact reproduction steps**
-2. **Check console output** for error messages or exceptions
+   - Check Log Tab for error messages or exceptions
 3. **Check Windows Registry** for corrupted settings:
    ```
-   regedit → HKEY_CURRENT_USER\Software\Osiris DevWorks\SC Localization Editor
+   regedit → HKEY_CURRENT_USER\Software\Osiris DevWorks\Smart Citizen
    ```
-4. **Check log files** (if any exist in Documents\SC Localization Editor\)
+4. **Check user data** in `Documents\Smart Citizen\<channel>\`
 5. **Check backup files** to see what was written to game
 
 ---
@@ -271,9 +248,6 @@ pytest tests/test_core.py -v --tb=short
 ```bash
 # Full suite + coverage
 pytest tests/ -v --cov=src --cov-report=html --cov-report=term
-
-# Plus manual testing checklist
-# See TESTING_CHECKLIST_v0.6.0.md
 ```
 
 ---

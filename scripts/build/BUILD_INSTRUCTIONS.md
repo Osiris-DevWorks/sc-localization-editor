@@ -60,14 +60,14 @@ uv run python scripts/build/build_exe.py
 This will:
 
 - Clean previous builds
-- Package the application into a single `.exe` file
-- Include all necessary data files (global.ini)
-- Create `dist/SmartCitizen-v0.1.0.exe`
+- Package the application into an onedir bundle
+- Include all necessary data files
+- Create `dist/SmartCitizen-{VERSION}/SmartCitizen.exe`
 
-**Testing the EXE:**
+**Testing the build:**
 
 ```bash
-dist\SmartCitizen-v0.1.0.exe
+dist\SmartCitizen-{VERSION}\SmartCitizen.exe
 ```
 
 ---
@@ -106,11 +106,11 @@ SmartCitizen-v0.1.0-Setup.exe
 
 ## Step 3: Test the Installer
 
-1. Run the installer: `SmartCitizen-v0.1.0-Setup.exe`
+1. Run the installer: `SmartCitizen-{VERSION}-Setup.exe`
 2. Follow the installation wizard
 3. Test the installed application:
    - Launch the app
-   - Load global.ini file
+   - Click "Extract DataForge from P4K" to load data
    - Edit some strings
    - Apply to game
    - Check that files are in the right location
@@ -219,8 +219,7 @@ The installer includes:
 For future versions:
 
 1. Update version in:
-   - `VERSION.TXT` (e.g., `0.2.0`)
-   - `installer.iss` (line ~5)
+   - `VERSION.TXT` (e.g., `1.1.0`) — this is the single source of truth; `installer.iss` reads it via ISPP
 
 2. Rebuild:
 

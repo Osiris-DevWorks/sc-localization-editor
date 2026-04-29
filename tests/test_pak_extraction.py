@@ -1,11 +1,11 @@
 """
-Tests for P4K extraction and DataForge integration (v0.6.0 critical feature)
+Tests for P4K extraction and DataForge cache management.
 
-Tests cover:
-- P4K extraction pipeline
-- DataForge cache management
-- Stats INI generation
-- Error handling for missing P4K or tools
+Covers:
+- DataForge cache freshness detection
+- P4K extraction pipeline error handling
+- DataForge keep-list / generator read-path contract
+- Filtered cache copy helper
 """
 
 import os
@@ -22,8 +22,9 @@ from src.utils.pak_extractor import (
 )
 
 
+@pytest.mark.unit
 class TestDataForgeCache:
-    """Test DataForge cache freshness detection"""
+    """DataForge cache freshness detection."""
 
     def test_cache_is_fresh_when_newer(self):
         """Test that cache is fresh when it's newer than p4k"""
@@ -96,273 +97,38 @@ class TestDataForgeCache:
             assert isinstance(is_fresh, bool)
 
 
+@pytest.mark.unit
 class TestDataForgeExtraction:
-    """Test P4K extraction pipeline"""
+    """P4K extraction pipeline — error handling paths."""
 
-    @patch("utils.pak_extractor.subprocess.run")
-    def test_extract_dataforge_calls_unp4k_and_unforge(self, mock_run):
-        """Test that extract_dataforge calls both unp4k and unforge tools"""
-        mock_run.return_value = MagicMock(returncode=0)
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            p4k_path = os.path.join(tmpdir, "Data.p4k")
-            cache_dir = os.path.join(tmpdir, "dataforge")
-
-            # Create dummy p4k file
-            with open(p4k_path, "w") as f:
-                f.write("dummy p4k")
-
-            # Attempt extraction (will fail without real tools, but we can check calls)
-            try:
-                extract_dataforge(p4k_path, cache_dir)
-            except Exception:
-                pass  # Expected to fail without real tools
-
-            # Verify subprocess.run was called (would be for unp4k)
-            # Note: actual behavior depends on implementation
-            assert mock_run.called or True  # Graceful failure
-
-    @patch("utils.pak_extractor.subprocess.run")
-    def test_extract_dataforge_handles_missing_tools(self, mock_run):
-        """Test extraction error handling when tools are missing"""
-        # Simulate tool not found error
+    @patch("src.utils.pak_extractor.subprocess.run")
+    def test_missing_tools_raises(self, mock_run):
+        """FileNotFoundError from unp4k.exe propagates as an exception."""
         mock_run.side_effect = FileNotFoundError("unp4k.exe not found")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            p4k_path = os.path.join(tmpdir, "Data.p4k")
-            cache_dir = os.path.join(tmpdir, "dataforge")
-
-            with open(p4k_path, "w") as f:
-                f.write("dummy p4k")
-
-            # Should raise or return error gracefully
-            with pytest.raises((FileNotFoundError, Exception)):
-                extract_dataforge(p4k_path, cache_dir)
-
-    @patch("utils.pak_extractor.subprocess.run")
-    def test_extract_dataforge_handles_invalid_p4k(self, mock_run):
-        """Test extraction error handling for invalid P4K file"""
-        # Simulate extraction failure
-        mock_run.return_value = MagicMock(returncode=1, stderr="Invalid P4K format")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            p4k_path = os.path.join(tmpdir, "invalid.p4k")
-            cache_dir = os.path.join(tmpdir, "dataforge")
-
-            # Create invalid p4k file
-            with open(p4k_path, "w") as f:
-                f.write("not a valid p4k file")
-
-            # Should handle error gracefully
-            try:
-                extract_dataforge(p4k_path, cache_dir)
-            except Exception as e:
-                # Should provide meaningful error message
-                assert "p4k" in str(e).lower() or "extract" in str(e).lower() or True
-
-    def test_cache_directory_structure(self):
-        """Test that expected cache directories are created"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            cache_dir = os.path.join(tmpdir, "dataforge")
-
-            expected_subdirs = [
-                "entity",
-                "entities",
-                "entityclasses",
-                "ships",
-                "weapons",
-            ]
-
-            # Simulate creating cache structure
-            os.makedirs(cache_dir, exist_ok=True)
-            for subdir in expected_subdirs:
-                subdir_path = os.path.join(cache_dir, subdir)
-                os.makedirs(subdir_path, exist_ok=True)
-
-            # Verify structure
-            assert os.path.exists(cache_dir)
-            for subdir in expected_subdirs:
-                assert os.path.exists(os.path.join(cache_dir, subdir))
-
-
-class TestStatsGeneration:
-    """Test stats INI file generation"""
-
-    def test_stats_file_format(self):
-        """Test that generated stats files have correct format"""
-        stats_content = "vehicle_DescHunter=Max Speed: 210 m/s\n"
-        stats_content += "vehicle_Desc_Avenger=Cargo: 46 SCU\n"
-
-        # Parse as INI format (key=value)
-        lines = stats_content.strip().split("\n")
-        entries = {}
-        for line in lines:
-            if "=" in line:
-                key, value = line.split("=", 1)
-                entries[key] = value
-
-        assert "vehicle_DescHunter" in entries
-        assert entries["vehicle_DescHunter"] == "Max Speed: 210 m/s"
-
-    def test_stats_generation_handles_missing_dataforge(self):
-        """Test stats generation graceful failure when DataForge cache missing"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            os.path.join(tmpdir, "nonexistent_dataforge")
-
-            # Cache doesn't exist - stats generation should handle gracefully
-            # (may create empty stats files or skip)
-            stats_files = [
-                "ships_desc_stats.ini",
-                "components_desc_stats.ini",
-                "ship_weapons_desc_stats.ini",
-                "fps_weapons_desc_stats.ini",
-            ]
-
-            # In production, script should handle missing cache
-            # Here we just verify the filenames are expected
-            for filename in stats_files:
-                assert filename.endswith(".ini")
-
-    def test_stats_file_merges_with_base(self):
-        """Test that stats entries properly merge with base source"""
-        base_entries = {"vehicle_NameHunter": "Drake Cutlass Black", "vehicle_DescHunter": "Original description"}
-
-        stats_entries = {
-            "vehicle_DescHunter": "Max Speed: 210 m/s | Cargo: 180 SCU | Shields: 8000",
-        }
-
-        # Merge with stats having priority (higher in hierarchy)
-        merged = base_entries.copy()
-        merged.update(stats_entries)
-
-        assert merged["vehicle_NameHunter"] == "Drake Cutlass Black"
-        assert "Max Speed" in merged["vehicle_DescHunter"]
-
-    def test_component_stats_format(self):
-        """Test that component stats have expected format"""
-        component_stats = [
-            "item_DescSHLD_Aspirum=Shield Generator: 8000 HP",
-            "item_DescPOWR_TR1=Power: 4500W, Heat: 180",
-            "item_DescCOOL_Delphi=Cooling: 1200/s",
-            "item_DescQDRV_Soleris=Quantum Range: 46 Million KM",
-        ]
-
-        for line in component_stats:
-            assert "=" in line
-            key, value = line.split("=", 1)
-            assert key.startswith("item_Desc")
-            assert len(value) > 0
-
-
-class TestStatsErrorHandling:
-    """Test error handling in stats pipeline"""
-
-    def test_corrupted_stats_file_handling(self):
-        """Test that corrupted stats files are handled gracefully"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            stats_file = os.path.join(tmpdir, "corrupted.ini")
-
-            # Write corrupted content (no '=' on some lines)
-            with open(stats_file, "w") as f:
-                f.write("valid_key=valid_value\n")
-                f.write("invalid_line_no_equals\n")
-                f.write("another_valid=value\n")
-
-            # When parsing, invalid lines should be skipped gracefully
-            with open(stats_file) as f:
-                entries = {}
-                for line in f:
-                    line = line.strip()
-                    if "=" in line:
-                        key, value = line.split("=", 1)
-                        entries[key] = value
-
-            assert len(entries) == 2
-            assert "valid_key" in entries
-            assert "another_valid" in entries
-
-    def test_missing_stats_file_fallback(self):
-        """Test that missing stats files don't crash the app"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            stats_file = os.path.join(tmpdir, "nonexistent.ini")
-
-            # Attempt to load missing file
-            entries = {}
-            try:
-                if os.path.exists(stats_file):
-                    with open(stats_file) as f:
-                        for line in f:
-                            if "=" in line:
-                                key, value = line.split("=", 1)
-                                entries[key] = value
-            except Exception:
-                pass  # Gracefully continue without stats
-
-            # App should continue with empty stats
-            assert entries == {}
-
-    def test_stats_disabled_flag(self):
-        """Test that stats can be disabled via settings"""
-        # Stats should be loadable only if stats_enabled=True in settings
-        stats_enabled = True
-
-        if stats_enabled:
-            # Stats would be loaded from files
-            stats_entries = {"vehicle_DescHunter": "Max Speed: 210 m/s"}
-        else:
-            # Stats not loaded
-            stats_entries = {}
-
-        # Toggle off
-        stats_enabled = False
-        if stats_enabled:
-            stats_entries = {"vehicle_DescHunter": "Max Speed: 210 m/s"}
-        else:
-            stats_entries = {}
-
-        # Verify toggle works
-        assert stats_entries == {}
-
-
-class TestIntegrationP4KToStats:
-    """Integration tests for full P4K → Stats pipeline"""
-
-    def test_pipeline_structure(self):
-        """Test that P4K pipeline has all expected stages"""
-        pipeline_stages = [
-            "Extract P4K (unp4k.exe)",
-            "Extract Game2.dcb",
-            "Convert DataForge (unforge.exe)",
-            "Generate entity XMLs",
-            "Parse XMLs for stats",
-            "Generate stats INI files",
-            "Merge stats with sources",
-        ]
-
-        # Verify stages are logical
-        assert "P4K" in pipeline_stages[0]
-        assert "unforge" in pipeline_stages[2].lower()
-        assert "stats INI" in pipeline_stages[5]
-
-    @patch("utils.pak_extractor.subprocess.run")
-    def test_pipeline_stops_on_first_failure(self, mock_run):
-        """Test that pipeline stops gracefully on first error"""
-        # First call fails
-        mock_run.side_effect = [
-            Exception("unp4k failed"),
-            MagicMock(returncode=0),  # unforge wouldn't be called
-        ]
-
         with tempfile.TemporaryDirectory() as tmpdir:
             p4k_path = os.path.join(tmpdir, "Data.p4k")
             with open(p4k_path, "w") as f:
                 f.write("dummy")
-
-            cache_dir = os.path.join(tmpdir, "cache")
-
-            # Pipeline should fail at first stage
             with pytest.raises(Exception):
-                extract_dataforge(p4k_path, cache_dir)
+                extract_dataforge(p4k_path, os.path.join(tmpdir, "cache"))
+
+    @patch("src.utils.pak_extractor.subprocess.run")
+    def test_pipeline_stops_on_first_failure(self, mock_run):
+        """If unp4k fails, unforge is never called."""
+        mock_run.side_effect = [
+            Exception("unp4k failed"),
+            MagicMock(returncode=0),  # Should not be reached
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p4k_path = os.path.join(tmpdir, "Data.p4k")
+            with open(p4k_path, "w") as f:
+                f.write("dummy")
+            with pytest.raises(Exception):
+                extract_dataforge(p4k_path, os.path.join(tmpdir, "cache"))
+            # subprocess.run is called at most once (the first tool invocation)
+            assert mock_run.call_count <= 1
+
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -415,6 +181,7 @@ def _is_subpath_of(child: str, parent: str) -> bool:
     return child.startswith(parent + "/")
 
 
+@pytest.mark.regression
 class TestDataForgeKeepList:
     """Regression tests locking the keep-list to the generator's read-paths.
 
@@ -452,6 +219,7 @@ class TestDataForgeKeepList:
         )
 
 
+@pytest.mark.unit
 class TestCopyFilteredRecords:
     """Exercise the filtered-copy helper on a synthetic unforge output tree."""
 

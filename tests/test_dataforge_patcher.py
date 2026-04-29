@@ -5,12 +5,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from src.utils.dataforge_patcher import (
     LocstringWorkaround,
     apply_locstring_workarounds,
     apply_patches,
     load_locstring_workarounds,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def _records_root(tmp_path: Path) -> Path:

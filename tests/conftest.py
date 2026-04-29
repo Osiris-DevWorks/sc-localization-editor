@@ -82,7 +82,7 @@ def mock_game_path(temp_dir):
 @pytest.fixture
 def mock_cache_dir(temp_dir):
     """Provide a mock cache directory structure"""
-    cache_dir = os.path.join(temp_dir, "Documents", "Smart Citizen", "cache")
+    cache_dir = os.path.join(temp_dir, "Documents", "Smart Citizen", "LIVE", "cache")
     os.makedirs(cache_dir, exist_ok=True)
 
     # Create subdirectories

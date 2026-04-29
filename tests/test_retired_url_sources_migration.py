@@ -79,6 +79,7 @@ def _seed_pre_1_0_defaults():
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.critical
 class TestFreshInstallDefaults:
     """A fresh install (empty registry) gets only global + user."""
 
@@ -115,6 +116,7 @@ class TestFreshInstallDefaults:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.critical
 class TestRetiredUrlSourcePrune:
     def test_prunes_all_when_paths_are_urls(self, isolated_qsettings, fake_user_data_dir):
         _seed_pre_1_0_defaults()

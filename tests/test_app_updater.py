@@ -10,6 +10,7 @@ import pytest
 from src.utils.app_updater import is_newer, parse_version
 
 
+@pytest.mark.unit
 class TestParseVersion:
     def test_plain(self):
         assert parse_version("0.9.3") == (0, 9, 3)
@@ -47,6 +48,7 @@ class TestParseVersion:
         assert parse_version("v100.200.300") == (100, 200, 300)
 
 
+@pytest.mark.unit
 class TestIsNewer:
     def test_strictly_newer_patch(self):
         assert is_newer("0.9.4", "0.9.3") is True

@@ -65,6 +65,7 @@ def fake_user_data_dir(tmp_path, monkeypatch):
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.unit
 class TestChannelConstants:
     def test_channels_defined(self):
         assert set(AppSettings.AVAILABLE_CHANNELS) == {"LIVE", "PTU", "EPTU", "HOTFIX", "TECH-PREVIEW"}
@@ -73,6 +74,7 @@ class TestChannelConstants:
         assert AppSettings.DEFAULT_CHANNEL == "LIVE"
 
 
+@pytest.mark.unit
 class TestActiveChannel:
     def test_unset_returns_default(self, isolated_qsettings):
         assert AppSettings.get_active_channel() == AppSettings.DEFAULT_CHANNEL
@@ -96,6 +98,7 @@ class TestActiveChannel:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.unit
 class TestChannelScopedPaths:
     def test_cache_dir_nests_under_active_channel(self, isolated_qsettings, fake_user_data_dir):
         AppSettings.set_active_channel("PTU")
@@ -139,6 +142,7 @@ class TestChannelScopedPaths:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.unit
 class TestSCInstallRoot:
     def test_set_and_get(self, isolated_qsettings, fake_sc_root):
         AppSettings.set_sc_install_root(str(fake_sc_root))
@@ -166,6 +170,7 @@ class TestSCInstallRoot:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.unit
 class TestAvailableChannels:
     def test_reports_only_channels_with_p4k(self, isolated_qsettings, fake_sc_root):
         AppSettings.set_sc_install_root(str(fake_sc_root))
@@ -193,6 +198,7 @@ class TestAvailableChannels:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.critical
 class TestMigrateGamePathToChannelLayout:
     def test_registry_split_from_live_suffix(self, isolated_qsettings, tmp_path):
         s = AppSettings.settings()

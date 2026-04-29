@@ -2,7 +2,10 @@
 
 import threading
 
+import pytest
 from src.utils.progress_sink import ProgressSink
+
+pytestmark = pytest.mark.unit
 
 
 def test_advance_accumulates():

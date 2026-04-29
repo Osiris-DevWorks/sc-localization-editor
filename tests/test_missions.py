@@ -1,5 +1,5 @@
 """
-Mission enhancements tests for SC Localization Editor v0.8.0
+Mission enhancements tests for Smart Citizen
 
 Tests cover:
 - Generating global.ini from mission enhancements via the merge pipeline
@@ -102,6 +102,7 @@ def generated_global_ini(tmp_path):
     return output_ini
 
 
+@pytest.mark.integration
 class TestMissionGlobalIniGeneration:
     """Test that the merge pipeline produces a valid global.ini from mission enhancements."""
 
@@ -127,6 +128,7 @@ class TestMissionGlobalIniGeneration:
             assert global_data[key] == expected, f"Key {key}: expected enhancement value, got base placeholder"
 
 
+@pytest.mark.regression
 class TestMissionTitleStructure:
     """Validate structural properties of mission title entries."""
 
@@ -162,6 +164,7 @@ class TestMissionTitleStructure:
         )
 
 
+@pytest.mark.regression
 class TestMissionDescStructure:
     """Validate structural properties of mission desc entries."""
 
@@ -214,6 +217,7 @@ class TestMissionDescStructure:
                 assert int(raw) > 0, f"Zero/negative Rep XP in {key}"
 
 
+@pytest.mark.regression
 class TestMissionCsvAlignment:
     """Validate that the generated global.ini mission data aligns with the CSV fixture."""
 

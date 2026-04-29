@@ -59,7 +59,8 @@ Smart Citizen also bundles upstream tooling from:
 ### 🛡️ Data Management
 - **Automatic Backups**: Timestamped backups created before applying changes to your game
 - **Registry Persistence**: All paths and preferences saved securely in Windows Registry
-- **Documents Storage**: Your custom edits stored in `Documents\Smart Citizen\` for safe persistence across sessions
+- **Documents Storage**: Your custom edits stored per-channel in `Documents\Smart Citizen\<channel>\` for safe persistence across sessions and game channels
+- **Per-Channel Isolation**: Each Star Citizen channel (LIVE, PTU, EPTU) gets its own cache, user overrides, and backups
 
 ## Quick Start
 
@@ -92,3 +93,7 @@ Smart Citizen is completely free. If you find it valuable:
 Built with **PyQt6** and inspired by the Star Citizen community's localization work.
 
 **GitHub**: https://github.com/Osiris-DevWorks/smart-citizen
+
+## Licence
+
+Smart Citizen is distributed under the **GPL-3.0-only** licence.

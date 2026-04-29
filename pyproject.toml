@@ -28,8 +28,7 @@ dev = [
     "pytest-html>=3.2.0",
     "pytest-mock>=3.10.0",
     "pytest-xdist>=3.0.0",
-    "sphinx>=5.0.0",
-    "sphinx-rtd-theme>=1.0.0",
+    "pytest-qt>=4.2.0",
     "pyinstaller>=6.3.0",
 ]
 
