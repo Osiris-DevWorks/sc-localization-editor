@@ -8,6 +8,8 @@ import pytest
 from PyQt6.QtCore import QSettings
 from src.utils.settings import AppSettings
 
+pytestmark = pytest.mark.unit
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────

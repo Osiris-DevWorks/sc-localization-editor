@@ -6,6 +6,8 @@ import pytest
 from PyQt6.QtCore import QSettings
 from src.utils.settings import AppSettings
 
+pytestmark = pytest.mark.unit
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Fixtures (mirror the pattern from test_channel_layout.py)
 # ─────────────────────────────────────────────────────────────────────────────

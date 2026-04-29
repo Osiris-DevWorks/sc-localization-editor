@@ -5,6 +5,8 @@ from urllib.error import HTTPError
 import pytest
 from src.utils.updater import _MAX_DOWNLOAD_BYTES, _require_https, download_file, download_file_if_changed
 
+pytestmark = pytest.mark.unit
+
 _URL = "https://example.com/file.ini"
 _HTTP_URL = "http://example.com/file.ini"
 

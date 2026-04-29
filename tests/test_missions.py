@@ -15,6 +15,8 @@ import pytest
 from src.merger.ini_merger import merge_ini_files, merge_sources_by_hierarchy
 from src.parser.ini_parser import parse_ini_file
 
+pytestmark = pytest.mark.unit
+
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 ENHANCEMENTS_INI = FIXTURES_DIR / "mission_rewards_enhancements.ini"
 MISSIONS_CSV = FIXTURES_DIR / "missions_4.7.177.csv"

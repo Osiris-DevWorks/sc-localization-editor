@@ -32,6 +32,7 @@ dev = [
     "pytest-qt>=4.2.0",
     "pyinstaller>=6.3.0",
     "pre-commit>=4.6.0",
+    "pytest-timeout>=2.0.0",
 ]
 
 [tool.ruff]
@@ -48,4 +49,41 @@ python_version = "3.12"
 mypy_path = "src"
 ignore_missing_imports = true
 check_untyped_defs = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-fail-under=65",
+    "--timeout=30",
+]
+markers = [
+    "unit: Unit tests (fast, isolated)",
+    "integration: Integration tests (may use file I/O, external tools)",
+    "slow: Slow running tests (P4K extraction, large file operations)",
+    "critical: Critical features that must pass (data loading, merging, stats, apply)",
+    "regression: Tests for previously found bugs",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "src/gui/*",
+    "src/main.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]
 
