@@ -7,6 +7,7 @@ the user vouches for).
 Reports keys where the truth set has a [BP]/[BP*]/[BP?] tag but the 0.9.3
 merged output does not.
 """
+
 from __future__ import annotations
 
 import re

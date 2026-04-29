@@ -153,7 +153,7 @@ def create_self_signed_cert(export_pfx_path: str | None = None) -> tuple[str, st
         detail = (result.stdout + result.stderr).strip()
         raise RuntimeError(f"New-SelfSignedCertificate failed:\n{detail}")
 
-    lines = [l.strip() for l in result.stdout.strip().splitlines() if l.strip()]
+    lines = [line.strip() for line in result.stdout.strip().splitlines() if line.strip()]
     if not lines:
         detail = result.stderr.strip()
         raise RuntimeError(

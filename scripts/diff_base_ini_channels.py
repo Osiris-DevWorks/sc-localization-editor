@@ -15,6 +15,7 @@ The user data root defaults to ``%USERPROFILE%\\Documents\\Open Strings`` which
 matches a standard install. Pass ``--user-data`` to override (e.g. for a
 OneDrive-redirected Documents folder).
 """
+
 from __future__ import annotations
 
 import argparse

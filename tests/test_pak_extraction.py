@@ -6,9 +6,12 @@ Covers:
 - P4K extraction pipeline error handling
 - DataForge keep-list / generator read-path contract
 - Filtered cache copy helper
+- _robust_rmtree retry/read-only logic
+- extract_global_ini happy path and error paths
 """
 
 import os
+import stat
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -17,8 +20,10 @@ import pytest
 from src.utils.pak_extractor import (
     DATAFORGE_KEEP_SUBPATHS,
     _copy_filtered_records,
+    _robust_rmtree,
     dataforge_cache_is_fresh,
     extract_dataforge,
+    extract_global_ini,
 )
 
 
@@ -127,8 +132,6 @@ class TestDataForgeExtraction:
                 extract_dataforge(p4k_path, os.path.join(tmpdir, "cache"))
             # subprocess.run is called at most once (the first tool invocation)
             assert mock_run.call_count <= 1
-
-
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -284,6 +287,207 @@ class TestCopyFilteredRecords:
 
         with pytest.raises(FileNotFoundError):
             _copy_filtered_records(src / "libs", tmp_path / "dst" / "libs")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# _robust_rmtree
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+class TestRobustRmtree:
+    def test_removes_normal_directory(self, tmp_path):
+        target = tmp_path / "to_delete"
+        target.mkdir()
+        (target / "file.txt").write_text("hi", encoding="utf-8")
+        _robust_rmtree(target)
+        assert not target.exists()
+
+    def test_succeeds_silently_when_path_missing(self, tmp_path):
+        _robust_rmtree(tmp_path / "nonexistent")
+
+    def test_removes_read_only_files(self, tmp_path):
+        target = tmp_path / "ro_dir"
+        target.mkdir()
+        ro_file = target / "readonly.txt"
+        ro_file.write_text("data", encoding="utf-8")
+        ro_file.chmod(stat.S_IREAD)
+        _robust_rmtree(target)
+        assert not target.exists()
+
+    def test_raises_after_all_attempts_fail(self, tmp_path, monkeypatch):
+        target = tmp_path / "stubborn"
+        target.mkdir()
+        (target / "x.txt").write_text("x", encoding="utf-8")
+
+        import shutil
+
+        call_count = {"n": 0}
+
+        def _always_fail(path, **kwargs):
+            call_count["n"] += 1
+            raise OSError("locked")
+
+        monkeypatch.setattr(shutil, "rmtree", _always_fail)
+        monkeypatch.setattr("time.sleep", lambda _: None)
+        with pytest.raises(OSError):
+            _robust_rmtree(target, attempts=3)
+        assert call_count["n"] == 3
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# dataforge_cache_is_fresh — stamp-based logic
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+class TestDataForgeCacheFreshStamp:
+    def _make_p4k(self, parent: Path, mtime: float) -> Path:
+        p4k = parent / "Data.p4k"
+        p4k.write_bytes(b"dummy")
+        os.utime(p4k, (mtime, mtime))
+        return p4k
+
+    def _make_cache_with_stamp(self, parent: Path, stamp_mtime: float) -> Path:
+        cache = parent / "dataforge"
+        libs = cache / "raw" / "libs" / "foundry" / "records"
+        libs.mkdir(parents=True)
+        xml = libs / "sample.xml"
+        xml.write_text("<x/>", encoding="utf-8")
+        stamp = cache / ".p4k_mtime"
+        stamp.write_text(str(stamp_mtime))
+        return cache
+
+    def test_fresh_when_stamp_matches(self, tmp_path):
+        mtime = 1700000000.0
+        p4k = self._make_p4k(tmp_path, mtime)
+        cache = self._make_cache_with_stamp(tmp_path, mtime)
+        assert dataforge_cache_is_fresh(p4k, cache) is True
+
+    def test_stale_when_stamp_older(self, tmp_path):
+        p4k = self._make_p4k(tmp_path, 1700000100.0)
+        cache = self._make_cache_with_stamp(tmp_path, 1700000000.0)
+        assert dataforge_cache_is_fresh(p4k, cache) is False
+
+    def test_stale_when_no_xml_files(self, tmp_path):
+        mtime = 1700000000.0
+        p4k = self._make_p4k(tmp_path, mtime)
+        cache = tmp_path / "dataforge"
+        libs = cache / "raw" / "libs"
+        libs.mkdir(parents=True)
+        stamp = cache / ".p4k_mtime"
+        stamp.write_text(str(mtime))
+        assert dataforge_cache_is_fresh(p4k, cache) is False
+
+    def test_stale_when_stamp_missing(self, tmp_path):
+        p4k = self._make_p4k(tmp_path, 1700000000.0)
+        cache = tmp_path / "dataforge"
+        cache.mkdir()
+        assert dataforge_cache_is_fresh(p4k, cache) is False
+
+    def test_stale_when_stamp_corrupt(self, tmp_path):
+        mtime = 1700000000.0
+        p4k = self._make_p4k(tmp_path, mtime)
+        cache = self._make_cache_with_stamp(tmp_path, mtime)
+        (cache / ".p4k_mtime").write_text("not-a-float")
+        assert dataforge_cache_is_fresh(p4k, cache) is False
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# extract_global_ini — happy path and error paths
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+class TestExtractGlobalIni:
+    def _make_fake_unp4k(self, tmp_path: Path) -> Path:
+        exe = tmp_path / "unp4k.exe"
+        exe.write_bytes(b"fake")
+        return exe
+
+    def _make_p4k(self, tmp_path: Path) -> Path:
+        p4k = tmp_path / "Data.p4k"
+        p4k.write_bytes(b"fake")
+        return p4k
+
+    def test_raises_when_unp4k_missing(self, tmp_path):
+        p4k = self._make_p4k(tmp_path)
+        with pytest.raises(FileNotFoundError, match="unp4k"):
+            extract_global_ini(
+                p4k_path=p4k,
+                output_path=tmp_path / "base.ini",
+                unp4k_exe=tmp_path / "missing_unp4k.exe",
+            )
+
+    def test_raises_when_p4k_missing(self, tmp_path):
+        exe = self._make_fake_unp4k(tmp_path)
+        with pytest.raises(FileNotFoundError, match="Data.p4k"):
+            extract_global_ini(
+                p4k_path=tmp_path / "missing.p4k",
+                output_path=tmp_path / "base.ini",
+                unp4k_exe=exe,
+            )
+
+    @patch("src.utils.pak_extractor._run_subprocess")
+    def test_raises_on_nonzero_returncode(self, mock_run, tmp_path):
+        exe = self._make_fake_unp4k(tmp_path)
+        p4k = self._make_p4k(tmp_path)
+        mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="unp4k error")
+        with pytest.raises(RuntimeError, match="unp4k.exe exited"):
+            extract_global_ini(p4k_path=p4k, output_path=tmp_path / "base.ini", unp4k_exe=exe)
+
+    @patch("src.utils.pak_extractor._run_subprocess")
+    def test_raises_when_extracted_file_missing(self, mock_run, tmp_path):
+        exe = self._make_fake_unp4k(tmp_path)
+        p4k = self._make_p4k(tmp_path)
+        mock_run.return_value = MagicMock(returncode=0, stdout="ok", stderr="")
+        # _run_subprocess succeeds but doesn't create the expected global.ini
+        with pytest.raises(FileNotFoundError, match="global.ini"):
+            extract_global_ini(p4k_path=p4k, output_path=tmp_path / "base.ini", unp4k_exe=exe)
+
+    @patch("src.utils.pak_extractor._run_subprocess")
+    def test_happy_path_copies_to_output(self, mock_run, tmp_path):
+        exe = self._make_fake_unp4k(tmp_path)
+        p4k = self._make_p4k(tmp_path)
+        output = tmp_path / "cache" / "base.ini"
+
+        def _fake_run(args, cwd=None, timeout=None):
+            # Simulate unp4k writing the expected file structure
+            extracted = Path(cwd) / "data" / "Localization" / "english" / "global.ini"
+            extracted.parent.mkdir(parents=True, exist_ok=True)
+            extracted.write_text("key=value\n", encoding="utf-8")
+            return MagicMock(returncode=0, stdout="", stderr="")
+
+        mock_run.side_effect = _fake_run
+        result = extract_global_ini(p4k_path=p4k, output_path=output, unp4k_exe=exe)
+        assert result is True
+        assert output.exists()
+        assert output.read_text(encoding="utf-8") == "key=value\n"
+
+    @patch("src.utils.pak_extractor._run_subprocess")
+    def test_progress_callbacks_called(self, mock_run, tmp_path):
+        exe = self._make_fake_unp4k(tmp_path)
+        p4k = self._make_p4k(tmp_path)
+        output = tmp_path / "base.ini"
+
+        def _fake_run(args, cwd=None, timeout=None):
+            extracted = Path(cwd) / "data" / "Localization" / "english" / "global.ini"
+            extracted.parent.mkdir(parents=True, exist_ok=True)
+            extracted.write_text("k=v\n", encoding="utf-8")
+            return MagicMock(returncode=0, stdout="", stderr="")
+
+        mock_run.side_effect = _fake_run
+        messages = []
+        pct_calls = []
+        extract_global_ini(
+            p4k_path=p4k,
+            output_path=output,
+            unp4k_exe=exe,
+            progress_callback=messages.append,
+            progress_pct_callback=lambda cur, total, msg: pct_calls.append((cur, total)),
+        )
+        assert len(messages) >= 1
+        assert len(pct_calls) >= 2
 
 
 if __name__ == "__main__":

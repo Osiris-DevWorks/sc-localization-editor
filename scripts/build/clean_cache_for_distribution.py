@@ -18,15 +18,16 @@ def get_documents_dir():
     """Get Documents directory path."""
     try:
         import winreg
+
         key = winreg.OpenKey(
-            winreg.HKEY_CURRENT_USER,
-            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+            winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
         )
         docs = Path(winreg.QueryValueEx(key, "Personal")[0])
         winreg.CloseKey(key)
         return docs
     except Exception:
         return Path.home() / "Documents"
+
 
 def main():
     cache_dir = get_documents_dir() / "Open Strings" / "cache" / "dataforge"
@@ -44,7 +45,7 @@ def main():
     print()
 
     response = input("Delete raw/ directory? (y/N): ").strip().lower()
-    if response != 'y':
+    if response != "y":
         print("Cancelled.")
         return
 
@@ -57,6 +58,7 @@ def main():
     except Exception as e:
         print(f"✗ Error deleting directory: {e}")
         return False
+
 
 if __name__ == "__main__":
     main()

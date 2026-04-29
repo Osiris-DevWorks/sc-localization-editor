@@ -4,6 +4,7 @@ Kraken uses [BP] (all) and [BP]* (partial). We emit [BP] / [BP?] with the
 same semantics. Report keys where kraken has a BP tag but our output does
 not — those are missing annotations users will feel.
 """
+
 from __future__ import annotations
 
 import re

@@ -9,20 +9,32 @@ from urllib.request import Request, urlopen
 
 logger = logging.getLogger(__name__)
 
+# 50 MB cap — INI/XML source files should never be remotely close to this.
+# Prevents a misbehaving or compromised server from filling memory/disk.
+_MAX_DOWNLOAD_BYTES = 50 * 1024 * 1024
+
+
+def _require_https(url: str) -> None:
+    """Raise ValueError if *url* is not an HTTPS URL."""
+    if not url.startswith("https://"):
+        raise ValueError(f"Only HTTPS URLs are accepted for downloads; got: {url!r}")
+
 
 def download_file(url: str, output_path: str | Path) -> Path:
     """Download a file from a URL and save to disk.
 
     Args:
-        url: URL to download from
+        url: HTTPS URL to download from
         output_path: Path to save the downloaded file
 
     Returns:
         Path to saved file
 
     Raises:
+        ValueError: If the URL is not HTTPS.
         Exception if download fails
     """
+    _require_https(url)
     output_path = Path(output_path)
 
     try:
@@ -31,12 +43,16 @@ def download_file(url: str, output_path: str | Path) -> Path:
         with urlopen(url, timeout=60) as response:
             chunks = []
             chunk_size = 65536  # 64KB chunks
+            total = 0
 
             while True:
                 try:
                     chunk = response.read(chunk_size)
                     if not chunk:
                         break
+                    total += len(chunk)
+                    if total > _MAX_DOWNLOAD_BYTES:
+                        raise ValueError(f"Download exceeds {_MAX_DOWNLOAD_BYTES // 1_048_576} MB limit: {url!r}")
                     chunks.append(chunk)
                 except TimeoutError:
                     logger.warning("Download timeout, retrying...")
@@ -63,15 +79,17 @@ def download_file_if_changed(url: str, output_path: str | Path) -> bool:
     Falls back to a full download if the local file does not exist.
 
     Args:
-        url: Raw URL to download from
+        url: HTTPS URL to download from
         output_path: Path to save/overwrite the downloaded file
 
     Returns:
         True if the file was downloaded (new or updated), False if already current (304).
 
     Raises:
+        ValueError: If the URL is not HTTPS.
         Exception on non-304 HTTP errors, timeouts, or write failures.
     """
+    _require_https(url)
     output_path = Path(output_path)
     headers: dict[str, str] = {}
 
@@ -83,7 +101,9 @@ def download_file_if_changed(url: str, output_path: str | Path) -> bool:
     req = Request(url, headers=headers)
     try:
         with urlopen(req, timeout=60) as response:
-            data = response.read()
+            data = response.read(_MAX_DOWNLOAD_BYTES + 1)
+        if len(data) > _MAX_DOWNLOAD_BYTES:
+            raise ValueError(f"Download exceeds {_MAX_DOWNLOAD_BYTES // 1_048_576} MB limit: {url!r}")
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_bytes(data)

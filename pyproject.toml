@@ -31,6 +31,7 @@ dev = [
     "pytest-xdist>=3.0.0",
     "pytest-qt>=4.2.0",
     "pyinstaller>=6.3.0",
+    "pre-commit>=4.6.0",
 ]
 
 [tool.ruff]

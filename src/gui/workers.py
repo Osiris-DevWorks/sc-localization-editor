@@ -205,7 +205,7 @@ class StartupSyncWorker(QThread):
                 continue
 
             source_url = AppSettings.get_source_path(source_name)
-            if not source_url or not source_url.startswith("http"):
+            if not source_url or not source_url.startswith("https://"):
                 continue
 
             self.source_starting.emit(source_name)

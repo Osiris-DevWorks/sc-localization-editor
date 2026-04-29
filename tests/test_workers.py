@@ -27,8 +27,7 @@ class TestGetResourcePath:
     def test_unfrozen_no_meipass(self, monkeypatch):
         """_MEIPASS must not be set when running tests — confirm that invariant."""
         assert not hasattr(sys, "_MEIPASS"), (
-            "_MEIPASS should not be set in the test process "
-            "(would mean tests are running inside a frozen build)"
+            "_MEIPASS should not be set in the test process (would mean tests are running inside a frozen build)"
         )
 
     def test_frozen_uses_meipass(self, monkeypatch, tmp_path):
@@ -43,6 +42,7 @@ class TestGetResourcePath:
         # os.path.join preserves the slash style from the relative arg;
         # normalise both sides before comparing.
         import os.path as _osp
+
         assert _osp.normpath(result) == _osp.normpath(str(tmp_path / "assets" / "fonts"))
 
 

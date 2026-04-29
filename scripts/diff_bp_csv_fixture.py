@@ -17,6 +17,7 @@ Compare against the tag our 0.9.3 mission_rewards_enhancements.ini writes on
 the loc-key whose base value matches the title. Keys are looked up by their
 *base.ini* value (stripped of any annotation) against the fixture title.
 """
+
 from __future__ import annotations
 
 import csv
@@ -76,10 +77,7 @@ def load_fixture(path: Path) -> dict[str, tuple[bool, bool, int]]:
             title = row["title"].strip()
             awards = row["awards_blueprint"].strip().lower() == "true"
             title_bp[title].append(awards)
-    return {
-        title: (any(bps), all(bps), len(bps))
-        for title, bps in title_bp.items()
-    }
+    return {title: (any(bps), all(bps), len(bps)) for title, bps in title_bp.items()}
 
 
 def main() -> int:

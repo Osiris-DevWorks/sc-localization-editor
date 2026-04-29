@@ -11,6 +11,7 @@ Defaults:
 
 Prints a summary report to stdout. Research/reporting only; makes no changes.
 """
+
 from __future__ import annotations
 
 import io
@@ -35,6 +36,7 @@ DEFAULT_FIXTURE = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "
 def _get_documents_dir() -> Path:
     try:
         import winreg
+
         key = winreg.OpenKey(
             winreg.HKEY_CURRENT_USER,
             r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
@@ -51,9 +53,7 @@ DEFAULT_OURS = _get_documents_dir() / "Open Strings" / "cache" / "mission_reward
 # The ground-truth fixture uses EM4 "Potential Blueprints" (title case).
 # Our output uses EM3 "POTENTIAL BLUEPRINTS" (all caps).
 # Accept either form when locating the blueprints section, case-insensitively.
-BLUEPRINTS_HEADER_RE = re.compile(
-    r"<EM[34]>\s*potential blueprints\s*</EM[34]>", re.IGNORECASE
-)
+BLUEPRINTS_HEADER_RE = re.compile(r"<EM[34]>\s*potential blueprints\s*</EM[34]>", re.IGNORECASE)
 
 # Regional subheader:
 #   Fixture form:   <EM4>[Regional Variants] example locations: Nyx, ...</EM4>
@@ -68,6 +68,7 @@ REGIONAL_HEADER_RE = re.compile(
 
 
 # --- Parsing --------------------------------------------------------------
+
 
 def parse_ini(path: Path) -> dict[str, str]:
     """Parse an INI-style file as key=value, splitting on first '=' only.
@@ -93,7 +94,7 @@ def extract_blueprint_section(value: str) -> str | None:
     m = BLUEPRINTS_HEADER_RE.search(value)
     if not m:
         return None
-    return value[m.end():]
+    return value[m.end() :]
 
 
 def split_sublines(text: str) -> list[str]:
@@ -180,6 +181,7 @@ def union_of_regions(regions: list[tuple[str, set[str]]]) -> set[str]:
 
 # --- Report ---------------------------------------------------------------
 
+
 def format_item_list(items: set[str], indent: str = "    ") -> str:
     if not items:
         return f"{indent}(none)"
@@ -237,15 +239,17 @@ def main(argv: list[str]) -> int:
             matching_keys.append(key)
             continue
 
-        differing.append({
-            "key": key,
-            "only_fixture": only_fixture,
-            "only_ours": only_ours,
-            "fixture_has_regional": f_has_regional,
-            "ours_has_regional": o_has_regional,
-            "fixture_regions": f_regions,
-            "ours_regions": o_regions,
-        })
+        differing.append(
+            {
+                "key": key,
+                "only_fixture": only_fixture,
+                "only_ours": only_ours,
+                "fixture_has_regional": f_has_regional,
+                "ours_has_regional": o_has_regional,
+                "fixture_regions": f_regions,
+                "ours_regions": o_regions,
+            }
+        )
 
     # --- Print report -----------------------------------------------------
 
@@ -285,16 +289,16 @@ def main(argv: list[str]) -> int:
             print(f"KEY: {d['key']}")
             print(f"  fixture has regional variants: {d['fixture_has_regional']}")
             print(f"  ours has regional variants:    {d['ours_has_regional']}")
-            if d['fixture_has_regional']:
+            if d["fixture_has_regional"]:
                 print("  fixture region labels:")
-                for lbl, items in d['fixture_regions']:
+                for lbl, items in d["fixture_regions"]:
                     print(f"    * {lbl}  ({len(items)} items)")
-            if d['only_fixture']:
+            if d["only_fixture"]:
                 print(f"  only in fixture ({len(d['only_fixture'])}):")
-                print(format_item_list(d['only_fixture'], indent="    "))
-            if d['only_ours']:
+                print(format_item_list(d["only_fixture"], indent="    "))
+            if d["only_ours"]:
                 print(f"  only in ours ({len(d['only_ours'])}):")
-                print(format_item_list(d['only_ours'], indent="    "))
+                print(format_item_list(d["only_ours"], indent="    "))
         print()
 
     return 0

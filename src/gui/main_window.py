@@ -996,7 +996,14 @@ class MainWindow(QMainWindow):
         temp_file = None
         try:
             # Step 2: Resolve to local file
-            if source.startswith("http://") or source.startswith("https://"):
+            if source.startswith("https://") or source.startswith("http://"):
+                if source.startswith("http://"):
+                    QMessageBox.warning(
+                        self,
+                        "Insecure URL",
+                        "Only HTTPS URLs are accepted. The URL you entered uses HTTP and will not be downloaded.",
+                    )
+                    return
                 # Auto-convert GitHub web URLs to raw URLs
                 if source.startswith("https://github.com/"):
                     source = source.replace("https://github.com/", "https://raw.githubusercontent.com/")

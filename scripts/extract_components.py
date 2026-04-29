@@ -18,6 +18,7 @@ Options:
     --stock-url URL  Override the stock-global.ini download URL
     --dry-run        Print stats without writing output file
 """
+
 import argparse
 import sys
 from pathlib import Path
@@ -30,6 +31,7 @@ def get_documents_dir() -> Path:
     """Resolve the real Documents folder (handles OneDrive redirection on Windows)."""
     try:
         import winreg
+
         key = winreg.OpenKey(
             winreg.HKEY_CURRENT_USER,
             r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
