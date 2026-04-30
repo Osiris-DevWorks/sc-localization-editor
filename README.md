@@ -27,6 +27,17 @@ uv run python src/main.py
 
 See [scripts/build/BUILD_INSTRUCTIONS.md](scripts/build/BUILD_INSTRUCTIONS.md).
 
+## Legal notice
+
+Star Citizen and all associated game data, including `Data.p4k`, are the
+property of Cloud Imperium Rights LLC and Cloud Imperium Rights Ltd. Open Strings
+only reads game files from your own licensed installation and does not redistribute
+any RSI or CIG content. Your use of Star Citizen game data is governed by the
+[Star Citizen EULA](https://robertsspaceindustries.com/eula).
+
+This is an unofficial fan tool, not affiliated with or endorsed by Cloud Imperium
+Games or Roberts Space Industries.
+
 ## Licence
 
 GPL-3.0-only. See [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md).

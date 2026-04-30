@@ -39,6 +39,8 @@ Type: filesandordirs; Name: "{app}\*"
 
 [Files]
 Source: "dist\OpenStrings\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "NOTICE.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\Open Strings"; Filename: "{app}\OpenStrings.exe"
