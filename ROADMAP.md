@@ -16,3 +16,12 @@
 - [ ] Test and verify compatibility with Star Citizen 4.8
 - [ ] Review and update localization tag handling for any 4.8 changes
 - [ ] General app testing and fixes as needed
+
+### Testing infrastructure (completed during 1.1.0 → 1.1.1)
+
+- [x] Pytest config consolidated into `pyproject.toml`; `tests/pytest.ini` removed
+- [x] Coverage floor enforced at 65%; GUI files excluded from measurement
+- [x] GitHub Actions CI: lint on ubuntu, tests on windows; uv caching; coverage.xml artifact
+- [x] `StringTableModel` covered by 85 automated tests via `pytest-qt`; two Qt compliance bugs found and fixed
+- [x] `ini_parser.py` coverage raised from 54% to 93% with 13 new tests
+- [x] Overall non-GUI coverage: 88% across 413 tests

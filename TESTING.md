@@ -13,66 +13,60 @@ Run the app (`uv run python src/main.py`) and work through the manual workflow i
 ### Automated Testing
 
 ```bash
-# Install dependencies
-uv sync
+# Install dependencies (includes dev group with pytest, pytest-qt, pytest-cov, etc.)
+uv sync --all-groups
 
 # Run all tests
-uv run pytest tests/ -v
+uv run pytest tests/
 
 # Run only critical tests
-uv run pytest tests/ -v -m critical
+uv run pytest tests/ -m critical
 
 # Run only unit tests (fast)
-uv run pytest tests/ -v -m unit
+uv run pytest tests/ -m unit
 
-# Run with coverage
-uv run pytest tests/ --cov=src --cov-report=html
+# Run with HTML coverage report
+uv run pytest tests/ --cov-report=html
 ```
+
+All pytest settings (timeout, coverage, markers) are configured in `pyproject.toml` under `[tool.pytest.ini_options]`. No separate `pytest.ini` is needed.
 
 ---
 
 ## Test Structure
 
-### Unit Tests (`tests/test_core.py`)
+### Test files
 
-**Coverage**: Core functionality that doesn't require GUI or external tools
+| File                                    | What it covers                                                                               |
+| --------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `test_core.py`                          | INI parsing, merging, StringEntry model, user INI management, stats integration              |
+| `test_ini_parser.py`                    | Full `ini_parser.py` coverage: source loading, `load_sources_from_settings`, exception paths |
+| `test_string_table_model.py`            | `StringTableModel`: data roles, flags, sort, filter, signals, Qt model compliance            |
+| `test_channel_layout.py`                | Per-channel directory layout and isolation                                                   |
+| `test_dataforge_patcher.py`             | DataForge enhancement patching logic                                                         |
+| `test_entry_filter.py`                  | Entry filter matching                                                                        |
+| `test_extracted_modules.py`             | Extracted module integration                                                                 |
+| `test_ini_parser.py`                    | INI parser edge cases                                                                        |
+| `test_missions.py`                      | Mission key handling and prefix detection                                                    |
+| `test_pak_extraction.py`                | P4K extraction pipeline, DataForge cache, filtered-copy helper                               |
+| `test_perf.py`                          | Performance utility helpers                                                                  |
+| `test_progress_sink.py`                 | Progress reporting                                                                           |
+| `test_retired_url_sources_migration.py` | Legacy URL source migration                                                                  |
+| `test_settings.py`                      | AppSettings persistence and defaults                                                         |
+| `test_updater.py`                       | Auto-update version checking                                                                 |
+| `test_user_cfg.py`                      | User config file handling                                                                    |
+| `test_user_ini_manager.py`              | User INI read/write                                                                          |
+| `test_version.py`                       | Version string parsing                                                                       |
+| `test_workers.py`                       | Qt worker thread signal contracts                                                            |
 
-**Test Classes**:
-
-- `TestIniParsing` - INI file parsing, encoding handling, edge cases
-- `TestMerging` - Multi-source merge logic, hierarchy order, priority
-- `TestStringEntry` - Data model, category extraction, status determination
-- `TestUserIniManagement` - Saving/loading custom edits to user.ini
-- `TestErrorHandling` - Error handling, graceful failures
-- `TestStatsIntegration` - Enhancement entry merging
-
-**Run these tests**:
-
-```bash
-pytest tests/test_core.py -v
-
-# Quick smoke test (use after code changes)
-uv run pytest tests/test_core.py -v -m unit
-```
-
-### P4K Extraction Tests (`tests/test_pak_extraction.py`)
-
-**Coverage**: P4K extraction pipeline, DataForge cache, filtered-copy helper
-
-**Test Classes**:
-
-- `TestDataForgeCache` - Cache freshness detection
-- `TestDataForgeExtraction` - Pipeline error handling (mocked subprocess)
-- `TestDataForgeKeepList` - Keep-list / generator read-path contract (regression)
-- `TestCopyFilteredRecords` - Filtered cache copy helper
-
-**Run these tests**:
+### Markers
 
 ```bash
-uv run pytest tests/test_pak_extraction.py -v
-
-# Run with logging to see what's being tested
-uv run pytest tests/test_pak_extraction.py -v -s
+uv run pytest tests/ -m unit        # Fast, isolated unit tests
+uv run pytest tests/ -m critical    # Must-pass before release
+uv run pytest tests/ -m integration # File I/O and external tool tests
+uv run pytest tests/ -m slow        # P4K extraction (large file ops)
+uv run pytest tests/ -m regression  # Tests for previously found bugs
 ```
 
 ---
@@ -82,30 +76,19 @@ uv run pytest tests/test_pak_extraction.py -v -s
 ### Critical Path Tests (must pass before release)
 
 ```bash
-uv run pytest tests/ -v -m critical
+uv run pytest tests/ -m critical
 ```
-
-Tests:
-
-- Data loading (ini_parser)
-- Multi-source merging (ini_merger)
-- Category extraction (string_model)
-- Stats generation & integration
-- Overrides persistence
-- Error handling
 
 ### Quick Smoke Test (run after small changes)
 
 ```bash
-uv run pytest tests/test_core.py::TestIniParsing -v
-uv run pytest tests/test_core.py::TestMerging -v
-uv run pytest tests/test_core.py::TestStringEntry -v
+uv run pytest tests/test_core.py tests/test_ini_parser.py tests/test_string_table_model.py
 ```
 
 ### Full Test Suite (run before major releases)
 
 ```bash
-uv run pytest tests/ -v --tb=short
+uv run pytest tests/ --tb=short
 ```
 
 ---
@@ -179,17 +162,24 @@ uv run python src/main.py
 
 ---
 
-## Test Coverage Goals
+## Test Coverage
 
-| Component              | Target Coverage | Current |
-| ---------------------- | --------------- | ------- |
-| `ini_parser.py`        | 95%             | \_      |
-| `ini_merger.py`        | 95%             | \_      |
-| `string_model.py`      | 90%             | \_      |
-| `overrides_manager.py` | 90%             | \_      |
-| `pak_extractor.py`     | 80%             | \_      |
-| `updater.py`           | 70%             | \_      |
-| GUI (`main_window.py`) | Manual only     | ✓       |
+Coverage is measured automatically on every test run. GUI files (`main_window.py`, `config_tab.py`, etc.) are excluded — they are covered by the manual test plan in `TESTPLAN.md`.
+
+### Current coverage (as of v1.1.0)
+
+| Component               | Coverage | Notes                                                         |
+| ----------------------- | -------- | ------------------------------------------------------------- |
+| `ini_parser.py`         | 93%      | Lines 127–134 are dead code (category filter never triggered) |
+| `ini_merger.py`         | 98%      |                                                               |
+| `string_model.py`       | 77%      |                                                               |
+| `string_table_model.py` | 99%      |                                                               |
+| `overrides_manager.py`  | 100%     |                                                               |
+| `pak_extractor.py`      | 60%      | GUI-driven extraction paths not reachable without a real P4K  |
+| `updater.py`            | 97%      |                                                               |
+| **Overall (non-GUI)**   | **88%**  | Floor enforced at 65% via `--cov-fail-under`                  |
+
+Coverage is uploaded as a `coverage.xml` artifact on every CI run (30-day retention).
 
 ---
 
@@ -225,12 +215,12 @@ uv run python src/main.py
 
 1. **Note exact reproduction steps**
    - Check Log Tab for error messages or exceptions
-3. **Check Windows Registry** for corrupted settings:
+2. **Check Windows Registry** for corrupted settings:
    ```
    regedit → HKEY_CURRENT_USER\Software\Joni Hayes\Open Strings
    ```
-4. **Check user data** in `Documents\Open Strings\<channel>\`
-5. **Check backup files** to see what was written to game
+3. **Check user data** in `Documents\Open Strings\<channel>\`
+4. **Check backup files** to see what was written to game
 
 ---
 
@@ -256,11 +246,11 @@ pytest tests/ -v --cov=src --cov-report=html --cov-report=term
 
 ### Issue: "ModuleNotFoundError: No module named 'src'"
 
-**Solution**: Run pytest from project root:
+**Solution**: Run pytest from the project root using `uv run`:
 
 ```bash
-cd C:\Users\aabou\PycharmProjects\sc-localization-editor
-pytest tests/ -v
+cd C:\path\to\open-strings
+uv run pytest tests/
 ```
 
 ### Issue: "ImportError: cannot import name 'StringEntry'"
@@ -303,8 +293,10 @@ When adding new features, add tests:
 
 2. **Add to appropriate file**:
    - Core logic → `test_core.py`
+   - INI parser paths → `test_ini_parser.py`
    - P4K/stats → `test_pak_extraction.py`
-   - GUI → Manual testing checklist (for now)
+   - `StringTableModel` (data roles, sort, filter, signals) → `test_string_table_model.py`
+   - New GUI widget → create `tests/test_<widget_name>.py`, use `qtbot` and `qtmodeltester` fixtures from `pytest-qt`
 
 3. **Follow the pattern**:
 
@@ -361,8 +353,8 @@ pytest tests/ -v --tb=short
 
 **Checklist**: TESTING_CHECKLIST_v0.6.0.md  
 **Total Checks**: 120+  
-**Passed**: **  
-**Failed**: **
+**Passed**: \*\*  
+**Failed**: \*\*
 
 ## Critical Path Tests
 
@@ -384,30 +376,26 @@ pytest tests/ -v --tb=short
 
 ---
 
-## CI/CD Integration (Future)
+## CI/CD
 
-To integrate tests into GitHub Actions:
+Tests run automatically on every push via GitHub Actions (`.github/workflows/ci.yml`):
 
-1. Create `.github/workflows/test.yml`
-2. Run pytest on every push
-3. Generate coverage reports
-4. Comment on PRs with results
+- **Lint job** (`ubuntu-latest`): ruff lint + format check, mypy type check
+- **Test job** (`windows-latest`): full pytest suite with coverage; uploads `coverage.xml` artifact (30-day retention)
 
-Example workflow:
-```yaml
-name: Tests
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
-      - run: pip install -r requirements.txt pytest pytest-mock
-      - run: pytest tests/ -v --tb=short
-````
+Both jobs use uv caching (`uv.lock`) to keep run times fast.
+
+To reproduce a CI failure locally:
+
+```bash
+# Lint (what CI runs)
+uv run ruff check src/ tests/
+uv run ruff format --check src/ tests/
+uv run mypy src/
+
+# Tests (what CI runs)
+uv run pytest tests/ --cov=src --cov-report=xml
+```
 
 ---
 
@@ -420,5 +408,6 @@ jobs:
 
 ---
 
-**Last Updated**: 2026-04-09  
+**Last Updated**: 2026-04-09
 **For Version**: 0.6.0 and later
+````

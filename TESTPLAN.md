@@ -1,8 +1,8 @@
-# Open Strings 1.0 Pre-Release Test Plan
+# Open Strings 1.1.x Pre-Release Test Plan
 
-Focused on the UX and integration paths `pytest` can't reach. Automated coverage already exists for parsing/merging/missions/patcher/pak-filtering/channel layout/progress — don't duplicate.
+Focused on the UX and integration paths `pytest` can't reach. Automated coverage already exists for parsing/merging/missions/patcher/pak-filtering/channel layout/progress/StringTableModel — don't duplicate.
 
-**Before starting:** `pytest tests/ -n auto` must pass green. Build a fresh `OpenStrings-1.0.0-Setup.exe` and drive the tests below against that installer (not the dev checkout).
+**Before starting:** `uv run pytest tests/` must pass green (413+ tests, 88%+ coverage). Build a fresh installer and drive the tests below against that installer (not the dev checkout).
 
 ---
 
