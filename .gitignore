@@ -75,3 +75,7 @@ data/contracts_version.txt
 
 # Local DataForge extraction scratch (Game2.dcb + unforge output, ~300 MB)
 /Data/
+
+# Sandbox testing
+test-openstrings.wsb
+sandbox-logs/
