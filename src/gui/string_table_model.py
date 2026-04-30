@@ -224,9 +224,13 @@ class StringTableModel(QAbstractTableModel):
     # -- QAbstractTableModel interface --------------------------------------
 
     def rowCount(self, parent=QModelIndex()):
+        if parent.isValid():
+            return 0
         return len(self._filtered_indices)
 
     def columnCount(self, parent=QModelIndex()):
+        if parent.isValid():
+            return 0
         return NUM_COLUMNS
 
     def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
@@ -235,6 +239,8 @@ class StringTableModel(QAbstractTableModel):
         return None
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
+        if not index.isValid():
+            return Qt.ItemFlag.ItemIsDropEnabled
         base = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         col = index.column()
         if col == COL_CUSTOM:
