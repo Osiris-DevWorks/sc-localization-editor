@@ -11,7 +11,13 @@
 - [x] Add Check for Updates — checks `jonigirl/open-strings` GitHub releases on startup (6-hour interval) and via toolbar button
 - [x] Change journal annotation tag from `[SmC]` to `[OS]`
 
-## 1.1.1 — Maintenance
+## 1.1.1 — Attribution and legal patch
+
+- [x] Add MIT attribution for bundled unp4k / unforge tools to NOTICE.md
+- [x] Add RSI / Data.p4k disclaimer to README
+- [x] Install LICENSE and NOTICE.md alongside app via installer
+
+## 1.1.2 — Maintenance
 
 - [ ] Test and verify compatibility with Star Citizen 4.8
 - [ ] Review and update localization tag handling for any 4.8 changes
