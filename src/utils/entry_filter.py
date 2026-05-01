@@ -4,7 +4,15 @@ Extracted from MainWindow._filtered_entry_indices so this logic can be
 tested independently of Qt.
 """
 
+import logging
+
 from src.models.string_model import StringEntry
+
+logger = logging.getLogger(__name__)
+
+# Number of columns in the row_values list built inside filter_entry_indices.
+# Category / Key / Default Value / Original Value / Fav-star / Custom Value / Status
+_NUM_FILTER_COLUMNS = 7
 
 
 def filter_entry_indices(
@@ -37,6 +45,20 @@ def filter_entry_indices(
         be visible.
     """
     active_col_filters = [(i, t) for i, t in enumerate(column_filters) if t]
+
+    # Validate column indices once, before the hot per-entry loop.
+    # Stale filters (e.g. after a column layout change) would cause IndexError
+    # inside the loop; drop them here and log once instead.
+    valid_col_filters = [(i, t) for i, t in active_col_filters if i < _NUM_FILTER_COLUMNS]
+    if len(valid_col_filters) != len(active_col_filters):
+        bad_indices = [i for i, _ in active_col_filters if i >= _NUM_FILTER_COLUMNS]
+        logger.warning(
+            "Column filter indices out of range for %d-column table — skipped: %s",
+            _NUM_FILTER_COLUMNS,
+            bad_indices,
+        )
+        active_col_filters = valid_col_filters
+
     result: list[int] = []
 
     for idx, entry in enumerate(entries):

@@ -613,18 +613,20 @@ class MainWindow(QMainWindow):
                 logger.info(f"Backed up existing file to {backup_path}")
 
             # Build final merged dict by re-merging all sources with user edits
-            # This ensures Apply uses latest source versions and user edits
+            # This ensures Apply uses the latest source versions (catches any file
+            # that has changed — or disappeared — since the initial Load).
             sources_dict, hierarchy, _mrk = load_sources_from_settings()
 
-            # Warn if any active sources are missing (only check sources actually in AVAILABLE_SOURCES)
-            active_source_names = set(AppSettings.AVAILABLE_SOURCES)
-            active_source_names.add("enhancements")
+            # Warn if any enabled non-user official source failed to load.
+            # Because load_sources_from_settings() runs right above, a source that
+            # was present at Load time but is now missing (e.g. network drive gone)
+            # will correctly appear here and the user can cancel before a partial
+            # apply is written.
             missing_sources = [
                 name
                 for name in hierarchy
-                if name in active_source_names
+                if name in AppSettings.AVAILABLE_SOURCES
                 and name != AppSettings.SOURCE_USER
-                and name != "enhancements"
                 and name not in sources_dict
                 and AppSettings.is_source_enabled(name)
             ]

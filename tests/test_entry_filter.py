@@ -78,3 +78,15 @@ def test_column_filter_by_default_values():
     col_filters = ["", "", "searchterm", "", "", "", ""]
     result = filter_entry_indices(entries, default_vals, col_filters, "All", "All", False, False, "★")
     assert result == [0]
+
+
+def test_out_of_bounds_column_filter_skipped_with_warning(caplog):
+    import logging
+
+    entries = [_e("k1"), _e("k2")]
+    # Index 99 is way out of range — should be dropped, not raise IndexError
+    col_filters = ["", "", "", "", "", "", "", "", "", "", "sometext"]  # 11 items, index 10 is OOB
+    with caplog.at_level(logging.WARNING, logger="src.utils.entry_filter"):
+        result = filter_entry_indices(entries, {}, col_filters, "All", "All", False, False, "★")
+    assert result == [0, 1]  # OOB filter dropped → all entries visible
+    assert any("out of range" in rec.message.lower() for rec in caplog.records)

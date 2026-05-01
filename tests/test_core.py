@@ -546,6 +546,20 @@ class TestSyncKeyVariants:
         assert merged["vehicle_NameHunter"] == "Cutlass"
         assert merged["items_commodities_Gold"] == "Gold"
 
+    def test_conflicting_variant_values_logs_warning(self, caplog):
+        import logging
+
+        merged = {
+            "item_nameSHLD_foo": "canonical_value",
+            "item_nameSHLD_foo_SCItem": "different_scitem_value",
+        }
+        with caplog.at_level(logging.WARNING, logger="src.merger.ini_merger"):
+            sync_key_variants(merged)
+        assert any("conflict" in rec.message.lower() for rec in caplog.records)
+        # Non-_SCItem variant still wins
+        assert merged["item_nameSHLD_foo"] == "canonical_value"
+        assert merged["item_nameSHLD_foo_SCItem"] == "canonical_value"
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

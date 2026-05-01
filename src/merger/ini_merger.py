@@ -1,9 +1,13 @@
 """INI file merger for combining base and custom strings."""
 
+import logging
+from collections import defaultdict
 from functools import cache
 from pathlib import Path
 
 from src.utils.perf import timed
+
+logger = logging.getLogger(__name__)
 
 # Component type codes used to canonicalize item_name*/item_desc* key variants.
 # Hoisted to module scope so _get_canonical_key doesn't rebuild this list on
@@ -135,43 +139,49 @@ def sync_key_variants(merged_dict: dict[str, str]) -> None:
     If item_Name_QDRV_RSI_S02_Hemera has value X, then
     item_nameQDRV_RSI_S02_Hemera_SCItem also gets value X.
 
+    The non-_SCItem variant is treated as authoritative. If variants carry
+    different values (unexpected after a clean hierarchy merge), a warning is
+    logged so the discrepancy is visible rather than silently discarded.
+
     This modifies merged_dict in-place.
 
     Args:
         merged_dict: Dictionary of keys to values from merged sources
     """
-    # Build a mapping of canonical → list of actual keys with that canonical form
-    canonical_keys: dict[str, list[str]] = {}
+    # Build canonical → [actual_keys] map.
+    # defaultdict avoids the double-lookup (check + set) of the manual approach.
+    # Iterate merged_dict directly — no need for list() copy since we're only reading keys here.
+    canonical_keys: dict[str, list[str]] = defaultdict(list)
+    for key in merged_dict:
+        canonical_keys[_get_canonical_key(key)].append(key)
 
-    for key in list(merged_dict.keys()):
-        canonical = _get_canonical_key(key)
-        if canonical not in canonical_keys:
-            canonical_keys[canonical] = []
-        canonical_keys[canonical].append(key)
-
-    # For each canonical form with multiple variants, sync their values
     for canonical, variants in canonical_keys.items():
-        if len(variants) > 1:
-            # Use the value from the first variant (they should all have the same after merge)
-            # Or prioritize: prefer the one without _SCItem suffix
-            synced_value = None
-            preferred_key = None
+        if len(variants) <= 1:
+            continue
 
-            # Prefer non-_SCItem variants
-            for var in variants:
-                if not var.lower().endswith("_scitem"):
-                    preferred_key = var
-                    synced_value = merged_dict[var]
-                    break
+        # Prefer non-_SCItem variant as the authoritative value;
+        # fall back to first variant if all have the _SCItem suffix.
+        preferred_key = next(
+            (v for v in variants if not v.lower().endswith("_scitem")),
+            variants[0],
+        )
+        synced_value = merged_dict[preferred_key]
 
-            # If all have _SCItem (unlikely), just use the first
-            if synced_value is None:
-                preferred_key = variants[0]
-                synced_value = merged_dict[preferred_key]
+        # Detect conflicts — after a clean hierarchy merge all variants should
+        # already agree. Log a warning when they don't so the discrepancy is
+        # visible in the log tab rather than silently lost.
+        if any(merged_dict[v] != synced_value for v in variants):
+            details = "; ".join(f"{v!r}={merged_dict[v]!r}" for v in variants)
+            logger.warning(
+                "Variant value conflict for canonical key %r — choosing %r=%r. All variants: %s",
+                canonical,
+                preferred_key,
+                synced_value,
+                details,
+            )
 
-            # Apply this value to all variants
-            for var in variants:
-                merged_dict[var] = synced_value
+        for var in variants:
+            merged_dict[var] = synced_value
 
 
 @timed
