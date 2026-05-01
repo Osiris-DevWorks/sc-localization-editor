@@ -110,3 +110,117 @@ class TestAnimatedProgressDialog:
         # QProgressDialog.value() may return -1 until the dialog is fully initialised;
         # validate the range is correct instead.
         assert dlg.minimum() == 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Pending-edit snapshot / restore logic (MainWindow helpers)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _entry(key, custom_value="", original_value="base", status="Unmodified"):
+    from src.models.string_model import StringEntry
+
+    e = StringEntry.__new__(StringEntry)
+    e.key = key
+    e.custom_value = custom_value
+    e.original_value = original_value
+    e.status = status
+    return e
+
+
+@pytest.mark.unit
+class TestPendingEditSnapshotRestore:
+    """Verify MainWindow._snapshot_pending_user_edits and _restore_pending_user_edits.
+
+    Both methods are called as unbound functions with minimal fake-self objects
+    so the full MainWindow widget is never instantiated.
+    """
+
+    def _snapshot(self, entries):
+        import types
+
+        from src.gui.main_window import MainWindow
+
+        fake = types.SimpleNamespace(entries=entries)
+        return MainWindow._snapshot_pending_user_edits(fake)
+
+    def _restore(self, entries, snapshot):
+        from src.gui.main_window import MainWindow
+
+        return MainWindow._restore_pending_user_edits(None, entries, snapshot)
+
+    # -- snapshot ----------------------------------------------------------
+
+    def test_snapshot_empty_entries_returns_empty_dict(self):
+        assert self._snapshot([]) == {}
+
+    def test_snapshot_skips_entries_with_no_custom_value(self):
+        entries = [_entry("k1", custom_value=""), _entry("k2", custom_value="")]
+        assert self._snapshot(entries) == {}
+
+    def test_snapshot_captures_non_empty_custom_values(self):
+        entries = [_entry("k1", custom_value="edit1"), _entry("k2", custom_value="edit2")]
+        assert self._snapshot(entries) == {"k1": "edit1", "k2": "edit2"}
+
+    def test_snapshot_mixed_entries_only_captures_non_empty(self):
+        entries = [
+            _entry("k1", custom_value="edit1"),
+            _entry("k2", custom_value=""),
+            _entry("k3", custom_value="edit3"),
+        ]
+        result = self._snapshot(entries)
+        assert result == {"k1": "edit1", "k3": "edit3"}
+
+    # -- restore -----------------------------------------------------------
+
+    def test_restore_empty_snapshot_returns_zero(self):
+        entries = [_entry("k1", custom_value="edit1")]
+        assert self._restore(entries, {}) == 0
+
+    def test_restore_skips_key_not_in_snapshot(self):
+        entries = [_entry("k1", custom_value="")]
+        count = self._restore(entries, {"other_key": "val"})
+        assert count == 0
+        assert entries[0].custom_value == ""
+
+    def test_restore_skips_entry_already_matching_snapshot(self):
+        # If the new entries already loaded this value from user.ini, no-op
+        entries = [_entry("k1", custom_value="already")]
+        count = self._restore(entries, {"k1": "already"})
+        assert count == 0
+
+    def test_restore_applies_pending_edit_and_sets_modified(self):
+        entries = [_entry("k1", custom_value="", original_value="base")]
+        count = self._restore(entries, {"k1": "pending edit"})
+        assert count == 1
+        assert entries[0].custom_value == "pending edit"
+        assert entries[0].status == "Modified"
+
+    def test_restore_sets_unmodified_when_pending_matches_original(self):
+        entries = [_entry("k1", custom_value="", original_value="base")]
+        count = self._restore(entries, {"k1": "base"})
+        assert count == 1
+        assert entries[0].status == "Unmodified"
+
+    def test_restore_returns_count_of_restored_entries(self):
+        entries = [
+            _entry("k1", custom_value="", original_value="base"),
+            _entry("k2", custom_value="already", original_value="base"),
+            _entry("k3", custom_value="", original_value="base"),
+        ]
+        count = self._restore(entries, {"k1": "edit1", "k2": "already", "k3": "edit3"})
+        # k2 is skipped (value already matches), k1 and k3 are restored
+        assert count == 2
+
+    def test_restore_snapshot_taken_before_entries_replaced(self):
+        """Verify the order-of-operations contract: snapshot old entries, restore into new."""
+        old = [_entry("k1", custom_value="unsaved")]
+        new = [_entry("k1", custom_value="", original_value="new base")]
+
+        snapshot = self._snapshot(old)
+        assert snapshot == {"k1": "unsaved"}
+
+        count = self._restore(new, snapshot)
+        assert count == 1
+        assert new[0].custom_value == "unsaved"
+        assert new[0].status == "Modified"

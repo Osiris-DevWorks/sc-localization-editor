@@ -915,6 +915,37 @@ class MainWindow(QMainWindow):
 
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(loc_dir)))
 
+    @timed
+    def _snapshot_pending_user_edits(self) -> dict:
+        """Return {key: custom_value} for in-memory edits that may not be on disk.
+
+        Reload paths (Config-tab save, Generate Enhancements completion, etc.)
+        rebuild self.entries from disk sources — which means custom_value comes
+        only from user.ini. Edits the user made but hasn't yet Applied live
+        only in memory; without snapshotting them here they'd be silently
+        wiped by the reload.
+        """
+        return {e.key: e.custom_value for e in self.entries if e.custom_value}
+
+    def _restore_pending_user_edits(self, entries: list, snapshot: dict) -> int:
+        """Re-apply *snapshot* on top of freshly-loaded *entries*.
+
+        Mirrors inline-edit setData semantics: status flips Modified if the
+        restored value differs from the new original, Unmodified otherwise.
+        Returns the count actually restored.
+        """
+        if not snapshot:
+            return 0
+        restored = 0
+        for e in entries:
+            pending = snapshot.get(e.key)
+            if pending is None or pending == e.custom_value:
+                continue
+            e.custom_value = pending
+            e.status = "Modified" if pending != e.original_value else "Unmodified"
+            restored += 1
+        return restored
+
     @pyqtSlot()
     @timed
     def perform_merge_and_reload(self):
@@ -923,6 +954,7 @@ class MainWindow(QMainWindow):
         Called when user saves configuration in Config tab. Loads all configured
         sources, merges them in hierarchy order, and updates the table display.
         """
+        pending_edits = self._snapshot_pending_user_edits()
         try:
             # Load all configured sources
             sources_dict, hierarchy, enhancements_key_categories = load_sources_from_settings()
@@ -942,6 +974,9 @@ class MainWindow(QMainWindow):
                     sources_dict, hierarchy, enhancements_key_categories=enhancements_key_categories
                 )
                 logger.info(f"Merge complete: {len(entries)} entries")
+                restored = self._restore_pending_user_edits(entries, pending_edits)
+                if restored:
+                    logger.info(f"Restored {restored} in-memory user edits not yet persisted to user.ini")
                 self.entries = entries
                 self.default_values = dict(sources_dict.get("global", {}))
                 self.update_category_combo()
@@ -2099,6 +2134,15 @@ class MainWindow(QMainWindow):
             self._loader_worker.quit()
             self._loader_worker.wait()
             self._loader_worker = None
+
+        # Preserve in-memory edits the user hasn't Applied yet — Generate
+        # Enhancements (and other reload paths) hit this slot with freshly
+        # loaded entries whose custom_value comes only from user.ini, so
+        # any un-saved edits would be silently dropped without this.
+        pending_edits = self._snapshot_pending_user_edits()
+        restored = self._restore_pending_user_edits(entries, pending_edits)
+        if restored:
+            logger.info(f"Restored {restored} in-memory user edits not yet persisted to user.ini")
 
         self.default_values = default_values
         self.entries = entries
