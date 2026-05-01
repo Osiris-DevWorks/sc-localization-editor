@@ -280,6 +280,12 @@ class StringTableModel(QAbstractTableModel):
                 return entry.status
             return None
 
+        # -- edit text (populates the inline editor on double-click) --------
+        if role == Qt.ItemDataRole.EditRole:
+            if col == COL_CUSTOM:
+                return entry.custom_value
+            return None
+
         # -- entry index (replaces old UserRole on col-0 trick) -------------
         if role == Qt.ItemDataRole.UserRole:
             return self._filtered_indices[row]

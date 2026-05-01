@@ -395,6 +395,31 @@ class TestStringTableModelToolTipRole:
 
 
 # ---------------------------------------------------------------------------
+# data() — EditRole
+# ---------------------------------------------------------------------------
+
+
+class TestStringTableModelEditRole:
+    def test_edit_role_custom_column_returns_value(self):
+        e = _ship(custom_value="My Edit")
+        m = _model_with(e)
+        val = m.data(m.index(0, COL_CUSTOM), Qt.ItemDataRole.EditRole)
+        assert val == "My Edit"
+
+    def test_edit_role_custom_column_empty_value_returns_empty_string(self):
+        e = _ship(custom_value="")
+        m = _model_with(e)
+        val = m.data(m.index(0, COL_CUSTOM), Qt.ItemDataRole.EditRole)
+        assert val == ""
+
+    def test_edit_role_non_custom_column_returns_none(self):
+        e = _ship(custom_value="My Edit")
+        m = _model_with(e)
+        for col in (COL_CATEGORY, COL_KEY, COL_DEFAULT, COL_CURRENT, COL_STATUS):
+            assert m.data(m.index(0, col), Qt.ItemDataRole.EditRole) is None
+
+
+# ---------------------------------------------------------------------------
 # flags()
 # ---------------------------------------------------------------------------
 
