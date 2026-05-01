@@ -16,7 +16,7 @@
     {
       "id": "edit",
       "title": "2. Edit strings",
-      "description": "Each row is one localization record. Double-click a cell in the Custom Value column to edit — your change are autosaved. Use the filter row above to narrow down your results. The ★ column marks ships as favorites so they sort to the top of the ASOP.",
+      "description": "Each row is one localization record. Double-click a cell in the Custom Value column to edit — your changes are autosaved. Use the filter row above to narrow down your results. The ★ column marks ships as favorites so they sort to the top of the ASOP.",
       "preferred_side": "auto"
     },
     {

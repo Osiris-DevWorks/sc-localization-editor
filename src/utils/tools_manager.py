@@ -98,7 +98,7 @@ def download_tools(
             _report(progress_callback, f"Extracting {name}…")
             logger.info(f"Extracting {name} to {tools_dir}")
             with zipfile.ZipFile(tmp_path) as zf:
-                zf.extractall(tools_dir)
+                _safe_extractall(zf, tools_dir)
             logger.info(f"{name} extracted OK")
 
         finally:
@@ -107,6 +107,22 @@ def download_tools(
                     tmp_path.unlink()
                 except OSError:
                     pass
+
+
+def _safe_extractall(zf: zipfile.ZipFile, dest: Path) -> None:
+    """Extract *zf* into *dest*, rejecting any path-traversal entries.
+
+    ``zipfile.ZipFile.extractall`` does not sanitise entry names, so a zip
+    containing ``../../evil.exe`` would write outside *dest*.  We resolve
+    each entry's target and refuse to extract anything that escapes the
+    destination directory (CWE-22 / zip slip).
+    """
+    dest_resolved = dest.resolve()
+    for entry in zf.infolist():
+        target = (dest / entry.filename).resolve()
+        if dest_resolved != target and dest_resolved not in target.parents:
+            raise ValueError(f"Unsafe zip entry rejected (path traversal): {entry.filename!r}")
+        zf.extract(entry, dest)
 
 
 def _report(callback, message: str) -> None:

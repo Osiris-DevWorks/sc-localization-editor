@@ -101,6 +101,7 @@ class ToolDownloadDialog(QDialog):
     def _on_cancel(self) -> None:
         self._cancel_btn.setEnabled(False)
         self._status_label.setText("Cancelling…")
+        self._worker.finished.disconnect(self._on_finished)
         self._worker.cancel()
         self._worker.wait()
         self.reject()

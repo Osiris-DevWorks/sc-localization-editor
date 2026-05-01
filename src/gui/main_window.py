@@ -2255,18 +2255,23 @@ class MainWindow(QMainWindow):
         else:
             status_bar.showMessage("Enhancement generation failed — check the Log tab for details")
 
+    def _ensure_tools_downloaded(self) -> bool:
+        """Show the tool-download dialog if needed. Returns True when tools are ready."""
+        from src.gui.tool_download_dialog import ToolDownloadDialog
+        from src.utils.tools_manager import tools_are_present
+
+        if tools_are_present():
+            return True
+        dlg = ToolDownloadDialog(parent=self)
+        return bool(dlg.exec())
+
     def _run_dataforge_extraction(self):
         """Launch DataForgeExtractWorker in the background (non-blocking)."""
         if self._forge_worker is not None:
             return
 
-        from src.gui.tool_download_dialog import ToolDownloadDialog
-        from src.utils.tools_manager import tools_are_present
-
-        if not tools_are_present():
-            dlg = ToolDownloadDialog(parent=self)
-            if not dlg.exec():
-                return
+        if not self._ensure_tools_downloaded():
+            return
 
         p4k_path = AppSettings.get_p4k_path()
         unp4k_exe = AppSettings.get_unp4k_exe_path()
@@ -2318,13 +2323,11 @@ class MainWindow(QMainWindow):
 
     def _run_p4k_extraction(self):
         """Launch P4kExtractWorker with a progress dialog; reload sources on success."""
-        from src.gui.tool_download_dialog import ToolDownloadDialog
-        from src.utils.tools_manager import tools_are_present
+        if self._p4k_worker is not None:
+            return
 
-        if not tools_are_present():
-            dlg = ToolDownloadDialog(parent=self)
-            if not dlg.exec():
-                return
+        if not self._ensure_tools_downloaded():
+            return
 
         p4k_path = AppSettings.get_p4k_path()
         output_path = AppSettings.get_cache_dir() / "base.ini"

@@ -1,4 +1,4 @@
-"""Extracts files from Star Citizen's Data.p4k using bundled unp4k.exe."""
+"""Extracts files from Star Citizen's Data.p4k using unp4k.exe."""
 
 import gc
 import logging
@@ -196,7 +196,7 @@ def extract_global_ini(
     Args:
         p4k_path: Path to Star Citizen's Data.p4k file.
         output_path: Destination path (e.g. cache/base.ini).
-        unp4k_exe: Path to the bundled unp4k.exe.
+        unp4k_exe: Path to the locally-cached unp4k.exe.
         progress_callback: Optional callable(str) for status messages.
 
     Returns:
@@ -273,8 +273,8 @@ def extract_dataforge(
 
     Args:
         p4k_path: Path to Data.p4k.
-        unp4k_exe: Path to bundled unp4k.exe.
-        unforge_exe: Path to bundled unforge.exe.
+        unp4k_exe: Path to locally-cached unp4k.exe.
+        unforge_exe: Path to locally-cached unforge.exe.
         dataforge_cache_dir: Destination directory for the cached entity XMLs.
         progress_callback: Optional callable(str) for status messages.
 
@@ -332,12 +332,10 @@ def extract_dataforge(
             cwd=str(tmp_dir),
             timeout=1800,  # 30 minutes max
         )
-        # Always log unforge's output at INFO (truncated). A zero-length
-        # stdout + sub-second runtime is typically a silent failure — e.g.
-        # missing .NET runtime, the user's AV quarantining a temp file, or
-        # unforge choking on a new DCB schema. Without this log the
-        # downstream "libs/ directory was not created" error gives no clue
-        # what went wrong.
+        # A zero-length stdout + sub-second runtime is typically a silent
+        # failure — e.g. AV quarantining a temp file, or unforge choking
+        # on a new DCB schema. Without this log the downstream
+        # "libs/ directory was not created" error gives no clue what went wrong.
         _stdout = (result.stdout or "").strip()
         _stderr = (result.stderr or "").strip()
         if _stdout:
@@ -369,11 +367,14 @@ def extract_dataforge(
                 # silently without producing output. This can happen if the
                 # executable is blocked by antivirus or the .dcb file is
                 # corrupt/unreadable.
+                from src.utils.tools_manager import get_tools_dir
+
                 diagnostic = (
                     "\n\nNo output from unforge and no libs/ directory produced. "
-                    "The bundled unforge.exe may be blocked by antivirus software. "
-                    "Try adding an exclusion for the Open Strings install folder "
-                    "and run again."
+                    "unforge.exe may be blocked by antivirus software. "
+                    "Try adding an exclusion for the tools cache folder:\n"
+                    f"{get_tools_dir()}\n"
+                    "then run the extraction again."
                 )
             raise FileNotFoundError(
                 "unforge ran but libs/ directory was not created — unexpected output structure." + diagnostic

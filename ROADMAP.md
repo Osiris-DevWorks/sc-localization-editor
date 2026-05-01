@@ -23,6 +23,8 @@
 - [x] Port radar sibling-key propagation from upstream 1.1.0: `"RADR"` added to `comp_types` so radar stat blocks propagate from `_SCItem` keys to their non-SCItem siblings
 - [x] Fix Custom Value cell editor losing content on double-click: `EditRole` now returns `entry.custom_value` in `StringTableModel.data()`, preventing the delegate from receiving `None` and erasing unsaved text
 - [x] Fix Generate Enhancements and source reload wiping pending edits: snapshot/restore mechanism preserves un-Applied in-memory edits across all `_on_loading_finished` and `perform_merge_and_reload` paths
+- [x] Update unp4k / unforge to v4.0.83 (self-contained .NET 10 binaries)
+- [x] Runtime tool download: unp4k and unforge are no longer bundled in the installer; they are downloaded once on first extraction to `%APPDATA%\Open Strings\tools\` and reused automatically
 - [ ] Test and verify compatibility with Star Citizen 4.8
 - [ ] Review and update localization tag handling for any 4.8 changes
 

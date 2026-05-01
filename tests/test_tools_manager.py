@@ -5,7 +5,12 @@ import zipfile
 from unittest.mock import patch
 
 import pytest
-from src.utils.tools_manager import TOOLS_VERSION, download_tools, get_tools_dir, tools_are_present
+from src.utils.tools_manager import (
+    TOOLS_VERSION,
+    download_tools,
+    get_tools_dir,
+    tools_are_present,
+)
 
 
 @pytest.mark.unit
@@ -164,3 +169,41 @@ class TestDownloadTools:
                 download_tools()
 
         assert nested.is_dir()
+
+
+@pytest.mark.unit
+class TestSafeExtractall:
+    def test_normal_entries_extracted(self, tmp_path):
+        from src.utils import tools_manager as _tm
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("unp4k.exe", "bin")
+            zf.writestr("x64/libzstd.dll", "dll")
+        buf.seek(0)
+        with zipfile.ZipFile(buf) as zf:
+            _tm._safe_extractall(zf, tmp_path)
+        assert (tmp_path / "unp4k.exe").exists()
+        assert (tmp_path / "x64" / "libzstd.dll").exists()
+
+    def test_path_traversal_entry_rejected(self, tmp_path):
+        from src.utils import tools_manager as _tm
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("../../evil.exe", "bad")
+        buf.seek(0)
+        with zipfile.ZipFile(buf) as zf:
+            with pytest.raises(ValueError, match="path traversal"):
+                _tm._safe_extractall(zf, tmp_path)
+
+    def test_absolute_path_entry_rejected(self, tmp_path):
+        from src.utils import tools_manager as _tm
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("/etc/passwd", "bad")
+        buf.seek(0)
+        with zipfile.ZipFile(buf) as zf:
+            with pytest.raises(ValueError, match="path traversal"):
+                _tm._safe_extractall(zf, tmp_path)
