@@ -303,7 +303,7 @@ begin
   UninstallEditsWarnLabel.Visible := TNewCheckBox(Sender).Checked;
 end;
 
-function ShowUninstallOptionsDialog(): Boolean;
+function ShowUninstallOptionsDialog: Boolean;
 var
   Form: TSetupForm;
   DescLabel: TLabel;
@@ -312,17 +312,14 @@ var
   ToolsHintLabel: TLabel;
   EditsCheck: TNewCheckBox;
   EditsPathLabel: TLabel;
-  Bevel: TBevel;
+  Bevel: TNewStaticText;
   UninstallButton: TNewButton;
   CancelButton: TNewButton;
 begin
-  Form := CreateCustomForm();
+  Form := CreateCustomForm(480, 312, False, False);
   try
     Form.Caption := 'Uninstall Open Strings';
-    Form.ClientWidth := 480;
-    Form.ClientHeight := 312;
     Form.Position := poScreenCenter;
-    Form.BorderStyle := bsDialog;
 
     DescLabel := TLabel.Create(Form);
     DescLabel.Parent := Form;
@@ -392,13 +389,14 @@ begin
     UninstallEditsWarnLabel.Font.Color := clMaroon;
     UninstallEditsWarnLabel.Visible := False;
 
-    Bevel := TBevel.Create(Form);
+    Bevel := TNewStaticText.Create(Form);
     Bevel.Parent := Form;
-    Bevel.Left := 20;
+    Bevel.Left := 0;
     Bevel.Top := 246;
-    Bevel.Width := 440;
+    Bevel.Width := 480;
     Bevel.Height := 2;
-    Bevel.Shape := bsTopLine;
+    Bevel.Caption := '';
+    Bevel.AutoSize := False;
 
     UninstallButton := TNewButton.Create(Form);
     UninstallButton.Parent := Form;
@@ -429,7 +427,7 @@ begin
     else
       Result := False;
   finally
-    Form.Free();
+    Form.Free;
   end;
 end;
 
