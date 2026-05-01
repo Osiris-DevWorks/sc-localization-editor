@@ -365,14 +365,15 @@ def extract_dataforge(
                     f"\n\nunforge stderr:\n{_stderr[:1500] or '(empty)'}"
                 )
             else:
-                # Nothing on either stream and no libs/ — classic "missing
-                # .NET runtime" signature on Windows. unforge is a .NET
-                # executable and quietly exits 0 when the CLR fails to load.
+                # Nothing on either stream and no libs/ — unforge exited
+                # silently without producing output. This can happen if the
+                # executable is blocked by antivirus or the .dcb file is
+                # corrupt/unreadable.
                 diagnostic = (
                     "\n\nNo output from unforge and no libs/ directory produced. "
-                    "This typically means .NET Framework 4.x isn't installed or "
-                    "is blocked by antivirus. Install the latest .NET Framework "
-                    "runtime from Microsoft and try again."
+                    "The bundled unforge.exe may be blocked by antivirus software. "
+                    "Try adding an exclusion for the Open Strings install folder "
+                    "and run again."
                 )
             raise FileNotFoundError(
                 "unforge ran but libs/ directory was not created — unexpected output structure." + diagnostic
