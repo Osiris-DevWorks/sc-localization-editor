@@ -32,9 +32,9 @@ def get_tools_dir() -> Path:
 
 
 def tools_are_present() -> bool:
-    """Return True if both unp4k.exe and unforge.exe exist in the tools directory."""
+    """Return True if both unp4k.exe and unforge.cli.exe exist in the tools directory."""
     d = get_tools_dir()
-    return (d / "unp4k.exe").exists() and (d / "unforge.exe").exists()
+    return (d / "unp4k.exe").exists() and (d / "unforge.cli.exe").exists()
 
 
 def download_tools(
@@ -63,7 +63,11 @@ def download_tools(
 
     _CHUNK = 65536
 
-    for name, url in [("unp4k", _UNP4K_ZIP_URL), ("unforge", _UNFORGE_ZIP_URL)]:
+    # (label, zip_url, actual_exe_name) — unforge ships as unforge.cli.exe, not unforge.exe
+    for name, url, exe_name in [
+        ("unp4k", _UNP4K_ZIP_URL, "unp4k.exe"),
+        ("unforge", _UNFORGE_ZIP_URL, "unforge.cli.exe"),
+    ]:
         if cancel_event and cancel_event.is_set():
             raise RuntimeError("Download cancelled")
 
@@ -99,7 +103,27 @@ def download_tools(
             logger.info(f"Extracting {name} to {tools_dir}")
             with zipfile.ZipFile(tmp_path) as zf:
                 _safe_extractall(zf, tools_dir)
-            logger.info(f"{name} extracted OK")
+
+            # Some release zips nest the exe inside a subdirectory rather than
+            # placing it at the archive root.  Promote it to the flat expected
+            # location so every caller can rely on get_tools_dir()/{exe_name}
+            # regardless of the upstream zip layout.
+            expected_exe = tools_dir / exe_name
+            if not expected_exe.exists():
+                found_exe = next(tools_dir.rglob(exe_name), None)
+                if found_exe is None:
+                    raise FileNotFoundError(
+                        f"{exe_name} not found anywhere under {tools_dir} after extraction. "
+                        "The release zip may have changed its internal layout."
+                    )
+                found_exe.replace(expected_exe)
+                logger.debug(
+                    "Promoted %s from subdirectory %s to tools root",
+                    exe_name,
+                    found_exe.parent.relative_to(tools_dir),
+                )
+
+            logger.info(f"{exe_name} extracted OK")
 
         finally:
             if tmp_path and tmp_path.exists():

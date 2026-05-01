@@ -2398,6 +2398,8 @@ class MainWindow(QMainWindow):
         )
         for _w in _workers:
             if _w is not None and _w.isRunning():
+                if hasattr(_w, "cancel"):
+                    _w.cancel()
                 _w.quit()
                 if not _w.wait(5000):  # 5 s — generous for DataForge, avoids deadlock
                     logger.warning("Worker %s did not stop within 5 s on close", type(_w).__name__)

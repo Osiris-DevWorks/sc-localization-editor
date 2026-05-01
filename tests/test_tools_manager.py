@@ -50,13 +50,13 @@ class TestToolsArePresent:
             assert not tools_are_present()
 
     def test_false_when_only_unforge_exists(self, tmp_path):
-        (tmp_path / "unforge.exe").write_text("x")
+        (tmp_path / "unforge.cli.exe").write_text("x")
         with patch("src.utils.tools_manager.get_tools_dir", return_value=tmp_path):
             assert not tools_are_present()
 
     def test_true_when_both_exes_exist(self, tmp_path):
         (tmp_path / "unp4k.exe").write_text("x")
-        (tmp_path / "unforge.exe").write_text("x")
+        (tmp_path / "unforge.cli.exe").write_text("x")
         with patch("src.utils.tools_manager.get_tools_dir", return_value=tmp_path):
             assert tools_are_present()
 
@@ -100,19 +100,19 @@ class TestDownloadTools:
 
     def test_extracts_unp4k_and_unforge_exes(self, tmp_path):
         unp4k_zip = _make_zip(("unp4k.exe", "bin"), ("x64/libzstd.dll", "dll"))
-        unforge_zip = _make_zip(("unforge.exe", "bin"), ("Zstd.Net.dll", "dll"))
+        unforge_zip = _make_zip(("unforge.cli.exe", "bin"), ("Zstd.Net.dll", "dll"))
 
         with patch("src.utils.tools_manager.get_tools_dir", return_value=tmp_path):
             with self._patch_urlopen([unp4k_zip, unforge_zip]):
                 download_tools()
 
         assert (tmp_path / "unp4k.exe").exists()
-        assert (tmp_path / "unforge.exe").exists()
+        assert (tmp_path / "unforge.cli.exe").exists()
 
     def test_supporting_files_also_extracted(self, tmp_path):
         unp4k_zip = _make_zip(("unp4k.exe", "b"), ("x64/libzstd.dll", "d"), ("x86/libzstd.dll", "d"))
         unforge_zip = _make_zip(
-            ("unforge.exe", "b"),
+            ("unforge.cli.exe", "b"),
             ("ICSharpCode.SharpZipLib.dll", "d"),
             ("Zstd.Net.dll", "d"),
         )
@@ -126,7 +126,7 @@ class TestDownloadTools:
 
     def test_progress_callback_called(self, tmp_path):
         unp4k_zip = _make_zip(("unp4k.exe", "b"))
-        unforge_zip = _make_zip(("unforge.exe", "b"))
+        unforge_zip = _make_zip(("unforge.cli.exe", "b"))
         messages = []
 
         with patch("src.utils.tools_manager.get_tools_dir", return_value=tmp_path):
@@ -159,10 +159,24 @@ class TestDownloadTools:
         # Should not have attempted the second download
         assert call_count == 1
 
+    def test_exe_in_subdirectory_promoted_to_flat_path(self, tmp_path):
+        # Reproduces a zip layout where the exe is nested inside a subdirectory
+        # rather than placed at the archive root.
+        unp4k_zip = _make_zip(("unp4k.exe", "bin"))
+        unforge_zip = _make_zip(("unforge-win-x64-v4.0.83/unforge.cli.exe", "bin"))
+
+        with patch("src.utils.tools_manager.get_tools_dir", return_value=tmp_path):
+            with self._patch_urlopen([unp4k_zip, unforge_zip]):
+                download_tools()
+
+        # Both exes must be at the flat expected location after promotion
+        assert (tmp_path / "unp4k.exe").exists()
+        assert (tmp_path / "unforge.cli.exe").exists()
+
     def test_tools_dir_created_if_missing(self, tmp_path):
         nested = tmp_path / "deep" / "nested"
         unp4k_zip = _make_zip(("unp4k.exe", "b"))
-        unforge_zip = _make_zip(("unforge.exe", "b"))
+        unforge_zip = _make_zip(("unforge.cli.exe", "b"))
 
         with patch("src.utils.tools_manager.get_tools_dir", return_value=nested):
             with self._patch_urlopen([unp4k_zip, unforge_zip]):

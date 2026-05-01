@@ -352,11 +352,23 @@ class DataForgeExtractWorker(QThread):
         self._unp4k_exe = unp4k_exe
         self._unforge_exe = unforge_exe
         self._cache_dir = cache_dir
+        self._thread_id: int | None = None
+
+    def cancel(self) -> None:
+        """Kill the active subprocess (if any) so the worker thread can exit cleanly."""
+        from src.utils.pak_extractor import kill_active_subprocess
+
+        tid = self._thread_id
+        if tid is not None:
+            kill_active_subprocess(tid)
 
     def run(self) -> None:
+        import threading as _threading
+
         from src.utils.dataforge_patcher import apply_patches
         from src.utils.pak_extractor import extract_dataforge
 
+        self._thread_id = _threading.get_ident()
         try:
             extract_dataforge(
                 self._p4k,
@@ -390,6 +402,8 @@ class DataForgeExtractWorker(QThread):
             logger.exception(f"DataForge extraction failed: {e}")
             self.error.emit(str(e))
             self.finished.emit(False)
+        finally:
+            self._thread_id = None
 
 
 class AppUpdateCheckerWorker(QThread):

@@ -655,10 +655,10 @@ class AppSettings:
 
     @staticmethod
     def get_unforge_exe_path() -> Path:
-        """Resolve unforge.exe from the versioned local tools directory."""
+        """Resolve unforge.cli.exe from the versioned local tools directory."""
         from src.utils.tools_manager import get_tools_dir
 
-        return get_tools_dir() / "unforge.exe"
+        return get_tools_dir() / "unforge.cli.exe"
 
     @staticmethod
     def get_dataforge_cache_dir() -> Path:

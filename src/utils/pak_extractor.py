@@ -8,12 +8,18 @@ import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from pathlib import Path
 
 from src.utils.perf import timed
 
 logger = logging.getLogger(__name__)
+
+# Track active subprocesses by Python thread-id so they can be killed
+# from the main thread when the app closes mid-extraction.
+_active_procs: dict[int, subprocess.Popen] = {}
+_active_procs_lock = threading.Lock()
 
 
 def _robust_rmtree(path: Path, attempts: int = 6) -> None:
@@ -161,23 +167,48 @@ def _run_subprocess(
     cwd: str | None = None,
     timeout: int | float | None = None,
 ) -> subprocess.CompletedProcess[str]:
-    """Run a subprocess with stdout/stderr capture and no console window."""
-    if sys.platform == "win32":
-        return subprocess.run(
-            args,
-            cwd=cwd,
-            timeout=timeout,
-            capture_output=True,
-            text=True,
-            creationflags=int(getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)),
-        )
-    return subprocess.run(
+    """Run a subprocess with stdout/stderr capture and no console window.
+
+    Uses Popen so the active process is registered in ``_active_procs`` and
+    can be killed from the main thread if the app closes mid-extraction.
+    """
+    flags = int(getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)) if sys.platform == "win32" else 0
+    proc = subprocess.Popen(
         args,
         cwd=cwd,
-        timeout=timeout,
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         text=True,
+        creationflags=flags,
     )
+    tid = threading.get_ident()
+    with _active_procs_lock:
+        _active_procs[tid] = proc
+    try:
+        try:
+            stdout, stderr = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            stdout, stderr = proc.communicate()
+    finally:
+        with _active_procs_lock:
+            _active_procs.pop(tid, None)
+    return subprocess.CompletedProcess(args, proc.returncode, stdout, stderr)
+
+
+def kill_active_subprocess(thread_id: int) -> None:
+    """Kill the subprocess currently running in *thread_id*, if any.
+
+    Called from the main thread when the app is closing while a long-running
+    extraction is in progress, so the temp directory can be cleaned up.
+    """
+    with _active_procs_lock:
+        proc = _active_procs.get(thread_id)
+    if proc is not None:
+        try:
+            proc.kill()
+        except OSError:
+            pass
 
 
 @timed
@@ -285,14 +316,14 @@ def extract_dataforge(
         FileNotFoundError: If required executables or Data.p4k are missing.
         RuntimeError: If either subprocess fails.
     """
-    for exe, name in [(unp4k_exe, "unp4k.exe"), (unforge_exe, "unforge.exe")]:
+    for exe, name in [(unp4k_exe, "unp4k.exe"), (unforge_exe, "unforge.cli.exe")]:
         if not exe.exists():
             raise FileNotFoundError(f"{name} not found at: {exe}")
     if not p4k_path.exists():
         raise FileNotFoundError(f"Data.p4k not found at: {p4k_path}")
 
     TOTAL_PHASES = 3
-    with tempfile.TemporaryDirectory() as tmp_dir:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp_dir:
         tmp = Path(tmp_dir)
 
         # ── Step 1: Extract Game2.dcb ─────────────────────────────────────────
