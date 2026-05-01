@@ -33,10 +33,12 @@ def parse_ini_file(path: str | Path) -> dict[str, str]:
     try:
         with open(path, encoding="utf-8-sig") as f:
             for line in f:
-                line = line.rstrip("\n\r")
+                # strip() once — removes newlines and any surrounding whitespace.
+                # Avoids the previous pattern of rstrip("\n\r") + two strip() calls.
+                line = line.strip()
 
                 # Skip empty lines and comments
-                if not line.strip() or line.strip().startswith(";"):
+                if not line or line.startswith(";"):
                     continue
 
                 # Split on first '=' only
@@ -48,9 +50,9 @@ def parse_ini_file(path: str | Path) -> dict[str, str]:
                 value = value.strip()
 
                 if key:
-                    # Strip comma-based metadata suffix (e.g., "key,P" → "key")
-                    # This is used in some source files to track properties
-                    clean_key = key.split(",")[0].strip()
+                    # Strip comma-based metadata suffix (e.g., "key,P" → "key").
+                    # partition() avoids allocating a list; left side is always the key.
+                    clean_key = key.partition(",")[0].strip()
                     if clean_key:
                         result[clean_key] = value
     except Exception as e:

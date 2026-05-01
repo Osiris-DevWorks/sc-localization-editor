@@ -61,20 +61,16 @@ def merge_sources_by_hierarchy(
     """
     result: dict[str, str] = {}
 
-    # Process each source in hierarchy order
-    # Earlier sources are base, later sources overwrite
+    # dict.update() is a C-level bulk copy — semantically identical to the
+    # previous Python loop (later sources overwrite earlier ones) but
+    # significantly faster for the ~87k-key base.ini on each Load / Apply.
     for source_name in hierarchy:
-        if source_name not in sources_dict:
-            continue
-
-        source_data = sources_dict[source_name]
-        for key, value in source_data.items():
-            result[key] = value
+        if source_name in sources_dict:
+            result.update(sources_dict[source_name])
 
     # Apply user overrides last (highest priority)
     if user_overrides:
-        for key, value in user_overrides.items():
-            result[key] = value
+        result.update(user_overrides)
 
     # Sync values across key variants (e.g., item_Name_QDRV vs item_nameQDRV_SCItem)
     sync_key_variants(result)

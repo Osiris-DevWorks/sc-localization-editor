@@ -59,6 +59,26 @@ def filter_entry_indices(
         )
         active_col_filters = valid_col_filters
 
+    # Pre-resolve each active column filter to a (value_getter, text) pair.
+    # Built once per call, amortised over all ~87k entries: the per-entry loop
+    # then calls only the getters for columns that are actually filtered rather
+    # than constructing a full 7-element list for every entry.
+    # Getters close over default_values / favorite_prefix — safe because both
+    # are parameters, not loop variables.
+    if active_col_filters:
+        _col_getters: tuple = (
+            lambda e: e.category.lower(),
+            lambda e: e.key.lower(),
+            lambda e: default_values.get(e.key, "").lower(),
+            lambda e: e.original_value.lower(),
+            lambda e: "★" if e.custom_value.startswith(favorite_prefix) else "",
+            lambda e: e.custom_value.lower(),
+            lambda e: e.status.lower(),
+        )
+        active_filter_fns: list = [(_col_getters[i], t) for i, t in active_col_filters]
+    else:
+        active_filter_fns = []
+
     result: list[int] = []
 
     for idx, entry in enumerate(entries):
@@ -72,18 +92,9 @@ def filter_entry_indices(
             show = False
         elif favorites_only and not entry.custom_value.startswith(favorite_prefix):
             show = False
-        elif active_col_filters:
-            row_values = [
-                entry.category.lower(),
-                entry.key.lower(),
-                default_values.get(entry.key, "").lower(),
-                entry.original_value.lower(),
-                "★" if entry.custom_value.startswith(favorite_prefix) else "",
-                entry.custom_value.lower(),
-                entry.status.lower(),
-            ]
-            for col, filter_text in active_col_filters:
-                if filter_text not in row_values[col]:
+        elif active_filter_fns:
+            for get_val, filter_text in active_filter_fns:
+                if filter_text not in get_val(entry):
                     show = False
                     break
 
