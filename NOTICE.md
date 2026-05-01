@@ -16,9 +16,11 @@ only (GPL-3.0-only). See `LICENSE` for the full terms.
 
 ### unp4k / unforge
 
-This application bundles `unp4k.exe`, `unforge.exe`, `ICSharpCode.SharpZipLib.dll`,
-and `Zstd.Net.dll` from [unp4k](https://github.com/dolkensp/unp4k) by Peter Dolkens
-and contributors.
+This application downloads `unp4k.exe`, `unforge.exe`, and their supporting
+libraries from [unp4k](https://github.com/dolkensp/unp4k) by Peter Dolkens
+and contributors on first use, and caches them locally under
+`%APPDATA%\Open Strings\tools\`. These tools are not distributed with this
+application.
 
 Copyright (C) Peter Dolkens and contributors.
 

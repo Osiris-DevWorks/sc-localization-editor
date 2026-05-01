@@ -1862,12 +1862,11 @@ class MainWindow(QMainWindow):
             True if P4K extraction was started (caller should defer file loading).
             False if no extraction is needed or user declined.
         """
-        unp4k_exe = AppSettings.get_unp4k_exe_path()
         p4k_path = AppSettings.get_p4k_path()
         base_ini = AppSettings.get_cache_dir() / "base.ini"
 
-        if not unp4k_exe.exists() or not p4k_path.exists():
-            return False  # silently skip — unp4k not bundled yet or game path not set
+        if not p4k_path.exists():
+            return False  # silently skip — game path not set
 
         base_missing = not base_ini.exists()
         p4k_newer = (not base_missing) and (p4k_path.stat().st_mtime > base_ini.stat().st_mtime)
@@ -1928,9 +1927,7 @@ class MainWindow(QMainWindow):
         if self._forge_worker is not None or self._enhancements_worker is not None:
             return
         p4k_path = AppSettings.get_p4k_path()
-        unp4k_exe = AppSettings.get_unp4k_exe_path()
-        unforge_exe = AppSettings.get_unforge_exe_path()
-        if not p4k_path.exists() or not unp4k_exe.exists() or not unforge_exe.exists():
+        if not p4k_path.exists():
             return
         forge_dir = AppSettings.get_dataforge_cache_dir()
         if not (forge_dir / ".p4k_mtime").exists():
@@ -2263,6 +2260,14 @@ class MainWindow(QMainWindow):
         if self._forge_worker is not None:
             return
 
+        from src.gui.tool_download_dialog import ToolDownloadDialog
+        from src.utils.tools_manager import tools_are_present
+
+        if not tools_are_present():
+            dlg = ToolDownloadDialog(parent=self)
+            if not dlg.exec():
+                return
+
         p4k_path = AppSettings.get_p4k_path()
         unp4k_exe = AppSettings.get_unp4k_exe_path()
         unforge_exe = AppSettings.get_unforge_exe_path()
@@ -2313,6 +2318,14 @@ class MainWindow(QMainWindow):
 
     def _run_p4k_extraction(self):
         """Launch P4kExtractWorker with a progress dialog; reload sources on success."""
+        from src.gui.tool_download_dialog import ToolDownloadDialog
+        from src.utils.tools_manager import tools_are_present
+
+        if not tools_are_present():
+            dlg = ToolDownloadDialog(parent=self)
+            if not dlg.exec():
+                return
+
         p4k_path = AppSettings.get_p4k_path()
         output_path = AppSettings.get_cache_dir() / "base.ini"
         unp4k_exe = AppSettings.get_unp4k_exe_path()

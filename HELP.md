@@ -8,6 +8,8 @@ On launch, Open Strings reloads any customizations from your previous session an
 
 Open the **Config** tab and click **Extract from Data.p4k**. This unpacks stock `global.ini` plus the DataForge entity XMLs used by the enhancement generator — ships, components, weapons, missions, blueprints, etc.
 
+> **First extraction only:** Open Strings needs two small extraction tools (unp4k and unforge, ~130 MB total) which are downloaded automatically from the upstream GitHub release the first time you extract. The download is a one-time step; the tools are cached locally and reused for all future extractions.
+
 When extraction finishes, the extracted `base.ini` is loaded into the table automatically — merged with any enhancement files and your saved `user.ini` overrides.
 
 ## 2. Edit Localization Strings

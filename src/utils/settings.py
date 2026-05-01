@@ -648,28 +648,17 @@ class AppSettings:
 
     @staticmethod
     def get_unp4k_exe_path() -> Path:
-        """Resolve bundled unp4k.exe — works both frozen (PyInstaller) and in dev."""
-        import sys
+        """Resolve unp4k.exe from the versioned local tools directory."""
+        from src.utils.tools_manager import get_tools_dir
 
-        meipass = getattr(sys, "_MEIPASS", None)
-        if getattr(sys, "frozen", False) and meipass is not None:
-            base = Path(meipass)
-        else:
-            # src/utils/settings.py → src/utils → src → project root
-            base = Path(__file__).parent.parent.parent
-        return base / "assets" / "unp4k" / "unp4k.exe"
+        return get_tools_dir() / "unp4k.exe"
 
     @staticmethod
     def get_unforge_exe_path() -> Path:
-        """Resolve bundled unforge.exe — works both frozen (PyInstaller) and in dev."""
-        import sys
+        """Resolve unforge.exe from the versioned local tools directory."""
+        from src.utils.tools_manager import get_tools_dir
 
-        meipass = getattr(sys, "_MEIPASS", None)
-        if getattr(sys, "frozen", False) and meipass is not None:
-            base = Path(meipass)
-        else:
-            base = Path(__file__).parent.parent.parent
-        return base / "assets" / "unp4k" / "unforge.exe"
+        return get_tools_dir() / "unforge.exe"
 
     @staticmethod
     def get_dataforge_cache_dir() -> Path:
