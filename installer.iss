@@ -56,6 +56,9 @@ var
   SCDirectoryPage: TInputDirWizardPage;
   DataDirPage: TInputDirWizardPage;
   DataDirPromptShown: Boolean;
+  DeleteToolsOnUninstall: Boolean;
+  DeleteEditsOnUninstall: Boolean;
+  UninstallEditsWarnLabel: TLabel;
 
 function IsDocsOnOneDrive(): Boolean;
 var
@@ -295,15 +298,182 @@ begin
   end;
 end;
 
+procedure EditsCheckClick(Sender: TObject);
+begin
+  UninstallEditsWarnLabel.Visible := TNewCheckBox(Sender).Checked;
+end;
+
+function ShowUninstallOptionsDialog(): Boolean;
+var
+  Form: TSetupForm;
+  DescLabel: TLabel;
+  ToolsCheck: TNewCheckBox;
+  ToolsPathLabel: TLabel;
+  ToolsHintLabel: TLabel;
+  EditsCheck: TNewCheckBox;
+  EditsPathLabel: TLabel;
+  Bevel: TBevel;
+  UninstallButton: TNewButton;
+  CancelButton: TNewButton;
+begin
+  Form := CreateCustomForm();
+  try
+    Form.Caption := 'Uninstall Open Strings';
+    Form.ClientWidth := 480;
+    Form.ClientHeight := 312;
+    Form.Position := poScreenCenter;
+    Form.BorderStyle := bsDialog;
+
+    DescLabel := TLabel.Create(Form);
+    DescLabel.Parent := Form;
+    DescLabel.Left := 20;
+    DescLabel.Top := 20;
+    DescLabel.Width := 440;
+    DescLabel.Height := 34;
+    DescLabel.AutoSize := False;
+    DescLabel.WordWrap := True;
+    DescLabel.Caption := 'Open Strings will be uninstalled. Choose what else to clean up:';
+
+    ToolsCheck := TNewCheckBox.Create(Form);
+    ToolsCheck.Parent := Form;
+    ToolsCheck.Left := 20;
+    ToolsCheck.Top := 68;
+    ToolsCheck.Width := 440;
+    ToolsCheck.Height := 20;
+    ToolsCheck.Caption := 'Extraction tools  (~130 MB)';
+    ToolsCheck.Checked := True;
+
+    ToolsPathLabel := TLabel.Create(Form);
+    ToolsPathLabel.Parent := Form;
+    ToolsPathLabel.Left := 38;
+    ToolsPathLabel.Top := 92;
+    ToolsPathLabel.Width := 422;
+    ToolsPathLabel.AutoSize := True;
+    ToolsPathLabel.Caption := ExpandConstant('{userappdata}') + '\Open Strings\tools\';
+    ToolsPathLabel.Font.Color := clGray;
+
+    ToolsHintLabel := TLabel.Create(Form);
+    ToolsHintLabel.Parent := Form;
+    ToolsHintLabel.Left := 38;
+    ToolsHintLabel.Top := 108;
+    ToolsHintLabel.Width := 422;
+    ToolsHintLabel.AutoSize := True;
+    ToolsHintLabel.Caption := 'Safe to keep — reused automatically if you reinstall Open Strings.';
+    ToolsHintLabel.Font.Color := clGray;
+
+    EditsCheck := TNewCheckBox.Create(Form);
+    EditsCheck.Parent := Form;
+    EditsCheck.Left := 20;
+    EditsCheck.Top := 148;
+    EditsCheck.Width := 440;
+    EditsCheck.Height := 20;
+    EditsCheck.Caption := 'My edits and backups';
+    EditsCheck.Checked := False;
+    EditsCheck.OnClick := @EditsCheckClick;
+
+    EditsPathLabel := TLabel.Create(Form);
+    EditsPathLabel.Parent := Form;
+    EditsPathLabel.Left := 38;
+    EditsPathLabel.Top := 172;
+    EditsPathLabel.Width := 422;
+    EditsPathLabel.AutoSize := True;
+    EditsPathLabel.Caption := GetDocumentsDir();
+    EditsPathLabel.Font.Color := clGray;
+
+    UninstallEditsWarnLabel := TLabel.Create(Form);
+    UninstallEditsWarnLabel.Parent := Form;
+    UninstallEditsWarnLabel.Left := 38;
+    UninstallEditsWarnLabel.Top := 188;
+    UninstallEditsWarnLabel.Width := 422;
+    UninstallEditsWarnLabel.Height := 28;
+    UninstallEditsWarnLabel.AutoSize := False;
+    UninstallEditsWarnLabel.WordWrap := True;
+    UninstallEditsWarnLabel.Caption := 'Warning: This will permanently delete your custom string edits and all backups.';
+    UninstallEditsWarnLabel.Font.Color := clMaroon;
+    UninstallEditsWarnLabel.Visible := False;
+
+    Bevel := TBevel.Create(Form);
+    Bevel.Parent := Form;
+    Bevel.Left := 20;
+    Bevel.Top := 246;
+    Bevel.Width := 440;
+    Bevel.Height := 2;
+    Bevel.Shape := bsTopLine;
+
+    UninstallButton := TNewButton.Create(Form);
+    UninstallButton.Parent := Form;
+    UninstallButton.Caption := 'Uninstall';
+    UninstallButton.Width := 90;
+    UninstallButton.Height := 28;
+    UninstallButton.Left := 262;
+    UninstallButton.Top := 260;
+    UninstallButton.ModalResult := mrOk;
+    UninstallButton.Default := True;
+
+    CancelButton := TNewButton.Create(Form);
+    CancelButton.Parent := Form;
+    CancelButton.Caption := 'Cancel';
+    CancelButton.Width := 90;
+    CancelButton.Height := 28;
+    CancelButton.Left := 370;
+    CancelButton.Top := 260;
+    CancelButton.ModalResult := mrCancel;
+    CancelButton.Cancel := True;
+
+    if Form.ShowModal() = mrOk then
+    begin
+      DeleteToolsOnUninstall := ToolsCheck.Checked;
+      DeleteEditsOnUninstall := EditsCheck.Checked;
+      Result := True;
+    end
+    else
+      Result := False;
+  finally
+    Form.Free();
+  end;
+end;
+
+function InitializeUninstall(): Boolean;
+begin
+  Result := ShowUninstallOptionsDialog();
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  ToolsDir: String;
+  UserDataDir: String;
 begin
   if CurUninstallStep = usUninstall then
   begin
-    { Same cleanup contract as install/upgrade: per-channel \cache gets
-      nuked, \backups + user.ini survive so a reinstall picks up where
-      the user left off. }
+    { Cache is always cleaned on uninstall (it is reproducible, not user data). }
     Log('Cleaning cached data during uninstall');
     CleanCachedData();
+    if DeleteToolsOnUninstall then
+    begin
+      ToolsDir := ExpandConstant('{userappdata}\Open Strings\tools');
+      if DirExists(ToolsDir) then
+      begin
+        Log('Deleting tools directory: ' + ToolsDir);
+        DelTree(ToolsDir, True, True, True);
+      end
+      else
+        Log('Tools directory not found (nothing to delete): ' + ToolsDir);
+    end
+    else
+      Log('Keeping tools directory as requested by user');
+    if DeleteEditsOnUninstall then
+    begin
+      UserDataDir := GetDocumentsDir();
+      if DirExists(UserDataDir) then
+      begin
+        Log('Deleting user data directory: ' + UserDataDir);
+        DelTree(UserDataDir, True, True, True);
+      end
+      else
+        Log('User data directory not found (nothing to delete): ' + UserDataDir);
+    end
+    else
+      Log('Keeping user edits and backups as requested by user');
   end;
 end;
 
