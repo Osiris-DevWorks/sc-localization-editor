@@ -25,6 +25,10 @@
 - [x] Fix Generate Enhancements and source reload wiping pending edits: snapshot/restore mechanism preserves un-Applied in-memory edits across all `_on_loading_finished` and `perform_merge_and_reload` paths
 - [x] Update unp4k / unforge to v4.0.83 (self-contained .NET 10 binaries)
 - [x] Runtime tool download: unp4k and unforge are no longer bundled in the installer; they are downloaded once on first extraction to `%APPDATA%\Open Strings\tools\` and reused automatically
+- [x] Fix quantum drive stats loss: entities whose XML `Localization` points to the `_SCItem` key variant (e.g. `item_DescQDRV_ARCC_S03_Fissure_SCItem`) now have stats propagated directly to the plain canonical key the merger picks (`item_DescQDRV_ARCC_S03_Fissure`), preventing silent discard. Affected 11 drives (Fissure, Impulse, Agni, Vesta, Drifter, Wanderer, Ranger, Erebos, Metis, Tyche, Balandin)
+- [x] Dynamic component type derivation: `comp_types` in the `_SCItem` propagation loop is now derived from base.ini key patterns at generation time rather than a hardcoded tuple — new component categories CIG adds in future patches are picked up automatically
+- [x] Zero-match warning: `scan_entity_dir` now logs a `WARNING` when a component directory produces 0 augmented entries despite finding loc-key matches, surfacing XML structure changes immediately at generation time
+- [x] Add `scripts/audit_dataforge_attrs.py` — patch testing tool that dumps all DataForge XML element·attribute pairs per component category and diffs them against a previous snapshot to identify new or removed attributes. See TESTING.md for the post-patch workflow
 - [ ] Test and verify compatibility with Star Citizen 4.8
 - [ ] Review and update localization tag handling for any 4.8 changes
 

@@ -2745,6 +2745,11 @@ def scan_entity_dir(
                             out[short_key] = f"{short_value} {tag}"
 
     logger.info(f"{entity_dir.name}: {matched} matched, {missed} no enhancements, {skipped} no loc key")
+    if matched == 0 and missed > 0:
+        logger.warning(
+            f"{entity_dir.name}: 0 enhancements generated despite {missed} loc-key matches — "
+            "DataForge XML structure may have changed (check attribute names in enhancement function)"
+        )
     return out
 
 
@@ -2960,12 +2965,32 @@ def main(
         # Propagate stats from _SCItem keys to their non-SCItem siblings (base.ini
         # carries both patterns: item_DescTYPE_..._SCItem and item_Desc_TYPE_...).
         # Same treatment for name labels (item_nameTYPE → item_Name_TYPE).
-        comp_types = ("COOL", "SHLD", "POWR", "QDRV", "RADR")
+        #
+        # Derive component type codes from base.ini rather than a hardcoded tuple.
+        # Scans for item_Desc_XXXX_ patterns (the canonical underscore form present
+        # for every component category). Any new category CIG adds in a future patch
+        # is picked up automatically on the next extraction + generation cycle.
+        _ct_pat = re.compile(r"^item_Desc_([A-Z]{2,6})_")
+        comp_types: frozenset[str] = frozenset(m.group(1) for k in loc for m in [_ct_pat.match(k)] if m) or frozenset(
+            ("COOL", "SHLD", "POWR", "QDRV", "RADR")
+        )  # fallback for empty loc in tests
         sibling_count = 0
         for key, value in list(out.items()):
             if not key.endswith("_SCItem"):
                 continue
             base_key = key[: -len("_SCItem")]
+            # Direct same-format propagation: item_DescXXX_*_SCItem → item_DescXXX_*
+            # This handles entities whose XML Localization points to the _SCItem variant
+            # (e.g. item_DescQDRV_ARCC_S03_Fissure_SCItem) while the merger picks the
+            # plain key (item_DescQDRV_ARCC_S03_Fissure) as the canonical winner.
+            # Without this, stats written to the _SCItem key are silently discarded.
+            if base_key not in out and base_key in loc:
+                stats_marker = ENHANCEMENT_SEPARATOR
+                if stats_marker in value:
+                    out[base_key] = loc[base_key] + value[value.index(stats_marker) :]
+                else:
+                    out[base_key] = value
+                sibling_count += 1
             for ct in comp_types:
                 desc_prefix = f"item_Desc{ct}_"
                 if base_key.startswith(desc_prefix):

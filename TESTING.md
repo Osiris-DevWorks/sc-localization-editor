@@ -166,18 +166,18 @@ uv run python src/main.py
 
 Coverage is measured automatically on every test run. GUI files (`main_window.py`, `config_tab.py`, etc.) are excluded — they are covered by the manual test plan in `TESTPLAN.md`.
 
-### Current coverage (as of v1.1.0)
+### Current coverage (as of v1.1.2)
 
 | Component               | Coverage | Notes                                                         |
 | ----------------------- | -------- | ------------------------------------------------------------- |
 | `ini_parser.py`         | 93%      | Lines 127–134 are dead code (category filter never triggered) |
-| `ini_merger.py`         | 98%      |                                                               |
-| `string_model.py`       | 77%      |                                                               |
+| `ini_merger.py`         | 97%      |                                                               |
+| `string_model.py`       | 75%      |                                                               |
 | `string_table_model.py` | 99%      |                                                               |
 | `overrides_manager.py`  | 100%     |                                                               |
-| `pak_extractor.py`      | 60%      | GUI-driven extraction paths not reachable without a real P4K  |
+| `pak_extractor.py`      | 55%      | GUI-driven extraction paths not reachable without a real P4K  |
 | `updater.py`            | 97%      |                                                               |
-| **Overall (non-GUI)**   | **88%**  | Floor enforced at 65% via `--cov-fail-under`                  |
+| **Overall (non-GUI)**   | **84%**  | Floor enforced at 65% via `--cov-fail-under`; 446 tests       |
 
 Coverage is uploaded as a `coverage.xml` artifact on every CI run (30-day retention).
 
@@ -280,6 +280,62 @@ This is expected and tested in `TestDataForgeExtraction::test_extract_dataforge_
 ```bash
 pytest tests/ -v -m "not slow"
 ```
+
+---
+
+## Patch Testing — After Each Star Citizen Update
+
+After CIG releases a patch, run this workflow to catch any enhancements breakage before users report it.
+
+### 1. Extract and regenerate
+
+1. Open the app → Enhancements tab → **Extract DataForge from P4K** (wait for completion)
+2. Click **Generate Enhancements** and watch the log for `WARNING` lines
+
+A warning like:
+
+```
+cooler: 0 enhancements generated despite 42 loc-key matches — DataForge XML structure may have changed
+```
+
+means CIG restructured that component's XML. The relevant `enhancements_*` function in
+`scripts/generate_enhancements_ini.py` needs updating.
+
+### 2. Audit attribute changes
+
+Run the audit script to diff DataForge XML attributes against the previous patch snapshot:
+
+```powershell
+# First patch after adding the script — no previous snapshot yet:
+uv run python scripts/audit_dataforge_attrs.py
+
+# Subsequent patches — diff against the previous version's snapshot:
+uv run python scripts/audit_dataforge_attrs.py --diff "$env:USERPROFILE\Documents\Open Strings\cache\dataforge_attrs_<prev_version>.txt"
+```
+
+Output flags:
+
+- `← NOT YET HANDLED — review needed`: CIG added a new attribute. Open the relevant `enhancements_*` function and decide whether to surface it as a stat line.
+- `← was being read` + listed under **REMOVED**: the XML was restructured and your parser is silently reading nothing. Fix immediately.
+- `← already handled`: no action needed.
+
+Snapshots are written to `Documents\Open Strings\cache\dataforge_attrs_<version>.txt` and `dataforge_attrs_latest.txt`.
+
+### 3. Spot-check in the app
+
+For any component category that had changes:
+
+1. Search for a known item (e.g., `item_DescQDRV_ARCC_S03_Echo`) in the table
+2. Verify the stats block is present and the numbers look plausible
+3. Check the log tab for any `sync_key_variants: conflict` warnings on enhancement keys — these indicate a new `_SCItem` variant pattern that may need investigation
+
+### 4. Run the automated suite
+
+```bash
+uv run pytest tests/ --tb=short
+```
+
+All 446 tests must pass before considering the patch verified.
 
 ---
 
