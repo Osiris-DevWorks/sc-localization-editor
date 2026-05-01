@@ -17,11 +17,14 @@
 - [x] Add RSI / Data.p4k disclaimer to README
 - [x] Install LICENSE and NOTICE.md alongside app via installer
 
-## 1.1.2 — Maintenance
+## 1.1.2 — Upstream fixes port + maintenance
 
+- [x] Port radar name tags from upstream 1.1.0: `[CLASS-S{size}-{grade}]` annotations for radar components, matching the existing pattern for shields, power plants, coolers, and quantum drives
+- [x] Port radar sibling-key propagation from upstream 1.1.0: `"RADR"` added to `comp_types` so radar stat blocks propagate from `_SCItem` keys to their non-SCItem siblings
+- [x] Fix Custom Value cell editor losing content on double-click: `EditRole` now returns `entry.custom_value` in `StringTableModel.data()`, preventing the delegate from receiving `None` and erasing unsaved text
+- [x] Fix Generate Enhancements and source reload wiping pending edits: snapshot/restore mechanism preserves un-Applied in-memory edits across all `_on_loading_finished` and `perform_merge_and_reload` paths
 - [ ] Test and verify compatibility with Star Citizen 4.8
 - [ ] Review and update localization tag handling for any 4.8 changes
-- [ ] General app testing and fixes as needed
 
 ### Testing infrastructure (completed during 1.1.0 → 1.1.1)
 

@@ -277,3 +277,16 @@
 - [x] Final enhancement data review
 - [x] Human read-through of all documentation for accuracy
 - [x] Ensure proper cleanup on uninstall
+
+# 1.1.0 Smart Citizen — post-production
+
+> The following changes were released in Smart Citizen v1.1.0 by Osiris DevWorks.
+> Items marked **[ported]** were merged into Open Strings 1.1.2.
+> Items marked **[held]** were not ported; reasons noted.
+
+- [x] Radar name tags: `scan_entity_dir` called with `generate_name_tags=True` for radar components, adding `[CLASS-S{size}-{grade}]` annotations matching other component types **[ported]**
+- [x] Radar sibling-key propagation: `"RADR"` added to `comp_types` so radar stat blocks copy from `_SCItem` keys to non-SCItem siblings **[ported]**
+- [x] Fix Custom Value cell editor erasing content on double-click: `EditRole` handling added to `StringTableModel.data()` **[ported]**
+- [x] Fix Generate Enhancements wiping pending edits: snapshot/restore of un-Applied in-memory edits across reload paths **[ported]**
+- [ ] Editor Side-Panel — held for Open Strings 1.2.0 (scope too large for a patch)
+- [ ] Journal timestamp annotations — held pending user decision on format

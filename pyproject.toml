@@ -1,6 +1,6 @@
 [project]
 name = "open-strings"
-version = "1.1.1"
+version = "1.1.2"
 description = "Open Strings desktop app"
 readme = "README.md"
 requires-python = ">=3.12"
