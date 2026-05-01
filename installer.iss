@@ -91,14 +91,6 @@ begin
               'user_data_dir', Dummy);
 end;
 
-function SuggestLocalDataDir(): String;
-begin
-  { Build a sensible default pointing at the local (non-OneDrive) profile.
-    %USERPROFILE% is the real NTFS path; \Documents here is the junction
-    that Windows keeps even when the shell's Personal has been redirected. }
-  Result := ExpandConstant('{%USERPROFILE}\Documents\Open Strings');
-end;
-
 function GetUninstallString(): String;
 var
   sUnInstPath: String;
@@ -210,11 +202,6 @@ begin
   Result := GetDocumentsBase() + '\Open Strings';
 end;
 
-procedure MigrateUserDocsFolder();
-begin
-  { No legacy folder migration — fresh install only. }
-end;
-
 procedure CleanPerChannelCaches(UserDataDir: String);
 var
   Channels: array[0..4] of String;
@@ -283,18 +270,43 @@ begin
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
+var
+  RegPath: String;
+  FinalPath: String;
+  DataDir: String;
 begin
-  if (CurStep=ssInstall) then
+  if CurStep = ssInstall then
   begin
-    if (IsUpgrade()) then
-    begin
+    if IsUpgrade() then
       UnInstallOldVersion();
-    end;
-
-      { Rebrand migration: no-op for this fork (clean break) }
-
-    { Clear cached data but preserve registry settings (source paths, preferences, etc.) }
     CleanCachedData();
+  end;
+  if CurStep = ssPostInstall then
+  begin
+    RegPath := 'Software\Joni Hayes\Open Strings';
+    { SC installation path — save the root folder picked on the wizard page
+      so the app reads sc_install_root directly on first launch. Also write
+      game_install_path for backwards-compat with the migration guard. }
+    FinalPath := SCDirectoryPage.Values[0];
+    if FinalPath <> '' then
+    begin
+      RegWriteStringValue(HKCU, RegPath, 'sc_install_root', FinalPath);
+      RegWriteStringValue(HKCU, RegPath, 'active_channel', 'LIVE');
+      RegWriteStringValue(HKCU, RegPath, 'game_install_path', FinalPath + '\LIVE');
+      Log('Saved sc_install_root=' + FinalPath + ', active_channel=LIVE');
+    end;
+    { Data directory — persist the user's choice (or the default if unchanged).
+      The app reads user_data_dir on every launch. }
+    if DataDirPromptShown then
+    begin
+      DataDir := DataDirPage.Values[0];
+      if DataDir <> '' then
+      begin
+        RegWriteStringValue(HKCU, RegPath, 'user_data_dir', DataDir);
+        ForceDirectories(DataDir);
+        Log('Saved user_data_dir: ' + DataDir);
+      end;
+    end;
   end;
 end;
 
@@ -316,73 +328,73 @@ var
   UninstallButton: TNewButton;
   CancelButton: TNewButton;
 begin
-  Form := CreateCustomForm(480, 312, False, False);
+  Form := CreateCustomForm(ScaleX(480), ScaleY(312), False, False);
   try
     Form.Caption := 'Uninstall Open Strings';
     Form.Position := poScreenCenter;
 
     DescLabel := TLabel.Create(Form);
     DescLabel.Parent := Form;
-    DescLabel.Left := 20;
-    DescLabel.Top := 20;
-    DescLabel.Width := 440;
-    DescLabel.Height := 34;
+    DescLabel.Left := ScaleX(20);
+    DescLabel.Top := ScaleY(20);
+    DescLabel.Width := ScaleX(440);
+    DescLabel.Height := ScaleY(34);
     DescLabel.AutoSize := False;
     DescLabel.WordWrap := True;
     DescLabel.Caption := 'Open Strings will be uninstalled. Choose what else to clean up:';
 
     ToolsCheck := TNewCheckBox.Create(Form);
     ToolsCheck.Parent := Form;
-    ToolsCheck.Left := 20;
-    ToolsCheck.Top := 68;
-    ToolsCheck.Width := 440;
-    ToolsCheck.Height := 20;
+    ToolsCheck.Left := ScaleX(20);
+    ToolsCheck.Top := ScaleY(68);
+    ToolsCheck.Width := ScaleX(440);
+    ToolsCheck.Height := ScaleY(20);
     ToolsCheck.Caption := 'Extraction tools  (~130 MB)';
     ToolsCheck.Checked := True;
 
     ToolsPathLabel := TLabel.Create(Form);
     ToolsPathLabel.Parent := Form;
-    ToolsPathLabel.Left := 38;
-    ToolsPathLabel.Top := 92;
-    ToolsPathLabel.Width := 422;
+    ToolsPathLabel.Left := ScaleX(38);
+    ToolsPathLabel.Top := ScaleY(92);
+    ToolsPathLabel.Width := ScaleX(422);
     ToolsPathLabel.AutoSize := True;
     ToolsPathLabel.Caption := ExpandConstant('{userappdata}') + '\Open Strings\tools\';
     ToolsPathLabel.Font.Color := clGray;
 
     ToolsHintLabel := TLabel.Create(Form);
     ToolsHintLabel.Parent := Form;
-    ToolsHintLabel.Left := 38;
-    ToolsHintLabel.Top := 108;
-    ToolsHintLabel.Width := 422;
+    ToolsHintLabel.Left := ScaleX(38);
+    ToolsHintLabel.Top := ScaleY(108);
+    ToolsHintLabel.Width := ScaleX(422);
     ToolsHintLabel.AutoSize := True;
     ToolsHintLabel.Caption := 'Safe to keep — reused automatically if you reinstall Open Strings.';
     ToolsHintLabel.Font.Color := clGray;
 
     EditsCheck := TNewCheckBox.Create(Form);
     EditsCheck.Parent := Form;
-    EditsCheck.Left := 20;
-    EditsCheck.Top := 148;
-    EditsCheck.Width := 440;
-    EditsCheck.Height := 20;
+    EditsCheck.Left := ScaleX(20);
+    EditsCheck.Top := ScaleY(148);
+    EditsCheck.Width := ScaleX(440);
+    EditsCheck.Height := ScaleY(20);
     EditsCheck.Caption := 'My edits and backups';
     EditsCheck.Checked := False;
     EditsCheck.OnClick := @EditsCheckClick;
 
     EditsPathLabel := TLabel.Create(Form);
     EditsPathLabel.Parent := Form;
-    EditsPathLabel.Left := 38;
-    EditsPathLabel.Top := 172;
-    EditsPathLabel.Width := 422;
+    EditsPathLabel.Left := ScaleX(38);
+    EditsPathLabel.Top := ScaleY(172);
+    EditsPathLabel.Width := ScaleX(422);
     EditsPathLabel.AutoSize := True;
     EditsPathLabel.Caption := GetDocumentsDir();
     EditsPathLabel.Font.Color := clGray;
 
     UninstallEditsWarnLabel := TLabel.Create(Form);
     UninstallEditsWarnLabel.Parent := Form;
-    UninstallEditsWarnLabel.Left := 38;
-    UninstallEditsWarnLabel.Top := 188;
-    UninstallEditsWarnLabel.Width := 422;
-    UninstallEditsWarnLabel.Height := 28;
+    UninstallEditsWarnLabel.Left := ScaleX(38);
+    UninstallEditsWarnLabel.Top := ScaleY(188);
+    UninstallEditsWarnLabel.Width := ScaleX(422);
+    UninstallEditsWarnLabel.Height := ScaleY(28);
     UninstallEditsWarnLabel.AutoSize := False;
     UninstallEditsWarnLabel.WordWrap := True;
     UninstallEditsWarnLabel.Caption := 'Warning: This will permanently delete your custom string edits and all backups.';
@@ -392,29 +404,29 @@ begin
     Bevel := TNewStaticText.Create(Form);
     Bevel.Parent := Form;
     Bevel.Left := 0;
-    Bevel.Top := 246;
-    Bevel.Width := 480;
-    Bevel.Height := 2;
+    Bevel.Top := ScaleY(246);
+    Bevel.Width := ScaleX(480);
+    Bevel.Height := ScaleY(2);
     Bevel.Caption := '';
     Bevel.AutoSize := False;
 
     UninstallButton := TNewButton.Create(Form);
     UninstallButton.Parent := Form;
     UninstallButton.Caption := 'Uninstall';
-    UninstallButton.Width := 90;
-    UninstallButton.Height := 28;
-    UninstallButton.Left := 262;
-    UninstallButton.Top := 260;
+    UninstallButton.Width := ScaleX(90);
+    UninstallButton.Height := ScaleY(28);
+    UninstallButton.Left := ScaleX(262);
+    UninstallButton.Top := ScaleY(260);
     UninstallButton.ModalResult := mrOk;
     UninstallButton.Default := True;
 
     CancelButton := TNewButton.Create(Form);
     CancelButton.Parent := Form;
     CancelButton.Caption := 'Cancel';
-    CancelButton.Width := 90;
-    CancelButton.Height := 28;
-    CancelButton.Left := 370;
-    CancelButton.Top := 260;
+    CancelButton.Width := ScaleX(90);
+    CancelButton.Height := ScaleY(28);
+    CancelButton.Left := ScaleX(370);
+    CancelButton.Top := ScaleY(260);
     CancelButton.ModalResult := mrCancel;
     CancelButton.Cancel := True;
 
@@ -628,7 +640,7 @@ begin
     to store Open Strings' cache + user.ini on a local path instead.
     The page is *always* created (so ShouldSkipPage has something to
     reference) but hidden when it doesn't apply. DataDirPromptShown
-    records whether it was actually exposed, so CurFinished only persists
+    records whether it was actually exposed, so CurStepChanged only persists
     a value the user was given the chance to see. }
   DataDirDesc := 'Open Strings extracts and caches game data, stores your custom string edits, and keeps '
     + 'automatic backups here.' + #13#10 + #13#10
@@ -667,47 +679,5 @@ begin
       Result := True
     else
       DataDirPromptShown := True;
-  end;
-end;
-
-procedure CurFinished(LastStep: TSetupStep);
-var
-  RegPath: String;
-  FinalPath: String;
-  DataDir: String;
-begin
-  if LastStep = ssPostInstall then
-  begin
-    RegPath := 'Software\Joni Hayes\Open Strings';
-
-    { SC installation path — the user picked the LIVE (or other channel)
-      subfolder. Derive the install root by stripping the trailing channel
-      name so the app reads sc_install_root directly without needing
-      the legacy migration to fire first. Also write game_install_path for
-      backwards-compat with the migration guard. }
-    FinalPath := SCDirectoryPage.Values[0];
-    if FinalPath <> '' then
-    begin
-      RegWriteStringValue(HKCU, RegPath, 'sc_install_root', FinalPath);
-      RegWriteStringValue(HKCU, RegPath, 'active_channel', 'LIVE');
-      { Legacy key: store the LIVE channel path for old code paths. }
-      RegWriteStringValue(HKCU, RegPath, 'game_install_path', FinalPath + '\LIVE');
-      Log('Saved sc_install_root=' + FinalPath + ', active_channel=LIVE');
-    end;
-
-    { Data directory — always persist the user's choice (or the default
-      Documents\Open Strings\ if they left it unchanged). The app reads
-      user_data_dir on every launch; writing it here means the value is
-      set consistently regardless of whether Documents is on OneDrive. }
-    if DataDirPromptShown then
-    begin
-      DataDir := DataDirPage.Values[0];
-      if DataDir <> '' then
-      begin
-        RegWriteStringValue(HKCU, RegPath, 'user_data_dir', DataDir);
-        ForceDirectories(DataDir);
-        Log('Saved user_data_dir: ' + DataDir);
-      end;
-    end;
   end;
 end;
