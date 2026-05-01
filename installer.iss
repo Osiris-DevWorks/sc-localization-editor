@@ -471,6 +471,13 @@ begin
     end
     else
       Log('Keeping tools directory as requested by user');
+    { Remove the parent AppData\Open Strings folder if it is now empty
+      (e.g. tools were the only thing in it). RemoveDir is a no-op on
+      non-empty directories, so this is safe regardless of user choice. }
+    if RemoveDir(ExpandConstant('{userappdata}\Open Strings')) then
+      Log('Removed empty AppData\Open Strings directory')
+    else
+      Log('AppData\Open Strings directory kept (not empty or already gone)');
     if DeleteEditsOnUninstall then
     begin
       UserDataDir := GetDocumentsDir();
