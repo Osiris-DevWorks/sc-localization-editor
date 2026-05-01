@@ -2954,13 +2954,13 @@ def main(
         radar_dir = ships_scitem / "radar"
         if radar_dir.exists():
             logger.info(f"Processing radars from {radar_dir}…")
-            out.update(scan_entity_dir(radar_dir, enhancements_radar, loc=loc))
+            out.update(scan_entity_dir(radar_dir, enhancements_radar, loc=loc, generate_name_tags=True))
         else:
             logger.info("No radar directory found in cache")
         # Propagate stats from _SCItem keys to their non-SCItem siblings (base.ini
         # carries both patterns: item_DescTYPE_..._SCItem and item_Desc_TYPE_...).
         # Same treatment for name labels (item_nameTYPE → item_Name_TYPE).
-        comp_types = ("COOL", "SHLD", "POWR", "QDRV")
+        comp_types = ("COOL", "SHLD", "POWR", "QDRV", "RADR")
         sibling_count = 0
         for key, value in list(out.items()):
             if not key.endswith("_SCItem"):
