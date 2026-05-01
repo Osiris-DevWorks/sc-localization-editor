@@ -10,7 +10,7 @@
     {
       "id": "extract",
       "title": "1. Extract from Data.p4k",
-      "description": "Clicking Extract unpacks your installed game's stock localization file. You should be prompted to run this if your current file becomes stale due to a patch, but if not, you can always run it manually. The strings reload into the table automatically when extraction finishes.",
+      "description": "Clicking Extract unpacks your installed game's stock localization file. On your very first extraction, Open Strings will download two small tools (~130 MB, one-time only). After that, extraction runs locally from your installed game data. The strings reload into the table automatically when extraction finishes.",
       "preferred_side": "above"
     },
     {
