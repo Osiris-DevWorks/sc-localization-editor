@@ -60,7 +60,8 @@ class EnhancementsTab(QWidget):
 
         enhancements_desc = QLabel(
             "Select which enhancement categories to include. "
-            "Click Apply to save changes. Enhancements are generated from your installed Data.p4k."
+            "Click Apply to save changes. Enhancements are generated from your installed Data.p4k. "
+            "Stats for items added in the latest patch may be incomplete until an app update is available."
         )
         enhancements_desc.setProperty("role", "secondary")
         enhancements_desc.setStyleSheet("font-size: 11px;")
