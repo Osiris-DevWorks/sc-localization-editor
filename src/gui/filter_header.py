@@ -60,10 +60,14 @@ class FilterHeaderView(QHeaderView):
 
     def paintSection(self, painter, rect, logicalIndex):
         """Paint the header label in the top portion only, not centered over the full height."""
-        # With viewport margins, the rect should already be the label-only area,
-        # but clamp to base height to be safe.
+        # During transient layout passes (theme swap, dock toggle, splitter drag,
+        # font load), rect.height() can momentarily collapse below base_h. The
+        # previous min(rect.height(), base_h) clamp then painted the label into
+        # a near-zero rect, and that paint stuck until a full re-layout — which
+        # for users meant restarting the app to get header text back. Force the
+        # full base_h here; Qt clips on its own if rect is genuinely smaller.
         base_h = super().sizeHint().height()
-        top_rect = QRect(rect.x(), rect.y(), rect.width(), min(rect.height(), base_h))
+        top_rect = QRect(rect.x(), rect.y(), rect.width(), base_h)
         super().paintSection(painter, top_rect, logicalIndex)
 
     # ------------------------------------------------------------------

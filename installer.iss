@@ -127,10 +127,39 @@ begin
   Log('Cleared stale uninstall registry entry (unins000.exe was missing)');
 end;
 
+function WaitForUninstallToFinish(MaxSeconds: Integer): Boolean;
+var
+  RegPath: String;
+  Dummy:   String;
+  Elapsed: Integer;
+begin
+  { Inno Setup's silent uninstaller detaches to %TEMP%\_iu*.tmp, so
+    ewWaitUntilTerminated returns as soon as the launcher exits — not when
+    the real cleanup finishes. Poll for the AppId Uninstall registry key to
+    disappear; that's the very last thing the temp copy does before it
+    exits. }
+  RegPath := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#emit SetupSetting("AppId")}_is1';
+  Elapsed := 0;
+  while Elapsed < MaxSeconds * 4 do
+  begin
+    if (not RegQueryStringValue(HKLM, RegPath, 'UninstallString', Dummy)) and
+       (not RegQueryStringValue(HKCU, RegPath, 'UninstallString', Dummy)) then
+    begin
+      Result := True;
+      Exit;
+    end;
+    Sleep(250);
+    Elapsed := Elapsed + 1;
+  end;
+  Result := False;
+end;
+
 function UnInstallOldVersion(): Integer;
 var
   sUnInstallString: String;
-  iResultCode: Integer;
+  iResultCode:      Integer;
+  SavedStatus:      String;
+  SavedStyle:       TProgressBarStyle;
 begin
   { Return Values:
     1 - uninstall string is empty
@@ -165,7 +194,33 @@ begin
     Exit;
   end;
 
-  if Exec(sUnInstallString, '/SILENT /NORESTART /SUPPRESSMSGBOXES','', SW_HIDE, ewWaitUntilTerminated, iResultCode) then
+  { Distinct upgrade step: tell the user what's happening while we wait,
+    then block until the old uninstaller has fully removed itself. Without
+    this, Inno Setup's silent uninstaller detaches to %TEMP%\_iu*.tmp and
+    returns control before its final cleanup pass runs. That tail end would
+    then race the [Files] section and delete the newly-written unins000.exe
+    and AppId registry entry — leaving the app installed with no way to
+    remove it from Apps & Features. }
+  SavedStatus := WizardForm.StatusLabel.Caption;
+  SavedStyle  := WizardForm.ProgressGauge.Style;
+  WizardForm.StatusLabel.Caption  := 'Uninstalling previous version...';
+  WizardForm.ProgressGauge.Style  := npbstMarquee;
+  WizardForm.Update;
+
+  Exec(sUnInstallString, '/SILENT /NORESTART /SUPPRESSMSGBOXES','', SW_HIDE, ewWaitUntilTerminated, iResultCode);
+
+  { Race fix: wait for the old uninstaller's registry-key deletion (its
+    actual last act) before we copy any files. Timeout after 90 s. }
+  if not WaitForUninstallToFinish(90) then
+    Log('WARNING: timed out waiting for old uninstaller to finish (90s). '
+      + 'The new install may produce a broken uninstaller; user should '
+      + 'uninstall and reinstall manually if Apps & Features entry is missing.');
+
+  WizardForm.StatusLabel.Caption := SavedStatus;
+  WizardForm.ProgressGauge.Style := SavedStyle;
+  WizardForm.Update;
+
+  if iResultCode = 0 then
     Result := 3
   else
     Result := 2;
