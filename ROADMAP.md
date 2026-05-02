@@ -40,3 +40,7 @@
 - [x] `StringTableModel` covered by 85 automated tests via `pytest-qt`; two Qt compliance bugs found and fixed
 - [x] `ini_parser.py` coverage raised from 54% to 93% with 13 new tests
 - [x] Overall non-GUI coverage: 88% across 413 tests
+
+## Future / Backlog
+
+- [ ] Create `dataforge-extract` dev branch: isolate `scripts/generate_enhancements_ini.py`, `scripts/audit_dataforge_attrs.py`, `src/utils/dataforge_patcher.py`, and `src/utils/pak_extractor.py` as a reusable DataForge extraction library for other SC projects (crafting explorer, blueprint database, loot table viewer). The blueprint chain (contract → pool → blueprint record → crafting record → entity UUID → display name) is the most portable piece.
