@@ -26,33 +26,42 @@ if "%SC_SELF_SIGN%"=="1" (
 
 if "%SELF_SIGN%"=="1" (
     echo Code signing: SELF-SIGNED  ^(integrity only; SmartScreen warning remains^)
-) else if "%SIGN_BUILD%"=="1" (
-    echo Code signing: ENABLED ^(CA cert^)
-) else (
-    echo Code signing: not configured. Choose an option:
-    echo.
-    echo   1^) Unsigned     - SmartScreen "Unknown Publisher" warning
-    echo   2^) Self-signed  - temporary cert, integrity only ^(no CA required^)
-    echo   3^) Certificate  - cert-store thumbprint or PFX file
-    echo.
-    set /p SIGN_CHOICE=Choice [1/2/3] (default 1): 
-    echo.
-    if "!SIGN_CHOICE!"=="2" (
-        set SIGN_BUILD=1
-        set SELF_SIGN=1
-        echo Code signing: SELF-SIGNED  ^(integrity only; SmartScreen warning remains^)
-    ) else if "!SIGN_CHOICE!"=="3" (
-        set SIGN_BUILD=1
-        set /p SC_SIGN_THUMB=  Thumbprint (SHA-1 from certmgr.msc, or blank to use PFX): 
-        if "!SC_SIGN_THUMB!"=="" (
-            set /p SC_SIGN_CERT=  PFX path: 
-            set /p SC_SIGN_PASSWORD=  PFX password (blank if none): 
-        )
-        echo Code signing: ENABLED ^(cert^)
-    ) else (
-        echo Code signing: DISABLED  ^(unsigned^)
-    )
+    goto :sign_ready
 )
+if "%SIGN_BUILD%"=="1" (
+    echo Code signing: ENABLED ^(CA cert^)
+    goto :sign_ready
+)
+
+echo Code signing: not configured. Choose an option:
+echo.
+echo   1) Unsigned     - SmartScreen "Unknown Publisher" warning
+echo   2) Self-signed  - temporary cert, integrity only (no CA required)
+echo   3) Certificate  - cert-store thumbprint or PFX file
+echo.
+set /p SIGN_CHOICE=Choice [1/2/3] (default 1): 
+echo.
+if "!SIGN_CHOICE!"=="2" goto :sign_self
+if "!SIGN_CHOICE!"=="3" goto :sign_cert
+echo Code signing: DISABLED  (unsigned)
+goto :sign_ready
+
+:sign_self
+set SIGN_BUILD=1
+set SELF_SIGN=1
+echo Code signing: SELF-SIGNED  (integrity only; SmartScreen warning remains)
+goto :sign_ready
+
+:sign_cert
+set SIGN_BUILD=1
+set /p SC_SIGN_THUMB=  Thumbprint (SHA-1 from certmgr.msc, or blank to use PFX): 
+if "!SC_SIGN_THUMB!"=="" (
+    set /p SC_SIGN_CERT=  PFX path: 
+    set /p SC_SIGN_PASSWORD=  PFX password (blank if none): 
+)
+echo Code signing: ENABLED ^(cert^)
+
+:sign_ready
 echo.
 
 echo Step 1: Cleaning old builds...
