@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 :: Always run from the project root regardless of where this script is invoked from
 cd /d "%~dp0..\.."
 
@@ -28,7 +29,29 @@ if "%SELF_SIGN%"=="1" (
 ) else if "%SIGN_BUILD%"=="1" (
     echo Code signing: ENABLED ^(CA cert^)
 ) else (
-    echo Code signing: DISABLED  ^(set SC_SIGN_THUMB, SC_SIGN_CERT, or SC_SELF_SIGN=1 to enable^)
+    echo Code signing: not configured. Choose an option:
+    echo.
+    echo   1^) Unsigned     - SmartScreen "Unknown Publisher" warning
+    echo   2^) Self-signed  - temporary cert, integrity only ^(no CA required^)
+    echo   3^) Certificate  - cert-store thumbprint or PFX file
+    echo.
+    set /p SIGN_CHOICE=Choice [1/2/3] (default 1): 
+    echo.
+    if "!SIGN_CHOICE!"=="2" (
+        set SIGN_BUILD=1
+        set SELF_SIGN=1
+        echo Code signing: SELF-SIGNED  ^(integrity only; SmartScreen warning remains^)
+    ) else if "!SIGN_CHOICE!"=="3" (
+        set SIGN_BUILD=1
+        set /p SC_SIGN_THUMB=  Thumbprint (SHA-1 from certmgr.msc, or blank to use PFX): 
+        if "!SC_SIGN_THUMB!"=="" (
+            set /p SC_SIGN_CERT=  PFX path: 
+            set /p SC_SIGN_PASSWORD=  PFX password (blank if none): 
+        )
+        echo Code signing: ENABLED ^(cert^)
+    ) else (
+        echo Code signing: DISABLED  ^(unsigned^)
+    )
 )
 echo.
 
@@ -44,7 +67,7 @@ if "%SELF_SIGN%"=="1" (
 ) else if "%SIGN_BUILD%"=="1" (
     uv run python scripts\build\build_exe.py --sign
 ) else (
-    uv run python scripts\build\build_exe.py
+    uv run python scripts\build\build_exe.py --no-prompt
 )
 if errorlevel 1 (
     echo ERROR: Failed to build executable

@@ -60,6 +60,12 @@ dist/
 *.manifest
 version_info.txt
 
+# Code-signing — never commit certificates or keys
+*.pfx
+*.p12
+*.cer
+*.key
+
 # Allow current spec and build scripts (needed for builds from any computer)
 !OpenStrings.spec
 !scripts/build/

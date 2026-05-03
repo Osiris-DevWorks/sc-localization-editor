@@ -3,6 +3,7 @@ Build script for creating Open Strings executable
 
 Usage:
     python build_exe.py                        # build only; prompts for signing if TTY
+    python build_exe.py --no-prompt            # build only; skip signing prompt (used by build_all.bat)
     python build_exe.py --sign                 # build and sign using env vars / prompt
     python build_exe.py --self-sign            # build and self-sign with a temp cert
     python build_exe.py --sign-file PATH       # sign an existing file (skip build)
@@ -306,6 +307,11 @@ parser.add_argument(
     metavar="PATH",
     help="Sign an existing file and exit (skips the build step).",
 )
+parser.add_argument(
+    "--no-prompt",
+    action="store_true",
+    help="Skip the interactive signing prompt and leave the build unsigned (used by build_all.bat).",
+)
 args = parser.parse_args()
 
 # --sign-file: sign only, no build
@@ -390,5 +396,5 @@ else:
         print()
     else:
         # Interactive: prompt when running in a terminal and no signing is configured
-        if not _SIGNING_CONFIGURED:
+        if not _SIGNING_CONFIGURED and not args.no_prompt:
             prompt_signing([exe_path])
