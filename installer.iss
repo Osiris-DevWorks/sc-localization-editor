@@ -159,7 +159,7 @@ var
   sUnInstallString: String;
   iResultCode:      Integer;
   SavedStatus:      String;
-  SavedStyle:       TProgressBarStyle;
+  SavedStyle:       TNewProgressBarStyle;
 begin
   { Return Values:
     1 - uninstall string is empty
