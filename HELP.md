@@ -17,7 +17,7 @@ When extraction finishes, the extracted `base.ini` is loaded into the table auto
 - Double-click any **Custom Value** cell to edit text.
 - **Default Value** — original text from `Data.p4k`-extracted `base.ini`.
 - **Current Value** — the effective value before your override (base + any imported INI layers).
-- **Custom Value** — your personal edit. Saved automatically on every change and persisted to `Documents\Open Strings\<channel>\user.ini` (each Star Citizen channel — LIVE, PTU, EPTU, HOTFIX, TECH-PREVIEW — has its own isolated overrides).
+- **Custom Value** — your personal edit. Saved automatically on every change and persisted to `<data folder>\<channel>\user.ini` (the data folder defaults to `Documents\Open Strings`; each Star Citizen channel — LIVE, PTU, EPTU, HOTFIX, TECH-PREVIEW — has its own isolated overrides).
 - Edits are highlighted with a **Modified** status (green).
 
 ## 3. Preview Pane
@@ -59,7 +59,7 @@ Use the **Category** filter to focus on one domain:
 
 ## 7. Apply Changes to Game
 
-Click **Apply to Game** to write your edits to the game installation. A timestamped backup of the current `global.ini` is created in `Documents\Open Strings\<channel>\backups\` before anything is overwritten.
+Click **Apply to Game** to write your edits to the game installation. A timestamped backup of the current `global.ini` is created in `<data folder>\<channel>\backups\` before anything is overwritten.
 
 ## 8. Restore a Backup
 
@@ -67,7 +67,7 @@ Click **Restore Backup** to revert to a previous version. Open Strings keeps up 
 
 ## 9. Clear Localization
 
-Click **Clear Localization** to delete the custom `global.ini` from the game directory, reverting the game to its default (vanilla) text. Your saved overrides in `Documents\Open Strings\<channel>\user.ini` are untouched and can be re-applied anytime.
+Click **Clear Localization** to delete the custom `global.ini` from the game directory, reverting the game to its default (vanilla) text. Your saved overrides in `<data folder>\<channel>\user.ini` are untouched and can be re-applied anytime.
 
 ## 10. Import INI
 
@@ -75,7 +75,7 @@ Use **Import INI** in the **Config** tab to fold an existing INI file into your 
 
 ## 11. After Game Updates
 
-When Star Citizen updates, your edits are preserved in `Documents\Open Strings\<channel>\user.ini`. Re-run **Extract from Data.p4k** to pull fresh stock strings from the patched game — the table reloads automatically and your customizations re-apply on top.
+When Star Citizen updates, your edits are preserved in `<data folder>\<channel>\user.ini`. Re-run **Extract from Data.p4k** to pull fresh stock strings from the patched game — the table reloads automatically and your customizations re-apply on top.
 
 ## Enhancements Tab
 
@@ -88,6 +88,7 @@ When Star Citizen updates, your edits are preserved in `Documents\Open Strings\<
 
 - **Appearance** — pick the app theme (see below).
 - **Star Citizen Installation** — path to your LIVE directory; auto-detected at install time, editable here.
+- **Open Strings Data** — folder for `user.ini`, caches, DataForge extraction, enhancement INIs, and backups. Defaults to `Documents\Open Strings`; move it off OneDrive-synced Documents if extraction or cache cleanup is slow.
 - **Base Localization (P4K Extraction)** — click **Extract from Data.p4k** to unpack stock localization plus DataForge entity data directly from your installed game. This is the sole source for base strings and enhancement data.
 - **Import INI** — fold an existing INI file into your overrides via the conflict-resolution dialog.
 

@@ -187,5 +187,46 @@ class TestAvailableChannels:
         assert AppSettings.get_available_channels() == []
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# User data directory override
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+class TestUserDataDirOverride:
+    def test_user_data_dir_override_wins(self, isolated_qsettings, tmp_path):
+        custom_dir = tmp_path / "Custom Open Strings Data"
+
+        AppSettings.set_user_data_dir(custom_dir)
+
+        assert AppSettings.get_user_data_dir() == custom_dir
+        assert custom_dir.exists()
+
+    def test_user_data_dir_alias_is_honored(self, isolated_qsettings, tmp_path):
+        custom_dir = tmp_path / "Alias Open Strings Data"
+        AppSettings.settings().setValue("UserDataDir", str(custom_dir))
+
+        assert AppSettings.get_user_data_dir() == custom_dir
+        # Alias should have been migrated to canonical key
+        assert AppSettings.settings().value(AppSettings.USER_DATA_DIR, "") == str(custom_dir)
+
+    def test_channel_paths_nest_under_custom_user_data_dir(self, isolated_qsettings, tmp_path):
+        custom_dir = tmp_path / "Custom Data"
+        AppSettings.set_user_data_dir(custom_dir)
+        AppSettings.set_active_channel("PTU")
+
+        assert AppSettings.get_cache_dir() == custom_dir / "PTU" / "cache"
+        assert AppSettings.get_user_ini_path() == custom_dir / "PTU" / "user.ini"
+
+    def test_clearing_user_data_dir_reverts_to_documents_default(self, isolated_qsettings, tmp_path, monkeypatch):
+        docs_dir = tmp_path / "Documents"
+        monkeypatch.setattr(AppSettings, "_resolve_docs_base", staticmethod(lambda: docs_dir))
+
+        AppSettings.set_user_data_dir(tmp_path / "Custom Data")
+        AppSettings.set_user_data_dir(None)
+
+        assert AppSettings.get_user_data_dir() == docs_dir / "Open Strings"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

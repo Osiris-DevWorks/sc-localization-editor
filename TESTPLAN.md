@@ -14,6 +14,7 @@ Run against the built `dist/OpenStrings-1.0.0-Setup.exe`.
 - [ ] **Reinstall over existing** — no duplicate migrations, no data loss, no zombie uninstall entry
 - [ ] **OneDrive-redirected Documents** — installer's `IsDocsOnOneDrive` page fires; user redirects to local path; `USER_DATA_DIR` override written; app respects it
 - [ ] **OneDrive + override already set** — installer skips the redirect page (`HasDataDirOverride`)
+- [ ] **Config tab data folder override** — change Open Strings Data to a custom local path; app reloads, `user.ini`/cache/backups resolve under `<custom>\<channel>\`, and Reset returns to `Documents\Open Strings`
 - [ ] **Uninstall → reinstall** — preserves `backups/`, registry settings, and `user.ini` across the cycle
 - [ ] **Uninstall** does NOT delete `Documents\Open Strings\backups\`
 
@@ -26,7 +27,7 @@ For **each channel you have installed** (minimum: LIVE; ideally also PTU):
 - [ ] `Channel: {NAME}` shown in status bar; SC-version string carries suffix (e.g. `SC v4.7.176-PTU`)
 - [ ] Switching channels triggers the enhancement-categories prompt **every** switch (not just first)
 - [ ] Switching to an **un-extracted** channel prompts to extract, doesn't load stale data
-- [ ] `Documents\Open Strings\{channel}\` has its own `cache/`, `backups/`, `dataforge/`, `user.ini` — zero cross-contamination
+- [ ] `<data folder>\{channel}\` has its own `cache/`, `backups/`, `dataforge/`, `user.ini` — zero cross-contamination
 - [ ] **PTU DataForge extraction succeeds** (validates bundled `unforge.exe` v4.0.83 PTU DCB fix)
 - [ ] `⚠` hint appears when the stored active channel's P4K is missing
 

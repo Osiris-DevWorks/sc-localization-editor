@@ -102,6 +102,10 @@ class AppSettings:
     # Documents redirected to OneDrive can point this at a local path to
     # avoid slow extraction / rmtree races on OneDrive-synced folders.
     USER_DATA_DIR = "user_data_dir"
+    # Compatibility alias — older docs/manual registry edits used ``UserDataDir``.
+    # The installer and current app write ``user_data_dir``; read both so either
+    # spelling works and migrate lazily on first read.
+    USER_DATA_DIR_ALIASES = ("UserDataDir",)
 
     # Settings keys - Data sources (new)
     # Prefix: data_sources/{source_name}/
@@ -451,13 +455,43 @@ class AppSettings:
         return docs_path
 
     @staticmethod
+    def _get_user_data_dir_override() -> str:
+        """Return the configured user-data directory override, if any.
+
+        Current builds store this as ``user_data_dir``. Some docs and manual
+        support notes referred to ``UserDataDir``; migrate that alias lazily
+        so users who followed those instructions don't fall back to Documents.
+        """
+        settings = AppSettings.settings()
+        raw = settings.value(AppSettings.USER_DATA_DIR, "", type=str)
+        if raw and str(raw).strip():
+            return str(raw).strip()
+
+        for alias in AppSettings.USER_DATA_DIR_ALIASES:
+            raw_alias = settings.value(alias, "", type=str)
+            if raw_alias and str(raw_alias).strip():
+                value = str(raw_alias).strip()
+                settings.setValue(AppSettings.USER_DATA_DIR, value)
+                settings.sync()
+                logger.info(f"Migrated user data directory setting {alias} → {AppSettings.USER_DATA_DIR}: {value}")
+                return value
+
+        return ""
+
+    @staticmethod
+    def get_user_data_dir_override() -> str:
+        """Return the explicit user-data directory override, or ``""`` when unset."""
+        return AppSettings._get_user_data_dir_override()
+
+    @staticmethod
     def get_user_data_dir() -> Path:
         r"""Get the user data directory.
 
         Resolution order:
-          1. Registry override ``USER_DATA_DIR`` — set by users who want the
-             cache/user.ini off a OneDrive-synced Documents folder (extraction
-             and rmtree are much slower under OneDrive's sync hooks).
+          1. Registry override ``user_data_dir`` (or legacy alias ``UserDataDir``)
+             — set by users who want the cache/user.ini off a OneDrive-synced
+             Documents folder (extraction and rmtree are much slower under
+             OneDrive's sync hooks). Environment variables and ``~`` are expanded.
           2. ``Documents\Open Strings\`` via the ``Personal`` shell-folder
              key, which honors OneDrive/folder redirection.
           3. ``~/Documents/Open Strings\`` as a last-ditch fallback.
@@ -465,15 +499,17 @@ class AppSettings:
         Returns:
             Path to the resolved directory (created if needed).
         """
-        override = AppSettings.settings().value(AppSettings.USER_DATA_DIR, "", type=str)
+        import os
+
+        override = AppSettings._get_user_data_dir_override()
         if override:
-            override_path = Path(override)
+            override_path = Path(os.path.expandvars(override)).expanduser().resolve()
             try:
                 override_path.mkdir(parents=True, exist_ok=True)
                 return override_path
             except OSError as e:
                 logger.warning(
-                    f"USER_DATA_DIR override {override!r} not usable ({e}); falling back to Documents default"
+                    f"user_data_dir override {override!r} not usable ({e}); falling back to Documents default"
                 )
         data_dir = AppSettings._resolve_docs_base() / "Open Strings"
         data_dir.mkdir(parents=True, exist_ok=True)
@@ -487,11 +523,19 @@ class AppSettings:
         Writes to the per-user QSettings registry node (same scope as every
         other AppSettings value), so it survives reinstalls.
         """
+        import os
+
+        settings = AppSettings.settings()
         if not path:
-            AppSettings.settings().remove(AppSettings.USER_DATA_DIR)
+            settings.remove(AppSettings.USER_DATA_DIR)
+            for alias in AppSettings.USER_DATA_DIR_ALIASES:
+                settings.remove(alias)
         else:
-            AppSettings.settings().setValue(AppSettings.USER_DATA_DIR, str(path))
-        AppSettings.settings().sync()
+            expanded = Path(os.path.expandvars(str(path))).expanduser().resolve()
+            settings.setValue(AppSettings.USER_DATA_DIR, str(expanded))
+            for alias in AppSettings.USER_DATA_DIR_ALIASES:
+                settings.remove(alias)
+        settings.sync()
 
     # ── Channel selection API ────────────────────────────────────────────────
 

@@ -9,6 +9,10 @@ by Osiris DevWorks.
 This fork has been modified by Joni Hayes starting in 2026. The original
 "Smart Citizen" branding, logos, and donation links have been removed.
 
+The configurable data folder feature was adapted from a community contribution
+to the Smart Citizen upstream by Coerwyn
+(https://github.com/Osiris-DevWorks/smart-citizen/pull/3).
+
 The combined work is licensed under the GNU General Public License v3.0
 only (GPL-3.0-only). See `LICENSE` for the full terms.
 

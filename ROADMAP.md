@@ -29,6 +29,7 @@
 - [x] Dynamic component type derivation: `comp_types` in the `_SCItem` propagation loop is now derived from base.ini key patterns at generation time rather than a hardcoded tuple — new component categories CIG adds in future patches are picked up automatically
 - [x] Zero-match warning: `scan_entity_dir` now logs a `WARNING` when a component directory produces 0 augmented entries despite finding loc-key matches, surfacing XML structure changes immediately at generation time
 - [x] Add `scripts/audit_dataforge_attrs.py` — patch testing tool that dumps all DataForge XML element·attribute pairs per component category and diffs them against a previous snapshot to identify new or removed attributes. See TESTING.md for the post-patch workflow
+- [x] Configurable data folder — new "Open Strings Data" control in Config tab (Browse / Reset) lets users move `user.ini`, cache, DataForge extraction, and backups off OneDrive-synced Documents without manual registry editing. Persisted as `user_data_dir` in registry; `UserDataDir` alias migrated lazily on first read. Based on upstream PR #3 by Coerwyn.
 - [ ] Test and verify compatibility with Star Citizen 4.8
 - [ ] Review and update localization tag handling for any 4.8 changes
 
@@ -42,5 +43,3 @@
 - [x] Overall non-GUI coverage: 88% across 413 tests
 
 ## Future / Backlog
-
-- [ ] Create `dataforge-extract` dev branch: isolate `scripts/generate_enhancements_ini.py`, `scripts/audit_dataforge_attrs.py`, `src/utils/dataforge_patcher.py`, and `src/utils/pak_extractor.py` as a reusable DataForge extraction library for other SC projects (crafting explorer, blueprint database, loot table viewer). The blueprint chain (contract → pool → blueprint record → crafting record → entity UUID → display name) is the most portable piece.
