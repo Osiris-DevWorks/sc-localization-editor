@@ -47,3 +47,19 @@ Licensed under the MIT License:
 > LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 > SOFTWARE.
+
+## Bundled fonts
+
+### Orbitron
+
+Copyright (C) 2009 Matt McInerney.
+
+Licensed under the SIL Open Font License, Version 1.1.
+See `assets/fonts/Orbitron-OFL.txt` for the full licence text.
+
+### Atkinson Hyperlegible
+
+Copyright (C) 2020 Braille Institute of America, Inc.
+
+Licensed under the SIL Open Font License, Version 1.1.
+See `assets/fonts/OFL-Atkinson.txt` for the full licence text.

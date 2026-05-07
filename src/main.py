@@ -30,7 +30,7 @@ if getattr(sys, "frozen", False):
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
 from src.gui.main_window import MainWindow
-from src.gui.theme import apply_theme, load_application_fonts
+from src.gui.theme import apply_body_font, apply_theme, load_application_fonts
 from src.utils.settings import AppSettings
 from src.utils.version import get_version
 
@@ -91,6 +91,7 @@ def main():
     app = QApplication(sys.argv)
     load_application_fonts()
     apply_theme(app, AppSettings.get_theme())
+    apply_body_font(AppSettings.get_font_preference())
     window = MainWindow()
     window.show()
 

@@ -83,6 +83,21 @@ class ConfigTab(QWidget):
         self.theme_combo.currentIndexChanged.connect(self._on_theme_changed)
         self.theme_combo.setMaximumWidth(150)
         appearance_layout.addWidget(self.theme_combo)
+
+        font_label = QLabel("Font:")
+        appearance_layout.addWidget(font_label)
+        self.font_combo = QComboBox()
+        self.font_combo.setToolTip("Choose the application body font. Takes effect immediately.")
+        self.font_combo.addItem("Atkinson Hyperlegible", AppSettings.FONT_ATKINSON)
+        self.font_combo.addItem("OpenDyslexic", AppSettings.FONT_OPENDYSLEXIC)
+        current_font = AppSettings.get_font_preference()
+        fidx = self.font_combo.findData(current_font)
+        if fidx >= 0:
+            self.font_combo.setCurrentIndex(fidx)
+        self.font_combo.currentIndexChanged.connect(self._on_font_changed)
+        self.font_combo.setMaximumWidth(200)
+        appearance_layout.addWidget(self.font_combo)
+
         appearance_layout.addStretch()
         layout.addWidget(appearance_group)
 
@@ -248,6 +263,15 @@ class ConfigTab(QWidget):
         layout.addStretch()
 
     # ── Theme ────────────────────────────────────────────────────────────────
+
+    def _on_font_changed(self, _index: int) -> None:
+        pref = self.font_combo.currentData()
+        if pref not in (AppSettings.FONT_ATKINSON, AppSettings.FONT_OPENDYSLEXIC):
+            return
+        AppSettings.set_font_preference(pref)
+        from src.gui.theme import apply_body_font
+
+        QTimer.singleShot(0, lambda: apply_body_font(pref))
 
     def _on_theme_changed(self, _index: int):
         """Defer the actual swap to the next event-loop tick. Running
@@ -464,7 +488,10 @@ class ConfigTab(QWidget):
     def preview_merge(self):
         """Show a dry-run summary of the current merge configuration."""
         try:
-            from src.parser.ini_parser import load_source_files, load_sources_from_settings
+            from src.parser.ini_parser import (
+                load_source_files,
+                load_sources_from_settings,
+            )
 
             sources_dict, hierarchy, _enhancements_cats = load_sources_from_settings()
 

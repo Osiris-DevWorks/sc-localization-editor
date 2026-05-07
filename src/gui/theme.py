@@ -23,6 +23,12 @@ logger = logging.getLogger(__name__)
 BRAND_FONT_FAMILY = "Orbitron"
 _BRAND_FONT_FILE = "Orbitron-Bold.ttf"
 
+# Body font — Atkinson Hyperlegible by default, OpenDyslexic as opt-in.
+# Both are licensed under the SIL Open Font License 1.1 (OFL-1.1).
+BODY_FONT_FAMILY = "Atkinson Hyperlegible"
+BODY_FONT_OD = "OpenDyslexic"
+_BODY_FONT_FILES = ("AtkinsonHyperlegible-Regular.ttf", "AtkinsonHyperlegible-Bold.ttf")
+
 
 def _assets_fonts_dir() -> Path:
     """Resolve the assets/fonts directory for both dev and PyInstaller builds."""
@@ -40,13 +46,35 @@ def load_application_fonts() -> None:
     font_path = _assets_fonts_dir() / _BRAND_FONT_FILE
     if not font_path.exists():
         logger.warning(f"Brand font not found at {font_path}; using system fallback")
-        return
-    font_id = QFontDatabase.addApplicationFont(str(font_path))
-    if font_id < 0:
-        logger.warning(f"Failed to register brand font {font_path}")
-        return
-    families = QFontDatabase.applicationFontFamilies(font_id)
-    logger.info(f"Registered brand font families: {families}")
+    else:
+        font_id = QFontDatabase.addApplicationFont(str(font_path))
+        if font_id < 0:
+            logger.warning(f"Failed to register brand font {font_path}")
+        else:
+            families = QFontDatabase.applicationFontFamilies(font_id)
+            logger.info(f"Registered brand font families: {families}")
+
+    for ttf in _BODY_FONT_FILES:
+        body_path = _assets_fonts_dir() / ttf
+        if not body_path.exists():
+            logger.warning(f"Body font not found at {body_path}")
+            continue
+        font_id = QFontDatabase.addApplicationFont(str(body_path))
+        if font_id < 0:
+            logger.warning(f"Failed to register body font {body_path}")
+        else:
+            logger.info(f"Registered body font: {ttf}")
+
+
+def apply_body_font(preference: str = "atkinson") -> None:
+    """Set the application-wide body font. Call after load_application_fonts()."""
+    from PyQt6.QtGui import QFont
+
+    family = BODY_FONT_OD if preference == "opendyslexic" else BODY_FONT_FAMILY
+    app = QApplication.instance()
+    if app is not None:
+        font = QFont(family, 10)
+        app.setFont(font)
 
 
 THEME_LIGHT = "light"
@@ -192,9 +220,17 @@ def _light_palette() -> QPalette:
     p.setColor(QPalette.ColorRole.PlaceholderText, QColor(90, 90, 90))
     # Disabled-state overrides — darker than 150-gray so disabled text keeps
     # ~4:1 contrast against the 200-gray window (was 150, which blurred away).
-    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, QColor(100, 100, 100))
+    p.setColor(
+        QPalette.ColorGroup.Disabled,
+        QPalette.ColorRole.WindowText,
+        QColor(100, 100, 100),
+    )
     p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, QColor(100, 100, 100))
-    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, QColor(100, 100, 100))
+    p.setColor(
+        QPalette.ColorGroup.Disabled,
+        QPalette.ColorRole.ButtonText,
+        QColor(100, 100, 100),
+    )
     return p
 
 
@@ -217,9 +253,17 @@ def _dark_palette() -> QPalette:
     p.setColor(QPalette.ColorRole.HighlightedText, QColor(255, 255, 255))
     p.setColor(QPalette.ColorRole.Link, QColor(100, 170, 255))
     p.setColor(QPalette.ColorRole.PlaceholderText, QColor(175, 175, 175))
-    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, QColor(150, 150, 150))
+    p.setColor(
+        QPalette.ColorGroup.Disabled,
+        QPalette.ColorRole.WindowText,
+        QColor(150, 150, 150),
+    )
     p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, QColor(150, 150, 150))
-    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, QColor(150, 150, 150))
+    p.setColor(
+        QPalette.ColorGroup.Disabled,
+        QPalette.ColorRole.ButtonText,
+        QColor(150, 150, 150),
+    )
     return p
 
 
@@ -244,9 +288,17 @@ def _os_dark_palette() -> QPalette:
     p.setColor(QPalette.ColorRole.HighlightedText, QColor(10, 18, 32))  # dark on cyan
     p.setColor(QPalette.ColorRole.Link, QColor(79, 215, 232))  # #4FD7E8
     p.setColor(QPalette.ColorRole.PlaceholderText, QColor(111, 181, 208))  # #6FB5D0
-    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, QColor(88, 120, 144))
+    p.setColor(
+        QPalette.ColorGroup.Disabled,
+        QPalette.ColorRole.WindowText,
+        QColor(88, 120, 144),
+    )
     p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, QColor(88, 120, 144))
-    p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, QColor(88, 120, 144))
+    p.setColor(
+        QPalette.ColorGroup.Disabled,
+        QPalette.ColorRole.ButtonText,
+        QColor(88, 120, 144),
+    )
     return p
 
 
