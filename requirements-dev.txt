@@ -4,7 +4,7 @@
 PyQt6>=6.10.0
 PyInstaller>=6.3.0
 pyperclip>=1.8.2
-lxml>=5.0
+lxml>=6.1.0
 
 # Testing
 pytest>=7.0.0
