@@ -25,7 +25,7 @@ _PREVIEW_VALUES: dict[str, dict[str, str]] = {
     "components":   {"class": "Military", "size": "2", "grade": "A", "type": "Shield Generator"},
     "missiles":     {"ordinance": "Infrared", "size": "1"},
     "ship_weapons": {"damage": "Energy",   "size": "2"},
-    "commodities":  {"label": "Crafting"},
+    "commodities":  {"label": "Crafting", "collection": "Collection"},
 }
 _PREVIEW_NAMES: dict[str, str] = {
     "components":   "FR-76",
@@ -552,11 +552,12 @@ class _ElementRow(QWidget):
     # preview row below. Unmapped kinds (size, grade) ignore this and use
     # the static STYLES_BY_KIND labels.
     _SAMPLE_MAPPED_RAW: dict[str, str] = {
-        "class":     "Military",
-        "ordinance": "Infrared",
-        "damage":    "Energy",
-        "type":      "Shield Generator",
-        "label":     "Crafting",
+        "class":      "Military",
+        "ordinance":  "Infrared",
+        "damage":     "Energy",
+        "type":       "Shield Generator",
+        "label":      "Crafting",
+        "collection": "Collection",
     }
 
     def __init__(self, spec, mapping: dict | None = None,
@@ -618,7 +619,7 @@ class _ElementRow(QWidget):
         # Only kinds backed by the per-category variant mapping get the
         # mapping-edit button — size and grade are derived from raw values
         # and have nothing user-editable beyond style.
-        if spec.kind in ("class", "ordinance", "damage", "type", "label"):
+        if spec.kind in ("class", "ordinance", "damage", "type", "label", "collection"):
             edit_btn = QPushButton("Edit mapping…")
             _tips = {
                 "ordinance": ("Edit the Short / Medium / Long text used for each tracking "
@@ -629,6 +630,8 @@ class _ElementRow(QWidget):
                               "type (e.g. Shield Generator → SH / SHLD / Shield)."),
                 "label":     ("Edit the Short / Medium / Long text for the crafting label "
                               "(e.g. Crafting → CF / Craft / Crafting)."),
+                "collection": ("Edit the Short / Medium / Long text for the collection label "
+                               "(e.g. Collection → Col / Collect / Collection)."),
             }
             edit_btn.setToolTip(_tips.get(spec.kind,
                 "Edit the Short / Medium / Long text used for each class "

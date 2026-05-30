@@ -320,6 +320,13 @@ class AppSettings:
             return default_config(category)
         AppSettings._migrate_tag_config_mapping(category, cfg)
         AppSettings._backfill_new_elements(category, cfg)
+        # 1.5.0: commodities gained a second flag (Collection). A stored
+        # single-element config used separator "none", which would mash the
+        # two flags together as "[CFCollection]". Pipe is the intended joiner,
+        # and the separator was meaningless for the old single-element tag, so
+        # upgrading it is safe (#97).
+        if category == "commodities" and cfg.separator == "none":
+            cfg.separator = "pipe"
         return cfg
 
     @staticmethod

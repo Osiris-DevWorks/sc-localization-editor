@@ -3324,6 +3324,74 @@ def _condense_crafted_items(items_list: list[tuple[str, str]]) -> list[str]:
     return lines
 
 
+# Loc keys for items that appear as Collection-mission objectives. These get
+# the Collection flag in their commodity tag (#97). Maintained list (the
+# authoritative ground truth lives in tests/fixtures/collection_items_
+# groundtruth.txt); auto-discovery of these from the DataForge mission graph
+# is a planned follow-up so the list stays current as CIG adds items.
+COLLECTION_ITEM_KEYS: frozenset[str] = frozenset({
+    "Mission_Item_0183", "Mission_Item_0184", "Mission_Item_0186",
+    "Mission_Item_0191", "Mission_Item_0192", "Mission_Item_0195",
+    "Mission_Item_0214", "harvestable_Armillaria",
+    "items_commodities_amiantpod", "items_commodities_amioshiplague",
+    "items_commodities_beradom", "items_commodities_carinite",
+    "items_commodities_carinite_pure", "items_commodities_carinite_raw",
+    "items_commodities_compboard", "items_commodities_decaripod",
+    "items_commodities_degnousroot", "items_commodities_dopple",
+    "items_commodities_feynmaline", "items_commodities_flareweedstalk",
+    "items_commodities_fotiascrub", "items_commodities_freeze",
+    "items_commodities_glacosite", "items_commodities_glow",
+    "items_commodities_goldenmedmon", "items_commodities_heartofthewoods",
+    "items_commodities_jaclium", "items_commodities_jaclium_ore",
+    "items_commodities_janalite", "items_commodities_kopionhorn_irradiated",
+    "items_commodities_mala", "items_commodities_marokgem",
+    "items_commodities_pingala", "items_commodities_pitambu",
+    "items_commodities_prota", "items_commodities_rantadung",
+    "items_commodities_revenantpod", "items_commodities_sadaryx",
+    "items_commodities_saldynium", "items_commodities_saldynium_ore",
+    "items_commodities_stonebugshell", "items_commodities_sunsetberry",
+    "items_commodities_valakkaregg_irradiated",
+    "items_commodities_valakkarfang_adult",
+    "items_commodities_valakkarfang_adult_irradiated",
+    "items_commodities_valakkarfang_apex_irradiated",
+    "items_commodities_valakkarfang_juvenile",
+    "items_commodities_valakkarfang_juvenile_irradiated",
+    "items_commodities_valakkarpearl_apex_irradiated",
+    "items_commodities_valakkarpearl_apex_irradiated_tier1",
+    "items_commodities_valakkarpearl_apex_irradiated_tier2",
+    "items_commodities_valakkarpearl_apex_irradiated_tier3",
+    "items_commodities_valakkarpearl_apex_irradiated_tier4",
+    "items_commodities_valakkarpearl_apex_irradiated_tier5",
+    "items_commodities_wuotanseed", "items_commodities_yormandi_eye",
+    "items_commodities_zip",
+})
+
+
+def _commodity_tag(cfg, *, crafting: bool, collection: bool) -> str:
+    """Render the commodity name tag for the applicable flags, wrapped in EM4.
+
+    Builds the values dict from which flags apply and lets render_tag honour
+    the user's config (element enabled-state, order, separator, style). An
+    item that is both crafting and collection yields e.g. ``<EM4>[CF|
+    Collection]</EM4>``; a single-flag item drops the empty flag and stays
+    ``<EM4>[CF]</EM4>`` / ``<EM4>[Collection]</EM4>``. Returns "" when no flag
+    resolves (e.g. the user disabled both elements)."""
+    values: dict[str, str] = {}
+    if crafting:
+        values["label"] = "Crafting"
+    if collection:
+        values["collection"] = "Collection"
+    if not values:
+        return ""
+    if cfg is not None and render_tag is not None:
+        tag_str = render_tag(cfg, values)
+    else:
+        # Defensive fallback when tag_builder isn't importable.
+        parts = ([("CF")] if crafting else []) + (["Collection"] if collection else [])
+        tag_str = "[" + "|".join(parts) + "]" if parts else ""
+    return f"<EM4>{tag_str}</EM4>" if tag_str else ""
+
+
 def scan_crafting_blueprints(
     bp_dir: Path,
     carryables_dir: Path,
@@ -3425,11 +3493,17 @@ def scan_crafting_blueprints(
             base_name = loc.get(name_key, "")
             if base_name and name_key not in out:
                 cfg = tag_config or DEFAULT_TAG_CONFIGS.get("commodities")
-                tag_str = render_tag(cfg, {"label": "Crafting"}) if cfg else "[CF]"
-                if cfg and getattr(cfg, "placement", "append") == "prepend":
-                    out[name_key] = f"<EM4>{tag_str}</EM4> {base_name}"
+                # Crafting commodity; also flag Collection if it's a
+                # Collection-mission objective → "[CF|Collection]" (#97).
+                tag = _commodity_tag(
+                    cfg, crafting=True, collection=name_key in COLLECTION_ITEM_KEYS,
+                )
+                if not tag:
+                    out[name_key] = base_name
+                elif cfg and getattr(cfg, "placement", "append") == "prepend":
+                    out[name_key] = f"{tag} {base_name}"
                 else:
-                    out[name_key] = f"{base_name} <EM4>{tag_str}</EM4>"
+                    out[name_key] = f"{base_name} {tag}"
 
             base_desc = loc.get(desc_key, "")
             if base_desc and desc_key not in out:
@@ -3441,6 +3515,28 @@ def scan_crafting_blueprints(
             f"(first few: {', '.join(skipped_no_loc[:8])})"
         )
     logger.info(f"Crafting: {len(out)} commodity entries augmented from {len(commodity_items)} commodities")
+
+    # Collection-only items: Collection-mission objectives that are NOT
+    # crafting materials (so the loop above never touched them). Tag them with
+    # the Collection flag alone, e.g. "[Collection]" (#97).
+    cfg = tag_config or DEFAULT_TAG_CONFIGS.get("commodities")
+    collection_only = 0
+    for name_key in COLLECTION_ITEM_KEYS:
+        if name_key in out:
+            continue
+        base_name = loc.get(name_key, "")
+        if not base_name:
+            continue
+        tag = _commodity_tag(cfg, crafting=False, collection=True)
+        if not tag:
+            continue
+        if cfg and getattr(cfg, "placement", "append") == "prepend":
+            out[name_key] = f"{tag} {base_name}"
+        else:
+            out[name_key] = f"{base_name} {tag}"
+        collection_only += 1
+    if collection_only:
+        logger.info(f"Collection: {collection_only} collection-only items tagged")
 
     # Build journal output (separate dict for independent toggling)
     out_journal: dict[str, str] = {}

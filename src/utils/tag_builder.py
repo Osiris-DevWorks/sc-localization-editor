@@ -32,7 +32,7 @@ CATEGORY_ELEMENT_KINDS: dict[str, tuple[str, ...]] = {
     "components":   ("class", "size", "grade", "type"),
     "missiles":     ("ordinance", "size"),
     "ship_weapons": ("damage", "size"),
-    "commodities":  ("label",),
+    "commodities":  ("label", "collection"),
 }
 
 # Which element kinds resolve through the per-category `class_mapping` dict.
@@ -85,15 +85,21 @@ STYLES_LABEL: tuple[tuple[str, str], ...] = (
     ("med",   "Medium (Craft)"),
     ("long",  "Long (Crafting)"),
 )
+STYLES_COLLECTION: tuple[tuple[str, str], ...] = (
+    ("short", "Short (Col)"),
+    ("med",   "Medium (Collect)"),
+    ("long",  "Long (Collection)"),
+)
 
 STYLES_BY_KIND: dict[str, tuple[tuple[str, str], ...]] = {
-    "class":     STYLES_CLASS,
-    "size":      STYLES_SIZE,
-    "grade":     STYLES_GRADE,
-    "ordinance": STYLES_ORDINANCE,
-    "damage":    STYLES_DAMAGE,
-    "type":      STYLES_TYPE,
-    "label":     STYLES_LABEL,
+    "class":      STYLES_CLASS,
+    "size":       STYLES_SIZE,
+    "grade":      STYLES_GRADE,
+    "ordinance":  STYLES_ORDINANCE,
+    "damage":     STYLES_DAMAGE,
+    "type":       STYLES_TYPE,
+    "label":      STYLES_LABEL,
+    "collection": STYLES_COLLECTION,
 }
 
 # Human-friendly element kind labels for the UI.
@@ -103,8 +109,9 @@ ELEMENT_LABELS: dict[str, str] = {
     "grade":     "Grade",
     "ordinance": "Ordinance",
     "damage":    "Damage type",
-    "type":      "Type",
-    "label":     "Label",
+    "type":       "Type",
+    "label":      "Label",
+    "collection": "Collection",
 }
 
 
@@ -118,6 +125,7 @@ SEPARATORS: tuple[tuple[str, str, str], ...] = (
     ("underscore", "Underscore ( _ )", "_"),
     ("dot",        "Period ( . )", "."),
     ("slash",      "Slash ( / )", "/"),
+    ("pipe",       "Pipe ( | )",  "|"),
 )
 
 # (key, label, open, close)
@@ -192,6 +200,12 @@ DEFAULT_COMMODITY_LABEL_MAPPING: dict[str, tuple[str, str, str]] = {
     "Crafting": ("CF", "Craft", "Crafting"),
 }
 
+# Collection-mission item flag. Combined with the crafting flag inside one
+# <EM4>[…]</EM4> wrapper (e.g. "[CF|Collection]") when an item is both (#97).
+DEFAULT_COMMODITY_COLLECTION_MAPPING: dict[str, tuple[str, str, str]] = {
+    "Collection": ("Col", "Collect", "Collection"),
+}
+
 DEFAULT_MAPPINGS: dict[str, dict[str, tuple[str, str, str]]] = {
     "components":   DEFAULT_COMPONENT_CLASS_MAPPING,
     "missiles":     DEFAULT_MISSILE_ORDINANCE_MAPPING,
@@ -205,6 +219,7 @@ DEFAULT_KIND_MAPPINGS: dict[str, dict[str, tuple[str, str, str]]] = {
     "ordinance": DEFAULT_MISSILE_ORDINANCE_MAPPING,
     "damage":    DEFAULT_SHIP_WEAPON_DAMAGE_MAPPING,
     "label":     DEFAULT_COMMODITY_LABEL_MAPPING,
+    "collection": DEFAULT_COMMODITY_COLLECTION_MAPPING,
 }
 
 
@@ -314,15 +329,25 @@ DEFAULT_TAG_CONFIGS: dict[str, TagConfig] = {
         enclosing="square",
         class_mapping=dict(DEFAULT_SHIP_WEAPON_DAMAGE_MAPPING),
     ),
-    # Commodities: static crafting label, default `[CF]`.
+    # Commodity tagging: two conditional flags sharing one wrapper. Crafting
+    # ("CF") for crafting materials, Collection ("Collection") for items used
+    # as Collection-mission objectives. When an item is both, render_tag joins
+    # them with the separator, e.g. "[CF|Collection]"; when only one flag
+    # applies, the other's empty value is dropped so a single-flag item stays
+    # "[CF]" or "[Collection]" (#97). Crafting-only output is unchanged from
+    # the pre-1.5.0 single-label default.
     "commodities": TagConfig(
         elements=[
-            ElementSpec("label", True, "short"),
+            ElementSpec("label", True, "short"),       # CF
+            ElementSpec("collection", True, "long"),   # Collection
         ],
-        separator="none",
+        separator="pipe",
         enclosing="square",
         placement="append",
-        class_mapping=dict(DEFAULT_COMMODITY_LABEL_MAPPING),
+        class_mapping={
+            **DEFAULT_COMMODITY_LABEL_MAPPING,
+            **DEFAULT_COMMODITY_COLLECTION_MAPPING,
+        },
     ),
 }
 
@@ -363,7 +388,7 @@ def _style_value(kind: str, style: str, raw: str,
             return f"Grade {raw}"
         return raw  # "letter"
 
-    if kind in ("class", "ordinance", "damage", "label", "type"):
+    if kind in ("class", "ordinance", "damage", "label", "type", "collection"):
         variants = mapping.get(raw)
         if variants is None:
             # Unknown raw value — surface it verbatim so the user can edit
