@@ -319,7 +319,7 @@ class EnhancementsTab(QWidget):
 
         grid.addWidget(QLabel("Header tag:"), 1, 4)
         self._header_em_combo = QComboBox()
-        for tag in ("EM1", "EM2", "EM3", "EM4"):
+        for tag in AppSettings.MISSION_HEADER_EM_TAGS:
             self._header_em_combo.addItem(tag, userData=tag)
         current_em = AppSettings.get_mission_header_em_tag()
         for i in range(self._header_em_combo.count()):

@@ -34,6 +34,9 @@ class AppSettings:
     # Mission label defaults — source of truth for fallback values
     DEFAULT_REP_XP_LABEL = "Rep"
     DEFAULT_MISSION_HEADER_EM_TAG = "EM3"
+    # Selectable emphasis tags. EM1/EM2 were removed in 1.5.0 — they never
+    # render in-game (only EM3 = underline and EM4 = color do). See issue #99.
+    MISSION_HEADER_EM_TAGS = ("EM3", "EM4")
     MISSION_HEADER_DEFAULTS = {
         "details": "MISSION DETAILS",
         "blueprints": "POTENTIAL BLUEPRINTS",
@@ -289,7 +292,14 @@ class AppSettings:
 
     @staticmethod
     def get_mission_header_em_tag() -> str:
-        return AppSettings.settings().value(AppSettings.MISSION_HEADER_EM_TAG, AppSettings.DEFAULT_MISSION_HEADER_EM_TAG)
+        tag = AppSettings.settings().value(
+            AppSettings.MISSION_HEADER_EM_TAG, AppSettings.DEFAULT_MISSION_HEADER_EM_TAG
+        )
+        # Coerce a stored EM1/EM2 (removed in 1.5.0; never rendered in-game)
+        # back to the default so generated output never carries a dead tag.
+        if tag not in AppSettings.MISSION_HEADER_EM_TAGS:
+            return AppSettings.DEFAULT_MISSION_HEADER_EM_TAG
+        return tag
 
     @staticmethod
     def set_mission_header_em_tag(tag: str) -> None:
