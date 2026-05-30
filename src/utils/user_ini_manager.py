@@ -1,5 +1,6 @@
 """User INI persistence and import utilities."""
 import logging
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -9,6 +10,45 @@ from src.parser.ini_parser import parse_ini_file
 from src.utils.perf import timed
 
 logger = logging.getLogger(__name__)
+
+
+def migrate_user_data_dir(old_root: "str | Path", new_root: "str | Path") -> int:
+    """Copy user data from ``old_root`` into ``new_root`` after the user moves
+    the Smart Citizen data folder (issue #103).
+
+    Copies every file under ``old_root`` to the matching path under
+    ``new_root``, **merging** rather than overwriting: any file that already
+    exists at the destination is left untouched, so data already in the new
+    location always wins. The originals are left in place (copy, not move),
+    so a mistaken move is recoverable.
+
+    Returns the number of files copied. A no-op (returns 0) when the old root
+    is missing or resolves to the same directory as the new root.
+    """
+    old_root = Path(old_root)
+    new_root = Path(new_root)
+    try:
+        if not old_root.exists() or old_root.resolve() == new_root.resolve():
+            return 0
+    except OSError:
+        return 0
+
+    copied = 0
+    for src in old_root.rglob("*"):
+        if src.is_dir():
+            continue
+        rel = src.relative_to(old_root)
+        dest = new_root / rel
+        if dest.exists():
+            continue  # never clobber data already present in the new location
+        try:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dest)
+            copied += 1
+        except OSError as e:
+            logger.warning(f"Could not migrate {src} -> {dest}: {e}")
+    logger.info(f"Migrated {copied} file(s) from {old_root} to {new_root}")
+    return copied
 
 
 def reset_user_ini(user_ini_path: Path, backup: bool = True) -> Optional[Path]:
