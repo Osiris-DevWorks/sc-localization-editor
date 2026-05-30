@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from src.gui.string_table_model import StringTableModel  # noqa: E402
 from src.models.string_model import StringEntry  # noqa: E402
 
-pytestmark = pytest.mark.unit
+pytestmark = [pytest.mark.unit, pytest.mark.regression]
 
 
 def _model(entries, filtered):
@@ -61,3 +61,14 @@ def test_just_out_of_range_returns_none():
     e = _entry()
     m = _model([e], [0])
     assert m.entry_for_row(1) is None
+
+
+def test_negative_control_raw_index_would_raise():
+    """Negative control for #110: the raw index entry_for_row used to do
+    (``self._filtered_indices[row]``) still raises IndexError on an empty
+    model — proving the danger is real — while the guarded entry_for_row
+    neutralizes it by returning None."""
+    m = _model([], [])
+    with pytest.raises(IndexError):
+        _ = m._filtered_indices[0]
+    assert m.entry_for_row(0) is None
