@@ -3387,9 +3387,18 @@ def _commodity_tag(cfg, *, crafting: bool, collection: bool) -> str:
         tag_str = render_tag(cfg, values)
     else:
         # Defensive fallback when tag_builder isn't importable.
-        parts = ([("CF")] if crafting else []) + (["Collection"] if collection else [])
+        parts = (["CF"] if crafting else []) + (["Collection"] if collection else [])
         tag_str = "[" + "|".join(parts) + "]" if parts else ""
     return f"<EM4>{tag_str}</EM4>" if tag_str else ""
+
+
+def _place_commodity_tag(base_name: str, tag: str, cfg) -> str:
+    """Combine an item name and its commodity tag per the config's placement
+    (prepend = tag before the name, otherwise after). Shared by the crafting
+    loop and the collection-only pass so the placement rule lives in one spot."""
+    if cfg and getattr(cfg, "placement", "append") == "prepend":
+        return f"{tag} {base_name}"
+    return f"{base_name} {tag}"
 
 
 def scan_crafting_blueprints(
@@ -3498,12 +3507,7 @@ def scan_crafting_blueprints(
                 tag = _commodity_tag(
                     cfg, crafting=True, collection=name_key in COLLECTION_ITEM_KEYS,
                 )
-                if not tag:
-                    out[name_key] = base_name
-                elif cfg and getattr(cfg, "placement", "append") == "prepend":
-                    out[name_key] = f"{tag} {base_name}"
-                else:
-                    out[name_key] = f"{base_name} {tag}"
+                out[name_key] = _place_commodity_tag(base_name, tag, cfg) if tag else base_name
 
             base_desc = loc.get(desc_key, "")
             if base_desc and desc_key not in out:
@@ -3530,10 +3534,7 @@ def scan_crafting_blueprints(
         tag = _commodity_tag(cfg, crafting=False, collection=True)
         if not tag:
             continue
-        if cfg and getattr(cfg, "placement", "append") == "prepend":
-            out[name_key] = f"{tag} {base_name}"
-        else:
-            out[name_key] = f"{base_name} {tag}"
+        out[name_key] = _place_commodity_tag(base_name, tag, cfg)
         collection_only += 1
     if collection_only:
         logger.info(f"Collection: {collection_only} collection-only items tagged")
