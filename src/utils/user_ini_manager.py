@@ -184,8 +184,10 @@ def generate_user_ini_from_diff(
         return 0
 
     try:
-        reference = parse_ini_file(reference_path)
-        current = parse_ini_file(current_path)
+        # strip_values=False so a favourite applied with a space prefix is
+        # captured verbatim in the diff rather than collapsing to equal (#100).
+        reference = parse_ini_file(reference_path, strip_values=False)
+        current = parse_ini_file(current_path, strip_values=False)
 
         diffs = {}
         for key, current_value in current.items():

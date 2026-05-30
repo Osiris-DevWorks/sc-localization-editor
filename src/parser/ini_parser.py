@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 @timed
-def parse_ini_file(path: str | Path) -> Dict[str, str]:
+def parse_ini_file(path: str | Path, *, strip_values: bool = True) -> Dict[str, str]:
     """Parse INI file line-by-line, preserving efficiency.
 
     Strips any comma-based metadata suffix from keys (e.g., "key,P" → "key").
@@ -20,6 +20,12 @@ def parse_ini_file(path: str | Path) -> Dict[str, str]:
 
     Args:
         path: Path to INI file
+        strip_values: When True (default, for base.ini / enhancements) the
+            value is whitespace-stripped. Pass False for ``user.ini`` so
+            values round-trip verbatim — the favourite prefix can be a
+            single space (the "invisible" sort-to-top marker), and stripping
+            would silently delete it, dropping the favourite on reload
+            (issue #100).
 
     Returns:
         Dictionary of key-value pairs
@@ -45,7 +51,8 @@ def parse_ini_file(path: str | Path) -> Dict[str, str]:
 
                 key, value = line.split('=', 1)
                 key = key.strip()
-                value = value.strip()
+                if strip_values:
+                    value = value.strip()
 
                 if key:
                     # Strip comma-based metadata suffix (e.g., "key,P" → "key")
@@ -91,7 +98,7 @@ def load_source_files(
     # Handle legacy custom_path parameter
     if custom_path and not user_overrides:
         logger.info(f"Loading user overrides from legacy path: {custom_path}")
-        user_overrides = parse_ini_file(custom_path)
+        user_overrides = parse_ini_file(custom_path, strip_values=False)
 
     logger.info(f"Starting merge of {sum(len(d) for d in sources_dict.values())} total keys from {len(sources_dict)} sources")
     logger.info(f"Hierarchy: {hierarchy}, Sources available: {list(sources_dict.keys())}")
@@ -288,7 +295,8 @@ def load_sources_from_settings() -> tuple[Dict[str, Dict[str, str]], List[str], 
             # User source can be empty on first run
             if source_name == AppSettings.SOURCE_USER:
                 if local_file.exists():
-                    source_data = parse_ini_file(source_path)
+                    # strip_values=False so a space favourite prefix survives (#100)
+                    source_data = parse_ini_file(source_path, strip_values=False)
                     if source_data:
                         sources_dict[source_name] = source_data
                         logger.info(f"Loaded {len(source_data)} entries from {source_name}")
@@ -365,7 +373,9 @@ def load_overrides(target_path: str | Path) -> Dict[str, str]:
     Returns:
         Dictionary of overrides
     """
-    return parse_ini_file(target_path)
+    # strip_values=False: user.ini values round-trip verbatim so a space
+    # favourite prefix is not silently stripped away on reload (#100).
+    return parse_ini_file(target_path, strip_values=False)
 
 
 def _determine_status(original_value: str, custom_value: str) -> str:
