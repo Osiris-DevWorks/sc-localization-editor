@@ -728,6 +728,11 @@ class _TagBuilderPage(QWidget):
         ctrl_grid.addWidget(QLabel("Separator:"), 0, 0)
         self.sep_combo = QComboBox()
         for key, label, _ in SEPARATORS:
+            # Commodities can't use "none": with two flags it would mash them
+            # into "[CFCollection]", and get_tag_config force-upgrades a stored
+            # "none" to "pipe", so don't offer it here (#97).
+            if self.category == "commodities" and key == "none":
+                continue
             self.sep_combo.addItem(label, userData=key)
         self._select_combo(self.sep_combo, config.separator)
         self.sep_combo.currentIndexChanged.connect(self._on_sep_changed)
