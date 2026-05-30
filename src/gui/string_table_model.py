@@ -211,8 +211,15 @@ class StringTableModel(QAbstractTableModel):
         """Map a model row to an index into self._entries."""
         return self._filtered_indices[row]
 
-    def entry_for_row(self, row: int) -> StringEntry:
-        return self._entries[self._filtered_indices[row]]
+    def entry_for_row(self, row: int) -> Optional[StringEntry]:
+        """Return the entry for a model row, or None if the row is out of
+        range. The view can briefly query stale rows after a failed/empty
+        load (first run before extraction, when the loader raises "No
+        sources configured"); an unguarded index there crashed with
+        IndexError (issue #110)."""
+        if 0 <= row < len(self._filtered_indices):
+            return self._entries[self._filtered_indices[row]]
+        return None
 
     def source_row_for_entry_index(self, entry_idx: int) -> Optional[int]:
         """Reverse lookup: entry index -> model row. O(1) via dict."""
@@ -241,7 +248,7 @@ class StringTableModel(QAbstractTableModel):
             return base | Qt.ItemFlag.ItemIsEditable
         if col == COL_STAR:
             entry = self.entry_for_row(index.row())
-            if entry.category != "Ships":
+            if entry is not None and entry.category != "Ships":
                 return Qt.ItemFlag.ItemIsEnabled  # not selectable
         return base
 
@@ -252,6 +259,8 @@ class StringTableModel(QAbstractTableModel):
         row = index.row()
         col = index.column()
         entry = self.entry_for_row(row)
+        if entry is None:
+            return None
         prefix = self._favorite_prefix
 
         # -- display text ---------------------------------------------------
@@ -324,6 +333,8 @@ class StringTableModel(QAbstractTableModel):
             return False
 
         entry = self.entry_for_row(index.row())
+        if entry is None:
+            return False
         new_text = str(value)
         if new_text == entry.custom_value:
             return False
