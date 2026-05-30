@@ -24,19 +24,36 @@ def migrate_user_data_dir(old_root: "str | Path", new_root: "str | Path") -> int
 
     Returns the number of files copied. A no-op (returns 0) when the old root
     is missing or resolves to the same directory as the new root.
+
+    Handles the case where the new folder is nested inside the old one: the
+    file list is snapshotted before any copy (so freshly-written files can't
+    be fed back into a lazy walk), and any source already under the
+    destination is skipped (so the new folder's own contents aren't recursively
+    re-copied into themselves).
     """
     old_root = Path(old_root)
     new_root = Path(new_root)
     try:
-        if not old_root.exists() or old_root.resolve() == new_root.resolve():
-            return 0
+        old_resolved = old_root.resolve()
+        new_resolved = new_root.resolve()
     except OSError:
+        return 0
+    if not old_root.exists() or old_resolved == new_resolved:
         return 0
 
     copied = 0
-    for src in old_root.rglob("*"):
+    # Snapshot up front — if new_root is nested in old_root, copying into it
+    # mid-walk would otherwise let a lazy rglob re-yield the new files.
+    for src in list(old_root.rglob("*")):
         if src.is_dir():
             continue
+        # Skip anything already under the destination (the new-inside-old
+        # case), so we don't recursively re-copy the new folder's contents.
+        try:
+            src.resolve().relative_to(new_resolved)
+            continue  # src is inside new_root → leave it alone
+        except (ValueError, OSError):
+            pass  # not under new_root → migrate it
         rel = src.relative_to(old_root)
         dest = new_root / rel
         if dest.exists():

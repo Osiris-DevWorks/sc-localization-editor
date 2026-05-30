@@ -64,3 +64,21 @@ def test_noop_when_same_dir(tmp_path):
 
 def test_noop_when_old_missing(tmp_path):
     assert migrate_user_data_dir(tmp_path / "does_not_exist", tmp_path / "new") == 0
+
+
+def test_new_nested_inside_old_terminates_without_recursion(tmp_path):
+    """If the new folder is a subdirectory of the old one, the migration must
+    copy the old data once and not recursively re-copy into ever-deeper
+    nesting (the lazy-walk trap)."""
+    old = tmp_path / "old"
+    _seed(old)                 # old/LIVE/user.ini + old/LIVE/backups/global.ini.bak
+    new = old / "moved"        # new is INSIDE old
+
+    copied = migrate_user_data_dir(old, new)
+
+    # The two seeded files land under new exactly once.
+    assert copied == 2
+    assert (new / "LIVE" / "user.ini").exists()
+    assert (new / "LIVE" / "backups" / "global.ini.bak").exists()
+    # No pathological deeper nesting (new/moved/… must not exist).
+    assert not (new / "moved").exists()
