@@ -35,15 +35,6 @@ CATEGORY_ELEMENT_KINDS: dict[str, tuple[str, ...]] = {
     "commodities":  ("label", "collection"),
 }
 
-# Which element kinds resolve through the per-category `class_mapping` dict.
-# (The mapping field is named `class_mapping` historically but holds the
-# variants for whichever kind the category exposes.)
-MAPPED_KINDS: dict[str, str] = {
-    "components":   "class",
-    "missiles":     "ordinance",
-    "ship_weapons": "damage",
-    "commodities":  "label",
-}
 
 
 # ── Style tables ──────────────────────────────────────────────────────────────
@@ -204,13 +195,6 @@ DEFAULT_COMMODITY_LABEL_MAPPING: dict[str, tuple[str, str, str]] = {
 # <EM4>[…]</EM4> wrapper (e.g. "[CF|Collection]") when an item is both (#97).
 DEFAULT_COMMODITY_COLLECTION_MAPPING: dict[str, tuple[str, str, str]] = {
     "Collection": ("Col", "Collect", "Collection"),
-}
-
-DEFAULT_MAPPINGS: dict[str, dict[str, tuple[str, str, str]]] = {
-    "components":   DEFAULT_COMPONENT_CLASS_MAPPING,
-    "missiles":     DEFAULT_MISSILE_ORDINANCE_MAPPING,
-    "ship_weapons": DEFAULT_SHIP_WEAPON_DAMAGE_MAPPING,
-    "commodities":  DEFAULT_COMMODITY_LABEL_MAPPING,
 }
 
 DEFAULT_KIND_MAPPINGS: dict[str, dict[str, tuple[str, str, str]]] = {

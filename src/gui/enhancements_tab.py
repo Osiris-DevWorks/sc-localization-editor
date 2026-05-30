@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
 from src.gui.tag_mapping_dialog import TagMappingDialog
 from src.utils.settings import AppSettings
 from src.utils.tag_builder import (
-    CATEGORIES, DEFAULT_MAPPINGS, ELEMENT_LABELS, ENCLOSINGS, MAPPED_KINDS,
+    CATEGORIES, ELEMENT_LABELS, ENCLOSINGS,
     PLACEMENTS, SEPARATORS, STYLES_BY_KIND, TagConfig, default_config,
     render_tag,
 )
