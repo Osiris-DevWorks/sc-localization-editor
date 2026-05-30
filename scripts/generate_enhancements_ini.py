@@ -4100,6 +4100,21 @@ def build_ammo_lookup(
     return lookup
 
 
+# scitem entity subdir → component-type label (matches the keys in
+# tag_builder.DEFAULT_COMPONENT_TYPE_MAPPING). Shared by the standalone
+# component generator (_run_gen_components) and the entity_name_tags builder
+# (build_scitem_lookups) so the type element renders identically on standalone
+# component names AND on the component entries inside mission blueprint lists
+# (issue #101 — the lookup builder previously omitted it).
+_SUBDIR_TO_TYPE: dict[str, str] = {
+    "shieldgenerator": "Shield Generator",
+    "cooler":          "Cooler",
+    "powerplant":      "Power Plant",
+    "quantumdrive":    "Quantum Drive",
+    "radar":           "Radar",
+}
+
+
 def build_scitem_lookups(
     scitem_dir: Path,
     loc: dict[str, str] | None = None,
@@ -4203,7 +4218,18 @@ def build_scitem_lookups(
         if ref and desc_loc_key:
             desc_value = loc.get(desc_loc_key, "")
             if desc_value:
-                tag = _component_name_tag(desc_value, root, config=tag_config)
+                # Derive the component type from the entity's subdir so the
+                # blueprint-list tag carries the same Type element the
+                # standalone component path emits (#101). Non-component
+                # entities won't be under these subdirs (comp_type stays "")
+                # and _component_name_tag returns None for them regardless.
+                _parts = {p.lower() for p in xml_file.parts}
+                comp_type = next(
+                    (t for sd, t in _SUBDIR_TO_TYPE.items() if sd in _parts), ""
+                )
+                tag = _component_name_tag(
+                    desc_value, root, config=tag_config, component_type=comp_type
+                )
                 if tag:
                     entity_name_tags[ref] = tag
 
@@ -4346,13 +4372,6 @@ def _run_gen_components(ctx: dict) -> dict[str, str]:
     tag_configs     = ctx.get("tag_configs") or {}
     comp_cfg        = tag_configs.get("components") or DEFAULT_TAG_CONFIGS.get("components")
     comp_placement  = getattr(comp_cfg, "placement", "prepend") if comp_cfg else "prepend"
-    _SUBDIR_TO_TYPE = {
-        "shieldgenerator": "Shield Generator",
-        "cooler":          "Cooler",
-        "powerplant":      "Power Plant",
-        "quantumdrive":    "Quantum Drive",
-        "radar":           "Radar",
-    }
 
     def _make_comp_tagger(comp_type: str):
         def _tagger(desc_value: str, root: ET.Element | None = None) -> str | None:
