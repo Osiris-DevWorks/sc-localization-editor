@@ -19,7 +19,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-pytestmark = pytest.mark.unit
+pytestmark = [pytest.mark.unit, pytest.mark.regression]
 
 
 @pytest.fixture(scope="module")
@@ -82,4 +82,30 @@ def test_blueprint_list_tag_carries_type_when_enabled(gen_module, tmp_path):
     # build_scitem_lookups derived and passed component_type (the #101 fix).
     assert "SH" in tag, f"type element missing from blueprint-list tag: {tag!r}"
     # Sanity: the rest of the trio is there too.
+    assert "MIL" in tag and "S1" in tag and "A" in tag
+
+
+def test_no_type_when_not_in_type_subdir(gen_module, tmp_path):
+    """Negative control: an identical component placed OUTSIDE a type subdir
+    gets no Type element (comp_type stays ""), proving the Type token comes
+    specifically from the subdir derivation added in #101 — not from the
+    config or something else. The rest of the trip (MIL-S1-A) still renders."""
+    ref = "22222222-2222-2222-2222-222222222222"
+    subdir = tmp_path / "miscgear"  # deliberately NOT one of the 5 type subdirs
+    subdir.mkdir(parents=True, exist_ok=True)
+    (subdir / "thing.xml").write_text(
+        f'<EntityClassDefinition.shield __ref="{ref}">'
+        '<SItemComponentParams Name="@nm" Description="@ds"/>'
+        '</EntityClassDefinition.shield>',
+        encoding="utf-8",
+    )
+    loc = {"nm": "Test Thing", "ds": "Size: 1 Grade: A Class: Military"}
+
+    _mag, _names, _by_file, entity_name_tags = gen_module.build_scitem_lookups(
+        tmp_path, loc=loc, tag_config=_type_enabled_config()
+    )
+
+    assert ref in entity_name_tags
+    tag = entity_name_tags[ref]
+    assert "SH" not in tag, f"type element should be absent outside a type subdir: {tag!r}"
     assert "MIL" in tag and "S1" in tag and "A" in tag
