@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
 from src.gui.tag_mapping_dialog import TagMappingDialog
 from src.utils.settings import AppSettings
 from src.utils.tag_builder import (
-    CATEGORIES, ELEMENT_LABELS, ENCLOSINGS,
+    CATEGORIES, ELEMENT_LABELS, ENCLOSINGS, MAPPED_KIND_NAMES,
     PLACEMENTS, SEPARATORS, STYLES_BY_KIND, TagConfig, default_config,
     render_tag,
 )
@@ -619,7 +619,7 @@ class _ElementRow(QWidget):
         # Only kinds backed by the per-category variant mapping get the
         # mapping-edit button — size and grade are derived from raw values
         # and have nothing user-editable beyond style.
-        if spec.kind in ("class", "ordinance", "damage", "type", "label", "collection"):
+        if spec.kind in MAPPED_KIND_NAMES:
             edit_btn = QPushButton("Edit mapping…")
             _tips = {
                 "ordinance": ("Edit the Short / Medium / Long text used for each tracking "

@@ -206,6 +206,12 @@ DEFAULT_KIND_MAPPINGS: dict[str, dict[str, tuple[str, str, str]]] = {
     "collection": DEFAULT_COMMODITY_COLLECTION_MAPPING,
 }
 
+# Element kinds whose value resolves through a variant mapping (vs. derived
+# kinds like size/grade). Single source of truth — the renderer and the UI's
+# mapping-edit affordances both key off this so adding a mapped kind only
+# means adding it to DEFAULT_KIND_MAPPINGS above.
+MAPPED_KIND_NAMES: frozenset[str] = frozenset(DEFAULT_KIND_MAPPINGS)
+
 
 # ── Data model ───────────────────────────────────────────────────────────────
 
@@ -372,7 +378,7 @@ def _style_value(kind: str, style: str, raw: str,
             return f"Grade {raw}"
         return raw  # "letter"
 
-    if kind in ("class", "ordinance", "damage", "label", "type", "collection"):
+    if kind in MAPPED_KIND_NAMES:
         variants = mapping.get(raw)
         if variants is None:
             # Unknown raw value — surface it verbatim so the user can edit
