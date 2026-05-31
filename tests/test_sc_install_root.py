@@ -53,11 +53,18 @@ class TestInstallRootCrossCheck:
         expected = r"D:\NewLocation\StarCitizen"
         assert os.path.normcase(result) == os.path.normcase(expected)
 
-    def test_only_sc_install_root_set(self, json_backend):
-        """Only SC_INSTALL_ROOT set (no GAME_INSTALL_PATH) -- returns SC_INSTALL_ROOT."""
+    def test_only_sc_install_root_set(self, json_backend, monkeypatch):
+        """Only SC_INSTALL_ROOT set (no GAME_INSTALL_PATH) -- returns SC_INSTALL_ROOT.
+
+        Mocks _is_valid_sc_root to return True since this test exercises the
+        cross-check logic, not path validation (which is tested separately).
+        """
         root = r"E:\RSI\StarCitizen"
         json_backend.setValue(AppSettings.SC_INSTALL_ROOT, root)
         # GAME_INSTALL_PATH not set (defaults to "")
+
+        # Mock validation to return True -- test focuses on cross-check, not validation
+        monkeypatch.setattr("src.utils.settings._is_valid_sc_root", lambda p: True)
 
         result = AppSettings.get_sc_install_root()
         assert result == root
@@ -107,9 +114,16 @@ class TestInstallRootCrossCheck:
 
     def test_game_path_without_channel_suffix_used_as_root(self, json_backend, monkeypatch):
         """GAME_INSTALL_PATH that doesn't end in a channel name is treated
-        as the root itself when SC_INSTALL_ROOT is not set."""
+        as the root itself when SC_INSTALL_ROOT is not set.
+
+        Mocks _is_valid_sc_root to return True since this test exercises the
+        cross-check logic, not path validation (which is tested separately).
+        """
         json_backend.remove(AppSettings.SC_INSTALL_ROOT)
         json_backend.setValue(AppSettings.GAME_INSTALL_PATH, r"D:\Games\StarCitizen")
+
+        # Mock validation to return True -- test focuses on cross-check, not validation
+        monkeypatch.setattr("src.utils.settings._is_valid_sc_root", lambda p: True)
 
         # Block filesystem auto-detection
         original_exists = Path.exists
@@ -122,3 +136,58 @@ class TestInstallRootCrossCheck:
 
         result = AppSettings.get_sc_install_root()
         assert result == r"D:\Games\StarCitizen"
+
+
+class TestIsValidScRoot:
+    """Tests for the _is_valid_sc_root path validation helper."""
+
+    def test_nonexistent_path_returns_false(self):
+        """A path that doesn't exist should return False."""
+        from src.utils.settings import _is_valid_sc_root
+        assert _is_valid_sc_root(r"C:\Nonexistent\Path") is False
+
+    def test_path_without_channel_subdirs_returns_false(self):
+        """A directory without LIVE/PTU/etc. subdirs should return False."""
+        from src.utils.settings import _is_valid_sc_root
+        # Use a directory that exists but has no channel subdirs
+        assert _is_valid_sc_root(r"C:\Windows") is False
+
+    def test_stale_registry_value_rejected(self, tmp_path):
+        """A stale value like 'SmartCitizen 1.4.1' should be rejected."""
+        from src.utils.settings import _is_valid_sc_root
+        # Create a directory that looks like a stale app install
+        stale_dir = tmp_path / "SmartCitizen 1.4.1"
+        stale_dir.mkdir()
+        assert _is_valid_sc_root(str(stale_dir)) is False
+
+    def test_valid_root_with_live_subdir(self, tmp_path):
+        """A root with LIVE subdir should be accepted."""
+        from src.utils.settings import _is_valid_sc_root
+        root = tmp_path / "StarCitizen"
+        root.mkdir()
+        (root / "LIVE").mkdir()
+        assert _is_valid_sc_root(str(root)) is True
+
+    def test_valid_root_with_multiple_channels(self, tmp_path):
+        """A root with multiple channel subdirs should be accepted."""
+        from src.utils.settings import _is_valid_sc_root
+        root = tmp_path / "StarCitizen"
+        root.mkdir()
+        (root / "LIVE").mkdir()
+        (root / "PTU").mkdir()
+        assert _is_valid_sc_root(str(root)) is True
+
+    def test_channel_path_not_root(self, tmp_path):
+        """A channel path (ending in LIVE) is not a valid root."""
+        from src.utils.settings import _is_valid_sc_root
+        # _is_valid_sc_root checks for channel SUBDIRS, so a channel
+        # path itself is NOT a valid root (it has no subdirs named LIVE)
+        channel = tmp_path / "StarCitizen" / "LIVE"
+        channel.mkdir(parents=True)
+        assert _is_valid_sc_root(str(channel)) is False
+
+    def test_invalid_path_string_returns_false(self):
+        """An invalid path string should return False without crashing."""
+        from src.utils.settings import _is_valid_sc_root
+        assert _is_valid_sc_root("") is False
+        assert _is_valid_sc_root("not_a_path|with invalid chars") is False

@@ -9,6 +9,24 @@ import winreg
 logger = logging.getLogger(__name__)
 
 
+def _is_valid_sc_root(path: str) -> bool:
+    """Return True if *path* looks like a valid Star Citizen install root.
+
+    Checks whether the directory contains at least one channel subfolder
+    (LIVE, PTU, EPTU, HOTFIX, TECH-PREVIEW).  This guards against stale
+    registry values like ``SmartCitizen 1.4.1`` being returned as the
+    install root.
+    """
+    try:
+        p = Path(path)
+        if not p.is_dir():
+            return False
+        return any((p / ch).is_dir() for ch in (
+            "LIVE", "PTU", "EPTU", "HOTFIX", "TECH-PREVIEW"
+        ))
+    except (OSError, ValueError):
+        return False
+
 class AppSettings:
     """Wrapper around QSettings for application configuration."""
 
@@ -529,7 +547,14 @@ class AppSettings:
         # Legacy path stored under the old key.
         saved = AppSettings.settings().value(AppSettings.GAME_INSTALL_PATH, "")
         if saved:
-            return saved
+            saved_path = Path(saved)
+            if saved_path.name.upper() in (c.upper() for c in AppSettings.AVAILABLE_CHANNELS):
+                # Ends with a channel name — trust it.
+                return saved
+            # Doesn't end with a channel name — might be a stale root.
+            # Only trust it if it actually contains channel subdirs.
+            if _is_valid_sc_root(saved):
+                return saved
 
         # Installer-written registry key (older flow).
         try:
@@ -538,8 +563,13 @@ class AppSettings:
             sc_directory, _ = winreg.QueryValueEx(registry_key, 'sc_directory')
             winreg.CloseKey(registry_key)
             if sc_directory:
-                AppSettings.settings().setValue(AppSettings.GAME_INSTALL_PATH, sc_directory)
-                return sc_directory
+                sc_path = Path(sc_directory)
+                if sc_path.name.upper() in (c.upper() for c in AppSettings.AVAILABLE_CHANNELS):
+                    AppSettings.settings().setValue(AppSettings.GAME_INSTALL_PATH, sc_directory)
+                    return sc_directory
+                if _is_valid_sc_root(sc_directory):
+                    AppSettings.settings().setValue(AppSettings.GAME_INSTALL_PATH, sc_directory)
+                    return sc_directory
         except (WindowsError, OSError):
             pass
 
@@ -1461,7 +1491,7 @@ class AppSettings:
                     AppSettings.settings().setValue(AppSettings.SC_INSTALL_ROOT, derived_root)
                     return derived_root
 
-        if saved:
+        if saved and _is_valid_sc_root(saved):
             return saved
 
         # Derive from the legacy per-channel path if it's set.
@@ -1469,7 +1499,8 @@ class AppSettings:
             legacy_path = Path(legacy)
             if legacy_path.name.upper() in (c.upper() for c in AppSettings.AVAILABLE_CHANNELS):
                 return str(legacy_path.parent)
-            return legacy  # assume it was already a root
+            if _is_valid_sc_root(legacy):
+                return legacy
 
         for candidate in [
             r"C:\Program Files\Roberts Space Industries\StarCitizen",
