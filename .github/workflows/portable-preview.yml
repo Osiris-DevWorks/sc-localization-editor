@@ -1,0 +1,176 @@
+name: Portable Preview
+
+# Build a tester-runnable portable build outside the standard release flow.
+# Output is a workflow artifact (a downloadable SmartCitizen-Portable-v{VERSION}.zip)
+# accessible to anyone with read access on the repo — testers need a
+# GitHub account but no special permission.
+#
+# Sibling of installer-preview.yml: same triggers, same gate, same comment
+# flow — only the build artifact differs (a no-install portable zip instead
+# of an Inno Setup installer). Use it when a tester wants to run the app
+# without installing, or to smoke-test portable-mode behavior (data/ next to
+# the exe, no registry) before a release.
+#
+# Two triggers, both opt-in to keep CI minutes lean:
+#
+#   1. workflow_dispatch — manually triggered from the Actions tab.
+#      Pick the branch you want a tester build for; the workflow uses
+#      whatever ref you selected.
+#   2. pull_request labeled with `build-portable` — add the label to a
+#      PR and a build kicks off automatically. Subsequent pushes to a
+#      labeled PR rebuild on every commit (synchronize event), so the
+#      artifact tracks the PR head. Remove the label to stop the rebuilds.
+#
+# Output:
+#   Artifact: smartcitizen-portable-{SHA} (retention 30 days)
+#   Contains: SmartCitizen-Portable-v{VERSION}.zip (a self-contained onedir
+#             build — unzip and run the .exe inside; portable mode writes its
+#             data/ folder right there next to the exe).
+#
+# Why 30 days vs CI's 7: testers need lead time to actually run the build,
+# file feedback, iterate. Matches installer-preview's retention.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    # Fires on label add AND on every push to a labeled PR. The label
+    # check in the job-level `if` gates both — a push to an unlabeled
+    # PR is a no-op, a push to a labeled PR rebuilds the portable zip.
+    types: [labeled, synchronize, reopened]
+
+# Cancel in-flight portable builds when a newer commit lands on the same
+# PR (or the same branch on dispatch). Only the latest tip is interesting
+# for testers; older runs would just be wasted minutes producing stale
+# artifacts.
+concurrency:
+  group: portable-preview-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-portable:
+    # Label gate. workflow_dispatch bypasses the label check entirely.
+    # For pull_request, require the literal `build-portable` label present
+    # on the PR.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'build-portable')
+    name: Build portable
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      # contents: read — checkout the PR branch.
+      # pull-requests: write — required for the final `gh pr comment` step
+      # to post the download link back to the PR.
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run pytest
+        # Same `python -m pytest` invocation and pak_extraction.TestDataForgeCache
+        # deselect as ci.yml / release.yml / installer-preview.yml — see those
+        # files for rationale. A failed test still red-X's the workflow;
+        # testers should not get a build compiled from a broken commit. If a
+        # tester needs a build DESPITE failing tests, re-run with
+        # workflow_dispatch against the same SHA and amend the deselects locally.
+        run: |
+          python -m pytest tests/ `
+            --deselect tests/test_pak_extraction.py::TestDataForgeCache `
+            -q
+
+      - name: Build portable onedir + zip
+        # --portable flips IS_PORTABLE = True (no registry, data/ next to the
+        # exe) and, on success, packages the onedir into
+        # dist/SmartCitizen-Portable-v{VERSION}.zip for us.
+        run: python scripts/build/build_exe.py --portable
+
+      - name: Locate portable zip + capture version
+        id: artifact
+        shell: pwsh
+        run: |
+          $version = (Get-Content VERSION.TXT).Trim()
+          $zip = "dist/SmartCitizen-Portable-v${version}.zip"
+          if (-not (Test-Path $zip)) {
+            Write-Error "Portable zip not found at $zip"
+            Get-ChildItem dist -Recurse -Depth 2 | ForEach-Object { Write-Host $_.FullName }
+            exit 1
+          }
+          $size_mb = [math]::Round((Get-Item $zip).Length / 1MB, 1)
+          Write-Host "Portable zip: $zip ($size_mb MB)"
+          "zip_path=$zip" | Out-File -Append $env:GITHUB_OUTPUT
+          "version=$version" | Out-File -Append $env:GITHUB_OUTPUT
+
+      - name: Upload portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # SHA in the artifact name lets multiple in-flight builds for
+          # different commits coexist in the Actions UI without clobbering
+          # each other. The filename INSIDE the artifact is the canonical
+          # SmartCitizen-Portable-v{VERSION}.zip, which itself unzips to a
+          # SmartCitizen-Portable-v{VERSION}/ folder (the build script keeps
+          # that top-level dir so an unzip-here doesn't scatter 100+ files).
+          name: smartcitizen-portable-${{ github.sha }}
+          path: ${{ steps.artifact.outputs.zip_path }}
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Hide prior portable-preview comments
+        # Pushes to a labeled PR trigger a rebuild + new comment on each
+        # commit. Minimize all prior comments matching our marker via
+        # GitHub's GraphQL minimizeComment so the latest is the only one
+        # users see at full opacity. Uses minimize (not delete) so the
+        # comment history is preserved.
+        if: github.event_name == 'pull_request'
+        shell: pwsh
+        run: |
+          $pr = ${{ github.event.pull_request.number }}
+          $comments = gh api "repos/${{ github.repository }}/issues/$pr/comments" --paginate --jq '.[] | select(.body | contains("Tester portable build for this PR")) | select(.user.login == "github-actions[bot]") | .node_id'
+          if (-not $comments) {
+            Write-Host "No prior portable-preview comments to hide"
+            exit 0
+          }
+          foreach ($node_id in $comments -split "`n") {
+            if (-not $node_id) { continue }
+            $mutation = "mutation { minimizeComment(input: { subjectId: ""$node_id"", classifier: OUTDATED }) { minimizedComment { isMinimized } } }"
+            gh api graphql -f query="$mutation" 2>&1 | Out-Null
+            Write-Host "Hid prior comment: $node_id"
+          }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Comment on PR with download instructions
+        # Only relevant for pull_request triggers (workflow_dispatch doesn't
+        # have a PR to comment on). GitHub doesn't expose stable direct-download
+        # URLs for artifacts, so the link points at the run page.
+        if: github.event_name == 'pull_request'
+        shell: pwsh
+        run: |
+          $version = "${{ steps.artifact.outputs.version }}"
+          $run_url = "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          $body = @"
+          🧳 **Tester portable build for this PR**
+
+          - Version: ``$version``
+          - Commit: ``${{ github.sha }}``
+          - [Download from workflow run]($run_url) → scroll to **Artifacts** → ``smartcitizen-portable-${{ github.sha }}``
+
+          Testers need a GitHub account but no special repo permissions. The download is a zip; inside is ``SmartCitizen-Portable-v$version.zip``, which unzips to a ``SmartCitizen-Portable-v$version/`` folder — run the ``.exe`` inside it. No install, no registry: portable mode keeps its data in a ``data/`` folder next to the exe. Artifact expires in 30 days. Pushing more commits to this PR will rebuild and post a new link.
+          "@
+          gh pr comment ${{ github.event.pull_request.number }} --body $body
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true

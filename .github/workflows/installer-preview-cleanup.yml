@@ -1,11 +1,11 @@
-name: Installer Preview Cleanup
+name: Preview Artifact Cleanup
 
-# When a PR is merged, delete the tester-installer artifacts that
-# installer-preview.yml uploaded for that PR. Keeps storage tidy
-# without waiting for the 30-day retention to expire. Targeted at
-# merged PRs only — close-without-merge leaves artifacts alone since
-# the PR may be reopened (which would just rebuild on next push anyway,
-# but keeps the audit cleaner this way).
+# When a PR is merged, delete the tester-build artifacts that the preview
+# workflows (installer-preview.yml and portable-preview.yml) uploaded for
+# that PR. Keeps storage tidy without waiting for the 30-day retention to
+# expire. Targeted at merged PRs only — close-without-merge leaves artifacts
+# alone since the PR may be reopened (which would just rebuild on next push
+# anyway, but keeps the audit cleaner this way).
 #
 # We delete ARTIFACTS only, not the workflow runs themselves. That
 # preserves the "this PR shipped N tester builds" history in the
@@ -24,17 +24,17 @@ permissions:
 jobs:
   cleanup:
     if: github.event.pull_request.merged == true
-    name: Delete installer artifacts for merged PR
+    name: Delete preview artifacts for merged PR
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
-      - name: Delete installer-preview artifacts for PR's head branch
-        # Strategy: walk installer-preview.yml's workflow runs filtered to
-        # this PR's head_ref, then for each run list+delete its artifacts.
-        # gh api --paginate auto-walks the Link header so this handles
-        # PRs with arbitrarily many rebuilds. Empty result sets are
-        # tolerated cleanly — the for loops just don't iterate.
+      - name: Delete preview artifacts for PR's head branch
+        # Strategy: for each preview workflow, walk its runs filtered to this
+        # PR's head_ref, then for each run list+delete its artifacts. gh api
+        # --paginate auto-walks the Link header so this handles PRs with
+        # arbitrarily many rebuilds. Empty result sets are tolerated cleanly —
+        # the for loops just don't iterate.
         #
         # A 404 on the DELETE call usually means the artifact already
         # expired between listing and deletion (or was already manually
@@ -45,41 +45,46 @@ jobs:
           set -euo pipefail
           BRANCH="${{ github.event.pull_request.head.ref }}"
           REPO="${{ github.repository }}"
-          WORKFLOW="installer-preview.yml"
+          # Both tester-build preview workflows upload PR-scoped artifacts;
+          # clean up after both. Keep this list in sync with any new
+          # *-preview.yml workflow that uploads per-PR artifacts.
+          WORKFLOWS="installer-preview.yml portable-preview.yml"
           PR_NUM="${{ github.event.pull_request.number }}"
 
-          echo "Cleanup target: PR #${PR_NUM}, branch '${BRANCH}', workflow ${WORKFLOW}"
-
-          # Note: head_branch in the runs API matches the source branch
-          # name (works for same-repo PRs; fork PRs would need head.repo
-          # disambiguation, but installer-preview's label gate is
-          # typically only used on internal PRs anyway).
-          run_ids=$(gh api --paginate \
-            "/repos/${REPO}/actions/workflows/${WORKFLOW}/runs" \
-            --jq ".workflow_runs[] | select(.head_branch == \"${BRANCH}\") | .id" \
-          )
-
-          if [ -z "$run_ids" ]; then
-            echo "No installer-preview runs found for branch '${BRANCH}' — nothing to clean up."
-            exit 0
-          fi
+          echo "Cleanup target: PR #${PR_NUM}, branch '${BRANCH}', workflows: ${WORKFLOWS}"
 
           deleted=0
           skipped=0
-          for run_id in $run_ids; do
-            echo "Run ${run_id}: listing artifacts…"
-            artifact_ids=$(gh api --paginate \
-              "/repos/${REPO}/actions/runs/${run_id}/artifacts" \
-              --jq '.artifacts[].id' \
-            )
-            for artifact_id in $artifact_ids; do
-              if gh api -X DELETE "/repos/${REPO}/actions/artifacts/${artifact_id}" 2>/dev/null; then
-                echo "  Deleted artifact ${artifact_id}"
-                deleted=$((deleted + 1))
-              else
-                echo "  Artifact ${artifact_id} already gone or inaccessible (skipped)"
-                skipped=$((skipped + 1))
-              fi
+          for WORKFLOW in $WORKFLOWS; do
+            # Note: head_branch in the runs API matches the source branch
+            # name (works for same-repo PRs; fork PRs would need head.repo
+            # disambiguation, but the preview label gates are typically only
+            # used on internal PRs anyway).
+            run_ids=$(gh api --paginate \
+              "/repos/${REPO}/actions/workflows/${WORKFLOW}/runs" \
+              --jq ".workflow_runs[] | select(.head_branch == \"${BRANCH}\") | .id" \
+            ) || { echo "Workflow ${WORKFLOW} not found or has no runs — skipping."; continue; }
+
+            if [ -z "$run_ids" ]; then
+              echo "No ${WORKFLOW} runs found for branch '${BRANCH}' — nothing to clean up."
+              continue
+            fi
+
+            for run_id in $run_ids; do
+              echo "[$WORKFLOW] Run ${run_id}: listing artifacts…"
+              artifact_ids=$(gh api --paginate \
+                "/repos/${REPO}/actions/runs/${run_id}/artifacts" \
+                --jq '.artifacts[].id' \
+              )
+              for artifact_id in $artifact_ids; do
+                if gh api -X DELETE "/repos/${REPO}/actions/artifacts/${artifact_id}" 2>/dev/null; then
+                  echo "  Deleted artifact ${artifact_id}"
+                  deleted=$((deleted + 1))
+                else
+                  echo "  Artifact ${artifact_id} already gone or inaccessible (skipped)"
+                  skipped=$((skipped + 1))
+                fi
+              done
             done
           done
 
