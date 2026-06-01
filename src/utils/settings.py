@@ -27,6 +27,21 @@ def _is_valid_sc_root(path: str) -> bool:
     except (OSError, ValueError):
         return False
 
+
+def _path_ends_in_channel(path: str) -> bool:
+    """Return True if *path*'s last component is a recognised channel name.
+
+    Used to distinguish per-channel paths (``...\\LIVE``) from install roots
+    (``...\\StarCitizen``).  Case-insensitive match against
+    :data:`AppSettings.AVAILABLE_CHANNELS`.
+    """
+    try:
+        name = Path(path).name.upper()
+    except (OSError, ValueError):
+        return False
+    return name in {c.upper() for c in AppSettings.AVAILABLE_CHANNELS}
+
+
 class AppSettings:
     """Wrapper around QSettings for application configuration."""
 
@@ -548,7 +563,7 @@ class AppSettings:
         saved = AppSettings.settings().value(AppSettings.GAME_INSTALL_PATH, "")
         if saved:
             saved_path = Path(saved)
-            if saved_path.name.upper() in (c.upper() for c in AppSettings.AVAILABLE_CHANNELS):
+            if _path_ends_in_channel(saved):
                 # Ends with a channel name — trust it.
                 return saved
             # Doesn't end with a channel name — might be a stale root.
@@ -564,7 +579,7 @@ class AppSettings:
             winreg.CloseKey(registry_key)
             if sc_directory:
                 sc_path = Path(sc_directory)
-                if sc_path.name.upper() in (c.upper() for c in AppSettings.AVAILABLE_CHANNELS):
+                if _path_ends_in_channel(sc_directory):
                     AppSettings.settings().setValue(AppSettings.GAME_INSTALL_PATH, sc_directory)
                     return sc_directory
                 if _is_valid_sc_root(sc_directory):
@@ -1481,7 +1496,7 @@ class AppSettings:
         legacy = AppSettings.settings().value(AppSettings.GAME_INSTALL_PATH, "")
         if saved and legacy:
             legacy_path = Path(legacy)
-            if legacy_path.name.upper() in (c.upper() for c in AppSettings.AVAILABLE_CHANNELS):
+            if _path_ends_in_channel(legacy):
                 derived_root = str(legacy_path.parent)
                 if os.path.normcase(derived_root) != os.path.normcase(saved):
                     logger.info(
@@ -1497,7 +1512,7 @@ class AppSettings:
         # Derive from the legacy per-channel path if it's set.
         if legacy:
             legacy_path = Path(legacy)
-            if legacy_path.name.upper() in (c.upper() for c in AppSettings.AVAILABLE_CHANNELS):
+            if _path_ends_in_channel(legacy):
                 return str(legacy_path.parent)
             if _is_valid_sc_root(legacy):
                 return legacy

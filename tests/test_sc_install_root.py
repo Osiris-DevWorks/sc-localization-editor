@@ -191,3 +191,55 @@ class TestIsValidScRoot:
         from src.utils.settings import _is_valid_sc_root
         assert _is_valid_sc_root("") is False
         assert _is_valid_sc_root("not_a_path|with invalid chars") is False
+
+    @pytest.mark.regression
+    def test_stale_sc_install_root_dropped_by_getter(self, tmp_path, json_backend, monkeypatch):
+        """End-to-end: SC_INSTALL_ROOT pointing at a directory with no channel
+        subdirs is rejected by get_sc_install_root() and falls through.
+
+        Regression for the 'SmartCitizen 1.4.1' stale-registry bug."""
+        # Simulate the stale registry value: a dir that exists but has no
+        # channel subdirectories
+        stale_dir = tmp_path / "SmartCitizen 1.4.1"
+        stale_dir.mkdir()
+        json_backend.setValue(AppSettings.SC_INSTALL_ROOT, str(stale_dir))
+        json_backend.remove(AppSettings.GAME_INSTALL_PATH)
+
+        # Block filesystem auto-detection so the test doesn't accidentally
+        # find a real SC install on the test machine
+        original_exists = Path.exists
+
+        def _fake_exists(self):
+            s = str(self)
+            if "Roberts Space Industries" in s:
+                return False
+            return original_exists(self)
+
+        monkeypatch.setattr(Path, "exists", _fake_exists)
+
+        result = AppSettings.get_sc_install_root()
+        # The stale value must be rejected, falling through to '' (no auto-detect)
+        assert result == ""
+
+    @pytest.mark.regression
+    def test_stale_game_install_path_dropped_by_getter(self, tmp_path, json_backend, monkeypatch):
+        """End-to-end: GAME_INSTALL_PATH pointing at a stale dir (no channel subdirs)
+        is rejected by get_sc_install_root() when SC_INSTALL_ROOT is unset."""
+        stale_dir = tmp_path / "SmartCitizen 1.4.1"
+        stale_dir.mkdir()
+        json_backend.remove(AppSettings.SC_INSTALL_ROOT)
+        json_backend.setValue(AppSettings.GAME_INSTALL_PATH, str(stale_dir))
+
+        original_exists = Path.exists
+
+        def _fake_exists(self):
+            s = str(self)
+            if "Roberts Space Industries" in s:
+                return False
+            return original_exists(self)
+
+        monkeypatch.setattr(Path, "exists", _fake_exists)
+
+        result = AppSettings.get_sc_install_root()
+        # The stale value must be rejected, falling through to ''
+        assert result == ""
