@@ -266,9 +266,15 @@ class TestAvailableChannels:
     def test_empty_list_when_root_set_but_no_channels_installed(
         self, isolated_qsettings, tmp_path
     ):
-        empty_root = tmp_path / "empty_sc"
-        empty_root.mkdir()
-        AppSettings.set_sc_install_root(str(empty_root))
+        # The root must look like a real SC install so get_sc_install_root()
+        # accepts it: as of #119 it validates that the saved root contains at
+        # least one channel subdir, else it rejects the value and falls through
+        # to auto-detect. Create the LIVE channel folder but no Data.p4k inside,
+        # so the root is valid yet no channel is actually installed, which
+        # makes get_available_channels() filter everything out.
+        sc_root = tmp_path / "StarCitizen"
+        (sc_root / "LIVE").mkdir(parents=True)
+        AppSettings.set_sc_install_root(str(sc_root))
         assert AppSettings.get_available_channels() == []
 
 
