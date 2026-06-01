@@ -2336,6 +2336,23 @@ def _extract_difficulty(element: ET.Element) -> str:
     return ""
 
 
+def _rep_reward_line(field_name: str, amount_str: str, rep_xp_label: str) -> str:
+    """Render one reputation-reward line for a MISSION DETAILS body.
+
+    *field_name* is the rank / standing name when known (e.g. ``"Neutral"``),
+    otherwise ``""``. *amount_str* is the pre-formatted signed amount, e.g.
+    ``"+500"``, ``"+500–4,000"``, or ``"-100"``. The configured reputation
+    label (``rep_xp_label``, default ``"Rep"``) becomes the field name when no
+    rank is known, and the trailing unit otherwise; it is never doubled. The
+    literal ``"XP"`` is never emitted: the label is the single source of the
+    unit word, so renaming it (Enhancements tab) flows through every mission
+    body (issue #102).
+    """
+    if field_name and field_name != rep_xp_label:
+        return f"<EM4>{field_name}:</EM4> {amount_str} {rep_xp_label}"
+    return f"<EM4>{rep_xp_label}:</EM4> {amount_str}"
+
+
 def _extract_mission_flags(root: ET.Element) -> list[str]:
     """Extract boolean mission flags from a MissionBrokerEntry XML root.
 
@@ -4815,6 +4832,11 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         else (list(pu_missions_dir.rglob("*.xml")) if pu_missions_dir.exists() else [])
     )
     pu_title_to_descs: dict[str, set[str]] = {}
+    # #102: desc keys belonging to cargo / delivery hauls. These award no
+    # blueprints, so under a [BP]-tagged shared title the orphan-drop below
+    # would otherwise delete their body and the haul would show no mission
+    # info. Tracked here so the orphan-drop can spare them.
+    pu_cargo_delivery_descs: set[str] = set()
     if pu_missions_dir.exists():
         for xml_file in _pu_files:
             try:
@@ -4828,6 +4850,10 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
                 title_key = title_attr.lstrip("@")
                 desc_key  = desc_attr.lstrip("@")
                 pu_title_to_descs.setdefault(title_key, set()).add(desc_key)
+                _parts = xml_file.parts
+                _i = _parts.index("pu_missions") if "pu_missions" in _parts else -1
+                if _i >= 0 and _i + 1 < len(_parts) and _parts[_i + 1] in ("cargo", "delivery"):
+                    pu_cargo_delivery_descs.add(desc_key)
             except (ET.ParseError, Exception):
                 continue
 
@@ -4849,6 +4875,21 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         _bp_variants = [v[7] for v in variants]  # v[7] = contract_has_bp
         _all_have_bp = has_blueprints and all(_bp_variants)
 
+        # #102 / #31: a haul title's contractgenerator variants (CareerContract
+        # blocks) can all carry BlueprintRewards, yet the SAME title is also
+        # fronted by ContractLegacy blocks spawning pu_missions cargo/delivery
+        # hauls that award no blueprints (Covalex: 16 BP-bearing career variants
+        # vs 419 BP-less legacy hauls). Those haul descs survive the orphan-drop
+        # below (kept so the haul still shows mission info), so a flat [BP] title
+        # would sit over blueprint-less haul bodies and read as wrong in-game.
+        # Detect the surviving no-BP cargo/delivery descs and demote [BP] to the
+        # honest [BP?] (the 9-BP career bodies keep their full list either way).
+        _cg_desc_keys = {v[3] for v in variants if v[3]}
+        _surviving_no_bp_cargo = bool(
+            (pu_cargo_delivery_descs & pu_title_to_descs.get(title_key, set()))
+            - _cg_desc_keys
+        )
+
         desc_bucket_has_bp: dict[str, bool] = {}
         desc_bucket_count: dict[str, int] = {}
         for v in variants:
@@ -4868,9 +4909,9 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
             has_blueprints and _any_variant_has_bp and not _has_dominant_no_bp_bucket
         )
         augmented_title = base_title
-        if _all_have_bp:
+        if _all_have_bp and not _surviving_no_bp_cargo:
             augmented_title += " <EM4>[BP]</EM4>"
-        elif _bp_partial:
+        elif _bp_partial or (_all_have_bp and _surviving_no_bp_cargo):
             augmented_title += " <EM4>[BP?]</EM4>"
         nonzero_xp = [x for x in unique_xp if x > 0]
         if len(nonzero_xp) == 1:
@@ -4933,14 +4974,14 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
             nonzero_tiers = [(s, f, rn) for s, f, rn in desc_seen_tiers if s > 0]
             if len(nonzero_tiers) == 1:
                 sxp, fxp, rn = nonzero_tiers[0]
-                label = f"{rn}:" if rn else f"{rep_xp_label}:"
-                details_lines.append(f"<EM4>{label}</EM4> +{sxp:,} XP")
+                details_lines.append(_rep_reward_line(rn, f"+{sxp:,}", rep_xp_label))
                 if fxp < 0:
-                    details_lines.append(f"<EM4>Failure Penalty:</EM4> {fxp:,} XP")
+                    details_lines.append(
+                        _rep_reward_line("Failure Penalty", f"{fxp:,}", rep_xp_label)
+                    )
             elif len(nonzero_tiers) > 1:
                 for i, (sxp, fxp, rn) in enumerate(sorted(nonzero_tiers, key=lambda t: t[0]), 1):
-                    label = rn if rn else f"Tier {i}"
-                    line = f"<EM4>{label}:</EM4> +{sxp:,} XP"
+                    line = _rep_reward_line(rn if rn else f"Tier {i}", f"+{sxp:,}", rep_xp_label)
                     if fxp < 0:
                         line += f" (Failure: {fxp:,})"
                     details_lines.append(line)
@@ -5062,6 +5103,13 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
             continue
         _cg_descs = {v[3] for v in _variants if v[3]}
         for _orphan in pu_title_to_descs.get(_title_key, set()) - _cg_descs:
+            # #102: keep cargo / delivery haul bodies. A haul awards no
+            # blueprints, so under a [BP]-tagged shared title it would be
+            # dropped here (the #31 fix) and show no mission info in-game.
+            # Leaving the body is correct: the haul genuinely has no blueprints
+            # section, and the title's [BP] reflects the sibling career contract.
+            if _orphan in pu_cargo_delivery_descs:
+                continue
             if out.pop(_orphan, None) is not None:
                 orphans_dropped += 1
     if orphans_dropped:

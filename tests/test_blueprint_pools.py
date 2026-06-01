@@ -828,3 +828,79 @@ class TestOrphanPuDescCleanup:
 
         assert "D_PU" in out, "non-BP title's pu desc must stay"
         assert "D_CG" in out
+
+
+class TestCargoBpTitleDemotion:
+    """#102: a haul title whose contractgenerator variants all carry
+    BlueprintRewards can still be fronted by ContractLegacy blocks that spawn
+    blueprint-less pu_missions cargo / delivery hauls (Covalex: 16 BP-bearing
+    career variants vs 419 BP-less legacy hauls). Those haul descs survive the
+    orphan-drop (kept so the haul shows mission info), so a flat ``[BP]`` would
+    sit over blueprint-less bodies and read as wrong in-game. The title-augment
+    loop demotes such titles to the honest ``[BP?]``.
+
+    The decision is inlined in ``_run_gen_missions``; these tests drive its
+    shape directly (mirroring ``TestOrphanPuDescCleanup`` above), since the
+    augment loop isn't separately callable.
+    """
+
+    @staticmethod
+    def _tag(variants, has_blueprints, pu_cargo_delivery_descs, pu_title_descs):
+        """Replica of the augment-loop BP-tag branch (generate_enhancements_ini)."""
+        _bp_variants = [v[7] for v in variants]
+        _all_have_bp = has_blueprints and all(_bp_variants)
+        _any_variant_has_bp = any(_bp_variants)
+        # Simplified partial detector: no dominant no-BP desc bucket. The real
+        # loop weighs bucket share; for these single-bucket fixtures the result
+        # matches, and the demotion path under test is independent of it.
+        _bp_partial = has_blueprints and _any_variant_has_bp and not _all_have_bp
+        _cg_desc_keys = {v[3] for v in variants if v[3]}
+        _surviving_no_bp_cargo = bool(
+            (pu_cargo_delivery_descs & pu_title_descs) - _cg_desc_keys
+        )
+        if _all_have_bp and not _surviving_no_bp_cargo:
+            return "[BP]"
+        if _bp_partial or (_all_have_bp and _surviving_no_bp_cargo):
+            return "[BP?]"
+        return ""
+
+    @pytest.mark.regression
+    def test_all_bp_variants_with_surviving_cargo_demotes(self, gen_module):
+        """All career variants award BP, but a legacy cargo haul desc survives
+        under the same title → demote ``[BP]`` to ``[BP?]`` (Covalex repro)."""
+        # tuple: (system, sxp, fxp, desc_key, flags, spawns, difficulty,
+        #         contract_has_bp[7], bp_chance, bp_variant, rank)
+        variants = [("Stanton", 500, 0, "D_CG", [], 0, 0, True, 1.0, "", "")]
+        tag = self._tag(
+            variants,
+            has_blueprints=True,
+            pu_cargo_delivery_descs={"HaulCargo_AtoB_desc"},
+            pu_title_descs={"D_CG", "HaulCargo_AtoB_desc"},
+        )
+        assert tag == "[BP?]"
+
+    @pytest.mark.regression
+    def test_all_bp_variants_no_cargo_stays_full_bp(self, gen_module):
+        """All variants award BP and no legacy cargo haul desc survives (pure
+        career / combat contract) → keep the unqualified ``[BP]``."""
+        variants = [("Stanton", 500, 0, "D_CG", [], 0, 0, True, 1.0, "", "")]
+        tag = self._tag(
+            variants,
+            has_blueprints=True,
+            pu_cargo_delivery_descs=set(),
+            pu_title_descs={"D_CG"},
+        )
+        assert tag == "[BP]"
+
+    @pytest.mark.regression
+    def test_zero_bp_cargo_title_gets_no_tag(self, gen_module):
+        """A title whose variants award no BP must stay untagged even when it
+        has surviving cargo descs (the demotion must not invent a ``[BP?]``)."""
+        variants = [("Stanton", 500, 0, "D_CG", [], 0, 0, False, 0.0, "", "")]
+        tag = self._tag(
+            variants,
+            has_blueprints=False,
+            pu_cargo_delivery_descs={"HaulCargo_AtoB_desc"},
+            pu_title_descs={"D_CG", "HaulCargo_AtoB_desc"},
+        )
+        assert tag == ""
