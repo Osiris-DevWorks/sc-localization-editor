@@ -31,14 +31,22 @@ from utils.settings import AppSettings
 def isolated_qsettings(tmp_path, monkeypatch):
     """Point QSettings at an in-memory / file-scoped store so tests don't
     stomp on the real Windows Registry. Uses IniFormat under tmp_path which
-    QSettings will use when we force the format + path."""
+    QSettings will use when we force the format + path.
+
+    Returns the SAME instance on every AppSettings.settings() call. A fresh
+    QSettings per call relied on cross-instance write visibility: IniFormat
+    buffers writes and only flushes on sync()/destruction, so a setValue on
+    one instance was not reliably seen by a value() read on the next. That
+    surfaced as an environment-dependent CI failure (a set-then-get inside a
+    single test reading back empty). One shared instance makes set and get
+    hit the same in-memory store, removing the disk-flush dependency.
+    """
     settings_file = tmp_path / "test_registry.ini"
-    # Swap out AppSettings.settings() for a QSettings instance backed by our
-    # temp file. Scoped per test.
-    original = AppSettings.settings
+    # One instance, reused for the whole test, so set-then-get is consistent.
+    shared = QSettings(str(settings_file), QSettings.Format.IniFormat)
 
     def _isolated():
-        return QSettings(str(settings_file), QSettings.Format.IniFormat)
+        return shared
 
     monkeypatch.setattr(AppSettings, "settings", staticmethod(_isolated))
     # Clear any lru_cache or cached state on AppSettings if added later.
