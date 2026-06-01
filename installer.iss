@@ -617,24 +617,23 @@ end;
 
 function IsValidSCPath(const Path: String): Boolean;
 var
-  ExtPath: String;
+  BasePath: String;
+  LastName: String;
 begin
   { Returns True if Path looks like a valid Star Citizen install path.
     Accepts either:
       - a root containing channel subdirectories (LIVE, PTU, etc.), or
       - a channel path (last component is a channel name like LIVE).
     Guards against stale registry values like 'SmartCitizen 1.4.1'. }
-  ExtPath := Path + '\';
-  if (LowerCase(ExtractFileName(RemoveBackslash(Path))) = 'live') or
-     (LowerCase(ExtractFileName(RemoveBackslash(Path))) = 'ptu') or
-     (LowerCase(ExtractFileName(RemoveBackslash(Path))) = 'eptu') or
-     (LowerCase(ExtractFileName(RemoveBackslash(Path))) = 'hotfix') or
-     (LowerCase(ExtractFileName(RemoveBackslash(Path))) = 'tech-preview') then
+  BasePath := RemoveBackslash(Path) + '\';
+  LastName := LowerCase(ExtractFileName(BasePath));
+  if (LastName = 'live') or (LastName = 'ptu') or (LastName = 'eptu') or
+     (LastName = 'hotfix') or (LastName = 'tech-preview') then
     Result := True
   else
-    Result := DirExists(ExtPath + 'LIVE') or DirExists(ExtPath + 'PTU') or
-              DirExists(ExtPath + 'EPTU') or DirExists(ExtPath + 'HOTFIX') or
-              DirExists(ExtPath + 'TECH-PREVIEW');
+    Result := DirExists(BasePath + 'LIVE') or DirExists(BasePath + 'PTU') or
+              DirExists(BasePath + 'EPTU') or DirExists(BasePath + 'HOTFIX') or
+              DirExists(BasePath + 'TECH-PREVIEW');
 end;
 
 procedure InitializeWizard();
@@ -672,41 +671,27 @@ begin
     channel the app is currently pointed at. The active_channel value is
     ignored here on purpose; the app-side channel switcher handles
     per-channel paths at runtime. }
-  if RegQueryStringValue(HKCU, NewRegPath, 'sc_install_root', SCRoot) and (SCRoot <> '') then
+  if RegQueryStringValue(HKCU, NewRegPath, 'sc_install_root', SCRoot) and (SCRoot <> '') and IsValidSCPath(SCRoot) then
   begin
-    if IsValidSCPath(SCRoot) then
-    begin
-      ActiveChannel := 'LIVE';
-      DefaultPath := SCRoot + '\' + ActiveChannel;
-    end;
+    ActiveChannel := 'LIVE';
+    DefaultPath := SCRoot + '\' + ActiveChannel;
   end;
 
   { Fall back to previously saved sc_directory / game_install_path in the
     NEW node, then the LEGACY node.  Each value is validated to ensure it
     actually looks like a valid SC install path (either ends with a channel
-    name, or contains channel subdirectories). }
+    name, or contains channel subdirectories).  Validation is folded into
+    the condition so a stale value causes fallthrough to the next option. }
   if DefaultPath = '' then
   begin
-    if RegQueryStringValue(HKCU, NewRegPath, 'sc_directory', SavedPath) and (SavedPath <> '') then
-    begin
-      if IsValidSCPath(SavedPath) then
-        DefaultPath := SavedPath
-    end
-    else if RegQueryStringValue(HKCU, NewRegPath, 'game_install_path', SavedPath) and (SavedPath <> '') then
-    begin
-      if IsValidSCPath(SavedPath) then
-        DefaultPath := SavedPath
-    end
-    else if RegQueryStringValue(HKCU, LegacyRegPath, 'sc_directory', SavedPath) and (SavedPath <> '') then
-    begin
-      if IsValidSCPath(SavedPath) then
-        DefaultPath := SavedPath
-    end
-    else if RegQueryStringValue(HKCU, LegacyRegPath, 'game_install_path', SavedPath) and (SavedPath <> '') then
-    begin
-      if IsValidSCPath(SavedPath) then
-        DefaultPath := SavedPath
-    end
+    if RegQueryStringValue(HKCU, NewRegPath, 'sc_directory', SavedPath) and (SavedPath <> '') and IsValidSCPath(SavedPath) then
+      DefaultPath := SavedPath
+    else if RegQueryStringValue(HKCU, NewRegPath, 'game_install_path', SavedPath) and (SavedPath <> '') and IsValidSCPath(SavedPath) then
+      DefaultPath := SavedPath
+    else if RegQueryStringValue(HKCU, LegacyRegPath, 'sc_directory', SavedPath) and (SavedPath <> '') and IsValidSCPath(SavedPath) then
+      DefaultPath := SavedPath
+    else if RegQueryStringValue(HKCU, LegacyRegPath, 'game_install_path', SavedPath) and (SavedPath <> '') and IsValidSCPath(SavedPath) then
+      DefaultPath := SavedPath
     else if DirExists('C:\Program Files\Roberts Space Industries\StarCitizen\LIVE') then
       DefaultPath := 'C:\Program Files\Roberts Space Industries\StarCitizen\LIVE'
     else if DirExists('C:\Program Files (x86)\Roberts Space Industries\StarCitizen\LIVE') then
