@@ -101,8 +101,8 @@ ELEMENT_LABELS: dict[str, str] = {
     "ordinance": "Ordinance",
     "damage":    "Damage type",
     "type":       "Type",
-    "label":      "Label",
-    "collection": "Collection",
+    "label":      "Crafting materials",
+    "collection": "Wikelo items",
 }
 
 

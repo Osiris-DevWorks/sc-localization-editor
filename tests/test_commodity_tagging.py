@@ -58,6 +58,11 @@ class TestRender:
         cfg = default_config("commodities")
         assert render_tag(cfg, {"label": "Crafting", "collection": "Collection"}) == "[CF|Collection]"
 
+    def test_both_join_with_none(self):
+        cfg = default_config("commodities")
+        none_sep = dc_replace(cfg, separator="none")
+        assert render_tag(none_sep, {"label": "Crafting", "collection": "Collection"}) == "[CFCollection]"
+
     def test_collection_short_medium_long(self):
         assert DEFAULT_KIND_MAPPINGS["collection"]["Collection"] == ("Col", "Collect", "Collection")
         cfg = default_config("commodities")
@@ -118,6 +123,6 @@ class TestMigration:
 
         kinds = {e.kind for e in cfg.elements}
         assert "collection" in kinds, "collection element should be backfilled"
-        assert cfg.separator == "pipe", "separator 'none' should upgrade to 'pipe'"
-        # And the combined render now works for a both-flags item.
-        assert render_tag(cfg, {"label": "Crafting", "collection": "Collection"}) == "[CF|Collection]"
+        assert cfg.separator == "none", "separator 'none' should be preserved for commodity none-separator configs"
+        # And the combined render now works with no explicit separator.
+        assert render_tag(cfg, {"label": "Crafting", "collection": "Collection"}) == "[CFCollection]"
