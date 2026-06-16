@@ -1786,9 +1786,16 @@ class AppSettings:
         consistent without manual bookkeeping at each call site.
         """
         AppSettings.settings().setValue(AppSettings.SC_INSTALL_ROOT, path)
-        AppSettings.set_game_install_path(
-            AppSettings.get_channel_install_path() if path else ""
+        # Compose the active-channel path from the value we were just handed,
+        # NOT via get_channel_install_path()/get_sc_install_root(). That getter
+        # runs a cross-check against the still-stale GAME_INSTALL_PATH and, when
+        # the user switches install locations (e.g. C: default → D:), reverts
+        # SC_INSTALL_ROOT back to the old root before we get a chance to refresh
+        # the legacy key — silently discarding the path the user just picked.
+        channel_path = (
+            str(Path(path) / AppSettings.get_active_channel()) if path else ""
         )
+        AppSettings.set_game_install_path(channel_path)
 
     @staticmethod
     def get_available_channels() -> list[str]:
