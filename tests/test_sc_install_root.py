@@ -138,6 +138,68 @@ class TestInstallRootCrossCheck:
         assert result == r"D:\Games\StarCitizen"
 
 
+class TestSetInstallRootSwitchesLocation:
+    """Regression: switching the install root to a new drive must stick.
+
+    set_sc_install_root() used to refresh GAME_INSTALL_PATH by reading back
+    through get_channel_install_path() -> get_sc_install_root(), whose
+    cross-check compares the just-set root against the *still-stale* legacy
+    GAME_INSTALL_PATH and reverts to the old location. The form field showed
+    the new path while P4K extraction kept using the old one.
+    """
+
+    @pytest.mark.regression
+    def test_switch_from_c_to_d_persists_new_root(self, json_backend):
+        """Pick D: while a stale C: install is stored -> D: wins, not C:."""
+        # Pre-existing default-location install on C:.
+        json_backend.setValue(
+            AppSettings.SC_INSTALL_ROOT,
+            r"C:\Program Files\Roberts Space Industries\StarCitizen",
+        )
+        json_backend.setValue(
+            AppSettings.GAME_INSTALL_PATH,
+            r"C:\Program Files\Roberts Space Industries\StarCitizen\LIVE",
+        )
+
+        # User browses to their real install on D:.
+        new_root = r"D:\Games\StarCitizen"
+        AppSettings.set_sc_install_root(new_root)
+
+        assert os.path.normcase(AppSettings.get_sc_install_root()) == os.path.normcase(
+            new_root
+        )
+        # The legacy key (used by P4K extraction) must follow to D:, not C:.
+        assert os.path.normcase(
+            AppSettings.get_game_install_path()
+        ) == os.path.normcase(r"D:\Games\StarCitizen\LIVE")
+
+    @pytest.mark.regression
+    def test_switch_respects_active_channel(self, json_backend):
+        """The synced legacy path uses the active channel, not a hardcoded LIVE."""
+        json_backend.setValue(
+            AppSettings.SC_INSTALL_ROOT, r"C:\Old\StarCitizen"
+        )
+        json_backend.setValue(
+            AppSettings.GAME_INSTALL_PATH, r"C:\Old\StarCitizen\LIVE"
+        )
+        AppSettings.set_active_channel("PTU")
+
+        AppSettings.set_sc_install_root(r"D:\New\StarCitizen")
+
+        assert os.path.normcase(
+            AppSettings.get_game_install_path()
+        ) == os.path.normcase(r"D:\New\StarCitizen\PTU")
+
+    def test_empty_path_clears_legacy_key(self, json_backend):
+        """Clearing the root clears the synced legacy path too."""
+        json_backend.setValue(AppSettings.SC_INSTALL_ROOT, r"D:\Games\StarCitizen")
+        json_backend.setValue(
+            AppSettings.GAME_INSTALL_PATH, r"D:\Games\StarCitizen\LIVE"
+        )
+        AppSettings.set_sc_install_root("")
+        assert json_backend.value(AppSettings.GAME_INSTALL_PATH, "") == ""
+
+
 class TestIsValidScRoot:
     """Tests for the _is_valid_sc_root path validation helper."""
 
