@@ -19,6 +19,7 @@ Usage:
 
 import io
 import logging
+import os
 import pickle
 import re
 import sys
@@ -5008,7 +5009,14 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         unique_desc_keys: list[str] = []
         for v in variants:
             dk = v[3]
-            if dk and dk not in unique_desc_keys:
+            # #151: a contract whose Description loc-key collides with its
+            # Title key (CIG data quirk, e.g. eckhart_defendship_MRT
+            # "Stop Attack") must never have the MISSION DETAILS / blueprint
+            # body written onto the title — for a [BP] mission that body
+            # clobbers the enhanced title with the full block in-game. The
+            # title keeps its [BP]/XP tags (written above); the body is
+            # dropped because there is no distinct key to hold it.
+            if dk and dk != title_key and dk not in unique_desc_keys:
                 unique_desc_keys.append(dk)
 
         for desc_key in unique_desc_keys:
