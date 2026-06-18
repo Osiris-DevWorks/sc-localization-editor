@@ -12,6 +12,7 @@ Contents:
 - DataForgeExtractWorker  — unp4k + unforge + patch pipeline
 - SelectAllDelegate       — Custom Value cell delegate (auto-select, EM3/EM4 wrap)
 - OrderSpinBoxDelegate    — Sort Order cell delegate (0-99 spin box, #142)
+- TestPlanSubmitWorker    — POSTs a tester's test-plan report to a Discord webhook
 """
 
 import logging
@@ -518,3 +519,41 @@ class OrderSpinBoxDelegate(QStyledItemDelegate):
         value = editor.value()
         # 0 clears the order; set_order() treats "" as "no order".
         model.setData(index, "" if value == 0 else str(value), Qt.ItemDataRole.EditRole)
+
+
+class TestPlanSubmitWorker(QThread):
+    """Post a tester's test-plan report to a Discord webhook (#144).
+
+    Network I/O off the main thread, per the project threading model. The
+    report is pre-split into Discord-sized chunks; each posts as its own
+    message in order. Emits finished(ok, message).
+    """
+
+    finished = pyqtSignal(bool, str)
+
+    def __init__(self, webhook_url: str, chunks: list, parent=None):
+        super().__init__(parent)
+        self._webhook_url = webhook_url
+        self._chunks = chunks
+
+    def run(self):
+        import json as _json
+        import urllib.request
+
+        try:
+            for chunk in self._chunks:
+                data = _json.dumps({"content": chunk}).encode("utf-8")
+                req = urllib.request.Request(
+                    self._webhook_url,
+                    data=data,
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    if resp.status >= 300:
+                        self.finished.emit(False, f"Discord returned HTTP {resp.status}")
+                        return
+            self.finished.emit(True, "Report sent to Discord.")
+        except Exception as e:
+            logger.exception("Test plan report submission failed")
+            self.finished.emit(False, f"Could not send report: {e}")
