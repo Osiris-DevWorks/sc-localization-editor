@@ -988,8 +988,12 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)  # Status
 
         # Set custom delegates: Custom Value text editor + Sort Order spin box.
-        self.table.setItemDelegateForColumn(COL_CUSTOM, SelectAllDelegate())
-        self.table.setItemDelegateForColumn(COL_ORDER, OrderSpinBoxDelegate())
+        # Parent each to the table so Qt's object tree owns them: the view does
+        # not take ownership, and PyQt's per-method keep-reference holds only the
+        # last delegate, so a second unparented setItemDelegateForColumn would
+        # let the first (Custom Value) delegate be garbage-collected.
+        self.table.setItemDelegateForColumn(COL_CUSTOM, SelectAllDelegate(self.table))
+        self.table.setItemDelegateForColumn(COL_ORDER, OrderSpinBoxDelegate(self.table))
         # Star column click handling
         self.table.clicked.connect(self._on_cell_clicked)
 
