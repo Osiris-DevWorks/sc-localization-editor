@@ -49,6 +49,7 @@
     "col_default_value": "Valor Padrão",
     "col_current_value": "Valor Atual",
     "col_star": "★",
+    "col_order": "#",
     "col_custom_value": "Valor Personalizado",
     "col_status": "Status",
     "no_data": "Nenhum dado carregado",

@@ -8,6 +8,7 @@ import logging
 
 from src.gui.string_table_model import NUM_COLUMNS
 from src.models.string_model import StringEntry
+from src.utils.ship_sort_prefix import get_order
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,7 @@ def filter_entry_indices(
         lambda e: default_values.get(e.key, "").lower(),
         lambda e: e.original_value.lower(),
         lambda e: "★" if e.custom_value.startswith(favorite_prefix) else "",
+        lambda e: get_order(e.custom_value, favorite_prefix) if e.category == "Ships" else "",
         lambda e: e.custom_value.lower(),
         lambda e: e.status.lower(),
     )

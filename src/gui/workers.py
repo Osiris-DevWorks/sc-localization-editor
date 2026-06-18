@@ -11,6 +11,7 @@ Contents:
 - P4kExtractWorker        — unp4k extraction of global.ini
 - DataForgeExtractWorker  — unp4k + unforge + patch pipeline
 - SelectAllDelegate       — Custom Value cell delegate (auto-select, EM3/EM4 wrap)
+- OrderSpinBoxDelegate    — Sort Order cell delegate (0-99 spin box, #142)
 """
 
 import logging
@@ -490,3 +491,30 @@ class SelectAllDelegate(QStyledItemDelegate):
         start = editor.selectionStart()
         editor.insert(wrapped)
         editor.setCursorPosition(start + len(f"<{tag}>") + len(sel))
+
+
+class OrderSpinBoxDelegate(QStyledItemDelegate):
+    """Editor for the Sort Order column (issue #142).
+
+    A 0-99 spin box where 0 means "no order" (shown blank). The model stores
+    the order as a zero-padded two-digit string on the ship's custom_value;
+    this delegate translates between that string and the spin box's int.
+    """
+
+    def createEditor(self, parent, option, index):
+        from PyQt6.QtWidgets import QSpinBox
+        editor = QSpinBox(parent)
+        editor.setRange(0, 99)
+        # 0 reads as "clear the order" — show it blank, not as "0".
+        editor.setSpecialValueText("")
+        return editor
+
+    def setEditorData(self, editor, index):
+        text = index.data(Qt.ItemDataRole.EditRole) or ""
+        editor.setValue(int(text) if str(text).isdigit() else 0)
+
+    def setModelData(self, editor, model, index):
+        editor.interpretText()
+        value = editor.value()
+        # 0 clears the order; set_order() treats "" as "no order".
+        model.setData(index, "" if value == 0 else str(value), Qt.ItemDataRole.EditRole)
