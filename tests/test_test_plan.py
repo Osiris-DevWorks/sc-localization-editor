@@ -53,6 +53,14 @@ def test_build_report_includes_tester_marks_and_version():
     assert "Anonymous" in test_plan.build_report(set(), "  ", "2.1.0")
 
 
+def test_build_report_includes_notes_when_present():
+    report = test_plan.build_report(set(), "Tester", "2.1.0", notes="weird flicker on apply")
+    assert "Notes" in report
+    assert "weird flicker on apply" in report
+    # No Notes section when blank.
+    assert "Notes" not in test_plan.build_report(set(), "Tester", "2.1.0", notes="   ")
+
+
 def test_discord_chunks_respect_limit_and_preserve_lines():
     report = test_plan.build_report(set(), "Tester", "2.1.0")
     chunks = test_plan.discord_chunks(report, limit=200)
