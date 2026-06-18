@@ -10,13 +10,14 @@ from __future__ import annotations
 
 import logging
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QPlainTextEdit,
     QProgressBar,
     QPushButton,
     QScrollArea,
@@ -29,6 +30,25 @@ from src.utils.settings import AppSettings
 from src.utils.version import get_version
 
 logger = logging.getLogger(__name__)
+
+
+class _ClickableLabel(QLabel):
+    """A word-wrapping label that emits ``clicked`` when pressed.
+
+    Paired with a text-less QCheckBox so a long checklist item wraps to the
+    panel width (QCheckBox can't wrap its own label) while clicking the text
+    still toggles the box.
+    """
+
+    clicked = pyqtSignal()
+
+    def __init__(self, text: str, parent=None):
+        super().__init__(text, parent)
+        self.setWordWrap(True)
+
+    def mousePressEvent(self, event):
+        self.clicked.emit()
+        super().mousePressEvent(event)
 
 
 class TestPlanPanel(QWidget):
@@ -75,8 +95,11 @@ class TestPlanPanel(QWidget):
         layout.addLayout(prog_row)
 
         # Checklist, in a scroll area so a long plan never squishes the buttons.
+        # Items word-wrap to the panel width; the horizontal scrollbar is off so
+        # long text never forces sideways scrolling.
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         container = QWidget()
         clist = QVBoxLayout(container)
         for s, section in enumerate(test_plan.TEST_SECTIONS):
@@ -84,11 +107,7 @@ class TestPlanPanel(QWidget):
             gbox = QVBoxLayout(group)
             for i, text in enumerate(section["items"]):
                 key = test_plan.item_key(s, i)
-                cb = QCheckBox(text)
-                cb.setChecked(key in self._checked)
-                cb.toggled.connect(lambda checked, k=key: self._on_toggle(k, checked))
-                gbox.addWidget(cb)
-                self._checkboxes[key] = cb
+                gbox.addWidget(self._make_check_row(key, text))
             clist.addWidget(group)
         clist.addStretch()
         scroll.setWidget(container)
@@ -116,11 +135,40 @@ class TestPlanPanel(QWidget):
         self.reset_btn = QPushButton("Reset")
         self.reset_btn.clicked.connect(self._reset)
         btn_row.addWidget(self.reset_btn)
+
+        # Free-text feedback, included in the report (clipboard and Discord).
+        layout.addWidget(QLabel("Additional feedback (optional):"))
+        self.notes_edit = QPlainTextEdit()
+        self.notes_edit.setPlaceholderText(
+            "Describe any bugs, surprises, or suggestions..."
+        )
+        self.notes_edit.setMaximumHeight(110)
+        layout.addWidget(self.notes_edit)
+
         layout.addLayout(btn_row)
 
         self.status_label = QLabel("")
         self.status_label.setWordWrap(True)
         layout.addWidget(self.status_label)
+
+    def _make_check_row(self, key: str, text: str) -> QWidget:
+        """A checklist row: a text-less checkbox plus a word-wrapping label.
+
+        QCheckBox can't wrap its own label, so the wrapping text lives in a
+        sibling label; clicking either the box or the text toggles the item.
+        """
+        row = QWidget()
+        hb = QHBoxLayout(row)
+        hb.setContentsMargins(0, 0, 0, 0)
+        cb = QCheckBox()
+        cb.setChecked(key in self._checked)
+        cb.toggled.connect(lambda checked, k=key: self._on_toggle(k, checked))
+        label = _ClickableLabel(text)
+        label.clicked.connect(cb.toggle)
+        hb.addWidget(cb, 0, Qt.AlignmentFlag.AlignTop)
+        hb.addWidget(label, 1)
+        self._checkboxes[key] = cb
+        return row
 
     # ── state ─────────────────────────────────────────────────────────────────
     def _on_toggle(self, key: str, checked: bool) -> None:
@@ -139,7 +187,10 @@ class TestPlanPanel(QWidget):
 
     def _build_report(self) -> str:
         return test_plan.build_report(
-            self._checked, self.tester_edit.text(), get_version()
+            self._checked,
+            self.tester_edit.text(),
+            get_version(),
+            notes=self.notes_edit.toPlainText(),
         )
 
     # ── actions ─────────────────────────────────────────────────────────────
