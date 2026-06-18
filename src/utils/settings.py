@@ -92,6 +92,12 @@ class AppSettings:
     # Settings keys - Favorites
     FAVORITE_PREFIX = "favorite_prefix"
 
+    # Settings keys - Test Plan panel (#144)
+    TEST_PLAN_CHECKS = "test_plan/checks"        # JSON: {"hash": ..., "checked": [...]}
+    TEST_PLAN_TESTER = "test_plan/tester_name"
+    TEST_WEBHOOK_URL = "test_plan/webhook_url"   # falls back to env var when unset
+    TEST_WEBHOOK_ENV = "SMART_CITIZEN_TEST_WEBHOOK_URL"
+
     # Settings keys - Mission labels
     REP_XP_LABEL = "rep_xp_label"
     MISSION_HEADER_DETAILS = "mission_header/details"
@@ -473,6 +479,55 @@ class AppSettings:
     def set_favorite_prefix(prefix: str) -> None:
         """Set the character prepended to favorited ship names."""
         AppSettings.settings().setValue(AppSettings.FAVORITE_PREFIX, prefix)
+
+    # ── Test Plan panel (#144) ───────────────────────────────────────────────
+    @staticmethod
+    def get_test_plan_checks() -> set:
+        """Return the tester's checked item keys, or empty if the plan changed.
+
+        Stored with the plan hash it was saved against; when TEST_SECTIONS
+        changes the hash no longer matches and the stale marks are dropped.
+        """
+        from src.utils.test_plan import plan_hash
+        raw = AppSettings.settings().value(AppSettings.TEST_PLAN_CHECKS, "")
+        if not raw:
+            return set()
+        try:
+            data = json.loads(raw)
+        except (ValueError, TypeError):
+            return set()
+        if data.get("hash") != plan_hash():
+            return set()
+        return set(data.get("checked", []))
+
+    @staticmethod
+    def set_test_plan_checks(checked) -> None:
+        """Persist the tester's checked item keys against the current plan hash."""
+        from src.utils.test_plan import plan_hash
+        payload = json.dumps({"hash": plan_hash(), "checked": sorted(checked)})
+        AppSettings.settings().setValue(AppSettings.TEST_PLAN_CHECKS, payload)
+
+    @staticmethod
+    def get_tester_name() -> str:
+        return AppSettings.settings().value(AppSettings.TEST_PLAN_TESTER, "")
+
+    @staticmethod
+    def set_tester_name(name: str) -> None:
+        AppSettings.settings().setValue(AppSettings.TEST_PLAN_TESTER, name)
+
+    @staticmethod
+    def get_test_webhook_url() -> str:
+        """Resolve the test-report Discord webhook: stored override, then env.
+
+        Returns "" when neither is set; the panel disables Submit in that case
+        and falls back to Copy Report. No webhook URL is ever bundled.
+        """
+        stored = AppSettings.settings().value(AppSettings.TEST_WEBHOOK_URL, "")
+        return (stored or os.environ.get(AppSettings.TEST_WEBHOOK_ENV, "")).strip()
+
+    @staticmethod
+    def set_test_webhook_url(url: str) -> None:
+        AppSettings.settings().setValue(AppSettings.TEST_WEBHOOK_URL, url)
 
     @staticmethod
     def get_rep_xp_label() -> str:
