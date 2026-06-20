@@ -78,9 +78,9 @@ def test_column_filter_by_order():
     # The order getter (col index 5) reads the two-digit sort prefix off a
     # ship's custom_value; non-ship rows and unordered ships return "".
     entries = [
-        _e("k1", custom_value="*05Avenger"),
-        _e("k2", custom_value="*12Cutlass"),
-        _e("k3", category="Gear", custom_value="*05Helmet"),
+        _e("k1", custom_value="*05-Avenger"),
+        _e("k2", custom_value="*12-Cutlass"),
+        _e("k3", category="Gear", custom_value="*05-Helmet"),
     ]
     col_filters = ["", "", "", "", "", "05", "", ""]
     result = filter_entry_indices(entries, {}, col_filters, "All", "All", False, False, "*")
