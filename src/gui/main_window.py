@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
     QHeaderView, QStatusBar, QFrame, QStyledItemDelegate,
     QAbstractItemView, QMenu, QProgressDialog, QProgressBar, QTextBrowser,
     QTableView, QStackedLayout, QGraphicsOpacityEffect,
-    QDockWidget, QPlainTextEdit,
+    QDockWidget, QPlainTextEdit, QInputDialog,
 )
 from PyQt6.QtGui import QColor, QFont, QCursor, QPixmap, QIcon, QPalette
 from PyQt6.QtCore import QUrl
@@ -382,6 +382,7 @@ class MainWindow(QMainWindow):
         self.config_tab.p4k_extract_requested.connect(self._run_p4k_extraction)
         self.config_tab.import_ini_requested.connect(self._handle_import_ini)
         self.config_tab.reset_user_ini_requested.connect(self._handle_reset_user_ini)
+        self.config_tab.restore_user_ini_requested.connect(self._handle_restore_user_ini)
         self.config_tab.channel_changed.connect(self._on_channel_changed)
         self.config_tab.language_changed.connect(self._on_language_changed)
         self.config_tab.check_updates_requested.connect(self._on_check_updates_clicked)
@@ -1916,6 +1917,80 @@ class MainWindow(QMainWindow):
             "user.ini Reset",
             f"All custom overrides for the {channel} channel have been "
             f"cleared.{backup_note}",
+        )
+
+    def _handle_restore_user_ini(self):
+        """Let the user restore user.ini from an automatic snapshot (#172).
+
+        Lists the rotating snapshots (newest first), lets the user pick one,
+        confirms, restores it (snapshotting the current file first so the
+        restore is itself reversible), and reloads the table. The reset-button
+        siblings (user.ini.bak-*) are intentionally not listed here — those are
+        restored by renaming, as the Reset dialog explains.
+        """
+        from src.utils.user_ini_manager import (
+            list_user_ini_backups,
+            restore_user_ini_backup,
+        )
+
+        user_ini_path = AppSettings.get_user_ini_path()
+        channel = AppSettings.get_active_channel()
+        backups = list_user_ini_backups(user_ini_path)
+
+        if not backups:
+            QMessageBox.information(
+                self,
+                "No Snapshots Yet",
+                f"Smart Citizen has no automatic user.ini snapshots for the "
+                f"{channel} channel yet. A snapshot is saved each time your "
+                f"overrides change, so restore points appear once you've made "
+                f"and saved edits.",
+            )
+            return
+
+        # Build "YYYY-MM-DD HH:MM:SS — N lines, M KB" labels mapped to paths.
+        from datetime import datetime as _dt
+
+        labels = []
+        for b in backups:
+            try:
+                st = b.stat()
+                when = _dt.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                lines = b.read_text(encoding="utf-8", errors="replace").count("\n")
+                size_kb = st.st_size / 1024
+                labels.append(f"{when}  —  {lines} overrides, {size_kb:.1f} KB")
+            except OSError:
+                labels.append(b.name)
+
+        choice, ok = QInputDialog.getItem(
+            self,
+            "Restore user.ini",
+            f"Pick a snapshot to restore for the {channel} channel.\n"
+            f"Your current user.ini is snapshotted first, so this is reversible.",
+            labels,
+            0,
+            False,
+        )
+        if not ok:
+            return
+        chosen = backups[labels.index(choice)]
+
+        try:
+            restore_user_ini_backup(chosen, user_ini_path)
+        except OSError as e:
+            logger.exception(f"Failed to restore user.ini from {chosen}")
+            QMessageBox.critical(
+                self, "Restore Failed",
+                f"Smart Citizen could not restore the snapshot:\n\n{type(e).__name__}: {e}",
+            )
+            return
+
+        self._show_loading_progress(f"Reloading {channel} after user.ini restore...")
+        self.statusBar().showMessage(f"Restored user.ini for {channel}", 5000)
+        QMessageBox.information(
+            self, "user.ini Restored",
+            f"Restored your overrides for the {channel} channel from:\n{chosen.name}\n\n"
+            f"Run Apply to Game to push the restored overrides in-game.",
         )
 
     def _handle_import_ini(self):

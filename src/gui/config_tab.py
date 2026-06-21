@@ -29,6 +29,9 @@ class ConfigTab(QWidget):
     # MainWindow runs the confirmation dialog and the actual file work so
     # this tab stays decoupled from filesystem state + reload orchestration.
     reset_user_ini_requested = pyqtSignal()
+    # Emitted when the user clicks "Restore user.ini" — MainWindow lists the
+    # rotating snapshots and lets the user pick one to restore (#172).
+    restore_user_ini_requested = pyqtSignal()
     # Emitted after the user picks a new channel in the combo AND the choice
     # has already been persisted via AppSettings.set_active_channel(). Main
     # window listens and triggers a reload against the new channel's data.
@@ -115,6 +118,16 @@ class ConfigTab(QWidget):
         )
         self._reset_user_ini_btn.clicked.connect(self.reset_user_ini_requested.emit)
         button_layout.addWidget(self._reset_user_ini_btn)
+
+        self._restore_user_ini_btn = QPushButton(tr("config.restore_user_ini_btn"))
+        self._restore_user_ini_btn.setMaximumWidth(150)
+        self._restore_user_ini_btn.setToolTip(
+            "Restore your custom string overrides from an automatic snapshot. "
+            "Smart Citizen keeps the last few states of user.ini, so you can roll "
+            "back a bad edit or recover after the file was emptied."
+        )
+        self._restore_user_ini_btn.clicked.connect(self.restore_user_ini_requested.emit)
+        button_layout.addWidget(self._restore_user_ini_btn)
 
         self._preview_btn = QPushButton(tr("config.preview_apply_btn"))
         self._preview_btn.setMaximumWidth(150)
@@ -431,6 +444,7 @@ class ConfigTab(QWidget):
         self._tools_desc_label.setText(tr("config.tools_desc"))
         self._import_btn.setText(tr("config.import_ini_btn"))
         self._reset_user_ini_btn.setText(tr("config.reset_user_ini_btn"))
+        self._restore_user_ini_btn.setText(tr("config.restore_user_ini_btn"))
         self._preview_btn.setText(tr("config.preview_apply_btn"))
         self._check_updates_btn.setText(tr("config.check_updates_btn"))
         self._appearance_group.setTitle(tr("config.appearance_group"))
