@@ -552,6 +552,23 @@ class ConfigTab(QWidget):
                     )
                     self.data_dir_input.setText(str(current_dir))
                     return
+                # Warn before committing a OneDrive-managed folder: OneDrive can
+                # sync and empty these files, which has caused lost edits (#172).
+                from src.utils.onedrive import is_onedrive_path
+                if is_onedrive_path(target):
+                    proceed = QMessageBox.warning(
+                        self,
+                        "Data Folder Inside OneDrive",
+                        f"This folder is inside OneDrive:\n\n{target}\n\n"
+                        f"OneDrive can sync and even empty these files, which has "
+                        f"caused lost edits. A local folder outside OneDrive is "
+                        f"strongly recommended.\n\nUse this OneDrive folder anyway?",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.No,
+                    )
+                    if proceed != QMessageBox.StandardButton.Yes:
+                        self.data_dir_input.setText(str(current_dir))
+                        return
                 target.mkdir(parents=True, exist_ok=True)
                 AppSettings.set_user_data_dir(target)
             else:
@@ -607,6 +624,13 @@ class ConfigTab(QWidget):
                 self, tr("config.migrate_data_failed_title"),
                 tr("config.migrate_data_failed_body", error=e),
             )
+
+    def change_data_dir_to(self, path: str) -> None:
+        """Set the data folder programmatically through the same validated
+        save + migrate + reload flow as the text input. Used by the startup
+        OneDrive warning's "move to a local folder" action (#172)."""
+        self.data_dir_input.setText(os.path.normpath(str(path)))
+        self._save_data_dir()
 
     def _browse_data_dir(self):
         start_dir = self.data_dir_input.text().strip() or str(AppSettings.get_user_data_dir())
