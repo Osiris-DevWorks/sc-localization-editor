@@ -65,6 +65,7 @@
     "tools_desc": "Import an external INI file to merge custom strings into your user.ini. Keys are validated against base.ini, and conflicts are resolved interactively.",
     "import_ini_btn": "Import INI...",
     "reset_user_ini_btn": "Reset user.ini...",
+    "restore_user_ini_btn": "Restore user.ini...",
     "preview_apply_btn": "Preview Apply",
     "check_updates_btn": "Check for Updates",
     "appearance_group": "Appearance",

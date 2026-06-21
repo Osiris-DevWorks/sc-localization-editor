@@ -189,6 +189,7 @@ Anchor examples already in-tree: `COL_*` constants in `src/gui/string_table_mode
 | Change Modified/Enhanced/Unmodified/New status logic | `src/parser/ini_parser.py` | `_determine_status_from_source()` |
 | Adjust close-time user.ini autosave guard | `src/utils/user_ini_manager.py` | `should_autosave_user_ini()` |
 | Change "Reset user.ini" tool behavior | `src/utils/user_ini_manager.py`, `src/gui/config_tab.py` | `reset_user_ini()` (+ Config-tab button wiring) |
+| Change user.ini backup/restore behavior | `src/utils/user_ini_manager.py`, `src/gui/main_window.py` | `backup_user_ini()` / `list_user_ini_backups()` / `restore_user_ini_backup()` (rotating snapshots in `backups/`, #172); Config-tab **Restore user.ini** → `_handle_restore_user_ini()` |
 | Move DataForge XML cache out of Documents | `src/utils/settings.py` | `migrate_dataforge_cache_to_local()`, `get_dataforge_cache_dir()` |
 | Add a tag-builder element/style/category | `src/utils/tag_builder.py` | `CATEGORY_ELEMENT_KINDS`, `STYLES_BY_KIND`, `DEFAULT_TAG_CONFIGS`, `render_tag()` |
 | Change Tag Builder UI / live preview | `src/gui/enhancements_tab.py`, `src/gui/tag_mapping_dialog.py` | `_PREVIEW_VALUES`, `TagMappingDialog` |
