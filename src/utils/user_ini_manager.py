@@ -135,6 +135,126 @@ def reset_user_ini(user_ini_path: Path, backup: bool = True) -> Optional[Path]:
     return candidate
 
 
+# Rotating snapshots of user.ini live alongside the game-file backups, in the
+# active channel's backups/ dir, under a distinct prefix so they never collide
+# with global.ini.bak_* or with reset_user_ini's sibling user.ini.bak-* files.
+USER_INI_BACKUP_PREFIX = "user.ini.bak_"
+MAX_USER_INI_BACKUPS = 5
+
+
+def _user_ini_backups_dir(user_ini_path: Path) -> Path:
+    """The channel's backups/ dir, derived from the user.ini path.
+
+    user.ini lives at ``{root}/{channel}/user.ini`` and backups at
+    ``{root}/{channel}/backups`` — i.e. ``AppSettings.get_backups_dir()`` — so
+    deriving it here keeps this module Qt-free and registry-free (testable with
+    plain tmp paths).
+    """
+    return user_ini_path.parent / "backups"
+
+
+def backup_user_ini(
+    user_ini_path: Path, *, keep: int = MAX_USER_INI_BACKUPS
+) -> Optional[Path]:
+    """Snapshot the current user.ini into the channel's backups/ dir.
+
+    Rotates oldest-first to keep at most ``keep`` snapshots. Returns the backup
+    path, or ``None`` when there's nothing worth saving (file missing or empty).
+
+    This is the safety net for user.ini: the one file holding all of a user's
+    hand-entered edits previously had no backups (only the applied game
+    global.ini did), so a truncation or a OneDrive sync emptying the file was
+    unrecoverable. Snapshotting before every content-changing write makes the
+    last ``keep`` distinct states restorable.
+    """
+    try:
+        if not user_ini_path.exists() or user_ini_path.stat().st_size == 0:
+            return None
+    except OSError:
+        return None
+
+    backups_dir = _user_ini_backups_dir(user_ini_path)
+    try:
+        backups_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        logger.warning(f"Could not create backups dir {backups_dir}: {e}")
+        return None
+
+    # Rotate: drop oldest until making room for one more keeps us at <= keep.
+    # Sort by name, not mtime: the timestamp in the name is fixed-width and
+    # zero-padded, so lexicographic order is chronological order — deterministic
+    # even when several saves land in the same clock tick (mtime ties are not).
+    existing = sorted(
+        backups_dir.glob(f"{USER_INI_BACKUP_PREFIX}*"),
+        key=lambda p: p.name,
+    )
+    while len(existing) >= keep:
+        oldest = existing.pop(0)
+        try:
+            oldest.unlink()
+            logger.info(f"Deleted oldest user.ini backup: {oldest.name}")
+        except OSError:
+            break
+
+    # Microsecond resolution so rapid successive saves get distinct, sortable
+    # names instead of colliding on a one-second tick.
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    dest = backups_dir / f"{USER_INI_BACKUP_PREFIX}{timestamp}"
+    # Same-second collision (two saves inside one second): suffix so the second
+    # snapshot can't clobber the first.
+    suffix = 2
+    while dest.exists():
+        dest = backups_dir / f"{USER_INI_BACKUP_PREFIX}{timestamp}-{suffix}"
+        suffix += 1
+
+    try:
+        shutil.copy2(user_ini_path, dest)
+    except OSError as e:
+        logger.warning(f"Could not snapshot user.ini to {dest}: {e}")
+        return None
+    logger.info(f"Backed up user.ini -> {dest}")
+    return dest
+
+
+def list_user_ini_backups(user_ini_path: Path) -> List[Path]:
+    """Return this channel's user.ini snapshots, newest first."""
+    backups_dir = _user_ini_backups_dir(user_ini_path)
+    if not backups_dir.exists():
+        return []
+    # Newest first by name (fixed-width timestamp → lexicographic == chronological).
+    return sorted(
+        backups_dir.glob(f"{USER_INI_BACKUP_PREFIX}*"),
+        key=lambda p: p.name,
+        reverse=True,
+    )
+
+
+def restore_user_ini_backup(backup_path: Path, user_ini_path: Path) -> Path:
+    """Restore ``backup_path`` over user.ini, snapshotting the current file
+    first so the restore itself is reversible. Returns ``user_ini_path``."""
+    # Snapshot the pre-restore state so an unwanted restore can be undone.
+    backup_user_ini(user_ini_path)
+    user_ini_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(backup_path, user_ini_path)
+    logger.info(f"Restored user.ini from {backup_path}")
+    return user_ini_path
+
+
+def _backup_if_changing(user_ini_path: Path, new_text: str) -> None:
+    """Snapshot the existing user.ini before overwriting it with *different*
+    content. No-op when the file is missing/empty or the content is unchanged,
+    so identical saves don't rotate real history out of the backup set.
+    """
+    try:
+        if user_ini_path.exists() and user_ini_path.stat().st_size > 0:
+            if user_ini_path.read_text(encoding="utf-8") != new_text:
+                backup_user_ini(user_ini_path)
+    except OSError as e:
+        logger.warning(
+            f"Could not snapshot user.ini before save ({user_ini_path}): {e}"
+        )
+
+
 def should_autosave_user_ini(entries: List[StringEntry], user_ini_path: Path) -> bool:
     """Decide whether the close-time autosave is safe to run.
 
@@ -193,12 +313,15 @@ def save_user_ini(entries: List[StringEntry], user_ini_path: Path) -> int:
         if entry.is_modified
     }
 
+    new_text = "".join(f"{key}={value}\n" for key, value in user_edits.items())
     user_ini_path.parent.mkdir(parents=True, exist_ok=True)
+    # Snapshot the prior file before overwriting, so even a truncating write
+    # (empty edits over a populated file) stays recoverable.
+    _backup_if_changing(user_ini_path, new_text)
 
     try:
         with open(user_ini_path, 'w', encoding='utf-8') as f:
-            for key, value in user_edits.items():
-                f.write(f"{key}={value}\n")
+            f.write(new_text)
 
         count = len(user_edits)
         logger.info(f"Saved {count} user edits to {user_ini_path}")
@@ -223,12 +346,13 @@ def save_user_ini_dict(data: Dict[str, str], user_ini_path: Path) -> int:
     Returns:
         Number of entries written
     """
+    new_text = "".join(f"{key}={value}\n" for key, value in data.items())
     user_ini_path.parent.mkdir(parents=True, exist_ok=True)
+    _backup_if_changing(user_ini_path, new_text)
 
     try:
         with open(user_ini_path, 'w', encoding='utf-8') as f:
-            for key, value in data.items():
-                f.write(f"{key}={value}\n")
+            f.write(new_text)
 
         count = len(data)
         logger.info(f"Saved {count} entries to {user_ini_path}")
