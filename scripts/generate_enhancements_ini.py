@@ -3876,6 +3876,7 @@ def enhancements_weapon(root: ET.Element, ammo_lookup: dict[str, ET.Element],
 # (not purchasable from the pledge store), where the default name doesn't
 # distinguish them from a store variant. Keys are exact loc keys from base.ini.
 # Merged into ships_desc_enhancements.ini at write time.
+# pray to god this works, because if it doesn't we're screwed.
 #
 # EARNABLE_SHIP_NAME_OVERRIDES: dict[str, str] = {
 #     "vehicle_Name???_???": "",  # placeholder 1
