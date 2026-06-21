@@ -51,9 +51,11 @@ TEST_SECTIONS: list[dict] = [
         "title": "Ship sort order for ASOP (#142)",
         "items": [
             "On a Ship row, set a number in the new # column (a 0-99 spin box); 0 clears it.",
-            "Number two or three favourite ships (e.g. 1, 2, 3) and Apply to Game.",
+            "Number two or three favourite ships (e.g. 1, 2, 3) and Apply to Game; in-game the name reads like \"01-ShipName\" (number, dash, name).",
             "In-game ASOP: confirm the numbered ships sort in that order (01 before 02 before 10).",
             "Click the # column header to sort: numbered ships come first, ascending.",
+            "On a ship whose name starts with digits (e.g. 300i, 600i, 890 Jump), confirm the # column is BLANK until you set a number (no phantom order).",
+            "Set an order on that numeric-named ship, then clear it: the base name is never altered (300i stays 300i, not 0i).",
             "Set a number then clear it (back to 0): the row returns to Unmodified.",
         ],
     },
