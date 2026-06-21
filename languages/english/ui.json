@@ -27,7 +27,8 @@
     "menu_clear_localization": "Clear Localization",
     "menu_clear_cache": "Clear Cache",
     "menu_import_ini": "Import INI…",
-    "menu_export_ini": "Export INI…"
+    "menu_export_ini": "Export INI…",
+    "menu_test_plan": "Test Plan"
   },
   "filters": {
     "category_label": "Category:",

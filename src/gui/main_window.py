@@ -514,6 +514,14 @@ class MainWindow(QMainWindow):
         self._action_open_loc_dir = more_menu.addAction(
             tr("toolbar.open_loc_dir_btn"), self.open_localization_dir
         )
+        more_menu.addSeparator()
+        self._action_test_plan = more_menu.addAction(
+            tr("toolbar.menu_test_plan"), self.show_test_plan
+        )
+        self._action_test_plan.setToolTip(
+            "Open the tester Test Plan: a checklist of what changed in this "
+            "release, with progress tracking and a report you can submit."
+        )
 
         self.more_btn = QPushButton(tr("toolbar.more_btn"))
         self.more_btn.setStyleSheet(f"background-color: {get_button_color('clear')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;")
@@ -2199,6 +2207,40 @@ class MainWindow(QMainWindow):
                 "See the About tab or the project README for usage details.</p>"
             )
 
+    # ── Side-docked Test Plan (#144) ─────────────────────────────────────────
+
+    def _ensure_test_plan_dock(self) -> QDockWidget:
+        """Create the side-docked tester Test Plan on first use and return it."""
+        if getattr(self, "test_plan_dock", None) is not None:
+            return self.test_plan_dock
+
+        from src.gui.test_plan_panel import TestPlanPanel
+
+        dock = QDockWidget("Test Plan", self)
+        dock.setObjectName("testPlanDock")
+        dock.setAllowedAreas(
+            Qt.DockWidgetArea.RightDockWidgetArea
+            | Qt.DockWidgetArea.LeftDockWidgetArea
+        )
+        dock.setFeatures(
+            QDockWidget.DockWidgetFeature.DockWidgetClosable
+            | QDockWidget.DockWidgetFeature.DockWidgetMovable
+            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+        )
+        dock.setWidget(TestPlanPanel(dock))
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock)
+        self.test_plan_dock = dock
+        return dock
+
+    def show_test_plan(self):
+        """Toggle the Test Plan side-panel."""
+        dock = self._ensure_test_plan_dock()
+        if dock.isVisible():
+            dock.hide()
+        else:
+            dock.show()
+            dock.raise_()
+
     # ── Side-docked String Editor ────────────────────────────────────────────
 
     def _ensure_editor_dock(self) -> QDockWidget:
@@ -2845,6 +2887,7 @@ class MainWindow(QMainWindow):
         self._action_import_ini.setText(tr("toolbar.menu_import_ini"))
         self._action_export_ini.setText(tr("toolbar.menu_export_ini"))
         self._action_open_loc_dir.setText(tr("toolbar.open_loc_dir_btn"))
+        self._action_test_plan.setText(tr("toolbar.menu_test_plan"))
 
         # Filter row
         self._category_label.setText(tr("filters.category_label"))
