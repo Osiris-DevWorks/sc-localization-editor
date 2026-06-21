@@ -3871,6 +3871,39 @@ def enhancements_weapon(root: ET.Element, ammo_lookup: dict[str, ET.Element],
     return "\\n".join(lines)
 
 
+# ── Earnable ship name overrides ─────────────────────────────────────────────
+# One-off vehicle_Name* renames for ships that are only earnable in-game
+# (not purchasable from the pledge store), where the default name doesn't
+# distinguish them from a store variant. Keys are exact loc keys from base.ini.
+# Merged into ships_desc_enhancements.ini at write time.
+#
+# EARNABLE_SHIP_NAME_OVERRIDES: dict[str, str] = {
+#     "vehicle_Name???_???": "",  # placeholder 1
+#     "vehicle_Name???_???": "",  # placeholder 2
+#     "vehicle_Name???_???": "",  # placeholder 3
+#     "vehicle_Name???_???": "",  # placeholder 4
+#     "vehicle_Name???_???": "",  # placeholder 5
+#     "vehicle_Name???_???": "",  # placeholder 6
+#     "vehicle_Name???_???": "",  # placeholder 7
+#     "vehicle_Name???_???": "",  # placeholder 8
+#     "vehicle_Name???_???": "",  # placeholder 9
+#     "vehicle_Name???_???": "",  # placeholder 10
+#     "vehicle_Name???_???": "",  # placeholder 11
+#     "vehicle_Name???_???": "",  # placeholder 12
+#     "vehicle_Name???_???": "",  # placeholder 13
+#     "vehicle_Name???_???": "",  # placeholder 14
+#     "vehicle_Name???_???": "",  # placeholder 15
+#     "vehicle_Name???_???": "",  # placeholder 16
+#     "vehicle_Name???_???": "",  # placeholder 17
+#     "vehicle_Name???_???": "",  # placeholder 18
+#     "vehicle_Name???_???": "",  # placeholder 19
+#     "vehicle_Name???_???": "",  # placeholder 20
+#     "vehicle_Name???_???": "",  # placeholder 21
+#     "vehicle_Name???_???": "",  # placeholder 22
+#     "vehicle_Name???_???": "",  # placeholder 23
+#     "vehicle_Name???_???": "",  # placeholder 24
+# }
+
 # ── Ship enhancements (DataForge-based) ──────────────────────────────────────────────
 
 def _extract_item_size(cls: str) -> str | None:
@@ -5668,6 +5701,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
     logger.info("Writing output files…")
     _flush()
     if _want("ship_descs"):
+        # out_ships.update(EARNABLE_SHIP_NAME_OVERRIDES)  # uncomment once keys are filled in
         write_ini(output_dir / "ships_desc_enhancements.ini",       out_ships)
     if _want("component_descs"):
         write_ini(output_dir / "components_desc_enhancements.ini",  out_components)
