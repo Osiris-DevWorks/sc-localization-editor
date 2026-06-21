@@ -49,6 +49,7 @@
     "col_default_value": "Default Value",
     "col_current_value": "Current Value",
     "col_star": "★",
+    "col_order": "#",
     "col_custom_value": "Custom Value",
     "col_status": "Status",
     "no_data": "No data loaded",

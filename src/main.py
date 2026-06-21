@@ -34,6 +34,9 @@ from src.utils.version import get_version
 from src.utils.settings import AppSettings
 from src.utils import i18n
 
+# TODO: LOG_LEVEL only honors the value 'DEBUG'; any other level name
+# (WARNING, ERROR, ...) is ignored and falls back to INFO. Consider mapping
+# any valid level name, e.g. getattr(logging, name, logging.INFO).
 # Setup logging — use --debug flag or LOG_LEVEL env var for perf timing output
 _log_level = logging.DEBUG if ('--debug' in sys.argv or os.environ.get('LOG_LEVEL', '').upper() == 'DEBUG') else logging.INFO
 logging.basicConfig(
