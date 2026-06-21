@@ -2699,6 +2699,52 @@ class MainWindow(QMainWindow):
         self._post_tutorial_tasks_started = True
         self._start_startup_sync()
         self._maybe_auto_check_app_updates()
+        self._maybe_warn_onedrive_data_dir()
+
+    def _maybe_warn_onedrive_data_dir(self) -> None:
+        """Warn once when the data root is inside a OneDrive-managed folder (#172).
+
+        OneDrive can sync and dehydrate/empty files under its tree, which has
+        emptied user.ini. The default data root resolves Documents via the shell
+        Personal folder, so on a OneDrive-redirected machine the per-user data
+        lands inside OneDrive. Offers a one-click move to a local folder and a
+        'don't warn again' opt-out.
+        """
+        if AppSettings.get_onedrive_warning_dismissed():
+            return
+        from src.utils.onedrive import is_onedrive_path, suggest_local_data_dir
+
+        data_dir = AppSettings.get_user_data_dir()
+        if not is_onedrive_path(data_dir):
+            return
+
+        local = suggest_local_data_dir()
+        from PyQt6.QtWidgets import QCheckBox
+
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Warning)
+        box.setWindowTitle("Your Smart Citizen Data Is in OneDrive")
+        box.setText(
+            "Smart Citizen stores your edits (user.ini), source cache, and "
+            "backups in:\n\n"
+            f"{data_dir}\n\n"
+            "That folder is inside OneDrive. OneDrive can sync and even empty "
+            "these files, which has caused lost edits. Moving your data to a "
+            "local folder outside OneDrive avoids this.\n\n"
+            f"Move it to:\n{local} ?"
+        )
+        move_btn = box.addButton("Move to a Local Folder", QMessageBox.ButtonRole.AcceptRole)
+        box.addButton("Keep Here", QMessageBox.ButtonRole.RejectRole)
+        dont_warn = QCheckBox("Don't warn me again")
+        box.setCheckBox(dont_warn)
+        box.exec()
+
+        if dont_warn.isChecked():
+            AppSettings.set_onedrive_warning_dismissed(True)
+
+        if box.clickedButton() is move_btn:
+            # Route through the Config tab's validated save + migrate + reload.
+            self.config_tab.change_data_dir_to(str(local))
 
     def _maybe_start_first_run_tutorial(self) -> None:
         """Auto-start the tour on first launch of a version whose tour wasn't seen.
