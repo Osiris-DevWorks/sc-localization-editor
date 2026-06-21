@@ -22,7 +22,7 @@ def _e(key="k", category="Ships", original_value="val", custom_value="", status=
 
 
 def _no_filters():
-    return ["", "", "", "", "", "", ""]
+    return ["", "", "", "", "", "", "", ""]
 
 
 def test_no_filters_returns_all_indices():
@@ -69,9 +69,22 @@ def test_column_filter_by_key():
 
 def test_column_filter_by_status_text():
     entries = [_e("k1", status="Unmodified"), _e("k2", status="New")]
-    col_filters = ["", "", "", "", "", "", "new"]
+    col_filters = ["", "", "", "", "", "", "", "new"]
     result = filter_entry_indices(entries, {}, col_filters, "All", "All", False, False, "★")
     assert result == [1]
+
+
+def test_column_filter_by_order():
+    # The order getter (col index 5) reads the two-digit sort prefix off a
+    # ship's custom_value; non-ship rows and unordered ships return "".
+    entries = [
+        _e("k1", custom_value="*05-Avenger"),
+        _e("k2", custom_value="*12-Cutlass"),
+        _e("k3", category="Gear", custom_value="*05-Helmet"),
+    ]
+    col_filters = ["", "", "", "", "", "05", "", ""]
+    result = filter_entry_indices(entries, {}, col_filters, "All", "All", False, False, "*")
+    assert result == [0]
 
 
 def test_column_filter_by_default_values():
@@ -87,7 +100,7 @@ def test_column_filter_by_custom_value():
         _e("k1", custom_value="my custom", status="Modified"),
         _e("k2", status="Unmodified"),
     ]
-    col_filters = ["", "", "", "", "", "custom", ""]
+    col_filters = ["", "", "", "", "", "", "custom", ""]
     result = filter_entry_indices(entries, {}, col_filters, "All", "All", False, False, "★")
     assert result == [0]
 

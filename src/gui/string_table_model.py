@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import QApplication
 
 from src.models.string_model import StringEntry
 from src.utils.i18n import tr
+from src.utils.ship_sort_prefix import get_order, set_order
 
 # ---------------------------------------------------------------------------
 # Column constants
@@ -25,9 +26,10 @@ COL_KEY = 1
 COL_DEFAULT = 2
 COL_CURRENT = 3
 COL_STAR = 4
-COL_CUSTOM = 5
-COL_STATUS = 6
-NUM_COLUMNS = 7
+COL_ORDER = 5
+COL_CUSTOM = 6
+COL_STATUS = 7
+NUM_COLUMNS = 8
 
 _HEADER_KEYS = [
     "strings_tab.col_category",
@@ -35,6 +37,7 @@ _HEADER_KEYS = [
     "strings_tab.col_default_value",
     "strings_tab.col_current_value",
     "strings_tab.col_star",
+    "strings_tab.col_order",
     "strings_tab.col_custom_value",
     "strings_tab.col_status",
 ]
@@ -144,6 +147,15 @@ def _make_sort_key(entries, default_values, sort_keys, col, grouped, favorite_pr
             is_fav = e.category == "Ships" and e.custom_value.startswith(favorite_prefix)
             return (0 if is_fav else 1, e.key.lower())
         return fav_key
+    if col == COL_ORDER:
+        # Sort order = the two-digit token on a Ship's custom_value. Assigned
+        # ships first (ascending by number), unassigned/non-ships after;
+        # tie-break by key so ordering within each group is stable.
+        def order_key(idx):
+            e = entries[idx]
+            order = get_order(e.custom_value, favorite_prefix) if e.category == "Ships" else ""
+            return (0 if order else 1, order, e.key.lower())
+        return order_key
     # unknown — fall back to key
     return lambda idx: entries[idx].key.lower()
 
@@ -278,6 +290,11 @@ class StringTableModel(QAbstractTableModel):
             entry = self.entry_for_row(index.row())
             if entry is not None and entry.category != "Ships":
                 return Qt.ItemFlag.ItemIsEnabled  # not selectable
+        if col == COL_ORDER:
+            entry = self.entry_for_row(index.row())
+            if entry is not None and entry.category == "Ships":
+                return base | Qt.ItemFlag.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled  # non-ships: shown, not editable
         return base
 
     def data(self, index: QModelIndex, role=Qt.ItemDataRole.DisplayRole):
@@ -305,6 +322,10 @@ class StringTableModel(QAbstractTableModel):
                 if entry.category != "Ships":
                     return ""
                 return "\u2605" if entry.custom_value.startswith(prefix) else "\u2606"
+            if col == COL_ORDER:
+                if entry.category != "Ships":
+                    return ""
+                return get_order(entry.custom_value, prefix)
             if col == COL_CUSTOM:
                 return entry.custom_value
             if col == COL_STATUS:
@@ -315,6 +336,8 @@ class StringTableModel(QAbstractTableModel):
         if role == Qt.ItemDataRole.EditRole:
             if col == COL_CUSTOM:
                 return entry.custom_value
+            if col == COL_ORDER:
+                return get_order(entry.custom_value, prefix)
             return None
 
         # -- entry index (replaces old UserRole on col-0 trick) -------------
@@ -328,6 +351,10 @@ class StringTableModel(QAbstractTableModel):
                     if entry.custom_value.startswith(prefix):
                         return "Favorite \u2014 click to remove"
                     return "Click to mark as favorite"
+                return None
+            if col == COL_ORDER:
+                if entry.category == "Ships":
+                    return "Sort order: click to pick a number for ASOP ordering"
                 return None
             return self.data(index, Qt.ItemDataRole.DisplayRole)
 
@@ -347,30 +374,47 @@ class StringTableModel(QAbstractTableModel):
 
         # -- alignment ------------------------------------------------------
         if role == Qt.ItemDataRole.TextAlignmentRole:
-            if col == COL_STAR:
+            if col in (COL_STAR, COL_ORDER):
                 return int(Qt.AlignmentFlag.AlignCenter)
             return None
 
         return None
 
     def setData(self, index: QModelIndex, value, role=Qt.ItemDataRole.EditRole) -> bool:
-        """Handle inline editing of the Custom Value column."""
+        """Handle inline editing of the Custom Value and Sort Order columns."""
         if not index.isValid() or role != Qt.ItemDataRole.EditRole:
             return False
-        if index.column() != COL_CUSTOM:
+        col = index.column()
+        if col not in (COL_CUSTOM, COL_ORDER):
             return False
 
         entry = self.entry_for_row(index.row())
         if entry is None:
             return False
-        new_text = str(value)
-        if new_text == entry.custom_value:
-            return False
 
-        entry.custom_value = new_text
-        entry.status = "Modified" if new_text != entry.original_value else "Unmodified"
+        if col == COL_CUSTOM:
+            new_text = str(value)
+            if new_text == entry.custom_value:
+                return False
+            entry.custom_value = new_text
+            entry.status = "Modified" if new_text != entry.original_value else "Unmodified"
+        else:  # COL_ORDER — only Ships are editable here (enforced by flags()).
+            if entry.category != "Ships":
+                return False
+            new_custom = set_order(
+                entry.custom_value,
+                entry.original_value,
+                self._favorite_prefix,
+                str(value),
+            )
+            if new_custom == entry.custom_value:
+                return False
+            entry.custom_value = new_custom
+            # set_order collapses to "" when nothing distinguishes it from
+            # stock, so a non-empty value always means Modified.
+            entry.status = "Modified" if entry.custom_value else "Unmodified"
 
-        # Notify view that star, custom value, and status columns changed
+        # Notify view that star, order, custom value, and status columns changed
         left = self.index(index.row(), COL_STAR)
         right = self.index(index.row(), COL_STATUS)
         self.dataChanged.emit(left, right)

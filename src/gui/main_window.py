@@ -27,7 +27,7 @@ from src.gui.filter_header import FilterHeaderView
 from src.gui.log_tab import LogTab
 from src.gui.markdown_renderer import markdown_to_html as _md_to_html
 from src.gui.string_table_model import (
-    StringTableModel, COL_STAR, COL_CUSTOM, COL_STATUS,
+    StringTableModel, COL_STAR, COL_ORDER, COL_CUSTOM, COL_STATUS,
     status_color,
 )
 from src.gui.theme import (
@@ -40,6 +40,7 @@ from src.gui.workers import (
     EnhancementsGeneratorWorker,
     FileLoaderWorker,
     LanguageBaseDownloadWorker,
+    OrderSpinBoxDelegate,
     P4kExtractWorker,
     SelectAllDelegate,
     StartupSyncWorker,
@@ -955,10 +956,13 @@ class MainWindow(QMainWindow):
             tr("strings_tab.col_default_value"),
             tr("strings_tab.col_current_value"),
             tr("strings_tab.col_star"),
+            tr("strings_tab.col_order"),
             tr("strings_tab.col_custom_value"),
             tr("strings_tab.col_status"),
         ]
-        self.filter_header = FilterHeaderView(column_names, self.table, skip_columns={0, 4, 6})
+        # Skip text-filter boxes on the non-text columns: category (0), ★ (4),
+        # order (5, a spin box), and status (7).
+        self.filter_header = FilterHeaderView(column_names, self.table, skip_columns={0, 4, 5, 7})
         self.table.setHorizontalHeader(self.filter_header)
         self.filter_header.filter_changed.connect(self.apply_filters)
 
@@ -979,11 +983,17 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)           # Default Value
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)           # Current Value
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)  # ★
-        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)           # Custom Value
-        header.setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)  # Status
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)  # Order #
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.Stretch)           # Custom Value
+        header.setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)  # Status
 
-        # Set custom delegate for editing Custom Value column (col 5)
-        self.table.setItemDelegateForColumn(COL_CUSTOM, SelectAllDelegate())
+        # Set custom delegates: Custom Value text editor + Sort Order spin box.
+        # Parent each to the table so Qt's object tree owns them: the view does
+        # not take ownership, and PyQt's per-method keep-reference holds only the
+        # last delegate, so a second unparented setItemDelegateForColumn would
+        # let the first (Custom Value) delegate be garbage-collected.
+        self.table.setItemDelegateForColumn(COL_CUSTOM, SelectAllDelegate(self.table))
+        self.table.setItemDelegateForColumn(COL_ORDER, OrderSpinBoxDelegate(self.table))
         # Star column click handling
         self.table.clicked.connect(self._on_cell_clicked)
 
@@ -2866,6 +2876,7 @@ class MainWindow(QMainWindow):
             tr("strings_tab.col_default_value"),
             tr("strings_tab.col_current_value"),
             tr("strings_tab.col_star"),
+            tr("strings_tab.col_order"),
             tr("strings_tab.col_custom_value"),
             tr("strings_tab.col_status"),
         ]
