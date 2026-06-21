@@ -143,6 +143,10 @@ class AppSettings:
     ENHANCEMENTS_ENABLED = "enhancements_enabled"
     INCLUDE_NEW_LINES = "include_new_lines"
 
+    # When the user dismisses the "your data is in OneDrive" warning with
+    # "don't warn again", we stop nagging on startup (#172).
+    ONEDRIVE_WARNING_DISMISSED = "onedrive_warning_dismissed"
+
     # Settings keys - Tutorial
     # Stores the app version string ("0.9.3") that last marked the guided tour
     # as completed, so a future release can re-trigger it if the tour gains
@@ -314,6 +318,20 @@ class AppSettings:
     def set_include_new_lines(enabled: bool) -> None:
         """Include or exclude discovered items from apply output."""
         AppSettings.settings().setValue(AppSettings.INCLUDE_NEW_LINES, enabled)
+
+    @staticmethod
+    def get_onedrive_warning_dismissed() -> bool:
+        """Whether the user dismissed the OneDrive data-root warning (#172)."""
+        return AppSettings.settings().value(
+            AppSettings.ONEDRIVE_WARNING_DISMISSED, False, type=bool
+        )
+
+    @staticmethod
+    def set_onedrive_warning_dismissed(dismissed: bool) -> None:
+        """Persist 'don't warn me again' for the OneDrive data-root warning."""
+        AppSettings.settings().setValue(
+            AppSettings.ONEDRIVE_WARNING_DISMISSED, dismissed
+        )
 
     @staticmethod
     def get_enhancement_category_enabled(key: str) -> bool:
