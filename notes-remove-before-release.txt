@@ -1,6 +1,0 @@
-NOTES — REMOVE BEFORE RELEASE
-==============================
-
-scripts/generate_enhancements_ini.py
-  - Line 3880: EARNABLE_SHIP_NAME_OVERRIDES dict (commented out — fill in vehicle_Name* keys before uncommenting)
-  - Line 5704: out_ships.update(EARNABLE_SHIP_NAME_OVERRIDES) merge call (commented out — uncomment once dict is filled in)
