@@ -222,6 +222,17 @@ Smart Citizen uses **long-lived release branches as integration targets**, not f
 
 Don't propose tagging, drafting release notes, or merging to `main` mid-integration — the user drives that handoff. During integration, normal work is just landing PRs on the release branch.
 
+### Branch protection
+
+The branching model above is enforced by GitHub settings, not just convention. Don't propose workflows that fight these rules.
+
+- **`release/*` is governed by the "Protect release branches" ruleset** (active; targets `refs/heads/release/*`). It requires every change to land via a pull request (no direct pushes), requires **one approving review from the code owner** (`@Osiris-DevWorks` via `.github/CODEOWNERS`, which owns `*`), forbids the author's own last push from being the approval, and blocks force-pushes and branch deletion. Net effect: a contributor can open a PR against a release branch, but only the owner's review can clear it to merge.
+- **`.github/CODEOWNERS` lives on `main`** so every `release/X.Y.Z` cut from `main` inherits the owner gate automatically. A release branch created before the file existed needs it added directly (that's why `release/2.1.0` carries its own copy).
+- **`main` has classic branch protection** (PR required, 0 approvals, admins included) — the release-branch merge still goes through a PR.
+- **The repo owner (admin) bypasses the ruleset.** That's how the owner runs `start_release` (the initial `VERSION.TXT` bump is a direct push to the new branch), lands hotfixes, and merges PRs with `gh pr merge --admin`. Contributors have no bypass.
+- **Process violations get reverted.** A direct push to a release branch that slips through (e.g. before protection existed) should be backed out via a revert PR, not left in place. The work returns through a normal PR.
+- **Platform limit:** this is a personal (non-org) repo, so GitHub can't restrict the literal merge-button click to one user. The code-owner approval is the real gate; nothing merges without the owner's review even though the final click isn't account-restricted. Tightening that further would require moving the repo under an org.
+
 ### Release checklist (release/X.Y.Z → main)
 1. `VERSION.TXT` should already match the branch name from when it opened — confirm (sole source of truth; `installer.iss` reads it via ISPP at compile time).
 2. Build the PyInstaller onedir: `.venv/Scripts/python.exe scripts/build/build_exe.py`
