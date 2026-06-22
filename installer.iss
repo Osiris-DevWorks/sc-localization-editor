@@ -101,6 +101,92 @@ begin
   Result := ExpandConstant('{%USERPROFILE}\Documents\Smart Citizen');
 end;
 
+function IsOneDriveSegment(const Seg: String): Boolean;
+var
+  Low: String;
+begin
+  { Mirror of onedrive.py:_is_onedrive_segment. True for a path segment that
+    names a OneDrive folder: bare "OneDrive" and the org variants
+    "OneDrive - Contoso" / "OneDrive-Contoso", but NOT look-alikes like
+    "OneDriveBackups". Keep this in sync with the app's detection so the
+    installer and the app agree on what counts as OneDrive. }
+  Low := Trim(LowerCase(Seg));
+  Result := (Low = 'onedrive') or
+            (Copy(Low, 1, Length('onedrive - ')) = 'onedrive - ') or
+            (Copy(Low, 1, Length('onedrive-')) = 'onedrive-');
+end;
+
+function PathUnderRoot(const Child, Root: String): Boolean;
+var
+  C, R: String;
+begin
+  { Prefix test that can't false-match a sibling: "...\OneDriveStuff" must NOT
+    register as under "...\OneDrive". Append a backslash to both sides before
+    comparing (mirror of onedrive.py's norm == root or norm.startswith(root + sep)).
+    Empty Root never matches — an unset env var must not match everything. }
+  Result := False;
+  if (Child = '') or (Root = '') then
+    Exit;
+  C := AddBackslash(LowerCase(RemoveBackslash(Child)));
+  R := AddBackslash(LowerCase(RemoveBackslash(Root)));
+  Result := (Pos(R, C) = 1);
+end;
+
+function IsPathOnOneDrive(const Path: String): Boolean;
+var
+  Roots: array[0..2] of String;
+  i, P: Integer;
+  Remaining, Seg: String;
+begin
+  { Mirror of onedrive.py:is_onedrive_path. Two independent signals, either
+    sufficient:
+      1. Path is at/under a OneDrive root from the environment
+         (%OneDrive% / %OneDriveConsumer% / %OneDriveCommercial%) — the
+         precise signal. Empty vars are skipped (unset must not match all).
+      2. Path contains a "OneDrive" path segment — a fallback that catches
+         org folders and contexts where the env var isn't set.
+    Used by NextButtonClick to warn on ANY chosen path (a hand-browsed
+    OneDrive subfolder or a pre-filled OneDrive override), not just the
+    shell Documents default that IsDocsOnOneDrive steers. }
+  Result := False;
+  if Path = '' then
+    Exit;
+
+  Roots[0] := GetEnv('OneDrive');
+  Roots[1] := GetEnv('OneDriveConsumer');
+  Roots[2] := GetEnv('OneDriveCommercial');
+  for i := 0 to 2 do
+  begin
+    if PathUnderRoot(Path, Roots[i]) then
+    begin
+      Result := True;
+      Exit;
+    end;
+  end;
+
+  { Segment fallback: split on '\' and test each component. }
+  Remaining := Path;
+  while Remaining <> '' do
+  begin
+    P := Pos('\', Remaining);
+    if P = 0 then
+    begin
+      Seg := Remaining;
+      Remaining := '';
+    end
+    else
+    begin
+      Seg := Copy(Remaining, 1, P - 1);
+      Remaining := Copy(Remaining, P + 1, MaxInt);
+    end;
+    if IsOneDriveSegment(Seg) then
+    begin
+      Result := True;
+      Exit;
+    end;
+  end;
+end;
+
 function HasVersionedAppSegment(const Path: String): Boolean;
 var
   Remaining, Seg, Low, Rest: String;
@@ -474,26 +560,20 @@ begin
   end;
 end;
 
-procedure CleanRegistrySettings();
-var
-  RegPath: String;
-  SavedSCDir: String;
-  HadSCDir: Boolean;
-begin
-  RegPath := 'Software\Osiris DevWorks\SC Localization Editor';
-
-  { Preserve sc_directory so the installer page can pre-fill it }
-  HadSCDir := RegQueryStringValue(HKCU, RegPath, 'sc_directory', SavedSCDir);
-
-  { Delete the entire app registry key }
-  RegDeleteKeyIncludingSubkeys(HKCU, RegPath);
-
-  { Restore sc_directory if it existed }
-  if HadSCDir and (SavedSCDir <> '') then
-  begin
-    RegWriteStringValue(HKCU, RegPath, 'sc_directory', SavedSCDir);
-  end;
-end;
+{ Persistence contract (#172): the user's data-folder choice must survive
+  uninstall + reinstall. It does so by construction —
+    - user_data_dir is written to the LIVE node (Osiris DevWorks\Smart Citizen)
+      via RegWriteStringValue in WriteInstallerChoicesToRegistry, NOT via a
+      Registry-section entry, so Inno's own uninstaller has no value to drop;
+    - this script has no Registry section and no code path that deletes
+      values from the live node, so nothing wipes it on uninstall;
+    - InitializeWizard pre-fills user_data_dir on the next install.
+  The real risk vector is a FUTURE change adding live-node deletion to the
+  uninstall step (see CurUninstallStepChanged). A former CleanRegistrySettings()
+  helper that key-deleted a whole node lived here and was dead code; it was
+  removed deliberately so its wipe pattern can't be copied and retargeted at
+  the live node. Do not reintroduce node/value deletion against
+  'Software\Osiris DevWorks\Smart Citizen' in the uninstall path. }
 
 procedure WriteInstallerChoicesToRegistry();
 var
@@ -657,7 +737,13 @@ begin
   begin
     { Same cleanup contract as install/upgrade: per-channel \cache gets
       nuked, \backups + user.ini survive so a reinstall picks up where
-      the user left off. }
+      the user left off. Only \cache is disposable.
+
+      Persistence lock (#172): do NOT delete the live registry node
+      'Software\Osiris DevWorks\Smart Citizen' or any of its values here —
+      user_data_dir (and the other settings) MUST survive uninstall so the
+      next install pre-fills the user's chosen data folder. Wiping the node
+      is exactly the regression that let the data-folder choice revert. }
     Log('Cleaning cached data during uninstall');
     CleanCachedData();
   end;
@@ -926,6 +1012,51 @@ begin
     CacheDirPage.Values[0] := SavedDataDir
   else
     CacheDirPage.Values[0] := GetLocalCacheDefault();
+end;
+
+function NextButtonClick(CurPageID: Integer): Boolean;
+var
+  Chosen: String;
+  Suggested: String;
+  Response: Integer;
+begin
+  { Active OneDrive warning (#172). The data-folder page's pre-fill only
+    *steers* the default away from a OneDrive-redirected Documents; it does
+    nothing about a user who browses to a OneDrive folder by hand, or a
+    pre-filled OneDrive override carried over from a prior install. Validate
+    the ENTERED path at Next-click against any OneDrive root (not just the
+    shell Documents folder) and make the user acknowledge it. This is the
+    installer-side mirror of the app's startup / Config-tab warning (#174),
+    and the "switch to a local folder" path matches #174's
+    "Move to a Local Folder" so both surfaces behave identically. }
+  Result := True;
+  if (DataDirPage = nil) or (CurPageID <> DataDirPage.ID) then
+    Exit;
+
+  Chosen := Trim(DataDirPage.Values[0]);
+  if not IsPathOnOneDrive(Chosen) then
+    Exit;
+
+  Suggested := SuggestLocalDataDir();
+  Response := MsgBox(
+    'The data folder you chose is inside OneDrive:' + #13#10 + #13#10 +
+    '  ' + Chosen + #13#10 + #13#10 +
+    'OneDrive syncs and can dehydrate or empty files under its tree. Smart Citizen '
+    + 'has lost user.ini data this way (your favorited ships and custom edits live there). '
+    + 'A local folder outside OneDrive is strongly recommended.' + #13#10 + #13#10 +
+    'Switch to a local folder?' + #13#10 +
+    '  - Click YES to use ' + Suggested + #13#10 +
+    '  - Click NO to keep the OneDrive folder anyway',
+    mbError, MB_YESNO);
+
+  if Response = IDYES then
+  begin
+    DataDirPage.Values[0] := Suggested;
+    { Stay on the page so the user sees the swapped-in local path before
+      committing. Mirrors #174 keeping the user on the data-dir surface. }
+    Result := False;
+  end;
+  { Response = IDNO: proceed with the OneDrive folder; the user was warned. }
 end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
