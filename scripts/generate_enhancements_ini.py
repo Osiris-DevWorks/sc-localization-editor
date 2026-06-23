@@ -3872,37 +3872,30 @@ def enhancements_weapon(root: ET.Element, ammo_lookup: dict[str, ET.Element],
 
 
 # ── Earnable ship name overrides ─────────────────────────────────────────────
-# One-off vehicle_Name* renames for ships that are only earnable in-game
-# (not purchasable from the pledge store), where the default name doesn't
-# distinguish them from a store variant. Keys are exact loc keys from base.ini.
-# Merged into ships_desc_enhancements.ini at write time.
-# pray to god this works, because if it doesn't we're screwed.
+# Specific Namings for executive hangar/wikelo ships. 
+# 3 hours wasted here so far
 #
+# Hopefully if this all works then when the user clicks generate enhancements the names for exec hangar ships and wikelo
+# earned ships will be used, if not (we're fucked) because I honestly can't
+# be arsed to rewrite the fuckin script to include this shit on top of all the other shit
+# this will probably slow the process by like a minute tho because the app has to
+# specifically search for these UI Keys
+#
+# FML
 # EARNABLE_SHIP_NAME_OVERRIDES: dict[str, str] = {
-#     "vehicle_Name???_???": "",  # placeholder 1
-#     "vehicle_Name???_???": "",  # placeholder 2
-#     "vehicle_Name???_???": "",  # placeholder 3
-#     "vehicle_Name???_???": "",  # placeholder 4
-#     "vehicle_Name???_???": "",  # placeholder 5
-#     "vehicle_Name???_???": "",  # placeholder 6
-#     "vehicle_Name???_???": "",  # placeholder 7
-#     "vehicle_Name???_???": "",  # placeholder 8
-#     "vehicle_Name???_???": "",  # placeholder 9
-#     "vehicle_Name???_???": "",  # placeholder 10
-#     "vehicle_Name???_???": "",  # placeholder 11
-#     "vehicle_Name???_???": "",  # placeholder 12
-#     "vehicle_Name???_???": "",  # placeholder 13
-#     "vehicle_Name???_???": "",  # placeholder 14
-#     "vehicle_Name???_???": "",  # placeholder 15
-#     "vehicle_Name???_???": "",  # placeholder 16
-#     "vehicle_Name???_???": "",  # placeholder 17
-#     "vehicle_Name???_???": "",  # placeholder 18
-#     "vehicle_Name???_???": "",  # placeholder 19
-#     "vehicle_Name???_???": "",  # placeholder 20
-#     "vehicle_Name???_???": "",  # placeholder 21
-#     "vehicle_Name???_???": "",  # placeholder 22
-#     "vehicle_Name???_???": "",  # placeholder 23
-#     "vehicle_Name???_???": "",  # placeholder 24
+#     "vehicle_Name???_???": "Drake",  
+#     "vehicle_Name???_???": "RSI",  
+#     "vehicle_Name???_???": "Anvil",  
+#     "vehicle_Name???_???": "Aegis",  
+#     "vehicle_Name???_???": "Argo",  
+#     "vehicle_Name???_???": "Gatac",  
+#     "vehicle_Name???_???": "Aopoa", 
+#     "vehicle_Name???_???": "Esperia",  
+#     "vehicle_Name???_???": "Kreuger",  
+#     "vehicle_Name???_???": "Origin",
+#     "vehicle_Name???_???": "Tumbril",
+#     "vehicle_Name???_???": "Crusader",
+#     "vehicle_Name???_???": "", 
 # }
 
 # ── Ship enhancements (DataForge-based) ──────────────────────────────────────────────
