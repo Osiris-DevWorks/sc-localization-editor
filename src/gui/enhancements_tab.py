@@ -184,6 +184,7 @@ class EnhancementsTab(QWidget):
             ("reputation",    "Reputation"),
             ("blueprints",    "Blueprints"),
             ("blueprint_tag", "Blueprint Tag"),
+            ("route",         "Route in Title"),
         ]
         # The blueprint_tag field controls the [BP]/[BP?] marker on the mission
         # TITLE, not a body line — it gets its own tooltip. Turning the body
@@ -193,6 +194,11 @@ class EnhancementsTab(QWidget):
             "blueprint_tag": (
                 "Show the [BP] / [BP?] marker on the mission title. "
                 "Independent of the Blueprints body section. "
+                "Takes effect on the next Generate Enhancements."
+            ),
+            "route": (
+                "Add the pickup → dropoff route to hauling / delivery "
+                "mission titles (the game fills in the real locations). "
                 "Takes effect on the next Generate Enhancements."
             ),
         }

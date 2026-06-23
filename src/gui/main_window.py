@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QFileDialog, QMessageBox, QTabWidget,
     QHeaderView, QStatusBar, QFrame, QStyledItemDelegate,
     QAbstractItemView, QMenu, QProgressDialog, QProgressBar, QTextBrowser,
-    QTableView, QStackedLayout, QGraphicsOpacityEffect,
+    QTableView, QStackedLayout, QStackedWidget, QGraphicsOpacityEffect,
     QDockWidget, QPlainTextEdit, QInputDialog,
 )
 from PyQt6.QtGui import QColor, QFont, QCursor, QPixmap, QIcon, QPalette
@@ -25,6 +25,7 @@ from src.gui.error_dialog import ErrorDialogHandler, _ErrorDialogEmitter
 from src.gui.enhancements_tab import EnhancementsTab
 from src.gui.filter_header import FilterHeaderView
 from src.gui.log_tab import LogTab
+from src.gui.simple_mode_widget import SimpleModeWidget
 from src.gui.markdown_renderer import markdown_to_html as _md_to_html
 from src.gui.string_table_model import (
     StringTableModel, COL_STAR, COL_ORDER, COL_CUSTOM, COL_STATUS,
@@ -283,6 +284,11 @@ class MainWindow(QMainWindow):
         # DataForge extraction worker
         self._forge_worker: Optional[DataForgeExtractWorker] = None
 
+        # #180: when True, the Simple-mode one-button flow is running and the
+        # enhancements-generation-finished slot should continue into
+        # apply_to_game. Cleared on completion or any failure.
+        self._simple_run_active = False
+
         # Track whether we've prompted for enhancements on startup (prevents duplicate dialogs)
         self._enhancements_prompted_on_startup = False
         # Flag to defer enhancements checking until after file loading completes (avoid I/O contention)
@@ -371,7 +377,11 @@ class MainWindow(QMainWindow):
         toolbar_row.setContentsMargins(0, 0, 12, 0)
         toolbar_row.addLayout(toolbar_layout, stretch=2)
         toolbar_row.addWidget(self.preview_pane, stretch=1)
-        main_layout.addLayout(toolbar_row)
+        # Wrapped in a container so Simple mode (#180) can hide the whole
+        # advanced toolbar + preview as a unit (a layout can't be hidden).
+        self.toolbar_container = QWidget()
+        self.toolbar_container.setLayout(toolbar_row)
+        main_layout.addWidget(self.toolbar_container)
 
         self.tabs = QTabWidget()
         self._strings_tab_index = self.tabs.addTab(self.create_strings_tab(), tr("tabs.string_editor"))
@@ -421,7 +431,19 @@ class MainWindow(QMainWindow):
         self.tabs.currentChanged.connect(self._on_tab_changed)
         self._previous_tab_index = self.tabs.currentIndex()
 
-        main_layout.addWidget(self.tabs, 1)
+        # #180: Simple/Advanced view switch. The tabbed UI (Advanced) and the
+        # one-button Simple page share a QStackedWidget so switching is a page
+        # swap rather than a teardown, and the QTabWidget keeps its stretch=1
+        # placement inside the stack.
+        self.simple_page = SimpleModeWidget()
+        self.simple_page.generate_and_apply_requested.connect(self._run_simple_apply)
+        self.simple_page.switch_to_advanced_requested.connect(
+            lambda: self._apply_ui_mode(AppSettings.UI_MODE_ADVANCED)
+        )
+        self.view_stack = QStackedWidget()
+        self.view_stack.addWidget(self.tabs)         # Advanced
+        self.view_stack.addWidget(self.simple_page)  # Simple
+        main_layout.addWidget(self.view_stack, 1)
 
         # Footer
         footer_layout = self.create_footer()
@@ -449,6 +471,24 @@ class MainWindow(QMainWindow):
         # now so it's visible before any source loading kicks off — users
         # who launch into an empty cache still see which channel they're on.
         self._ensure_channel_indicator()
+
+        # #180: apply the saved Simple/Advanced view last, once every widget
+        # the toggle touches exists.
+        self._apply_ui_mode(AppSettings.get_ui_mode())
+
+    def _apply_ui_mode(self, mode: str) -> None:
+        """Switch between the Simple and Advanced views and persist the choice (#180).
+
+        Simple shows the one-button page and hides the advanced toolbar +
+        preview; Advanced restores the full tabbed UI. Safe to call before or
+        after the window is shown.
+        """
+        if mode not in (AppSettings.UI_MODE_SIMPLE, AppSettings.UI_MODE_ADVANCED):
+            mode = AppSettings.UI_MODE_SIMPLE
+        simple = mode == AppSettings.UI_MODE_SIMPLE
+        self.view_stack.setCurrentWidget(self.simple_page if simple else self.tabs)
+        self.toolbar_container.setVisible(not simple)
+        AppSettings.set_ui_mode(mode)
 
     def _on_tab_changed(self, new_index: int):
         """Revert unapplied enhancement checkbox changes when leaving the Enhancements tab."""
@@ -522,6 +562,16 @@ class MainWindow(QMainWindow):
         self._action_test_plan.setToolTip(
             "Open the tester Test Plan: a checklist of what changed in this "
             "release, with progress tracking and a report you can submit."
+        )
+        more_menu.addSeparator()
+        # #180: jump to the simplified one-button view. Lives in the toolbar
+        # (Advanced-only); the way back is the Simple page's own button.
+        self._action_switch_to_simple = more_menu.addAction(
+            tr("toolbar.menu_switch_to_simple"),
+            lambda: self._apply_ui_mode(AppSettings.UI_MODE_SIMPLE),
+        )
+        self._action_switch_to_simple.setToolTip(
+            "Switch to the simplified one-button view."
         )
 
         self.more_btn = QPushButton(tr("toolbar.more_btn"))
@@ -2763,6 +2813,15 @@ class MainWindow(QMainWindow):
         if getattr(self, "_tutorial_first_run_checked", False):
             return
         self._tutorial_first_run_checked = True
+        # #180: the guided tour spotlights the tabs and toolbar, which are
+        # hidden in Simple mode (the default for new installs). Skip it there —
+        # Simple mode is self-explanatory (one button), and the tour is one
+        # click away from the toolbar once the user switches to Advanced. Still
+        # fire the deferred startup tasks so first-run source sync / update /
+        # OneDrive checks aren't lost.
+        if AppSettings.get_ui_mode() == AppSettings.UI_MODE_SIMPLE:
+            QTimer.singleShot(0, self._start_post_tutorial_tasks)
+            return
         if AppSettings.get_tutorial_disabled():
             QTimer.singleShot(0, self._start_post_tutorial_tasks)
             return
@@ -3009,6 +3068,10 @@ class MainWindow(QMainWindow):
         self._action_export_ini.setText(tr("toolbar.menu_export_ini"))
         self._action_open_loc_dir.setText(tr("toolbar.open_loc_dir_btn"))
         self._action_test_plan.setText(tr("toolbar.menu_test_plan"))
+        self._action_switch_to_simple.setText(tr("toolbar.menu_switch_to_simple"))
+
+        # Simple-mode page (#180)
+        self.simple_page.retranslate_ui()
 
         # Filter row
         self._category_label.setText(tr("filters.category_label"))
@@ -3774,6 +3837,47 @@ class MainWindow(QMainWindow):
             self._loader_worker.wait()
             self._loader_worker = None
 
+    def _run_simple_apply(self):
+        """Simple-mode one-button flow (#180): generate enhancements, then apply.
+
+        Reuses the existing async pipeline (extract → generate) and the
+        existing ``apply_to_game`` (backup / validate / rollback). Sets a flag
+        so ``_on_enhancements_generation_finished`` continues into the apply
+        once generation completes; this adds one continuation, not a parallel
+        pipeline.
+        """
+        if self._enhancements_worker is not None or self._forge_worker is not None:
+            return  # already running
+
+        # Applying needs the game folder, but Config (where it's set) is hidden
+        # in Simple mode — so guide the user to Advanced rather than no-op.
+        if not AppSettings.get_game_install_path():
+            QMessageBox.information(
+                self, "Set Your Game Folder",
+                "Smart Citizen needs to know where Star Citizen is installed "
+                "before it can apply changes.\n\nSwitching to Advanced mode so "
+                "you can set the game folder on the Config tab.",
+            )
+            self._apply_ui_mode(AppSettings.UI_MODE_ADVANCED)
+            self.tabs.setCurrentIndex(self._config_tab_index)
+            return
+
+        reply = QMessageBox.question(
+            self, "Generate & Apply to Game",
+            "This will generate the latest enhancements with your default "
+            "settings and apply them to your game's global.ini. A timestamped "
+            "backup is made first.\n\nThe first run can take a few minutes "
+            "while DataForge is extracted. Continue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        self._simple_run_active = True
+        self.simple_page.set_busy(True)
+        self._run_enhancements_pipeline()
+
     def _run_enhancements_pipeline(self):
         """Entry point for the enhancements button: extract DataForge if needed, then generate enhancements."""
         if self._enhancements_worker is not None or self._forge_worker is not None:
@@ -3868,6 +3972,9 @@ class MainWindow(QMainWindow):
 
     def _on_enhancements_generation_error(self, message: str):
         logger.error(f"Enhancements generation error: {message}")
+        # #180: abandon any in-flight Simple-mode flow so it doesn't apply.
+        self._simple_run_active = False
+        self.simple_page.set_busy(False)
         # Close progress dialog on error
         if self._enhancements_progress_dialog is not None:
             self._enhancements_progress_dialog.close()
@@ -3886,9 +3993,21 @@ class MainWindow(QMainWindow):
         self.enhancements_tab.refresh_enhancements_status()
 
         if success:
-            self.statusBar().showMessage("Enhancements generated — reloading entries…")
+            # #180: Simple-mode one-button flow continues into apply here.
+            # apply_to_game is synchronous and re-loads sources from disk, so
+            # the just-written enhancement INIs are picked up; the table reload
+            # below keeps the (hidden) Advanced view consistent afterward.
+            if self._simple_run_active:
+                self._simple_run_active = False
+                self.simple_page.set_busy(False)
+                self.statusBar().showMessage("Enhancements generated — applying to game…")
+                self.apply_to_game()
+            else:
+                self.statusBar().showMessage("Enhancements generated — reloading entries…")
             self._show_loading_progress("Reloading strings with updated enhancements…")
         else:
+            self._simple_run_active = False
+            self.simple_page.set_busy(False)
             self.statusBar().showMessage("Enhancement generation failed — check the Log tab for details")
 
     def _run_dataforge_extraction(self):
@@ -3920,6 +4039,9 @@ class MainWindow(QMainWindow):
 
     def _on_dataforge_extract_error(self, message: str):
         logger.error(f"DataForge extraction error: {message}")
+        # #180: abandon any in-flight Simple-mode flow so it doesn't apply.
+        self._simple_run_active = False
+        self.simple_page.set_busy(False)
         if getattr(self, "_forge_progress_dialog", None) is not None:
             self._forge_progress_dialog.close()
             self._forge_progress_dialog = None
@@ -3950,6 +4072,9 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("DataForge extracted — generating enhancements…")
             self._run_enhancements_generation()
         else:
+            # #180: extraction failed, so the Simple-mode flow can't continue.
+            self._simple_run_active = False
+            self.simple_page.set_busy(False)
             if getattr(self, "_forge_progress_dialog", None) is not None:
                 self._forge_progress_dialog.close()
                 self._forge_progress_dialog = None

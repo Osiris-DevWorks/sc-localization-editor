@@ -6,6 +6,13 @@
   "window": {
     "title": "Smart Citizen v{version}"
   },
+  "simple_mode": {
+    "switch_to_advanced": "Switch to Advanced",
+    "switch_to_advanced_tip": "Show the full Smart Citizen interface with all tabs and options.",
+    "generate_apply_btn": "Generate & Apply to Game",
+    "generate_apply_tip": "Generate the latest enhancements with default settings and apply them to your game. A backup of the current global.ini is made first.",
+    "defaults_hint": "Uses your default settings. The first run can take a few minutes while DataForge is extracted."
+  },
   "tabs": {
     "string_editor": "String Editor",
     "config": "Config",
@@ -28,7 +35,8 @@
     "menu_clear_cache": "Clear Cache",
     "menu_import_ini": "Import INI…",
     "menu_export_ini": "Export INI…",
-    "menu_test_plan": "Test Plan"
+    "menu_test_plan": "Test Plan",
+    "menu_switch_to_simple": "Switch to Simple Mode"
   },
   "filters": {
     "category_label": "Category:",

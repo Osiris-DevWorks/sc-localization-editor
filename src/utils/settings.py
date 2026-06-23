@@ -119,7 +119,7 @@ class AppSettings:
     # Enhancements run.
     MISSION_FIELD_KEYS = (
         "mission_type", "difficulty", "spawns", "reputation",
-        "blueprints", "blueprint_tag",
+        "blueprints", "blueprint_tag", "route",
     )
     _MISSION_FIELD_SETTING = {
         "mission_type":  "mission_field/mission_type",
@@ -128,6 +128,9 @@ class AppSettings:
         "reputation":    "mission_field/reputation",
         "blueprints":    "mission_field/blueprints",
         "blueprint_tag": "mission_field/blueprint_tag",
+        # #166: pickup→dropoff route appended to haul/delivery TITLES
+        # (e.g. ` | ~mission(Location|name) > ~mission(Destination|name)`).
+        "route":         "mission_field/route",
     }
     MISSION_HEADER_DEFAULTS = {
         "details": "MISSION DETAILS",
@@ -138,6 +141,12 @@ class AppSettings:
 
     # Settings keys - Appearance
     THEME = "theme"
+    # #180: "simple" (one-button generate+apply) vs "advanced" (full UI).
+    # The installer writes this on a fresh registry install; the in-app
+    # toggle changes it at runtime. Defaults to "simple" when unset.
+    UI_MODE = "ui_mode"
+    UI_MODE_SIMPLE = "simple"
+    UI_MODE_ADVANCED = "advanced"
 
     # Settings keys - Enhancements
     ENHANCEMENTS_ENABLED = "enhancements_enabled"
@@ -365,6 +374,30 @@ class AppSettings:
     def set_theme(theme: str) -> None:
         """Persist UI theme name."""
         AppSettings.settings().setValue(AppSettings.THEME, theme)
+
+    @staticmethod
+    def get_ui_mode() -> str:
+        """Return the UI mode: 'simple' or 'advanced' (#180).
+
+        Defaults to 'simple' for fresh installs (the installer may have
+        already written the user's choice). Any unrecognized stored value
+        coerces back to 'simple'.
+        """
+        value = AppSettings.settings().value(
+            AppSettings.UI_MODE, AppSettings.UI_MODE_SIMPLE
+        )
+        return (
+            value
+            if value in (AppSettings.UI_MODE_SIMPLE, AppSettings.UI_MODE_ADVANCED)
+            else AppSettings.UI_MODE_SIMPLE
+        )
+
+    @staticmethod
+    def set_ui_mode(mode: str) -> None:
+        """Persist the UI mode. Unknown values fall back to 'simple'."""
+        if mode not in (AppSettings.UI_MODE_SIMPLE, AppSettings.UI_MODE_ADVANCED):
+            mode = AppSettings.UI_MODE_SIMPLE
+        AppSettings.settings().setValue(AppSettings.UI_MODE, mode)
 
     @staticmethod
     def get_selected_language() -> str:

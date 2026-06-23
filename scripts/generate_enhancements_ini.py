@@ -987,6 +987,120 @@ def _classify_mission_engagement(loc_key: str | None) -> str:
     return "FPS"
 
 
+# #166: pickup→dropoff route appended to haul/delivery mission TITLES.
+# Captures a ~mission(Var|Modifier) token: group 1 is the variable name,
+# group 2 (optional) the "|Modifier" display tail the body uses.
+_ROUTE_TOKEN_RE = re.compile(r"~mission\(\s*([A-Za-z][A-Za-z0-9_]*)\s*(\|[^)]*)?\)")
+
+
+def _route_token_role(var: str) -> str | None:
+    """Classify a ~mission token variable as a route endpoint, or None.
+
+    ``Location*`` / ``Pickup*`` are pickups (from); ``Destination*`` /
+    ``Dropoff*`` are dropoffs (to). Case-insensitive; everything else
+    (TargetName, System, Item, ...) is not a route endpoint.
+    """
+    v = var.lower()
+    if v.startswith("location") or v.startswith("pickup"):
+        return "from"
+    if v.startswith("destination") or v.startswith("dropoff"):
+        return "to"
+    return None
+
+
+# Title-key families that carry a pickup→dropoff route (#166). StarStrings
+# scopes the route to exactly these: HaulCargo contracts and Delivery jobs.
+_HAUL_DELIVERY_KEY_TOKENS = ("haulcargo", "delivery")
+
+
+def _is_haul_or_delivery_title(title_key: str) -> bool:
+    """True for a hauling-cargo or delivery mission title (route-eligible)."""
+    low = title_key.lower()
+    return any(tok in low for tok in _HAUL_DELIVERY_KEY_TOKENS)
+
+
+def _title_has_route_token(title: str) -> bool:
+    """True if *title* already shows a from/to route token.
+
+    Some CIG base titles embed the location themselves (e.g. CFP delivery
+    titles read ``...at ~mission(Destination)``). When they do, appending our
+    own route would double it, so the caller skips those.
+    """
+    if not title:
+        return False
+    return any(
+        _route_token_role(m.group(1)) is not None
+        for m in _ROUTE_TOKEN_RE.finditer(title)
+    )
+
+
+def _title_route_token(var: str, body_token: str) -> str:
+    """Render a route endpoint for a mission TITLE.
+
+    StarStrings validated the short ``|name`` display for the canonical
+    ``Location`` / ``Destination`` variables, so use it there (titles want
+    a place name, not a full address). For any other endpoint variable
+    (Pickup*/Dropoff*) copy the exact token the body uses — the body
+    already resolves it, so reusing it verbatim guarantees the title does
+    too rather than guessing at an unverified ``|name`` form.
+    """
+    low = var.lower()
+    if low.startswith("location") or low.startswith("destination"):
+        return f"~mission({var}|name)"
+    return body_token
+
+
+def _derive_route_fragment(desc_bodies: list[str]) -> str:
+    """Build the ` | from > to` route fragment for a haul/delivery title.
+
+    Returns a fragment with a leading ``" | "`` separator, or ``""`` when no
+    unambiguous route applies. The shape mirrors StarStrings, driven by how
+    many distinct from/to *variables* the mission's own body resolves:
+
+    - one source, one dest      → ``| <from> > <to>``   (A→B)
+    - one source, many/zero dest → ``| from <from>``     (single-to-multi)
+    - one dest, many/zero source → ``| to <to>``         (multi-to-single)
+    - many sources AND many dests → omitted (ambiguous; one title can't
+      carry two routes — the heterogeneous-shared-title guard)
+
+    A token is only emitted when its variable appears in the body, so the
+    game is guaranteed to resolve it (no raw ``~mission(...)`` text leaks
+    into a title).
+    """
+    # var name -> the exact ~mission(...) token string first seen in a body.
+    from_tokens: dict[str, str] = {}
+    to_tokens: dict[str, str] = {}
+    for body in desc_bodies:
+        if not body:
+            continue
+        for m in _ROUTE_TOKEN_RE.finditer(body):
+            var = m.group(1)
+            role = _route_token_role(var)
+            if role is None:
+                continue
+            token = f"~mission({var}{m.group(2) or ''})"
+            bucket = from_tokens if role == "from" else to_tokens
+            bucket.setdefault(var, token)
+
+    if not from_tokens and not to_tokens:
+        return ""
+
+    single_from = len(from_tokens) == 1
+    single_to = len(to_tokens) == 1
+
+    if single_from and single_to:
+        fv, ft = next(iter(from_tokens.items()))
+        tv, tt = next(iter(to_tokens.items()))
+        return f" | {_title_route_token(fv, ft)} > {_title_route_token(tv, tt)}"
+    if single_from:
+        fv, ft = next(iter(from_tokens.items()))
+        return f" | from {_title_route_token(fv, ft)}"
+    if single_to:
+        tv, tt = next(iter(to_tokens.items()))
+        return f" | to {_title_route_token(tv, tt)}"
+    return ""
+
+
 def _resource_amount(amount_el: ET.Element) -> str | None:
     """Extract the numeric value from a resourceAmountPerSecond element."""
     unit = amount_el.find(".//SPowerSegmentResourceUnit")
@@ -4993,6 +5107,20 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
             has_blueprints and _any_variant_has_bp and not _has_dominant_no_bp_bucket
         )
         augmented_title = base_title
+        # #166: append the pickup→dropoff route for hauling/delivery titles,
+        # before the [BP]/XP tags (the StarStrings layout). Scoped by the
+        # HaulCargo/Delivery key family; skipped when CIG's base title already
+        # shows a route token so we don't double it. Route variables are read
+        # from the mission's own desc bodies (pu_missions + contractgenerator)
+        # so the game is guaranteed to resolve them.
+        if (_show("route") and _is_haul_or_delivery_title(title_key)
+                and not _title_has_route_token(base_title)):
+            _route_descs = pu_title_to_descs.get(title_key, set()) | {
+                v[3] for v in variants if v[3]
+            }
+            _route = _derive_route_fragment([loc.get(dk) for dk in _route_descs])
+            if _route:
+                augmented_title += _route
         if _show("blueprint_tag"):
             if _all_have_bp and not _surviving_no_bp_cargo:
                 augmented_title += " <EM4>[BP]</EM4>"
