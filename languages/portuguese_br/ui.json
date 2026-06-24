@@ -26,7 +26,7 @@
     },
     "generate_apply_btn": {
       "ht": "",
-      "at": "Gerar e Aplicar ao Jogo"
+      "at": "Aplicar Aprimoramentos"
     },
     "generate_apply_tip": {
       "ht": "",
@@ -65,8 +65,8 @@
   },
   "toolbar": {
     "apply_btn": {
-      "ht": "Aplicar ao Jogo",
-      "at": "Aplicar ao Jogo"
+      "ht": "Aplicar Aprimoramentos",
+      "at": "Aplicar Aprimoramentos"
     },
     "restore_backup_btn": {
       "ht": "Restaurar Backup",

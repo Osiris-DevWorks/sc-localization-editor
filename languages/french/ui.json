@@ -26,7 +26,7 @@
     },
     "generate_apply_btn": {
       "ht": "",
-      "at": "Générer et appliquer au jeu"
+      "at": "Appliquer les enrichissements"
     },
     "generate_apply_tip": {
       "ht": "",
@@ -65,8 +65,8 @@
   },
   "toolbar": {
     "apply_btn": {
-      "ht": "Appliquer au jeu",
-      "at": "Appliquer au jeu"
+      "ht": "Appliquer les enrichissements",
+      "at": "Appliquer les enrichissements"
     },
     "restore_backup_btn": {
       "ht": "Restaurer une sauvegarde",

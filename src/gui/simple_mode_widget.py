@@ -38,41 +38,47 @@ class SimpleModeWidget(QWidget):
         layout.setSpacing(16)
         layout.addStretch(1)
 
-        # Switch-to-Advanced sits top-aligned within the centred block so the
-        # big primary action stays the visual focus.
-        switch_row = QHBoxLayout()
-        switch_row.addStretch(1)
-        self.advanced_btn = QPushButton(tr("simple_mode.switch_to_advanced"))
-        self.advanced_btn.setToolTip(tr("simple_mode.switch_to_advanced_tip"))
-        self.advanced_btn.setStyleSheet(
-            f"background-color: {get_button_color('open')}; "
-            f"color: {get_button_text_color()}; font-weight: bold; padding: 6px 14px;"
-        )
-        self.advanced_btn.clicked.connect(self.switch_to_advanced_requested)
-        switch_row.addWidget(self.advanced_btn)
-        switch_row.addStretch(1)
-        layout.addLayout(switch_row)
-
-        layout.addSpacing(8)
-
-        # The one big button.
+        # Both buttons live in one centred, width-capped column and expand to
+        # fill it, so they end up the same size. Apply Enhancements (primary)
+        # sits on top; Switch to Advanced below it.
         self.generate_apply_btn = QPushButton(tr("simple_mode.generate_apply_btn"))
         self.generate_apply_btn.setToolTip(tr("simple_mode.generate_apply_tip"))
         self.generate_apply_btn.setMinimumHeight(44)
-        # Sized to its content and centred rather than a full-width bar, so the
-        # Simple page stays compact (#180 follow-up).
         self.generate_apply_btn.setSizePolicy(
-            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
         self.generate_apply_btn.setStyleSheet(
             f"background-color: {get_button_color('apply')}; "
             f"color: {get_button_text_color()}; font-weight: bold; "
-            f"font-size: 14px; padding: 10px 28px;"
+            f"font-size: 14px; padding: 10px 20px;"
         )
         self.generate_apply_btn.clicked.connect(self.generate_and_apply_requested)
-        layout.addWidget(
-            self.generate_apply_btn, alignment=Qt.AlignmentFlag.AlignHCenter
+
+        self.advanced_btn = QPushButton(tr("simple_mode.switch_to_advanced"))
+        self.advanced_btn.setToolTip(tr("simple_mode.switch_to_advanced_tip"))
+        self.advanced_btn.setMinimumHeight(44)
+        self.advanced_btn.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
+        self.advanced_btn.setStyleSheet(
+            f"background-color: {get_button_color('open')}; "
+            f"color: {get_button_text_color()}; font-weight: bold; "
+            f"font-size: 14px; padding: 10px 20px;"
+        )
+        self.advanced_btn.clicked.connect(self.switch_to_advanced_requested)
+
+        btn_col = QVBoxLayout()
+        btn_col.setSpacing(12)
+        btn_col.addWidget(self.generate_apply_btn)   # Apply Enhancements on top
+        btn_col.addWidget(self.advanced_btn)         # Switch to Advanced below
+        btn_wrap = QWidget()
+        btn_wrap.setLayout(btn_col)
+        btn_wrap.setMaximumWidth(320)
+        btn_row = QHBoxLayout()
+        btn_row.addStretch(1)
+        btn_row.addWidget(btn_wrap)
+        btn_row.addStretch(1)
+        layout.addLayout(btn_row)
 
         self.hint_label = QLabel(tr("simple_mode.defaults_hint"))
         self.hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
