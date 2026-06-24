@@ -904,3 +904,18 @@ class TestCargoBpTitleDemotion:
             pu_title_descs={"D_CG", "HaulCargo_AtoB_desc"},
         )
         assert tag == ""
+
+
+class TestTypelessTagFilter:
+    """#160: typeless component tags ("[S1-A]" — size+grade, no class/type)
+    are dropped before being woven into POTENTIAL BLUEPRINTS, so armour /
+    magazines / salvage-mining heads show bare. Class/type-qualified tags
+    survive."""
+
+    def test_typeless_tags_match_the_filter(self, gen_module):
+        for tag in ("[S1-A]", "[S2]", "[S3-B]", "[S0-D]"):
+            assert gen_module._TYPELESS_COMPONENT_TAG_RE.search(tag), tag
+
+    def test_class_or_type_tags_do_not_match(self, gen_module):
+        for tag in ("[Mil-S1-A]", "[SAL-S2]", "[MIN-S0-B]", "[CIV-S3-C]"):
+            assert not gen_module._TYPELESS_COMPONENT_TAG_RE.search(tag), tag

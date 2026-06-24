@@ -236,9 +236,16 @@ def write_ini(path: Path, entries: dict[str, str]) -> None:
 #     deliberately stay English under #30 option A), making the cached
 #     values language-independent again. Bump flushes any pickle built
 #     from a non-English loc before this fix.
+#   scitem_lookups v8 / blueprint_pools v12 (2.1.0, #160) — typeless component
+#     tags ("[S1-A]" — size+grade, no class) are no longer woven into
+#     blueprint lists. Armour, magazines and salvage/mining heads expose
+#     Size/Grade but no ship-component class, so they were picking up a
+#     meaningless "[S1-A]" in POTENTIAL BLUEPRINTS. entity_name_tags now keeps
+#     only CLASS/TYPE-qualified tags; both lookups carry the affected names so
+#     both bump to force a rebuild.
 _LOOKUP_VERSIONS: dict[str, str] = {
-    "blueprint_pools": "v11",
-    "scitem_lookups": "v7",
+    "blueprint_pools": "v12",
+    "scitem_lookups": "v8",
     "standings": "v2",
 }
 
@@ -4418,6 +4425,14 @@ _SUBDIR_TO_TYPE: dict[str, str] = {
     "radar":           "Radar",
 }
 
+# #160: a typeless component tag — "[S1-A]" (size, optional grade) with no
+# leading CLASS/TYPE token. _component_name_tag emits this as a fallback for
+# items that carry Size/Grade but no ship-component class (armour, magazines,
+# salvage/mining heads). Such tags are meaningless in blueprint lists, so they
+# are filtered out before being woven in. Class/type tags ("[Mil-S1-A]",
+# "[SAL-S2]") start with a letter token and don't match.
+_TYPELESS_COMPONENT_TAG_RE = re.compile(r"^\[S\d")
+
 
 def build_scitem_lookups(
     scitem_dir: Path,
@@ -4539,7 +4554,15 @@ def build_scitem_lookups(
                 tag = _component_name_tag(
                     desc_value, root, config=tag_config, component_type=comp_type
                 )
-                if tag:
+                # #160: armour, magazines, salvage/mining heads and other FPS
+                # gear expose Size + Grade in their AttachDef but no ship
+                # component CLASS, so _component_name_tag falls back to a
+                # typeless "[S1-A]" (size+grade only). That tag is meaningless
+                # in a POTENTIAL BLUEPRINTS list — users reported it as an
+                # unknown tag. Only weave CLASS/TYPE-qualified tags (e.g.
+                # "[Mil-S1-A]", "[SAL-S2]") into blueprint lists; drop the
+                # typeless fallback so these items show bare.
+                if tag and not _TYPELESS_COMPONENT_TAG_RE.search(tag):
                     entity_name_tags[ref] = tag
 
     return mag_lookup, entity_names, entity_names_by_filename, entity_name_tags
