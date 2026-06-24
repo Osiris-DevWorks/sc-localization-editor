@@ -58,17 +58,21 @@ class SimpleModeWidget(QWidget):
         # The one big button.
         self.generate_apply_btn = QPushButton(tr("simple_mode.generate_apply_btn"))
         self.generate_apply_btn.setToolTip(tr("simple_mode.generate_apply_tip"))
-        self.generate_apply_btn.setMinimumHeight(96)
+        self.generate_apply_btn.setMinimumHeight(44)
+        # Sized to its content and centred rather than a full-width bar, so the
+        # Simple page stays compact (#180 follow-up).
         self.generate_apply_btn.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
         )
         self.generate_apply_btn.setStyleSheet(
             f"background-color: {get_button_color('apply')}; "
             f"color: {get_button_text_color()}; font-weight: bold; "
-            f"font-size: 20px; padding: 12px;"
+            f"font-size: 14px; padding: 10px 28px;"
         )
         self.generate_apply_btn.clicked.connect(self.generate_and_apply_requested)
-        layout.addWidget(self.generate_apply_btn)
+        layout.addWidget(
+            self.generate_apply_btn, alignment=Qt.AlignmentFlag.AlignHCenter
+        )
 
         self.hint_label = QLabel(tr("simple_mode.defaults_hint"))
         self.hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
