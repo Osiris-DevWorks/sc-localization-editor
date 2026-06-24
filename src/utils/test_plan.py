@@ -69,6 +69,61 @@ TEST_SECTIONS: list[dict] = [
             "If a webhook is configured, Submit and confirm the report arrives in Discord.",
         ],
     },
+    {
+        "title": "Hostiles toggle + salvage (#162 / #163 / #165)",
+        "items": [
+            "Enhancements tab: confirm the mission-detail toggle is now labelled \"Hostiles\" (was \"Spawns\").",
+            "Uncheck Hostiles, Generate Enhancements; confirm NO mission (including salvage contracts) shows a Hostiles line.",
+            "Re-check Hostiles and regenerate; filter on a Salvage Contractor mission and confirm it shows \"Salvageable Ships\" but NO bogus hostile wave (lawful salvage reads as peaceful).",
+            "Confirm normal combat missions still show their Hostiles counts.",
+        ],
+    },
+    {
+        "title": "Blueprint list tag cleanup (#160)",
+        "items": [
+            "Generate Enhancements, then open a mission with a POTENTIAL BLUEPRINTS list that includes armour / magazines / FPS gear.",
+            "Confirm those items show with NO trailing [S1-A]-style tag (they read as bare names).",
+            "Confirm real ship components still carry their class tag (e.g. [Mil-S1-A]).",
+        ],
+    },
+    {
+        "title": "Header style label (#164)",
+        "items": [
+            "Enhancements tab: the mission header style dropdown reads \"Underline\" / \"Blue text\" (not EM3 / EM4).",
+            "Pick each option, Generate Enhancements, and confirm section headers render underlined vs blue in-game as labelled.",
+        ],
+    },
+    {
+        "title": "Blueprint mission filters (#156)",
+        "items": [
+            "Strings table: tick \"BP Titles\" and confirm only mission-title rows carrying [BP]/[BP?] remain.",
+            "Tick \"BP Descriptions\" only and confirm only rows with a POTENTIAL BLUEPRINTS body remain.",
+            "Tick both and confirm titles AND descriptions show; Clear Filters resets both.",
+        ],
+    },
+    {
+        "title": "FAQ tab (#152)",
+        "items": [
+            "Open the new FAQ tab (between About and Legal); it renders four Q&As without error.",
+            "Switch theme (light/dark) and confirm the FAQ re-renders with matching colours.",
+        ],
+    },
+    {
+        "title": "Stats above description (#153)",
+        "items": [
+            "Enhancements tab: tick \"Show stats above description\", Generate Enhancements.",
+            "Open a ship or component (e.g. a shield generator); confirm the stats block now sits ABOVE the prose blurb, separated by a divider.",
+            "Untick it and regenerate; confirm stats return below the description under \"--- STATS ---\".",
+        ],
+    },
+    {
+        "title": "Ace-pilot tag (#158)",
+        "items": [
+            "Generate Enhancements with the \"Ace Pilot Tag\" toggle on.",
+            "Filter for ambush/strike missions (e.g. Foxwell) and confirm ace-spawning missions carry an [ACE] title tag (or [ACE?] where only some variants spawn one), alongside [BP]/XP.",
+            "Turn the Ace Pilot Tag toggle off, regenerate, and confirm the [ACE] tags disappear.",
+        ],
+    },
 ]
 
 
