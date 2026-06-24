@@ -5224,6 +5224,20 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
                 augmented_title += " <EM4>[BP]</EM4>"
             elif _bp_partial or (_all_have_bp and _surviving_no_bp_cargo):
                 augmented_title += " <EM4>[BP?]</EM4>"
+        # #158: ace-pilot flag. An AcePilotShip spawn group classifies as the
+        # "Ace Pilots" hostile label (see _SPAWN_KEYWORD_TABLE). [ACE] when
+        # every variant of this title spawns an ace; [ACE?] when only some do
+        # (mirrors [BP]/[BP?] for shared/ambiguous titles). The ace always
+        # spawns when its group is present — there is no probability in the
+        # data — so there is no percentage to show.
+        if _show("ace"):
+            _ace_flags = [
+                "Ace Pilots" in (v[5] or {}).get(SPAWN_HOSTILE, {}) for v in variants
+            ]
+            if _ace_flags and all(_ace_flags):
+                augmented_title += " <EM4>[ACE]</EM4>"
+            elif any(_ace_flags):
+                augmented_title += " <EM4>[ACE?]</EM4>"
         nonzero_xp = [x for x in unique_xp if x > 0]
         if len(nonzero_xp) == 1:
             augmented_title += f" <EM4>[{nonzero_xp[0]:,} {rep_xp_label}]</EM4>"

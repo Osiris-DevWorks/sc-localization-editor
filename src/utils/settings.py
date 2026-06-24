@@ -119,7 +119,7 @@ class AppSettings:
     # Enhancements run.
     MISSION_FIELD_KEYS = (
         "mission_type", "difficulty", "spawns", "reputation",
-        "blueprints", "blueprint_tag", "route",
+        "blueprints", "blueprint_tag", "route", "ace",
     )
     _MISSION_FIELD_SETTING = {
         "mission_type":  "mission_field/mission_type",
@@ -131,6 +131,8 @@ class AppSettings:
         # #166: pickup→dropoff route appended to haul/delivery TITLES
         # (e.g. ` | ~mission(Location|name) > ~mission(Destination|name)`).
         "route":         "mission_field/route",
+        # #158: [ACE]/[ACE?] title tag for missions that spawn an ace pilot.
+        "ace":           "mission_field/ace",
     }
     MISSION_HEADER_DEFAULTS = {
         "details": "MISSION DETAILS",

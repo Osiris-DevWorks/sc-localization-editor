@@ -185,6 +185,7 @@ class EnhancementsTab(QWidget):
             ("blueprints",    "Blueprints"),
             ("blueprint_tag", "Blueprint Tag"),
             ("route",         "Route in Title"),
+            ("ace",           "Ace Pilot Tag"),
         ]
         # The blueprint_tag field controls the [BP]/[BP?] marker on the mission
         # TITLE, not a body line — it gets its own tooltip. Turning the body
@@ -199,6 +200,11 @@ class EnhancementsTab(QWidget):
             "route": (
                 "Add the pickup → dropoff route to hauling / delivery "
                 "mission titles (the game fills in the real locations). "
+                "Takes effect on the next Generate Enhancements."
+            ),
+            "ace": (
+                "Flag missions that spawn an ace pilot with an [ACE] title tag "
+                "([ACE?] when only some variants of that mission do). "
                 "Takes effect on the next Generate Enhancements."
             ),
         }

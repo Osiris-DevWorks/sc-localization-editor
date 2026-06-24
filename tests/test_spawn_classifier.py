@@ -602,3 +602,15 @@ class TestSpawnGatingInEnhancementsMission:
         )
         assert "Hostiles:" not in body
         assert "Salvageable Ships" in body
+
+
+class TestAcePilotClassification:
+    """#158: an AcePilotShip spawn group is the detection basis for the
+    [ACE]/[ACE?] title tag — it must classify as the 'Ace Pilots' hostile
+    label so the title loop can find it in a variant's spawn breakdown."""
+
+    @pytest.mark.parametrize("name", ["AcePilotShip", "AcePilot", "Ace Pilot"])
+    def test_ace_group_is_hostile_ace_pilots(self, gen_module, name):
+        bucket, label = gen_module.classify_spawn_group(name, "ship")
+        assert bucket == gen_module.SPAWN_HOSTILE
+        assert label == "Ace Pilots"
