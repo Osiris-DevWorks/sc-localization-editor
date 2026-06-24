@@ -152,3 +152,45 @@ def test_favorites_marker_searchable_in_star_column():
     col_filters = ["", "", "", "", "★", "", ""]
     result = filter_entry_indices(entries, {}, col_filters, "All", "All", False, False, "★")
     assert result == [0]
+
+
+# ── #156: blueprint-mission filters ──────────────────────────────────────────
+
+def _bp_entries():
+    return [
+        _e("title_bp", original_value="Retrieve Cargo Haul <EM4>[BP]</EM4>"),
+        _e("title_bpq", original_value="Recoup Stolen Haul <EM4>[BP?]</EM4>"),
+        _e("desc_bp", original_value="POSTING...\n<EM4>POTENTIAL BLUEPRINTS</EM4>\n- Antium Core"),
+        _e("plain_title", original_value="Some Mission"),
+        _e("plain_desc", original_value="A description with no rewards section"),
+    ]
+
+
+def test_bp_titles_only_keeps_tagged_titles():
+    e = _bp_entries()
+    result = filter_entry_indices(e, {}, _no_filters(), "All", "All", False, False, "★",
+                                  bp_titles_only=True)
+    assert result == [0, 1]  # [BP] and [BP?] titles only
+
+
+def test_bp_descs_only_keeps_potential_blueprints_bodies():
+    e = _bp_entries()
+    result = filter_entry_indices(e, {}, _no_filters(), "All", "All", False, False, "★",
+                                  bp_descs_only=True)
+    assert result == [2]  # the POTENTIAL BLUEPRINTS body only
+
+
+def test_both_bp_flags_show_titles_or_descs():
+    e = _bp_entries()
+    result = filter_entry_indices(e, {}, _no_filters(), "All", "All", False, False, "★",
+                                  bp_titles_only=True, bp_descs_only=True)
+    assert result == [0, 1, 2]  # titles OR descriptions
+
+
+def test_bp_filter_reads_custom_override_when_present():
+    # A user override on a title row is what's shown, so the tag must be read
+    # from custom_value when set.
+    e = [_e("t", original_value="bare title", custom_value="Custom <EM4>[BP]</EM4>")]
+    result = filter_entry_indices(e, {}, _no_filters(), "All", "All", False, False, "★",
+                                  bp_titles_only=True)
+    assert result == [0]

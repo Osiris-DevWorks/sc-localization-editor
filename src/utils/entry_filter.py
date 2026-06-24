@@ -22,6 +22,8 @@ def filter_entry_indices(
     hide_unmodified: bool,
     favorites_only: bool,
     favorite_prefix: str,
+    bp_titles_only: bool = False,
+    bp_descs_only: bool = False,
 ) -> list[int]:
     """Return indices of entries that pass all active filters.
 
@@ -37,6 +39,11 @@ def filter_entry_indices(
         favorites_only: When True, only entries whose custom_value starts with
             favorite_prefix are shown.
         favorite_prefix: The prefix that marks a row as a favourite.
+        bp_titles_only: When True, keep mission-title rows carrying the
+            [BP] / [BP?] blueprint tag (#156).
+        bp_descs_only: When True, keep mission-description rows containing the
+            POTENTIAL BLUEPRINTS section (#156). When both bp_* flags are set
+            the row passes if it matches EITHER (blueprint titles OR bodies).
 
     Returns:
         Ordered list of integer indices into *entries* for rows that should
@@ -86,6 +93,16 @@ def filter_entry_indices(
             continue
         if favorites_only and not entry.custom_value.startswith(favorite_prefix):
             continue
+        # #156: blueprint-mission isolation. [BP]/[BP?] tags live on title
+        # rows; the POTENTIAL BLUEPRINTS header lives on description rows. The
+        # effective value (user override if any, else the merged baseline that
+        # carries the enhancement) is what's shown, so test that.
+        if bp_titles_only or bp_descs_only:
+            val = entry.custom_value or entry.original_value
+            is_bp_title = bp_titles_only and "[BP" in val
+            is_bp_desc = bp_descs_only and "potential blueprints" in val.lower()
+            if not (is_bp_title or is_bp_desc):
+                continue
         if active_filter_fns:
             skip = False
             for get_val, filter_text in active_filter_fns:

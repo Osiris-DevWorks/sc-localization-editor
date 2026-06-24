@@ -162,6 +162,14 @@
       "ht": "★ Favorites Only",
       "at": ""
     },
+    "bp_titles_only": {
+      "ht": "BP Titles",
+      "at": ""
+    },
+    "bp_descs_only": {
+      "ht": "BP Descriptions",
+      "at": ""
+    },
     "group_sort_btn": {
       "ht": "Group Sort",
       "at": ""

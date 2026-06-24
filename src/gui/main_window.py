@@ -636,6 +636,19 @@ class MainWindow(QMainWindow):
         self.favorites_only_check.stateChanged.connect(self.apply_filters)
         filter_layout.addWidget(self.favorites_only_check)
 
+        # #156: isolate blueprint missions. BP Titles keeps title rows tagged
+        # [BP]/[BP?]; BP Descriptions keeps bodies with a POTENTIAL BLUEPRINTS
+        # section. Checking both shows either.
+        self.bp_titles_check = QCheckBox(tr("filters.bp_titles_only"))
+        self.bp_titles_check.setToolTip("Show only mission titles carrying the [BP] / [BP?] blueprint tag.")
+        self.bp_titles_check.stateChanged.connect(self.apply_filters)
+        filter_layout.addWidget(self.bp_titles_check)
+
+        self.bp_descs_check = QCheckBox(tr("filters.bp_descs_only"))
+        self.bp_descs_check.setToolTip("Show only mission descriptions containing a POTENTIAL BLUEPRINTS section.")
+        self.bp_descs_check.stateChanged.connect(self.apply_filters)
+        filter_layout.addWidget(self.bp_descs_check)
+
         self.grouped_sort_btn = QPushButton(tr("filters.group_sort_btn"))
         self.grouped_sort_btn.setToolTip("Sort titles and descriptions together for the same entity")
         self.grouped_sort_btn.setMaximumWidth(100)
@@ -3082,6 +3095,8 @@ class MainWindow(QMainWindow):
         self._status_label.setText(tr("filters.status_label"))
         self.hide_unmodified_check.setText(tr("filters.hide_unmodified"))
         self.favorites_only_check.setText(tr("filters.favorites_only"))
+        self.bp_titles_check.setText(tr("filters.bp_titles_only"))
+        self.bp_descs_check.setText(tr("filters.bp_descs_only"))
         self.grouped_sort_btn.setText(tr("filters.group_sort_btn"))
         self.clear_filters_btn.setText(tr("filters.clear_filters_btn"))
         self.copy_filtered_btn.setText(tr("filters.copy_filtered_btn"))
@@ -4169,6 +4184,8 @@ class MainWindow(QMainWindow):
             self.hide_unmodified_check.isChecked(),
             self.favorites_only_check.isChecked(),
             AppSettings.get_favorite_prefix(),
+            bp_titles_only=self.bp_titles_check.isChecked(),
+            bp_descs_only=self.bp_descs_check.isChecked(),
         )
 
     @timed
@@ -4287,17 +4304,23 @@ class MainWindow(QMainWindow):
         self.status_combo.blockSignals(True)
         self.hide_unmodified_check.blockSignals(True)
         self.favorites_only_check.blockSignals(True)
+        self.bp_titles_check.blockSignals(True)
+        self.bp_descs_check.blockSignals(True)
 
         self.filter_header.clear_all()
         self.category_combo.setCurrentIndex(0)
         self.status_combo.setCurrentIndex(0)
         self.hide_unmodified_check.setChecked(False)
         self.favorites_only_check.setChecked(False)
+        self.bp_titles_check.setChecked(False)
+        self.bp_descs_check.setChecked(False)
 
         self.category_combo.blockSignals(False)
         self.status_combo.blockSignals(False)
         self.hide_unmodified_check.blockSignals(False)
         self.favorites_only_check.blockSignals(False)
+        self.bp_titles_check.blockSignals(False)
+        self.bp_descs_check.blockSignals(False)
 
         self.apply_filters()
 
