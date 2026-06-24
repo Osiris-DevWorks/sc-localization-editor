@@ -220,6 +220,10 @@
       "ht": "Status",
       "at": ""
     },
+    "col_owned": {
+      "ht": "Owned",
+      "at": ""
+    },
     "no_data": {
       "ht": "No data loaded",
       "at": ""

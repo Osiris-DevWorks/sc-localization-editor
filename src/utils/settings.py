@@ -273,6 +273,7 @@ class AppSettings:
     # the actual component names elsewhere. Issue #31 follow-up.
     TAG_ANNOTATE_MISSION_DESCS = "tag_builder/annotate_mission_descs"
     STATS_PREPEND = "stats_prepend"  # #153: stats block above the description
+    OWNED_ITEMS = "owned_items"      # #157: blueprint items the user owns (JSON list of names)
 
     # Settings keys - Data sources (new)
     # Prefix: data_sources/{source_name}/
@@ -794,6 +795,45 @@ class AppSettings:
         """Persist the stats-above-description toggle (#153)."""
         AppSettings.settings().setValue(AppSettings.STATS_PREPEND, bool(enabled))
         AppSettings.settings().sync()
+
+    @staticmethod
+    def get_owned_items() -> set:
+        """Return the set of owned blueprint item names (#157).
+
+        Stored as a JSON list string so it round-trips identically through the
+        registry (QSettings) and the portable JSON backend — a raw Python list
+        in QSettings comes back as a QStringList and mangles single-item sets.
+        """
+        import json
+        raw = AppSettings.settings().value(AppSettings.OWNED_ITEMS, "", type=str)
+        if not raw:
+            return set()
+        try:
+            return set(json.loads(raw))
+        except (ValueError, TypeError):
+            return set()
+
+    @staticmethod
+    def set_owned_items(names) -> None:
+        """Persist the owned blueprint item-name set (#157)."""
+        import json
+        AppSettings.settings().setValue(
+            AppSettings.OWNED_ITEMS, json.dumps(sorted(names))
+        )
+        AppSettings.settings().sync()
+
+    @staticmethod
+    def toggle_owned_item(name: str) -> bool:
+        """Add/remove *name* from the owned set; return the new owned state."""
+        owned = AppSettings.get_owned_items()
+        if name in owned:
+            owned.discard(name)
+            new_state = False
+        else:
+            owned.add(name)
+            new_state = True
+        AppSettings.set_owned_items(owned)
+        return new_state
 
     @staticmethod
     def get_tutorial_completed_version() -> str:
