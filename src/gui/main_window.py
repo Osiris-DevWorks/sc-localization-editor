@@ -28,7 +28,7 @@ from src.gui.log_tab import LogTab
 from src.gui.simple_mode_widget import SimpleModeWidget
 from src.gui.markdown_renderer import markdown_to_html as _md_to_html
 from src.gui.string_table_model import (
-    StringTableModel, COL_STAR, COL_ORDER, COL_CUSTOM, COL_STATUS,
+    StringTableModel, COL_STAR, COL_ORDER, COL_CUSTOM, COL_STATUS, COL_OWNED,
     status_color,
 )
 from src.gui.theme import (
@@ -292,6 +292,10 @@ class MainWindow(QMainWindow):
         # enhancements-generation-finished slot should continue into
         # apply_to_game. Cleared on completion or any failure.
         self._simple_run_active = False
+
+        # #157: item names (normalized) that appear in any POTENTIAL BLUEPRINTS
+        # list — the rows eligible for the Owned star. Recomputed on each load.
+        self._bp_item_names: set[str] = set()
 
         # Track whether we've prompted for enhancements on startup (prevents duplicate dialogs)
         self._enhancements_prompted_on_startup = False
@@ -1063,6 +1067,7 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)  # Order #
         header.setSectionResizeMode(6, QHeaderView.ResizeMode.Stretch)           # Custom Value
         header.setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)  # Status
+        header.setSectionResizeMode(COL_OWNED, QHeaderView.ResizeMode.ResizeToContents)  # Owned (#157)
 
         # Set custom delegates: Custom Value text editor + Sort Order spin box.
         # Parent each to the table so Qt's object tree owns them: the view does
@@ -1425,6 +1430,17 @@ class MainWindow(QMainWindow):
 
             # Merge all sources in hierarchy order, with user edits on top
             merged_dict = merge_sources_by_hierarchy(sources_dict, hierarchy, user_overrides_dict)
+
+            # #157: weave [Owned] into blueprint lists so the tag reaches the
+            # applied game file (apply re-loads sources from disk, where the
+            # live owned overlay isn't baked in). Idempotent.
+            _owned = AppSettings.get_owned_items()
+            if _owned:
+                from src.utils.owned_items import apply_owned_to_value
+                for _k, _v in list(merged_dict.items()):
+                    _nv = apply_owned_to_value(_v, _owned)
+                    if _nv != _v:
+                        merged_dict[_k] = _nv
 
             # Stamp Journal entries Smart Citizen produced or modified —
             # both user-edited journals AND auto-generated journal
@@ -1883,6 +1899,7 @@ class MainWindow(QMainWindow):
                     AppSettings.get_favorite_prefix(),
                 )
                 self.apply_filters()
+                self._recompute_owned()  # #157
 
                 # Update status bar with entry counts and per-source status
                 self._update_status_bar()
@@ -2300,6 +2317,7 @@ class MainWindow(QMainWindow):
                 self.entries, self.default_values, AppSettings.get_favorite_prefix(),
             )
             self.apply_filters()
+            self._recompute_owned()  # #157
 
             # Update status bar with entry counts and per-source status
             self._update_status_bar()
@@ -3159,6 +3177,7 @@ class MainWindow(QMainWindow):
             tr("strings_tab.col_order"),
             tr("strings_tab.col_custom_value"),
             tr("strings_tab.col_status"),
+            tr("strings_tab.col_owned"),
         ]
         self.filter_header.update_column_names(new_column_names)
         self._model.retranslate()
@@ -3869,6 +3888,7 @@ class MainWindow(QMainWindow):
             sort_keys=sort_keys,
         )
         self.apply_filters()
+        self._recompute_owned()  # #157: weave [Owned] tags + populate Owned stars
 
         # Update status bar with entry counts and per-source status
         self._update_status_bar()
@@ -4455,11 +4475,39 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot(QModelIndex)
     def _on_cell_clicked(self, proxy_index: QModelIndex):
-        """Handle cell clicks — col 4 (★) toggles favorite for Ship rows."""
-        if proxy_index.column() == COL_STAR:
+        """Handle cell clicks — COL_STAR toggles favorite (Ships); COL_OWNED
+        toggles owned (#157) on blueprint-item rows."""
+        col = proxy_index.column()
+        if col == COL_STAR:
             entry_idx = self._entry_index_for_row(proxy_index.row())
             if entry_idx < len(self.entries) and self.entries[entry_idx].category == "Ships":
                 self.toggle_favorite(proxy_index.row())
+        elif col == COL_OWNED:
+            entry_idx = self._entry_index_for_row(proxy_index.row())
+            if 0 <= entry_idx < len(self.entries):
+                from src.utils.owned_items import normalize_item_name
+                e = self.entries[entry_idx]
+                name = normalize_item_name(e.custom_value or e.original_value)
+                if name and name in self._bp_item_names:
+                    AppSettings.toggle_owned_item(name)
+                    self._recompute_owned()
+
+    def _recompute_owned(self):
+        """#157: rebuild the blueprint-item set, weave/strip [Owned] tags on
+        blueprint-list bullets to match the owned set, and refresh the table.
+        Called after every load and on every Owned toggle; the transform is
+        idempotent so repeated runs never double the tag."""
+        from src.utils.owned_items import extract_bp_item_names, apply_owned_to_value
+        owned = AppSettings.get_owned_items()
+        bp: set[str] = set()
+        for e in self.entries:
+            bp |= extract_bp_item_names(e.original_value)
+        self._bp_item_names = bp
+        for e in self.entries:
+            new_val = apply_owned_to_value(e.original_value, owned)
+            if new_val != e.original_value:
+                e.original_value = new_val
+        self._model.set_owned_state(bp, owned)
 
     def toggle_favorite(self, proxy_row: int):
         """Add or remove the sort prefix from a ship's custom value."""

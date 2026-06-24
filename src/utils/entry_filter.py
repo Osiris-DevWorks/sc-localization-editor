@@ -80,6 +80,11 @@ def filter_entry_indices(
         lambda e: get_order(e.custom_value, favorite_prefix) if e.category == "Ships" else "",
         lambda e: e.custom_value.lower(),
         lambda e: e.status.lower(),
+        # COL_OWNED (#157): the owned star isn't text-filterable from here (the
+        # owned set lives on the model), so this getter just keeps the tuple
+        # aligned with NUM_COLUMNS for the drift guard. Blueprint filtering is
+        # covered by the dedicated BP filters (#156).
+        lambda e: "",
     )
     active_filter_fns = [(_col_getters[i], t) for i, t in valid_col_filters]
 

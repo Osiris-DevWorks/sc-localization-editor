@@ -124,6 +124,16 @@ TEST_SECTIONS: list[dict] = [
             "Turn the Ace Pilot Tag toggle off, regenerate, and confirm the [ACE] tags disappear.",
         ],
     },
+    {
+        "title": "Owned blueprints (#157)",
+        "items": [
+            "Find an item that appears in mission POTENTIAL BLUEPRINTS lists (e.g. an Antium armour piece); its row shows an Owned star in the new Owned column.",
+            "Click the Owned star: it fills, and that item gains a blue [Owned] tag in every mission's POTENTIAL BLUEPRINTS list where it appears.",
+            "Click again to unmark: the [Owned] tag disappears everywhere.",
+            "Restart the app and confirm your owned marks persisted (the [Owned] tags reappear).",
+            "Apply to Game with an item owned, then confirm [Owned] shows in that blueprint list in-game.",
+        ],
+    },
 ]
 
 
