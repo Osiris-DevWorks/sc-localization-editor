@@ -414,16 +414,20 @@ class EnhancementsTab(QWidget):
         self._rep_xp_label_input.editingFinished.connect(self._save_rep_xp_label)
         grid.addWidget(self._rep_xp_label_input, 0, 5)
 
-        grid.addWidget(QLabel("Header tag:"), 1, 4)
+        grid.addWidget(QLabel("Header style:"), 1, 4)
         self._header_em_combo = QComboBox()
+        # #164: show what the tags actually do in-game (EM3 underlines, EM4
+        # renders blue) instead of the opaque EM3/EM4 names. The stored value
+        # stays the EM tag, so the generator output is unchanged.
+        _EM_LABELS = {"EM3": "Underline", "EM4": "Blue text"}
         for tag in AppSettings.MISSION_HEADER_EM_TAGS:
-            self._header_em_combo.addItem(tag, userData=tag)
+            self._header_em_combo.addItem(_EM_LABELS.get(tag, tag), userData=tag)
         current_em = AppSettings.get_mission_header_em_tag()
         for i in range(self._header_em_combo.count()):
             if self._header_em_combo.itemData(i) == current_em:
                 self._header_em_combo.setCurrentIndex(i)
                 break
-        self._header_em_combo.setToolTip("Emphasis tag for section headers (default EM3)")
+        self._header_em_combo.setToolTip("Style for section headers: Underline (EM3) or Blue text (EM4)")
         self._header_em_combo.currentIndexChanged.connect(self._save_header_em_tag)
         grid.addWidget(self._header_em_combo, 1, 5)
 
