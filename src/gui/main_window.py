@@ -252,7 +252,11 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(tr("window.title", version=get_version()))
-        self.setGeometry(100, 100, 1400, 800)
+        # Position only; the size is set after the UI is built — restored from
+        # saved geometry, or sized to the compact content hint on first run
+        # (#180 follow-up: open as small as the layout allows). See
+        # restore_window_state().
+        self.move(100, 100)
 
         # Set window icon (taskbar + window title bar + favicon)
         icon_path = get_resource_path(os.path.join("assets", "logo.ico"))
@@ -4421,12 +4425,20 @@ class MainWindow(QMainWindow):
         self._model.notify_entry_changed(entry_idx)
 
     def restore_window_state(self):
-        """Restore window geometry and state."""
+        """Restore window geometry and state.
+
+        With no saved geometry (fresh install), open at the compact content
+        hint instead of a fixed large default — Simple mode is the default
+        view and a near-empty screen shouldn't open oversized (#180 follow-up).
+        Returning users keep whatever size they last left the window.
+        """
         geometry = AppSettings.get_window_geometry()
         state = AppSettings.get_window_state()
 
         if geometry:
             self.restoreGeometry(geometry)
+        else:
+            self.resize(self.sizeHint())
         if state:
             self.restoreState(state)
 
