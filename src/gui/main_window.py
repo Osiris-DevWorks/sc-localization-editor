@@ -3983,6 +3983,7 @@ class MainWindow(QMainWindow):
             mission_headers=AppSettings.get_mission_headers(),
             mission_header_em_tag=AppSettings.get_mission_header_em_tag(),
             mission_detail_fields=AppSettings.get_mission_detail_fields(),
+            stats_prepend=AppSettings.get_stats_prepend(),
             language=language,
         )
         self.enhancements_tab.set_operation_running("Generating enhancements…")

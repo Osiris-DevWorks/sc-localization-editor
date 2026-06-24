@@ -342,6 +342,10 @@ def _index_rglob(xml_path_index: dict, entity_dir: Path, records_dir: Path) -> l
 
 ENHANCEMENT_SEPARATOR = "\\n\\n--- STATS ---\\n"
 MISSION_SEPARATOR = "\\n\\n<EM3>MISSION DETAILS</EM3>\\n"
+# #153: when the user opts to show stats ABOVE the prose description, the stats
+# block leads and a plain divider separates it from the (less-important) PR
+# blurb — no "--- STATS ---" label needed since the stats are right at the top.
+STATS_PREPEND_SEPARATOR = "\\n\\n------\\n\\n"
 
 # Default section header text — mirrored from AppSettings.MISSION_HEADER_DEFAULTS
 # (not imported because this script runs standalone too). Keep these two
@@ -363,7 +367,8 @@ def _humanize_key(key: str) -> str:
 
 
 def append_enhancements(existing_value: str, enhancements_block: str,
-                        separator: str = ENHANCEMENT_SEPARATOR) -> str:
+                        separator: str = ENHANCEMENT_SEPARATOR,
+                        prepend: bool = False) -> str:
     if existing_value is None:
         existing_value = ""
     if not enhancements_block:
@@ -380,6 +385,12 @@ def append_enhancements(existing_value: str, enhancements_block: str,
         if marker in existing_value:
             existing_value = existing_value[:existing_value.index(marker)]
             break
+    # #153: stats above the prose blurb when the user prefers it (stats are the
+    # useful part for module-picking in the Hologlass). The "--- STATS ---"
+    # header (carried in `separator`) is dropped in this mode since the block
+    # leads; a plain divider sits between it and the prose.
+    if prepend:
+        return enhancements_block + STATS_PREPEND_SEPARATOR + existing_value
     return existing_value + separator + enhancements_block
 
 
@@ -4311,6 +4322,7 @@ def scan_spaceships(
     armor_lookup: dict | None = None,
     xml_path_index: dict | None = None,
     records_dir: Path | None = None,
+    prepend: bool = False,
 ) -> dict[str, str]:
     """Scan DataForge spaceship entities and generate ship stat descriptions."""
     out: dict[str, str] = {}
@@ -4364,7 +4376,7 @@ def scan_spaceships(
         if block:
             # Deduplicate: first match for a given key wins
             if loc_key not in out:
-                out[loc_key] = append_enhancements(base_value, block)
+                out[loc_key] = append_enhancements(base_value, block, prepend=prepend)
                 matched += 1
         elif is_discovered:
             if loc_key not in out:
@@ -4590,6 +4602,7 @@ def scan_entity_dir(
     xml_path_index: dict | None = None,
     records_dir: Path | None = None,
     tag_loc: dict | None = None,
+    prepend: bool = False,
 ) -> dict[str, str]:
     """
     Scan all XML files in entity_dir, extract localization key + enhancements,
@@ -4646,7 +4659,8 @@ def scan_entity_dir(
             continue
 
         if enhancements_block:
-            out[key] = append_enhancements(base_value, enhancements_block, separator)
+            out[key] = append_enhancements(base_value, enhancements_block, separator,
+                                           prepend=prepend)
             matched += 1
         elif capture_all or is_discovered:
             # Still emit the base value so all missions / discovered items are captured
@@ -4712,6 +4726,7 @@ def _run_gen_components(ctx: dict) -> dict[str, str]:
     tag_configs     = ctx.get("tag_configs") or {}
     comp_cfg        = tag_configs.get("components") or DEFAULT_TAG_CONFIGS.get("components")
     comp_placement  = getattr(comp_cfg, "placement", "prepend") if comp_cfg else "prepend"
+    _prepend        = ctx.get("stats_prepend", False)  # #153
 
     def _make_comp_tagger(comp_type: str):
         def _tagger(desc_value: str, root: ET.Element | None = None) -> str | None:
@@ -4731,7 +4746,7 @@ def _run_gen_components(ctx: dict) -> dict[str, str]:
                                    name_tag_fn=tagger,
                                    name_tag_placement=comp_placement,
                                    xml_path_index=xml_path_index, records_dir=records,
-                                   tag_loc=ctx.get("tag_loc")))
+                                   tag_loc=ctx.get("tag_loc"), prepend=_prepend))
     radar_dir = ships_scitem / "radar"
     if radar_dir.exists():
         tagger = _make_comp_tagger(_SUBDIR_TO_TYPE.get("radar", ""))
@@ -4739,6 +4754,7 @@ def _run_gen_components(ctx: dict) -> dict[str, str]:
                                    name_tag_fn=tagger,
                                    name_tag_placement=comp_placement,
                                    xml_path_index=xml_path_index, records_dir=records,
+                                   prepend=_prepend,
                                    tag_loc=ctx.get("tag_loc")))
 
     comp_types = ("COOL", "SHLD", "POWR", "QDRV", "RADR")
@@ -4855,6 +4871,7 @@ def _run_gen_missiles(ctx: dict) -> dict[str, str]:
                 name_tag_placement=missile_placement,
                 xml_path_index=xml_path_index, records_dir=records,
                 tag_loc=ctx.get("tag_loc"),
+                prepend=ctx.get("stats_prepend", False),
             ))
     return out
 
@@ -4916,6 +4933,7 @@ def _run_gen_ship_weapons(ctx: dict) -> dict[str, str]:
             name_tag_placement=ship_weapon_placement,
             xml_path_index=xml_path_index, records_dir=records,
             tag_loc=ctx.get("tag_loc"),
+            prepend=ctx.get("stats_prepend", False),
         )
     logger.info(f"Finished ship weapons ({len(out)} entries)")
     return out
@@ -4935,6 +4953,7 @@ def _run_gen_fps_weapons(ctx: dict) -> dict[str, str]:
             lambda root: _fps_weapon_dispatch(root, fps_ammo, loc, mag_lookup),
             loc=loc,
             xml_path_index=xml_path_index, records_dir=records,
+            prepend=ctx.get("stats_prepend", False),
         )
     logger.info(f"Finished FPS weapons ({len(out)} entries)")
     return out
@@ -4948,7 +4967,8 @@ def _run_gen_ships(ctx: dict) -> dict[str, str]:
     xml_path_index    = ctx.get("xml_path_index")
     spaceships_dir = records / "entities" / "spaceships"
     out = scan_spaceships(spaceships_dir, controller_lookup, loc, armor_lookup,
-                          xml_path_index=xml_path_index, records_dir=records)
+                          xml_path_index=xml_path_index, records_dir=records,
+                          prepend=ctx.get("stats_prepend", False))
     logger.info(f"Finished ships ({len(out)} entries)")
     return out
 
@@ -5529,6 +5549,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
          mission_headers: dict[str, str] | None = None,
          mission_header_em_tag: str = _DEFAULT_MISSION_HEADER_EM_TAG,
          mission_detail_fields: dict | None = None,
+         stats_prepend: bool = False,
          english_base_ini_path: Path | None = None) -> None:
     import sys as sys_mod
     # Deferred import — the script is loaded by both the app worker (where
@@ -5804,6 +5825,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
         "mission_headers":   mission_headers or dict(_DEFAULT_MISSION_HEADERS),
         "mission_header_em": mission_header_em_tag or _DEFAULT_MISSION_HEADER_EM_TAG,
         "mission_detail_fields": mission_detail_fields or {},
+        "stats_prepend":     bool(stats_prepend),
     }
 
     gen_jobs: dict[str, Callable] = {}

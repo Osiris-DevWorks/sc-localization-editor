@@ -234,6 +234,22 @@ class EnhancementsTab(QWidget):
         mf_note.setWordWrap(True)
         gl.addWidget(mf_note)
 
+        # #153: place the stats block above the prose description (for ship and
+        # component/weapon entries), so the useful numbers sit at the top when
+        # comparing modules in the Hologlass. Baked at generation time.
+        self._stats_prepend_check = QCheckBox("Show stats above description")
+        self._stats_prepend_check.setChecked(AppSettings.get_stats_prepend())
+        self._stats_prepend_check.setStyleSheet("font-size: 11px;")
+        self._stats_prepend_check.setToolTip(
+            "Put the generated stats block above the manufacturer/PR description "
+            "instead of below it (ships, components, weapons). Takes effect on "
+            "the next Generate Enhancements."
+        )
+        self._stats_prepend_check.toggled.connect(
+            lambda checked: AppSettings.set_stats_prepend(checked)
+        )
+        gl.addWidget(self._stats_prepend_check)
+
         btn_row = QHBoxLayout()
 
         self._apply_categories_btn = QPushButton(tr("enhancements.apply_btn"))

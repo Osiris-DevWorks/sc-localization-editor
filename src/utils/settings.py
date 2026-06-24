@@ -270,6 +270,7 @@ class AppSettings:
     # text can turn it off here without affecting the inline tags on
     # the actual component names elsewhere. Issue #31 follow-up.
     TAG_ANNOTATE_MISSION_DESCS = "tag_builder/annotate_mission_descs"
+    STATS_PREPEND = "stats_prepend"  # #153: stats block above the description
 
     # Settings keys - Data sources (new)
     # Prefix: data_sources/{source_name}/
@@ -774,6 +775,22 @@ class AppSettings:
         AppSettings.settings().setValue(
             AppSettings.TAG_ANNOTATE_MISSION_DESCS, bool(enabled)
         )
+        AppSettings.settings().sync()
+
+    @staticmethod
+    def get_stats_prepend() -> bool:
+        """#153: whether the generated stats block is placed ABOVE the prose
+        description (True) instead of appended below it (False, default).
+        Applies to ship and component/weapon descriptions; baked at generation
+        time, so it takes effect on the next Generate Enhancements run."""
+        return bool(AppSettings.settings().value(
+            AppSettings.STATS_PREPEND, False, type=bool
+        ))
+
+    @staticmethod
+    def set_stats_prepend(enabled: bool) -> None:
+        """Persist the stats-above-description toggle (#153)."""
+        AppSettings.settings().setValue(AppSettings.STATS_PREPEND, bool(enabled))
         AppSettings.settings().sync()
 
     @staticmethod
