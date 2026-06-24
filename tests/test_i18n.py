@@ -139,3 +139,91 @@ class TestDeepMerge:
         base = {"a": {"x": "1"}}
         i18n._deep_merge(base, {"a": "flat"})
         assert base == {"a": "flat"}
+
+
+# ── #182: human/AI translation leaves {"ht": ..., "at": ...} ─────────────────
+
+@pytest.fixture
+def htat_root(tmp_path, monkeypatch):
+    """Languages tree whose leaves are {ht, at} objects (the #182 schema)."""
+    import src.utils.resource_path as resource_path
+
+    monkeypatch.setattr(
+        resource_path, "get_resource_path", lambda rel: str(tmp_path / rel)
+    )
+    saved_lang, saved_strings = i18n._current_lang, i18n._strings
+    _write_lang(tmp_path, "english", {
+        "toolbar": {
+            "apply_btn": {"ht": "Apply to Game", "at": ""},
+            "more_btn": {"ht": "More", "at": ""},
+            "help_btn": {"ht": "Help", "at": ""},
+        },
+    })
+    _write_lang(tmp_path, "french", {
+        "toolbar": {
+            "apply_btn": {"ht": "Appliquer au jeu", "at": ""},   # human
+            "more_btn": {"ht": "", "at": "Plus"},                # AI fallback
+            "help_btn": {"ht": "", "at": ""},                    # blank -> EN floor
+        },
+        "tutorial": {"step1": {"ht": "Étape un", "at": ""}},     # EN lacks tutorial
+    })
+    yield tmp_path
+    i18n._current_lang, i18n._strings = saved_lang, saved_strings
+
+
+class TestHtAtLeafResolution:
+    def test_leaf_value_prefers_ht(self):
+        assert i18n._leaf_value({"ht": "Bonjour", "at": "Salut"}) == "Bonjour"
+
+    def test_leaf_value_falls_back_to_at_when_ht_blank(self):
+        assert i18n._leaf_value({"ht": "", "at": "Salut"}) == "Salut"
+
+    def test_leaf_value_empty_when_both_blank(self):
+        assert i18n._leaf_value({"ht": "", "at": ""}) == ""
+
+    def test_leaf_value_accepts_legacy_plain_string(self):
+        assert i18n._leaf_value("plain") == "plain"
+
+    def test_is_leaf_distinguishes_leaf_from_section(self):
+        assert i18n._is_leaf({"ht": "x", "at": ""})
+        assert i18n._is_leaf({"at": "y"})
+        assert not i18n._is_leaf({"apply_btn": {"ht": "x", "at": ""}})  # section
+        assert not i18n._is_leaf("str")
+
+    def test_tr_prefers_human_translation(self, htat_root):
+        i18n.set_language("french")
+        assert i18n.tr("toolbar.apply_btn") == "Appliquer au jeu"
+
+    def test_tr_falls_back_to_ai_when_ht_blank(self, htat_root):
+        i18n.set_language("french")
+        assert i18n.tr("toolbar.more_btn") == "Plus"
+
+    def test_blank_leaf_does_not_override_english_floor(self, htat_root):
+        # french has help_btn but both ht/at blank -> keep the English base.
+        i18n.set_language("french")
+        assert i18n.tr("toolbar.help_btn") == "Help"
+
+    def test_overlay_only_key_is_added(self, htat_root):
+        i18n.set_language("french")
+        assert i18n.tr("tutorial.step1") == "Étape un"
+
+    def test_tr_on_section_returns_bare_key(self, htat_root):
+        i18n.set_language("english")
+        assert i18n.tr("toolbar") == "toolbar"
+
+
+class TestHtAtMerge:
+    def test_leaf_is_atomic_replaced_wholesale(self):
+        base = {"k": {"ht": "A", "at": ""}}
+        i18n._deep_merge(base, {"k": {"ht": "", "at": "B"}})
+        assert base == {"k": {"ht": "", "at": "B"}}
+
+    def test_blank_overlay_leaf_skipped_keeps_base(self):
+        base = {"k": {"ht": "A", "at": ""}}
+        i18n._deep_merge(base, {"k": {"ht": "", "at": ""}})
+        assert base == {"k": {"ht": "A", "at": ""}}
+
+    def test_overlay_only_leaf_added(self):
+        base = {}
+        i18n._deep_merge(base, {"k": {"ht": "", "at": "X"}})
+        assert base == {"k": {"ht": "", "at": "X"}}

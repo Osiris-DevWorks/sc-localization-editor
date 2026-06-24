@@ -13,6 +13,15 @@ Key format: dot-separated path into the JSON tree.
 Missing keys fall back to English, then return the bare key string so
 nothing blows up if a translation file is incomplete.
 
+Leaf shape (human-vs-AI translation, #182):
+    "apply_btn": { "ht": "Apply to Game", "at": "" }
+Every leaf is an object with a human translation (``ht``) and an AI
+translation (``at``). ``tr()`` prefers ``ht`` and falls back to ``at`` when
+``ht`` is empty, so an empty ``ht`` marks a key a human translator still
+needs to review. A leaf whose ``ht`` and ``at`` are both empty does not
+override the English base (see ``_deep_merge``), so English stays the floor.
+Plain-string leaves are still accepted for backward compatibility.
+
 The UI language is loaded once at startup from
 ``languages/<lang>/ui.json`` (overlaid onto English for missing keys).
 A language switch at runtime calls set_language() again; widgets already
@@ -49,10 +58,42 @@ def _load_file(language: str) -> dict:
         return {}
 
 
+def _is_leaf(v) -> bool:
+    """True for a translation leaf: an ``{"ht": ..., "at": ...}`` object.
+
+    Distinguishes a leaf from a section dict (which holds sub-keys), so the
+    merge and lookup don't recurse into ``ht``/``at``.
+    """
+    return isinstance(v, dict) and ("ht" in v or "at" in v)
+
+
+def _leaf_value(leaf) -> str:
+    """Resolve a leaf to its display string: ``ht`` if set, else ``at``.
+
+    Accepts a plain string too (legacy, pre-#182 files). Returns ``""`` when
+    both translations are empty.
+    """
+    if isinstance(leaf, str):
+        return leaf
+    if _is_leaf(leaf):
+        return leaf.get("ht") or leaf.get("at") or ""
+    return ""
+
+
 def _deep_merge(base: dict, overlay: dict) -> None:
-    """Recursively merge *overlay* into *base* in-place."""
+    """Recursively merge *overlay* into *base* in-place.
+
+    Section dicts merge recursively. A translation leaf is atomic: an overlay
+    leaf with any content (``ht`` or ``at``) replaces the base leaf wholesale,
+    but an empty overlay leaf (both blank) is skipped so the English base
+    stays as the fallback floor. New keys absent from the base are added.
+    """
     for k, v in overlay.items():
-        if isinstance(v, dict) and isinstance(base.get(k), dict):
+        if _is_leaf(v):
+            if _leaf_value(v) != "" or k not in base:
+                base[k] = v
+            # else: both ht and at empty -> keep the English base leaf.
+        elif isinstance(v, dict) and isinstance(base.get(k), dict) and not _is_leaf(base.get(k)):
             _deep_merge(base[k], v)
         else:
             if isinstance(base.get(k), dict) and not isinstance(v, dict):
@@ -90,7 +131,7 @@ def tr(key: str, **kwargs) -> str:
         set_language(_current_lang)
     node = _strings
     for part in key.split("."):
-        if not isinstance(node, dict):
+        if not isinstance(node, dict) or _is_leaf(node):
             node = None
             break
         node = node.get(part)
@@ -99,7 +140,13 @@ def tr(key: str, **kwargs) -> str:
         logger.debug(f"i18n: missing key {key!r} (lang={_current_lang!r})")
         return key
 
-    val = str(node)
+    # Leaf -> ht (preferred) or at (fallback); legacy plain string -> itself.
+    # A non-leaf section dict resolves to "" and falls through to the bare key.
+    val = _leaf_value(node)
+    if val == "":
+        logger.debug(f"i18n: empty/blank key {key!r} (lang={_current_lang!r})")
+        return key
+
     if kwargs:
         try:
             return val.format(**kwargs)
