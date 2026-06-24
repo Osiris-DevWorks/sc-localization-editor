@@ -10,6 +10,7 @@ a = Analysis(
         ('docs/ABOUT.md', 'docs'),
         ('docs/HELP.md', 'docs'),
         ('docs/LEGAL.md', 'docs'),
+        ('docs/FAQ.md', 'docs'),
         ('assets', 'assets'),
         ('patches', 'patches'),
         ('languages', 'languages'),

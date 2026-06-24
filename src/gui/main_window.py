@@ -415,6 +415,7 @@ class MainWindow(QMainWindow):
         self._log_tab_index = self.tabs.addTab(self.log_tab, tr("tabs.log"))
 
         self._about_tab_index = self.tabs.addTab(self.create_about_tab(), tr("tabs.about"))
+        self._faq_tab_index = self.tabs.addTab(self.create_faq_tab(), tr("tabs.faq"))
         self._legal_tab_index = self.tabs.addTab(self.create_legal_tab(), tr("tabs.legal"))
 
         # Error-dialog handler: surfaces ERROR/CRITICAL log records as a
@@ -1189,6 +1190,36 @@ class MainWindow(QMainWindow):
             self._error_dialog_showing = False
             self._last_error_dialog_time = time.monotonic()
 
+    def create_faq_tab(self) -> QWidget:
+        """Create the FAQ tab (#152). Content lives in docs/FAQ.md (bundled
+        into the frozen build via SmartCitizen.spec and build_exe.py) and
+        renders through the same markdown_to_html pipeline as About/Legal so
+        theme swaps recolor it consistently."""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        self.faq_browser = QTextBrowser()
+        self.faq_browser.setOpenExternalLinks(True)
+        self._render_faq_html()
+        layout.addWidget(self.faq_browser)
+        return widget
+
+    def _render_faq_html(self):
+        """(Re)render the FAQ tab HTML. Mirrors _render_legal_html (sans badge);
+        force the browser palette to track the theme for live theme swaps."""
+        from PyQt6.QtWidgets import QApplication
+        self.faq_browser.setPalette(QApplication.palette())
+        try:
+            faq_path = AppSettings.get_localized_doc_path("FAQ.md")
+            with open(faq_path, 'r', encoding='utf-8') as f:
+                faq_content = f.read()
+            self.faq_browser.setHtml(self.markdown_to_html(faq_content))
+        except Exception as e:
+            logger.error(f"Error loading FAQ.md: {e}", exc_info=True)
+            self.faq_browser.setHtml(
+                "<h1>FAQ</h1><p>Unable to load the FAQ.</p>"
+                f"<p style='color: gray;'>{str(e)}</p>"
+            )
+
     def create_legal_tab(self) -> QWidget:
         """Create the Legal tab — CIG community-content compliance, license
         notices, privacy/data disclosure, and AI-use statement. Content lives
@@ -1892,6 +1923,8 @@ class MainWindow(QMainWindow):
             self._render_help_html()
         if hasattr(self, "legal_browser"):
             self._render_legal_html()
+        if hasattr(self, "faq_browser"):
+            self._render_faq_html()
         self._apply_editor_dock_canvas_tint()
 
     def _handle_reset_user_ini(self):
@@ -3068,6 +3101,7 @@ class MainWindow(QMainWindow):
         self.tabs.setTabText(self._enhancements_tab_index, tr("tabs.enhancements"))
         self.tabs.setTabText(self._log_tab_index, tr("tabs.log"))
         self.tabs.setTabText(self._about_tab_index, tr("tabs.about"))
+        self.tabs.setTabText(self._faq_tab_index, tr("tabs.faq"))
         self.tabs.setTabText(self._legal_tab_index, tr("tabs.legal"))
 
         # Toolbar buttons

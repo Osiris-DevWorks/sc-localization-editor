@@ -131,6 +131,7 @@ icon_path    = os.path.join(assets_dir, 'logo.ico')
 about_file   = os.path.join(root_dir, 'docs', 'ABOUT.md')
 help_file    = os.path.join(root_dir, 'docs', 'HELP.md')
 legal_file   = os.path.join(root_dir, 'docs', 'LEGAL.md')
+faq_file     = os.path.join(root_dir, 'docs', 'FAQ.md')
 patches_dir  = os.path.join(root_dir, 'patches')
 languages_dir = os.path.join(root_dir, 'languages')
 enhancements_script = os.path.join(root_dir, 'scripts', 'generate_enhancements_ini.py')
@@ -144,6 +145,7 @@ common_args = [
     '--add-data', f'{about_file}{os.pathsep}docs',
     '--add-data', f'{help_file}{os.pathsep}docs',
     '--add-data', f'{legal_file}{os.pathsep}docs',
+    '--add-data', f'{faq_file}{os.pathsep}docs',
     '--add-data', f'{assets_dir}{os.pathsep}assets',
     '--add-data', f'{patches_dir}{os.pathsep}patches',
     # UI translation files. Without this the frozen app can't resolve any
