@@ -1,279 +1,1046 @@
 {
   "branding": {
-    "title": "SMART CITIZEN",
-    "tagline": "SMARTER STRINGS FOR STAR CITIZEN"
+    "title": {
+      "ht": "SMART CITIZEN",
+      "at": ""
+    },
+    "tagline": {
+      "ht": "SMARTER STRINGS FOR STAR CITIZEN",
+      "at": ""
+    }
   },
   "window": {
-    "title": "Smart Citizen v{version}"
+    "title": {
+      "ht": "Smart Citizen v{version}",
+      "at": ""
+    }
+  },
+  "simple_mode": {
+    "switch_to_advanced": {
+      "ht": "Switch to Advanced",
+      "at": ""
+    },
+    "switch_to_advanced_tip": {
+      "ht": "Show the full Smart Citizen interface with all tabs and options.",
+      "at": ""
+    },
+    "generate_apply_btn": {
+      "ht": "Generate & Apply to Game",
+      "at": ""
+    },
+    "generate_apply_tip": {
+      "ht": "Generate the latest enhancements with default settings and apply them to your game. A backup of the current global.ini is made first.",
+      "at": ""
+    },
+    "defaults_hint": {
+      "ht": "Uses your default settings. The first run can take a few minutes while DataForge is extracted.",
+      "at": ""
+    }
   },
   "tabs": {
-    "string_editor": "String Editor",
-    "config": "Config",
-    "enhancements": "Enhancements",
-    "log": "Log",
-    "about": "About",
-    "legal": "Legal"
+    "string_editor": {
+      "ht": "String Editor",
+      "at": ""
+    },
+    "config": {
+      "ht": "Config",
+      "at": ""
+    },
+    "enhancements": {
+      "ht": "Enhancements",
+      "at": ""
+    },
+    "log": {
+      "ht": "Log",
+      "at": ""
+    },
+    "about": {
+      "ht": "About",
+      "at": ""
+    },
+    "legal": {
+      "ht": "Legal",
+      "at": ""
+    }
   },
   "toolbar": {
-    "apply_btn": "Apply to Game",
-    "restore_backup_btn": "Restore Backup",
-    "clear_btn": "Clear",
-    "import_export_btn": "Import / Export",
-    "open_loc_dir_btn": "Open Localization Dir",
-    "editor_btn": "Editor",
-    "help_btn": "Help",
-    "tutorial_btn": "Tutorial",
-    "more_btn": "More",
-    "menu_clear_localization": "Clear Localization",
-    "menu_clear_cache": "Clear Cache",
-    "menu_import_ini": "Import INI…",
-    "menu_export_ini": "Export INI…",
-    "menu_test_plan": "Test Plan"
+    "apply_btn": {
+      "ht": "Apply to Game",
+      "at": ""
+    },
+    "restore_backup_btn": {
+      "ht": "Restore Backup",
+      "at": ""
+    },
+    "clear_btn": {
+      "ht": "Clear",
+      "at": ""
+    },
+    "import_export_btn": {
+      "ht": "Import / Export",
+      "at": ""
+    },
+    "open_loc_dir_btn": {
+      "ht": "Open Localization Dir",
+      "at": ""
+    },
+    "editor_btn": {
+      "ht": "Editor",
+      "at": ""
+    },
+    "help_btn": {
+      "ht": "Help",
+      "at": ""
+    },
+    "tutorial_btn": {
+      "ht": "Tutorial",
+      "at": ""
+    },
+    "more_btn": {
+      "ht": "More",
+      "at": ""
+    },
+    "menu_clear_localization": {
+      "ht": "Clear Localization",
+      "at": ""
+    },
+    "menu_clear_cache": {
+      "ht": "Clear Cache",
+      "at": ""
+    },
+    "menu_import_ini": {
+      "ht": "Import INI…",
+      "at": ""
+    },
+    "menu_export_ini": {
+      "ht": "Export INI…",
+      "at": ""
+    },
+    "menu_test_plan": {
+      "ht": "Test Plan",
+      "at": ""
+    },
+    "menu_switch_to_simple": {
+      "ht": "Switch to Simple Mode",
+      "at": ""
+    }
   },
   "filters": {
-    "category_label": "Category:",
-    "status_label": "Status:",
-    "status_all": "All",
-    "status_modified": "Modified",
-    "status_enhanced": "Enhanced",
-    "status_unmodified": "Unmodified",
-    "status_new": "New",
-    "hide_unmodified": "Hide Unmodified",
-    "favorites_only": "★ Favorites Only",
-    "group_sort_btn": "Group Sort",
-    "clear_filters_btn": "Clear Filters",
-    "copy_filtered_btn": "Copy Filtered"
+    "category_label": {
+      "ht": "Category:",
+      "at": ""
+    },
+    "status_label": {
+      "ht": "Status:",
+      "at": ""
+    },
+    "status_all": {
+      "ht": "All",
+      "at": ""
+    },
+    "status_modified": {
+      "ht": "Modified",
+      "at": ""
+    },
+    "status_enhanced": {
+      "ht": "Enhanced",
+      "at": ""
+    },
+    "status_unmodified": {
+      "ht": "Unmodified",
+      "at": ""
+    },
+    "status_new": {
+      "ht": "New",
+      "at": ""
+    },
+    "hide_unmodified": {
+      "ht": "Hide Unmodified",
+      "at": ""
+    },
+    "favorites_only": {
+      "ht": "★ Favorites Only",
+      "at": ""
+    },
+    "group_sort_btn": {
+      "ht": "Group Sort",
+      "at": ""
+    },
+    "clear_filters_btn": {
+      "ht": "Clear Filters",
+      "at": ""
+    },
+    "copy_filtered_btn": {
+      "ht": "Copy Filtered",
+      "at": ""
+    }
   },
   "strings_tab": {
-    "col_category": "Category",
-    "col_key": "Key",
-    "col_default_value": "Default Value",
-    "col_current_value": "Current Value",
-    "col_star": "★",
-    "col_order": "#",
-    "col_custom_value": "Custom Value",
-    "col_status": "Status",
-    "no_data": "No data loaded",
-    "preview_placeholder": "Select a row to preview its rendered text.",
-    "context_underline": "Underline",
-    "context_highlight": "Highlight"
+    "col_category": {
+      "ht": "Category",
+      "at": ""
+    },
+    "col_key": {
+      "ht": "Key",
+      "at": ""
+    },
+    "col_default_value": {
+      "ht": "Default Value",
+      "at": ""
+    },
+    "col_current_value": {
+      "ht": "Current Value",
+      "at": ""
+    },
+    "col_star": {
+      "ht": "★",
+      "at": ""
+    },
+    "col_order": {
+      "ht": "#",
+      "at": ""
+    },
+    "col_custom_value": {
+      "ht": "Custom Value",
+      "at": ""
+    },
+    "col_status": {
+      "ht": "Status",
+      "at": ""
+    },
+    "no_data": {
+      "ht": "No data loaded",
+      "at": ""
+    },
+    "preview_placeholder": {
+      "ht": "Select a row to preview its rendered text.",
+      "at": ""
+    },
+    "context_underline": {
+      "ht": "Underline",
+      "at": ""
+    },
+    "context_highlight": {
+      "ht": "Highlight",
+      "at": ""
+    }
   },
   "config": {
-    "title": "Configuration",
-    "instructions": "Configure your Star Citizen installation path, extract base localization from Data.p4k, and import external INI files to customize your strings.",
-    "tools_group": "Tools",
-    "tools_desc": "Import an external INI file to merge custom strings into your user.ini. Keys are validated against base.ini, and conflicts are resolved interactively.",
-    "import_ini_btn": "Import INI...",
-    "reset_user_ini_btn": "Reset user.ini...",
-    "restore_user_ini_btn": "Restore user.ini...",
-    "preview_apply_btn": "Preview Apply",
-    "check_updates_btn": "Check for Updates",
-    "appearance_group": "Appearance",
-    "theme_label": "Theme:",
-    "theme_default": "Default",
-    "theme_light": "Light",
-    "theme_dark": "Dark",
-    "theme_odw": "ODW",
-    "star_citizen_group": "Star Citizen",
-    "installation_label": "Installation",
-    "installation_desc": "Path to your Star Citizen install root (the directory containing LIVE, PTU, EPTU, HOTFIX, TECH-PREVIEW).",
-    "browse_btn": "Browse...",
-    "channel_label": "Channel:",
-    "language_label": "Language:",
-    "map_language_btn": "Map Language File",
-    "map_language_title": "Map Language File",
-    "map_language_desc": "Set a URL to each language's global.ini. When you switch to that language, Smart Citizen downloads it and uses it as the base strings, instead of the English Data.p4k extraction. The download is cached per language and only re-fetched when it changes. Leave a field blank to use the bundled default (if any).",
-    "base_localization_label": "Base Localization",
-    "base_localization_desc": "Extract global.ini from your installed Data.p4k to get stock game strings that always match your installed version.",
-    "extract_btn": "Extract from Data.p4k",
-    "data_group": "Smart Citizen Data",
-    "data_desc": "Folder for user.ini, source cache, enhancement INIs, and backups. Move this off OneDrive-synced Documents if cache cleanup fails. The DataForge XML cache has its own path below — it’s ~1.4 GB so the default keeps it out of OneDrive automatically.",
-    "app_data_label": "App data folder:",
-    "dataforge_cache_label": "DataForge cache folder:",
-    "reset_btn": "Reset",
-    "p4k_group": "Base Localization (P4K Extraction)",
-    "p4k_desc": "Extract global.ini from your installed Data.p4k to get stock game strings that always match your installed version.",
-    "p4k_status_found_with_base": "Data.p4k found  |  base.ini last updated: {date}",
-    "p4k_status_found_no_base": "Data.p4k found  |  base.ini not yet extracted",
-    "p4k_status_not_found": "Data.p4k not found at: {path}",
-    "p4k_status_no_path": "Game install path not configured",
-    "select_sc_root": "Select Star Citizen Installation Root",
-    "select_data_folder": "Select Smart Citizen Data Folder",
-    "select_cache_folder": "Select DataForge Cache Folder",
-    "migrate_data_title": "Move Your Data?",
-    "migrate_data_body": "Move your existing Smart Citizen data (overrides, backups, cached strings) from\n\n{old_dir}\n\nto the new folder\n\n{new_dir}?\n\nFiles already in the new folder are kept. The old folder will be cleaned up after the move.",
-    "migrate_data_done_title": "Data Moved",
-    "migrate_data_done_body": "Moved {count} file(s) to the new data folder.",
-    "migrate_data_failed_title": "Migration Failed",
-    "migrate_data_failed_body": "Could not migrate your data:\n{error}",
-    "channel_not_installed_title": "Channel Not Installed",
-    "channel_not_installed_body": "{channel} isn’t installed under the current root. Install it via the RSI Launcher or pick a different channel.",
-    "invalid_data_folder_title": "Invalid Data Folder",
-    "invalid_cache_folder_title": "Invalid Cache Folder",
-    "dataforge_cache_changed_title": "DataForge Cache Path Changed",
-    "dataforge_cache_changed_body": "Changing the DataForge cache path requires re-extracting from Data.p4k.\n\nWhat should happen to the previous cache after re-extraction completes?",
-    "re_extract_delete_old": "Re-extract && delete old",
-    "re_extract_keep_old": "Re-extract && keep old",
-    "preview_title": "Apply Preview",
-    "preview_header": "Apply Preview\n\nMerge Order (top to bottom):\n",
-    "preview_total": "\nTotal Keys: {count:,}\nStatus Breakdown:\n",
-    "no_sources_warning": "No sources available to merge."
+    "title": {
+      "ht": "Configuration",
+      "at": ""
+    },
+    "instructions": {
+      "ht": "Configure your Star Citizen installation path, extract base localization from Data.p4k, and import external INI files to customize your strings.",
+      "at": ""
+    },
+    "tools_group": {
+      "ht": "Tools",
+      "at": ""
+    },
+    "tools_desc": {
+      "ht": "Import an external INI file to merge custom strings into your user.ini. Keys are validated against base.ini, and conflicts are resolved interactively.",
+      "at": ""
+    },
+    "import_ini_btn": {
+      "ht": "Import INI...",
+      "at": ""
+    },
+    "reset_user_ini_btn": {
+      "ht": "Reset user.ini...",
+      "at": ""
+    },
+    "restore_user_ini_btn": {
+      "ht": "Restore user.ini...",
+      "at": ""
+    },
+    "preview_apply_btn": {
+      "ht": "Preview Apply",
+      "at": ""
+    },
+    "check_updates_btn": {
+      "ht": "Check for Updates",
+      "at": ""
+    },
+    "appearance_group": {
+      "ht": "Appearance",
+      "at": ""
+    },
+    "theme_label": {
+      "ht": "Theme:",
+      "at": ""
+    },
+    "theme_default": {
+      "ht": "Default",
+      "at": ""
+    },
+    "theme_light": {
+      "ht": "Light",
+      "at": ""
+    },
+    "theme_dark": {
+      "ht": "Dark",
+      "at": ""
+    },
+    "theme_odw": {
+      "ht": "ODW",
+      "at": ""
+    },
+    "star_citizen_group": {
+      "ht": "Star Citizen",
+      "at": ""
+    },
+    "installation_label": {
+      "ht": "Installation",
+      "at": ""
+    },
+    "installation_desc": {
+      "ht": "Path to your Star Citizen install root (the directory containing LIVE, PTU, EPTU, HOTFIX, TECH-PREVIEW).",
+      "at": ""
+    },
+    "browse_btn": {
+      "ht": "Browse...",
+      "at": ""
+    },
+    "channel_label": {
+      "ht": "Channel:",
+      "at": ""
+    },
+    "language_label": {
+      "ht": "Language:",
+      "at": ""
+    },
+    "map_language_btn": {
+      "ht": "Map Language File",
+      "at": ""
+    },
+    "map_language_title": {
+      "ht": "Map Language File",
+      "at": ""
+    },
+    "map_language_desc": {
+      "ht": "Set a URL to each language's global.ini. When you switch to that language, Smart Citizen downloads it and uses it as the base strings, instead of the English Data.p4k extraction. The download is cached per language and only re-fetched when it changes. Leave a field blank to use the bundled default (if any).",
+      "at": ""
+    },
+    "base_localization_label": {
+      "ht": "Base Localization",
+      "at": ""
+    },
+    "base_localization_desc": {
+      "ht": "Extract global.ini from your installed Data.p4k to get stock game strings that always match your installed version.",
+      "at": ""
+    },
+    "extract_btn": {
+      "ht": "Extract from Data.p4k",
+      "at": ""
+    },
+    "data_group": {
+      "ht": "Smart Citizen Data",
+      "at": ""
+    },
+    "data_desc": {
+      "ht": "Folder for user.ini, source cache, enhancement INIs, and backups. Move this off OneDrive-synced Documents if cache cleanup fails. The DataForge XML cache has its own path below — it’s ~1.4 GB so the default keeps it out of OneDrive automatically.",
+      "at": ""
+    },
+    "app_data_label": {
+      "ht": "App data folder:",
+      "at": ""
+    },
+    "dataforge_cache_label": {
+      "ht": "DataForge cache folder:",
+      "at": ""
+    },
+    "reset_btn": {
+      "ht": "Reset",
+      "at": ""
+    },
+    "p4k_group": {
+      "ht": "Base Localization (P4K Extraction)",
+      "at": ""
+    },
+    "p4k_desc": {
+      "ht": "Extract global.ini from your installed Data.p4k to get stock game strings that always match your installed version.",
+      "at": ""
+    },
+    "p4k_status_found_with_base": {
+      "ht": "Data.p4k found  |  base.ini last updated: {date}",
+      "at": ""
+    },
+    "p4k_status_found_no_base": {
+      "ht": "Data.p4k found  |  base.ini not yet extracted",
+      "at": ""
+    },
+    "p4k_status_not_found": {
+      "ht": "Data.p4k not found at: {path}",
+      "at": ""
+    },
+    "p4k_status_no_path": {
+      "ht": "Game install path not configured",
+      "at": ""
+    },
+    "select_sc_root": {
+      "ht": "Select Star Citizen Installation Root",
+      "at": ""
+    },
+    "select_data_folder": {
+      "ht": "Select Smart Citizen Data Folder",
+      "at": ""
+    },
+    "select_cache_folder": {
+      "ht": "Select DataForge Cache Folder",
+      "at": ""
+    },
+    "migrate_data_title": {
+      "ht": "Move Your Data?",
+      "at": ""
+    },
+    "migrate_data_body": {
+      "ht": "Move your existing Smart Citizen data (overrides, backups, cached strings) from\n\n{old_dir}\n\nto the new folder\n\n{new_dir}?\n\nFiles already in the new folder are kept. The old folder will be cleaned up after the move.",
+      "at": ""
+    },
+    "migrate_data_done_title": {
+      "ht": "Data Moved",
+      "at": ""
+    },
+    "migrate_data_done_body": {
+      "ht": "Moved {count} file(s) to the new data folder.",
+      "at": ""
+    },
+    "migrate_data_failed_title": {
+      "ht": "Migration Failed",
+      "at": ""
+    },
+    "migrate_data_failed_body": {
+      "ht": "Could not migrate your data:\n{error}",
+      "at": ""
+    },
+    "channel_not_installed_title": {
+      "ht": "Channel Not Installed",
+      "at": ""
+    },
+    "channel_not_installed_body": {
+      "ht": "{channel} isn’t installed under the current root. Install it via the RSI Launcher or pick a different channel.",
+      "at": ""
+    },
+    "invalid_data_folder_title": {
+      "ht": "Invalid Data Folder",
+      "at": ""
+    },
+    "invalid_cache_folder_title": {
+      "ht": "Invalid Cache Folder",
+      "at": ""
+    },
+    "dataforge_cache_changed_title": {
+      "ht": "DataForge Cache Path Changed",
+      "at": ""
+    },
+    "dataforge_cache_changed_body": {
+      "ht": "Changing the DataForge cache path requires re-extracting from Data.p4k.\n\nWhat should happen to the previous cache after re-extraction completes?",
+      "at": ""
+    },
+    "re_extract_delete_old": {
+      "ht": "Re-extract && delete old",
+      "at": ""
+    },
+    "re_extract_keep_old": {
+      "ht": "Re-extract && keep old",
+      "at": ""
+    },
+    "preview_title": {
+      "ht": "Apply Preview",
+      "at": ""
+    },
+    "preview_header": {
+      "ht": "Apply Preview\n\nMerge Order (top to bottom):\n",
+      "at": ""
+    },
+    "preview_total": {
+      "ht": "\nTotal Keys: {count:,}\nStatus Breakdown:\n",
+      "at": ""
+    },
+    "no_sources_warning": {
+      "ht": "No sources available to merge.",
+      "at": ""
+    }
   },
   "enhancements": {
-    "title": "Enhancements",
-    "desc": "Optional features that extend the base localization data: category toggles for the enhancement generator, a favorites prefix for the in-game ship list, and a Tag Builder that customizes the bracketed name tags on components, missiles, and ship weapons.",
-    "enhancements_group": "Localization Enhancements",
-    "enhancements_desc": "Select which enhancement categories to include. Click Apply to save changes. Enhancements are generated from your installed Data.p4k.",
-    "cat_desc_ships": "Ship performance, loadout, and crew data",
-    "cat_desc_ship_items": "Component class/size/grade annotations and statistics",
-    "cat_desc_gear": "Combat stats for FPS weapons",
-    "cat_desc_missions": "XP rewards and blueprint drops for missions",
-    "cat_desc_commodities": "Crafting recipes and material usage",
-    "cat_desc_journal": "Mining Compendium with crafting data per mineral",
-    "apply_btn": "Apply",
-    "generate_btn": "Generate Enhancements",
-    "favorites_group": "Favorites",
-    "favorites_desc": "A configurable prefix is prepended to starred ship names in the generated ship list so they sort to the top of the in-game ship selection.",
-    "sort_prefix_label": "Sort prefix:",
-    "tag_builder_group": "Tag Builder",
-    "tag_builder_desc": "Customizes the bracketed name tags on components, missiles, and ship weapons. Changes take effect after clicking Apply Tag Changes and re-running Generate Enhancements.",
-    "preview_label": "Preview:",
-    "annotate_mission_descs_cb": "Annotate components in mission descriptions",
-    "apply_tag_changes_btn": "Apply Tag Changes",
-    "reset_defaults_btn": "Reset to defaults",
-    "edit_mapping_btn": "Edit Mapping..."
+    "title": {
+      "ht": "Enhancements",
+      "at": ""
+    },
+    "desc": {
+      "ht": "Optional features that extend the base localization data: category toggles for the enhancement generator, a favorites prefix for the in-game ship list, and a Tag Builder that customizes the bracketed name tags on components, missiles, and ship weapons.",
+      "at": ""
+    },
+    "enhancements_group": {
+      "ht": "Localization Enhancements",
+      "at": ""
+    },
+    "enhancements_desc": {
+      "ht": "Select which enhancement categories to include. Click Apply to save changes. Enhancements are generated from your installed Data.p4k.",
+      "at": ""
+    },
+    "cat_desc_ships": {
+      "ht": "Ship performance, loadout, and crew data",
+      "at": ""
+    },
+    "cat_desc_ship_items": {
+      "ht": "Component class/size/grade annotations and statistics",
+      "at": ""
+    },
+    "cat_desc_gear": {
+      "ht": "Combat stats for FPS weapons",
+      "at": ""
+    },
+    "cat_desc_missions": {
+      "ht": "XP rewards and blueprint drops for missions",
+      "at": ""
+    },
+    "cat_desc_commodities": {
+      "ht": "Crafting recipes and material usage",
+      "at": ""
+    },
+    "cat_desc_journal": {
+      "ht": "Mining Compendium with crafting data per mineral",
+      "at": ""
+    },
+    "apply_btn": {
+      "ht": "Apply",
+      "at": ""
+    },
+    "generate_btn": {
+      "ht": "Generate Enhancements",
+      "at": ""
+    },
+    "favorites_group": {
+      "ht": "Favorites",
+      "at": ""
+    },
+    "favorites_desc": {
+      "ht": "A configurable prefix is prepended to starred ship names in the generated ship list so they sort to the top of the in-game ship selection.",
+      "at": ""
+    },
+    "sort_prefix_label": {
+      "ht": "Sort prefix:",
+      "at": ""
+    },
+    "tag_builder_group": {
+      "ht": "Tag Builder",
+      "at": ""
+    },
+    "tag_builder_desc": {
+      "ht": "Customizes the bracketed name tags on components, missiles, and ship weapons. Changes take effect after clicking Apply Tag Changes and re-running Generate Enhancements.",
+      "at": ""
+    },
+    "preview_label": {
+      "ht": "Preview:",
+      "at": ""
+    },
+    "annotate_mission_descs_cb": {
+      "ht": "Annotate components in mission descriptions",
+      "at": ""
+    },
+    "apply_tag_changes_btn": {
+      "ht": "Apply Tag Changes",
+      "at": ""
+    },
+    "reset_defaults_btn": {
+      "ht": "Reset to defaults",
+      "at": ""
+    },
+    "edit_mapping_btn": {
+      "ht": "Edit Mapping...",
+      "at": ""
+    }
   },
   "log": {
-    "min_level_label": "Min level:",
-    "auto_scroll_check": "Auto-scroll",
-    "clear_btn": "Clear",
-    "export_btn": "Export to file…",
-    "export_title": "Export log",
-    "export_failed_title": "Export failed",
-    "lines_label": "{count} lines"
+    "min_level_label": {
+      "ht": "Min level:",
+      "at": ""
+    },
+    "auto_scroll_check": {
+      "ht": "Auto-scroll",
+      "at": ""
+    },
+    "clear_btn": {
+      "ht": "Clear",
+      "at": ""
+    },
+    "export_btn": {
+      "ht": "Export to file…",
+      "at": ""
+    },
+    "export_title": {
+      "ht": "Export log",
+      "at": ""
+    },
+    "export_failed_title": {
+      "ht": "Export failed",
+      "at": ""
+    },
+    "lines_label": {
+      "ht": "{count} lines",
+      "at": ""
+    }
   },
   "import_dialog": {
-    "title": "Import Conflicts",
-    "conflicts_group": "Conflicts ({count} keys)",
-    "keep_all_btn": "Keep All Current",
-    "import_all_btn": "Import All",
-    "col_key": "Key",
-    "col_current_value": "Current Value",
-    "col_imported_value": "Imported Value",
-    "col_resolution": "Resolution",
-    "resolution_keep": "Keep Current",
-    "resolution_use": "Use Imported",
-    "resolution_append": "Append Imported",
-    "resolution_prepend": "Prepend Imported",
-    "resolution_custom": "Custom...",
-    "custom_value_title": "Custom Value",
-    "custom_value_prompt": "Enter custom value for key:\n{key}",
-    "auto_add_summary": "{count} keys will be added automatically.",
-    "excluded_summary": "{count} keys excluded (not in base.ini)."
+    "title": {
+      "ht": "Import Conflicts",
+      "at": ""
+    },
+    "conflicts_group": {
+      "ht": "Conflicts ({count} keys)",
+      "at": ""
+    },
+    "keep_all_btn": {
+      "ht": "Keep All Current",
+      "at": ""
+    },
+    "import_all_btn": {
+      "ht": "Import All",
+      "at": ""
+    },
+    "col_key": {
+      "ht": "Key",
+      "at": ""
+    },
+    "col_current_value": {
+      "ht": "Current Value",
+      "at": ""
+    },
+    "col_imported_value": {
+      "ht": "Imported Value",
+      "at": ""
+    },
+    "col_resolution": {
+      "ht": "Resolution",
+      "at": ""
+    },
+    "resolution_keep": {
+      "ht": "Keep Current",
+      "at": ""
+    },
+    "resolution_use": {
+      "ht": "Use Imported",
+      "at": ""
+    },
+    "resolution_append": {
+      "ht": "Append Imported",
+      "at": ""
+    },
+    "resolution_prepend": {
+      "ht": "Prepend Imported",
+      "at": ""
+    },
+    "resolution_custom": {
+      "ht": "Custom...",
+      "at": ""
+    },
+    "custom_value_title": {
+      "ht": "Custom Value",
+      "at": ""
+    },
+    "custom_value_prompt": {
+      "ht": "Enter custom value for key:\n{key}",
+      "at": ""
+    },
+    "auto_add_summary": {
+      "ht": "{count} keys will be added automatically.",
+      "at": ""
+    },
+    "excluded_summary": {
+      "ht": "{count} keys excluded (not in base.ini).",
+      "at": ""
+    }
   },
   "coach": {
-    "back_btn": "Back",
-    "next_btn": "Next",
-    "skip_btn": "Skip",
-    "finish_btn": "Finish",
-    "step_counter": "Step {current} of {total}"
+    "back_btn": {
+      "ht": "Back",
+      "at": ""
+    },
+    "next_btn": {
+      "ht": "Next",
+      "at": ""
+    },
+    "skip_btn": {
+      "ht": "Skip",
+      "at": ""
+    },
+    "finish_btn": {
+      "ht": "Finish",
+      "at": ""
+    },
+    "step_counter": {
+      "ht": "Step {current} of {total}",
+      "at": ""
+    }
   },
   "tag_mapping_dialog": {
-    "hint": "Edit how each raw value renders at Short / Medium / Long lengths. The element’s style dropdown in the Tag Builder picks which length is used.",
-    "reset_btn": "Reset to defaults",
-    "col_value": "Value",
-    "col_short": "Short",
-    "col_medium": "Medium",
-    "col_long": "Long"
+    "hint": {
+      "ht": "Edit how each raw value renders at Short / Medium / Long lengths. The element’s style dropdown in the Tag Builder picks which length is used.",
+      "at": ""
+    },
+    "reset_btn": {
+      "ht": "Reset to defaults",
+      "at": ""
+    },
+    "col_value": {
+      "ht": "Value",
+      "at": ""
+    },
+    "col_short": {
+      "ht": "Short",
+      "at": ""
+    },
+    "col_medium": {
+      "ht": "Medium",
+      "at": ""
+    },
+    "col_long": {
+      "ht": "Long",
+      "at": ""
+    }
   },
   "dialogs": {
-    "warning_title": "Warning",
-    "error_title": "Error",
-    "success_title": "Success",
-    "no_file_loaded": "Please load a file first",
-    "no_game_path": "Please configure game install path in Config tab",
-    "missing_sources_title": "Missing Sources",
-    "missing_sources_body": "The following enabled sources could not be loaded:\n\n  {names}\n\nTheir customizations will NOT be included in the applied file.\n\nApply anyway?",
-    "apply_status": "Applied to game | {user_count} user edits | {enhancement_count} enhancements",
-    "apply_failed_status": "Apply failed — validation error",
-    "validation_failed_title": "Validation Failed",
-    "validation_failed_body": "The written file failed validation and has been deleted.\n\n{msg}{restore_note}",
-    "nothing_to_clear_title": "Nothing to Clear",
-    "nothing_to_clear_body": "No custom global.ini found in the game’s localization directory.\nThe game is already using vanilla text.",
-    "clear_localization_title": "Clear Localization",
-    "clear_localization_body": "This will delete the custom global.ini from:\n{loc_dir}\n\nThe game will revert to its default (vanilla) localization text.\n\nYour overrides are preserved in the app and can be re-applied at any time.\n\nContinue?",
-    "clear_localization_done_title": "Done",
-    "clear_localization_done_body": "Custom localization removed.\nThe game will now use its default text.\n\nTo re-apply your overrides and stat descriptions, click Apply to Game.",
-    "clear_localization_status": "Localization cleared — game reverted to vanilla text",
-    "cache_empty_title": "Cache Empty",
-    "cache_empty_body": "The cache directory is already empty.",
-    "clear_cache_title": "Clear Cache",
-    "dataforge_cache_title": "Clear DataForge Cache?",
-    "cache_cleared_title": "Cache Cleared",
-    "dir_not_found_title": "Directory Not Found",
-    "nothing_to_export_title": "Nothing to Export",
-    "nothing_to_export_body": "No applied global.ini was found in the game’s localization directory.\n\nClick ‘Apply to Game’ first to write your customizations, then Export to package them for sharing.",
-    "export_loc_pack_title": "Export Loc-Pack",
-    "export_complete_title": "Export Complete",
-    "export_complete_body": "Loc-pack written to:\n{out_path}\n\nChannel: {channel}\nSource size: {source_size:,} bytes\nZip size: {zip_size:,} bytes",
-    "export_failed_title": "Export Failed",
-    "export_failed_body": "Could not write the loc-pack zip:\n{error}",
-    "update_available_title": "Smart Citizen — Update Available",
-    "update_available_body": "A new version is available: v{latest}\nYou are on v{current}.",
-    "update_open_release": "Open Release Page",
-    "update_later": "Later",
-    "up_to_date_title": "Smart Citizen — Up to Date",
-    "up_to_date_body": "You are on the latest version (v{current}).",
-    "update_check_failed_title": "Smart Citizen — Update Check Failed",
-    "update_check_failed_body": "Could not check for updates:\n\n{message}",
-    "nothing_to_reset_title": "Nothing to Reset",
-    "nothing_to_reset_body": "There is no user.ini for the {channel} channel — already at stock values.\n\nPath checked:\n{path}",
-    "reset_user_ini_title": "Reset user.ini?",
-    "reset_failed_title": "Reset Failed",
-    "reset_failed_body": "Could not reset user.ini:\n\n{error}\n\nThe file is still in place. Close any other application that might have it open (text editor, sync client) and try again.",
-    "no_sources_body": "No sources configured. Please configure data sources in Config tab.",
-    "merge_failed": "Merge failed",
-    "merging_sources": "Merging sources...",
-    "language_changed_status": "Language changed to {language} — reloading sources…",
-    "language_downloading": "Downloading {language} localization…",
-    "language_no_url": "No download URL set for {language}; showing the English base. Use Map Language File to set one.",
-    "language_download_failed": "Couldn't download the {language} localization, and no cached copy was found. Showing the English base instead. Check the URL in Map Language File and your connection, then try again.",
-    "language_generating_enhancements": "Generating {language} enhancements from DataForge…",
-    "file_not_found_title": "File Not Found",
-    "file_not_found_body": "File does not exist:\n{path}",
-    "empty_file_title": "Empty File",
-    "empty_file_body": "The imported file contains no valid key=value entries.",
-    "copy_filtered_title": "Copy Filtered",
-    "copy_filtered_empty": "No rows to copy.",
-    "copy_filtered_done": "Copied {count} rows to clipboard.",
-    "copy_error_title": "Copy Error",
-    "copy_error_body": "Failed to copy to clipboard: {error}"
+    "warning_title": {
+      "ht": "Warning",
+      "at": ""
+    },
+    "error_title": {
+      "ht": "Error",
+      "at": ""
+    },
+    "success_title": {
+      "ht": "Success",
+      "at": ""
+    },
+    "no_file_loaded": {
+      "ht": "Please load a file first",
+      "at": ""
+    },
+    "no_game_path": {
+      "ht": "Please configure game install path in Config tab",
+      "at": ""
+    },
+    "missing_sources_title": {
+      "ht": "Missing Sources",
+      "at": ""
+    },
+    "missing_sources_body": {
+      "ht": "The following enabled sources could not be loaded:\n\n  {names}\n\nTheir customizations will NOT be included in the applied file.\n\nApply anyway?",
+      "at": ""
+    },
+    "apply_status": {
+      "ht": "Applied to game | {user_count} user edits | {enhancement_count} enhancements",
+      "at": ""
+    },
+    "apply_failed_status": {
+      "ht": "Apply failed — validation error",
+      "at": ""
+    },
+    "validation_failed_title": {
+      "ht": "Validation Failed",
+      "at": ""
+    },
+    "validation_failed_body": {
+      "ht": "The written file failed validation and has been deleted.\n\n{msg}{restore_note}",
+      "at": ""
+    },
+    "nothing_to_clear_title": {
+      "ht": "Nothing to Clear",
+      "at": ""
+    },
+    "nothing_to_clear_body": {
+      "ht": "No custom global.ini found in the game’s localization directory.\nThe game is already using vanilla text.",
+      "at": ""
+    },
+    "clear_localization_title": {
+      "ht": "Clear Localization",
+      "at": ""
+    },
+    "clear_localization_body": {
+      "ht": "This will delete the custom global.ini from:\n{loc_dir}\n\nThe game will revert to its default (vanilla) localization text.\n\nYour overrides are preserved in the app and can be re-applied at any time.\n\nContinue?",
+      "at": ""
+    },
+    "clear_localization_done_title": {
+      "ht": "Done",
+      "at": ""
+    },
+    "clear_localization_done_body": {
+      "ht": "Custom localization removed.\nThe game will now use its default text.\n\nTo re-apply your overrides and stat descriptions, click Apply to Game.",
+      "at": ""
+    },
+    "clear_localization_status": {
+      "ht": "Localization cleared — game reverted to vanilla text",
+      "at": ""
+    },
+    "cache_empty_title": {
+      "ht": "Cache Empty",
+      "at": ""
+    },
+    "cache_empty_body": {
+      "ht": "The cache directory is already empty.",
+      "at": ""
+    },
+    "clear_cache_title": {
+      "ht": "Clear Cache",
+      "at": ""
+    },
+    "dataforge_cache_title": {
+      "ht": "Clear DataForge Cache?",
+      "at": ""
+    },
+    "cache_cleared_title": {
+      "ht": "Cache Cleared",
+      "at": ""
+    },
+    "dir_not_found_title": {
+      "ht": "Directory Not Found",
+      "at": ""
+    },
+    "nothing_to_export_title": {
+      "ht": "Nothing to Export",
+      "at": ""
+    },
+    "nothing_to_export_body": {
+      "ht": "No applied global.ini was found in the game’s localization directory.\n\nClick ‘Apply to Game’ first to write your customizations, then Export to package them for sharing.",
+      "at": ""
+    },
+    "export_loc_pack_title": {
+      "ht": "Export Loc-Pack",
+      "at": ""
+    },
+    "export_complete_title": {
+      "ht": "Export Complete",
+      "at": ""
+    },
+    "export_complete_body": {
+      "ht": "Loc-pack written to:\n{out_path}\n\nChannel: {channel}\nSource size: {source_size:,} bytes\nZip size: {zip_size:,} bytes",
+      "at": ""
+    },
+    "export_failed_title": {
+      "ht": "Export Failed",
+      "at": ""
+    },
+    "export_failed_body": {
+      "ht": "Could not write the loc-pack zip:\n{error}",
+      "at": ""
+    },
+    "update_available_title": {
+      "ht": "Smart Citizen — Update Available",
+      "at": ""
+    },
+    "update_available_body": {
+      "ht": "A new version is available: v{latest}\nYou are on v{current}.",
+      "at": ""
+    },
+    "update_open_release": {
+      "ht": "Open Release Page",
+      "at": ""
+    },
+    "update_later": {
+      "ht": "Later",
+      "at": ""
+    },
+    "up_to_date_title": {
+      "ht": "Smart Citizen — Up to Date",
+      "at": ""
+    },
+    "up_to_date_body": {
+      "ht": "You are on the latest version (v{current}).",
+      "at": ""
+    },
+    "update_check_failed_title": {
+      "ht": "Smart Citizen — Update Check Failed",
+      "at": ""
+    },
+    "update_check_failed_body": {
+      "ht": "Could not check for updates:\n\n{message}",
+      "at": ""
+    },
+    "nothing_to_reset_title": {
+      "ht": "Nothing to Reset",
+      "at": ""
+    },
+    "nothing_to_reset_body": {
+      "ht": "There is no user.ini for the {channel} channel — already at stock values.\n\nPath checked:\n{path}",
+      "at": ""
+    },
+    "reset_user_ini_title": {
+      "ht": "Reset user.ini?",
+      "at": ""
+    },
+    "reset_failed_title": {
+      "ht": "Reset Failed",
+      "at": ""
+    },
+    "reset_failed_body": {
+      "ht": "Could not reset user.ini:\n\n{error}\n\nThe file is still in place. Close any other application that might have it open (text editor, sync client) and try again.",
+      "at": ""
+    },
+    "no_sources_body": {
+      "ht": "No sources configured. Please configure data sources in Config tab.",
+      "at": ""
+    },
+    "merge_failed": {
+      "ht": "Merge failed",
+      "at": ""
+    },
+    "merging_sources": {
+      "ht": "Merging sources...",
+      "at": ""
+    },
+    "language_changed_status": {
+      "ht": "Language changed to {language} — reloading sources…",
+      "at": ""
+    },
+    "language_downloading": {
+      "ht": "Downloading {language} localization…",
+      "at": ""
+    },
+    "language_no_url": {
+      "ht": "No download URL set for {language}; showing the English base. Use Map Language File to set one.",
+      "at": ""
+    },
+    "language_download_failed": {
+      "ht": "Couldn't download the {language} localization, and no cached copy was found. Showing the English base instead. Check the URL in Map Language File and your connection, then try again.",
+      "at": ""
+    },
+    "language_generating_enhancements": {
+      "ht": "Generating {language} enhancements from DataForge…",
+      "at": ""
+    },
+    "file_not_found_title": {
+      "ht": "File Not Found",
+      "at": ""
+    },
+    "file_not_found_body": {
+      "ht": "File does not exist:\n{path}",
+      "at": ""
+    },
+    "empty_file_title": {
+      "ht": "Empty File",
+      "at": ""
+    },
+    "empty_file_body": {
+      "ht": "The imported file contains no valid key=value entries.",
+      "at": ""
+    },
+    "copy_filtered_title": {
+      "ht": "Copy Filtered",
+      "at": ""
+    },
+    "copy_filtered_empty": {
+      "ht": "No rows to copy.",
+      "at": ""
+    },
+    "copy_filtered_done": {
+      "ht": "Copied {count} rows to clipboard.",
+      "at": ""
+    },
+    "copy_error_title": {
+      "ht": "Copy Error",
+      "at": ""
+    },
+    "copy_error_body": {
+      "ht": "Failed to copy to clipboard: {error}",
+      "at": ""
+    }
   },
   "progress": {
-    "reading_sources": "Reading source files...",
-    "creating_entries": "Creating StringEntry objects...",
-    "computing_sort_keys": "Computing sort keys...",
-    "ready": "Ready",
-    "applying_patches": "Applying DataForge patches…",
-    "loading_generator": "Loading enhancements generator...",
-    "generating_enhancements": "Generating enhancements (may take a few minutes on first run)...",
-    "unp4k_launch": "Launching unp4k — this may take a minute...",
-    "unp4k_launch_short": "Launching unp4k…",
-    "copy_global": "Copying extracted global.ini to cache...",
-    "copy_global_short": "Copying extracted global.ini…",
-    "extract_dcb": "Extracting Game2.dcb from Data.p4k…",
-    "unforge": "Converting DataForge database — this takes several minutes…",
-    "unforge_short": "Converting DataForge database…",
-    "caching_entities": "Caching entity files…",
-    "snapshot_diff": "Snapshotting cache for diff…"
+    "reading_sources": {
+      "ht": "Reading source files...",
+      "at": ""
+    },
+    "creating_entries": {
+      "ht": "Creating StringEntry objects...",
+      "at": ""
+    },
+    "computing_sort_keys": {
+      "ht": "Computing sort keys...",
+      "at": ""
+    },
+    "ready": {
+      "ht": "Ready",
+      "at": ""
+    },
+    "applying_patches": {
+      "ht": "Applying DataForge patches…",
+      "at": ""
+    },
+    "loading_generator": {
+      "ht": "Loading enhancements generator...",
+      "at": ""
+    },
+    "generating_enhancements": {
+      "ht": "Generating enhancements (may take a few minutes on first run)...",
+      "at": ""
+    },
+    "unp4k_launch": {
+      "ht": "Launching unp4k — this may take a minute...",
+      "at": ""
+    },
+    "unp4k_launch_short": {
+      "ht": "Launching unp4k…",
+      "at": ""
+    },
+    "copy_global": {
+      "ht": "Copying extracted global.ini to cache...",
+      "at": ""
+    },
+    "copy_global_short": {
+      "ht": "Copying extracted global.ini…",
+      "at": ""
+    },
+    "extract_dcb": {
+      "ht": "Extracting Game2.dcb from Data.p4k…",
+      "at": ""
+    },
+    "unforge": {
+      "ht": "Converting DataForge database — this takes several minutes…",
+      "at": ""
+    },
+    "unforge_short": {
+      "ht": "Converting DataForge database…",
+      "at": ""
+    },
+    "caching_entities": {
+      "ht": "Caching entity files…",
+      "at": ""
+    },
+    "snapshot_diff": {
+      "ht": "Snapshotting cache for diff…",
+      "at": ""
+    }
   },
   "status_bar": {
-    "update_checking": "Checking…",
-    "update_available": "v{version} available",
-    "update_up_to_date": "Up to date (v{version})",
-    "update_check_failed": "Check failed",
-    "update_indicator_available": "v{current} · update available",
-    "update_indicator_up_to_date": "v{current} · up to date",
-    "update_indicator_failed": "v{current} · check failed"
+    "update_checking": {
+      "ht": "Checking…",
+      "at": ""
+    },
+    "update_available": {
+      "ht": "v{version} available",
+      "at": ""
+    },
+    "update_up_to_date": {
+      "ht": "Up to date (v{version})",
+      "at": ""
+    },
+    "update_check_failed": {
+      "ht": "Check failed",
+      "at": ""
+    },
+    "update_indicator_available": {
+      "ht": "v{current} · update available",
+      "at": ""
+    },
+    "update_indicator_up_to_date": {
+      "ht": "v{current} · up to date",
+      "at": ""
+    },
+    "update_indicator_failed": {
+      "ht": "v{current} · check failed",
+      "at": ""
+    }
   }
 }

@@ -64,6 +64,10 @@ var
     cleared on Reset so the app's default (%LOCALAPPDATA%\Smart Citizen)
     wins on resolution. }
   CacheDirPage: TInputDirWizardPage;
+  { #180: Simple vs Advanced start mode. Radio page; the choice is written to
+    HKCU\...\ui_mode in WriteInstallerChoicesToRegistry and the app reads it on
+    first launch. Defaults to Simple, pre-selected from a prior install. }
+  ModeChoicePage: TInputOptionWizardPage;
 
 function GetLocalCacheDefault(): String;
 begin
@@ -670,6 +674,19 @@ begin
     ForceDirectories(CacheDir);
     Log('Saved cache_dir to registry: ' + CacheDir);
   end;
+
+  { #180: persist the Simple/Advanced start mode. Always written (not just on
+    a non-default) so a fresh install opens in the user's chosen mode rather
+    than relying on the app's "simple when unset" fallback. Honors the #172
+    persistence contract: this only writes the live node; nothing is deleted
+    on uninstall. }
+  if ModeChoicePage.SelectedValueIndex = 1 then
+    RegWriteStringValue(HKCU,
+      'Software\Osiris DevWorks\Smart Citizen', 'ui_mode', 'advanced')
+  else
+    RegWriteStringValue(HKCU,
+      'Software\Osiris DevWorks\Smart Citizen', 'ui_mode', 'simple');
+  Log('Saved ui_mode to registry.');
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -1012,6 +1029,31 @@ begin
     CacheDirPage.Values[0] := SavedDataDir
   else
     CacheDirPage.Values[0] := GetLocalCacheDefault();
+
+  { #180: Start mode. Simple is a near-empty one-button screen for new users;
+    Advanced is the full interface. Radio buttons (Exclusive=True). Default to
+    Simple, but pre-select the user's prior choice on a reinstall so an upgrade
+    doesn't silently flip an Advanced user back to Simple. }
+  ModeChoicePage := CreateInputOptionPage(
+    CacheDirPage.ID,
+    'Start Mode',
+    'Choose how Smart Citizen opens.',
+    'Simple mode is a single "Generate & Apply to Game" button that does '
+    + 'everything with default settings — ideal if you just want enhanced '
+    + 'strings fast. Advanced mode shows the full interface with every tab and '
+    + 'option.'
+    + #13#10 + #13#10 +
+    'You can switch modes anytime from inside the app.',
+    True,
+    False
+  );
+  ModeChoicePage.Add('Simple mode (recommended)');
+  ModeChoicePage.Add('Advanced mode');
+  if RegQueryStringValue(HKCU, NewRegPath, 'ui_mode', SavedDataDir) and
+     (CompareText(SavedDataDir, 'advanced') = 0) then
+    ModeChoicePage.SelectedValueIndex := 1
+  else
+    ModeChoicePage.SelectedValueIndex := 0;
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
