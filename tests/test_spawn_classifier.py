@@ -558,3 +558,47 @@ class TestMergeSpawnBreakdownsMax:
         v[gen_module.SPAWN_HOSTILE] = {"Pirates": 3}
         gen_module._merge_spawn_breakdowns_max(agg, v)
         assert agg[gen_module.SPAWN_HOSTILE] == {"Pirates": 10}
+
+
+class TestSpawnGatingInEnhancementsMission:
+    """#163 / #165: the Hostiles toggle and shared-desc ambiguity suppression
+    are applied inside ``enhancements_mission`` (the pu_missions / entities
+    path), not just the contractgen path."""
+
+    @staticmethod
+    def _mission():
+        # A salvage-shaped mission: one friendly salvage target + a hostile
+        # group, under a description key shared with other variants.
+        return ET.fromstring(
+            '<MissionBrokerEntry description="@Shared_desc">'
+            '<spawnDescriptions>'
+            '<SpawnDescription_ShipGroup Name="SalvageableShip">'
+            '<ships><SpawnDescription_Ship concurrentAmount="1"/></ships>'
+            '</SpawnDescription_ShipGroup>'
+            '<SpawnDescription_ShipGroup Name="Pirates">'
+            '<ships><SpawnDescription_Ship concurrentAmount="4"/></ships>'
+            '</SpawnDescription_ShipGroup>'
+            '</spawnDescriptions>'
+            '</MissionBrokerEntry>'
+        )
+
+    def test_show_spawns_true_emits_hostiles(self, gen_module):
+        body = gen_module.enhancements_mission(self._mission(), show_spawns=True)
+        assert "Hostiles:" in body and "Pirates" in body
+
+    def test_show_spawns_false_drops_all_spawn_lines(self, gen_module):
+        # #163: with the Hostiles toggle off, no spawn bucket is emitted.
+        body = gen_module.enhancements_mission(self._mission(), show_spawns=False)
+        assert "Hostiles:" not in body
+        assert "Salvageable Ships" not in body
+
+    def test_ambiguous_desc_drops_hostiles_keeps_friendlies(self, gen_module):
+        # #165: a desc key shared by missions with conflicting hostiles drops
+        # ONLY the Hostiles bucket; the consistent friendly line survives.
+        root = self._mission()
+        key = gen_module._mission_loc_key(root)
+        body = gen_module.enhancements_mission(
+            root, show_spawns=True, spawn_ambiguous_keys={key}
+        )
+        assert "Hostiles:" not in body
+        assert "Salvageable Ships" in body

@@ -180,7 +180,7 @@ class EnhancementsTab(QWidget):
         _MISSION_FIELD_LABELS = [
             ("mission_type",  "Mission Type"),
             ("difficulty",    "Difficulty"),
-            ("spawns",        "Spawns"),
+            ("spawns",        "Hostiles"),
             ("reputation",    "Reputation"),
             ("blueprints",    "Blueprints"),
             ("blueprint_tag", "Blueprint Tag"),

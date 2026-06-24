@@ -2540,7 +2540,9 @@ def _extract_mission_flags(root: ET.Element) -> list[str]:
 
 
 def enhancements_mission(root: ET.Element, reputation_lookup: dict[str, int] | None = None,
-                         rep_xp_label: str = _DEFAULT_REP_XP_LABEL) -> str:
+                         rep_xp_label: str = _DEFAULT_REP_XP_LABEL,
+                         show_spawns: bool = True,
+                         spawn_ambiguous_keys: "set[str] | None" = None) -> str:
     """Extract mission/contract reward stats (aUEC + Reputation XP) and flags.
 
     Extracts:
@@ -2570,7 +2572,21 @@ def enhancements_mission(root: ET.Element, reputation_lookup: dict[str, int] | N
         # Extract spawn/wave counts — bucketed Hostiles / Friendlies /
         # Objectives / Unknown rather than the pre-1.4.1 single-tally
         # Enemies + Non-hostiles. Empty buckets are dropped by the formatter.
-        lines.extend(_format_spawn_lines(_extract_spawn_counts(root)))
+        # #163: gated by the Hostiles mission-detail toggle. The contractgen
+        # path gates this too (via _show("spawns")); pu_missions / entities
+        # missions reach the table through here, so without the gate salvage
+        # contracts kept showing hostiles after the user turned them off.
+        # #165: when this desc key is shared by missions with conflicting
+        # hostile spawns (every salvage contract shares one description, but
+        # only the unlawful ones spawn hostiles), drop ONLY the Hostiles bucket
+        # — a single body can't honestly show one count for both. The
+        # consistent buckets (e.g. Friendlies "Salvageable Ships") still show.
+        _ambiguous = loc_key in spawn_ambiguous_keys if spawn_ambiguous_keys else False
+        if show_spawns:
+            _bd = _extract_spawn_counts(root)
+            if _ambiguous:
+                _bd[SPAWN_HOSTILE] = {}
+            lines.extend(_format_spawn_lines(_bd))
 
         # Turret presence — groups visually with the other hostile-entity
         # tallies so a player sizing up the mission sees enemies + turrets
@@ -4957,11 +4973,47 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
 
     out: dict[str, str] = {}
     pu_missions_dir = records / "missionbroker" / "pu_missions"
+    _show_spawns = _show("spawns")  # #163: honor the Hostiles toggle here too
+
+    # #165: pre-pass — a single mission description is often shared by many
+    # pu_missions XMLs with DIFFERENT hostile spawns (every lawful AND unlawful
+    # salvage contract shares `SalvageContractor_Description`, but only the
+    # unlawful ones spawn a hostile wave). The shared body can't honestly show
+    # one count, so flag desc keys whose hostile breakdown is inconsistent
+    # across the XMLs sharing them and suppress their Hostiles line (mirrors the
+    # [BP] -> [BP?] demotion for heterogeneous shared titles).
+    spawn_ambiguous_descs: set[str] = set()
+    if pu_missions_dir.exists():
+        _pu_pre = (
+            _index_rglob(xml_path_index, pu_missions_dir, records)
+            if xml_path_index is not None
+            else list(pu_missions_dir.rglob("*.xml"))
+        )
+        _desc_host_sigs: dict[str, set] = {}
+        for _xf in _pu_pre:
+            try:
+                _r = ET.parse(_xf).getroot()
+                _dk = _mission_loc_key(_r)
+                if not _dk:
+                    continue
+                _host = _extract_spawn_counts(_r).get(SPAWN_HOSTILE, {})
+                _desc_host_sigs.setdefault(_dk, set()).add(tuple(sorted(_host.items())))
+            except (ET.ParseError, Exception):
+                continue
+        spawn_ambiguous_descs = {k for k, s in _desc_host_sigs.items() if len(s) > 1}
+        if spawn_ambiguous_descs:
+            logger.info(
+                f"#165: suppressing hostiles on {len(spawn_ambiguous_descs)} "
+                f"shared-but-inconsistent mission description(s)"
+            )
 
     if pu_missions_dir.exists():
         out.update(scan_entity_dir(
             pu_missions_dir,
-            lambda root: enhancements_mission(root, reputation_lookup, rep_xp_label=rep_xp_label),
+            lambda root: enhancements_mission(root, reputation_lookup,
+                                              rep_xp_label=rep_xp_label,
+                                              show_spawns=_show_spawns,
+                                              spawn_ambiguous_keys=spawn_ambiguous_descs),
             loc=loc, loc_key_fn=_mission_loc_key,
             separator=mission_sep, capture_all=True,
             xml_path_index=xml_path_index, records_dir=records,
@@ -4975,7 +5027,10 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         if mission_dir.exists():
             out.update(scan_entity_dir(
                 mission_dir,
-                lambda root: enhancements_mission(root, reputation_lookup, rep_xp_label=rep_xp_label),
+                lambda root: enhancements_mission(root, reputation_lookup,
+                                                  rep_xp_label=rep_xp_label,
+                                                  show_spawns=_show_spawns,
+                                                  spawn_ambiguous_keys=spawn_ambiguous_descs),
                 loc=loc, separator=mission_sep, capture_all=True,
                 xml_path_index=xml_path_index, records_dir=records,
             ))
