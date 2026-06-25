@@ -530,6 +530,81 @@ class TestWrapperHostileFallback:
         assert breakdown[gen_module.SPAWN_UNKNOWN] == {}
 
 
+class TestHandlerScopeExclusion:
+    """#186: the handler-level spawn fallback must inherit only spawns defined
+    at handler scope, never the union of every sibling ``CareerContract``'s
+    roster. A greedy ``.//`` scan over the whole handler leaked ground
+    "Kopions"/"Soldiers" onto an easy 9-probe satellite mission whose own
+    contract carried no spawns and so fell back to the handler breakdown.
+    """
+
+    def _handler(self) -> ET.Element:
+        root = _make_root(
+            '<ContractGeneratorHandler_Career>'
+            # Handler-scope default: a ship group directly under the handler,
+            # outside any CareerContract — the genuine shared default.
+            '<SpawnDescription_ShipGroup Name="Defenders">'
+            '<ships><SpawnDescription_Ship concurrentAmount="4"/></ships>'
+            '</SpawnDescription_ShipGroup>'
+            # Two sibling contracts, each with its own larger roster — including
+            # a ground "Kopions" group that must never leak onto a sibling.
+            '<CareerContract debugName="A">'
+            '<SpawnDescription_ShipGroup Name="Pirates">'
+            '<ships><SpawnDescription_Ship concurrentAmount="30"/></ships>'
+            '</SpawnDescription_ShipGroup>'
+            '</CareerContract>'
+            '<CareerContract debugName="B">'
+            '<SpawnDescription_ShipGroup Name="Kopions">'
+            '<ships><SpawnDescription_Ship concurrentAmount="9"/></ships>'
+            '</SpawnDescription_ShipGroup>'
+            '</CareerContract>'
+            '</ContractGeneratorHandler_Career>'
+        )
+        return root.find(".//ContractGeneratorHandler_Career")
+
+    def test_excludes_sibling_contract_spawns(self, gen_module):
+        handler = self._handler()
+        breakdown = gen_module._extract_spawn_counts(
+            handler, exclude_within="CareerContract"
+        )
+        # Only the handler-scope Defenders survive; the contracts' rosters drop.
+        assert breakdown[gen_module.SPAWN_HOSTILE] == {"Defenders": 4}
+
+    def test_without_exclusion_unions_everything(self, gen_module):
+        # Documents the pre-fix behavior the exclusion guards against.
+        handler = self._handler()
+        breakdown = gen_module._extract_spawn_counts(handler)
+        assert breakdown[gen_module.SPAWN_HOSTILE] == {
+            "Defenders": 4, "Pirates": 30, "Kopions": 9,
+        }
+
+    def test_contract_own_spawns_unchanged(self, gen_module):
+        # The exclusion only matters at handler scope; a contract still reports
+        # its own roster (this is what wins when a contract has its own spawns).
+        contract = self._handler().find(".//CareerContract[@debugName='A']")
+        breakdown = gen_module._extract_spawn_counts(contract)
+        assert breakdown[gen_module.SPAWN_HOSTILE] == {"Pirates": 30}
+
+    def test_no_handler_scope_spawns_yields_empty(self, gen_module):
+        # The satellite case: every spawn lives inside a contract, so handler
+        # scope is empty and an own-less contract inherits nothing (no inflated
+        # roster) rather than the union.
+        root = _make_root(
+            '<ContractGeneratorHandler_Career>'
+            '<CareerContract debugName="A">'
+            '<SpawnDescription_ShipGroup Name="Pirates">'
+            '<ships><SpawnDescription_Ship concurrentAmount="30"/></ships>'
+            '</SpawnDescription_ShipGroup>'
+            '</CareerContract>'
+            '</ContractGeneratorHandler_Career>'
+        )
+        handler = root.find(".//ContractGeneratorHandler_Career")
+        breakdown = gen_module._extract_spawn_counts(
+            handler, exclude_within="CareerContract"
+        )
+        assert breakdown[gen_module.SPAWN_HOSTILE] == {}
+
+
 class TestMergeSpawnBreakdownsMax:
     """The contract aggregator merges per-variant breakdowns by taking the
     MAX per label — preserving the pre-1.4.1 ``max(enemies, venemies)``

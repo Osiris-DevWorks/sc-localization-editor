@@ -2310,12 +2310,39 @@ def _add_spawn(breakdown: SpawnBreakdown, bucket: str, label: str, count: int) -
     breakdown[bucket][label] = breakdown[bucket].get(label, 0) + count
 
 
-def _extract_spawn_counts(element: ET.Element) -> SpawnBreakdown:
+def _within_excluded_subtree(node: ET.Element, scope: ET.Element,
+                             exclude_tag: str | None) -> bool:
+    """True if ``node`` has an ancestor tagged ``exclude_tag`` at or below
+    ``scope`` (exclusive of ``scope`` itself). Walks up via ``getparent()``.
+
+    Used to keep handler-scope spawn extraction from reaching down into the
+    handler's child ``CareerContract`` nodes — see ``_extract_spawn_counts``'s
+    ``exclude_within`` and issue #186.
+    """
+    if not exclude_tag:
+        return False
+    parent = node.getparent()
+    while parent is not None and parent is not scope:
+        if parent.tag == exclude_tag:
+            return True
+        parent = parent.getparent()
+    return False
+
+
+def _extract_spawn_counts(element: ET.Element,
+                          exclude_within: str | None = None) -> SpawnBreakdown:
     """Extract a per-bucket per-label breakdown of spawn descriptions.
 
     Parses ``SpawnDescription_ShipGroup`` and ``SpawnDescription_NPC_Group``
     elements within the given XML element scope, classifies each by name via
     :func:`classify_spawn_group`, and aggregates counts per (bucket, label).
+
+    ``exclude_within`` skips any spawn group nested inside a descendant with
+    that tag. The handler-level fallback passes ``"CareerContract"`` so a
+    contract with no spawns of its own inherits only spawns defined directly at
+    handler scope (the genuine shared default), NOT the union of every sibling
+    contract's roster — which leaked e.g. ground "Kopions"/"Soldiers" onto an
+    easy 9-probe satellite mission (#186).
 
     Pre-1.4.1 this returned ``(num_waves, num_enemies, num_not_enemies)`` and
     bucketed everything unrecognized as hostile — see the keyword-table
@@ -2324,6 +2351,8 @@ def _extract_spawn_counts(element: ET.Element) -> SpawnBreakdown:
     breakdown = _empty_spawn_breakdown()
 
     for sg in element.findall(".//SpawnDescription_ShipGroup"):
+        if _within_excluded_subtree(sg, element, exclude_within):
+            continue
         name = sg.get("Name", "")
         ships = sg.findall(".//SpawnDescription_Ship")
         total = sum(int(s.get("concurrentAmount", "0")) for s in ships)
@@ -2343,6 +2372,8 @@ def _extract_spawn_counts(element: ET.Element) -> SpawnBreakdown:
         _add_spawn(breakdown, bucket, label, total)
 
     for ng in element.findall(".//SpawnDescription_NPC_Group"):
+        if _within_excluded_subtree(ng, element, exclude_within):
+            continue
         name = ng.get("Name", "")
         auto_settings = ng.findall(".//autoSpawnSettings")
         total_npcs = 0
@@ -3084,7 +3115,13 @@ def scan_contract_generators(
 
                     # Extract handler-level spawn breakdown (shared across
                     # contracts; per-contract overrides win when non-empty).
-                    handler_spawns = _extract_spawn_counts(handler)
+                    # Exclude spawns nested inside the handler's CareerContract
+                    # children so the fallback inherits only genuine
+                    # handler-scope defaults, not a union of every sibling
+                    # contract's roster (#186).
+                    handler_spawns = _extract_spawn_counts(
+                        handler, exclude_within="CareerContract"
+                    )
 
                     contracts = handler.findall(contract_xpath)
 
