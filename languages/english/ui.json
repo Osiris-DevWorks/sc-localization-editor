@@ -29,11 +29,11 @@
       "at": ""
     },
     "generate_apply_tip": {
-      "ht": "Generate the latest enhancements with default settings and apply them to your game. A backup of the current global.ini is made first.",
+      "ht": "Generate the latest enhancements with your current settings and apply them to your game. A backup of the current global.ini is made first.",
       "at": ""
     },
     "defaults_hint": {
-      "ht": "Uses your default settings. The first run can take a few minutes while DataForge is extracted.",
+      "ht": "Uses your current settings (the same ones the Advanced view shows).\nThe first run can take a few minutes while DataForge is extracted.",
       "at": ""
     }
   },

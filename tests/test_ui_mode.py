@@ -108,6 +108,10 @@ class _StubWindow:
         self.view_stack.addWidget(self.tabs)
         self.view_stack.addWidget(self.simple_page)
         self.toolbar_container = QWidget()
+        # _apply_ui_mode only resizes the window when it's already shown; this
+        # never-shown stub reports not-visible so the swap is exercised in
+        # isolation, without the sizing helper.
+        self.isVisible = lambda: False
 
 
 def test_apply_ui_mode_swaps_page(qapp, isolated_settings):
@@ -132,3 +136,81 @@ def test_apply_ui_mode_unknown_falls_back_to_simple(qapp, isolated_settings):
     stub = _StubWindow()
     MainWindow._apply_ui_mode(stub, "garbage")
     assert stub.view_stack.currentWidget() is stub.simple_page
+
+
+# ── _size_window_for_mode (mode-driven startup size, #180 follow-up) ─────────
+
+class _SizeStub:
+    """Records the window-sizing calls _size_window_for_mode makes, so the
+    Advanced=maximized / Simple=shrink-to-fit contract is tested without a
+    real top-level window (offscreen QPA doesn't report maximize reliably)."""
+
+    def __init__(self, maximized=False):
+        self.calls = []
+        self._maximized = maximized
+
+    def showMaximized(self):
+        self.calls.append("max")
+        self._maximized = True
+
+    def showNormal(self):
+        self.calls.append("normal")
+        self._maximized = False
+
+    def resize(self, size):
+        self.calls.append(("resize", size))
+
+    def minimumSizeHint(self):
+        return "MIN"  # sentinel — Simple resizes to the minimum fit
+
+    def isMaximized(self):
+        return self._maximized
+
+    def isFullScreen(self):
+        return False
+
+
+def test_advanced_mode_opens_maximized(qapp):
+    from src.gui.main_window import MainWindow
+
+    s = _SizeStub()
+    MainWindow._size_window_for_mode(s, AppSettings.UI_MODE_ADVANCED)
+    assert s.calls == ["max"]
+
+
+def test_simple_mode_shrinks_to_minimum_when_normal(qapp):
+    from src.gui.main_window import MainWindow
+
+    s = _SizeStub()
+    MainWindow._size_window_for_mode(s, AppSettings.UI_MODE_SIMPLE)
+    assert s.calls == [("resize", "MIN")]
+
+
+def test_switch_from_maximized_unmaximizes_then_defers_shrink(qapp):
+    # From a maximized (Advanced) window the shrink is deferred past the async
+    # geometry restore, so only the un-maximize is synchronous here.
+    from src.gui.main_window import MainWindow
+
+    s = _SizeStub(maximized=True)
+    MainWindow._size_window_for_mode(s, AppSettings.UI_MODE_SIMPLE)
+    assert s.calls == ["normal"]
+
+
+def test_deferred_shrink_resizes_when_still_simple(qapp, isolated_settings):
+    from src.gui.main_window import MainWindow
+
+    AppSettings.set_ui_mode(AppSettings.UI_MODE_SIMPLE)
+    s = _SizeStub()
+    MainWindow._shrink_to_fit_if_simple(s)
+    assert s.calls == [("resize", "MIN")]
+
+
+def test_deferred_shrink_skipped_if_switched_to_advanced(qapp, isolated_settings):
+    # Guards the race: if the user flips back to Advanced before the deferred
+    # shrink fires, it must not shrink the maximized window.
+    from src.gui.main_window import MainWindow
+
+    AppSettings.set_ui_mode(AppSettings.UI_MODE_ADVANCED)
+    s = _SizeStub()
+    MainWindow._shrink_to_fit_if_simple(s)
+    assert s.calls == []

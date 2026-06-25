@@ -494,10 +494,59 @@ class MainWindow(QMainWindow):
         """
         if mode not in (AppSettings.UI_MODE_SIMPLE, AppSettings.UI_MODE_ADVANCED):
             mode = AppSettings.UI_MODE_SIMPLE
+        from PyQt6.QtWidgets import QSizePolicy
+
         simple = mode == AppSettings.UI_MODE_SIMPLE
         self.view_stack.setCurrentWidget(self.simple_page if simple else self.tabs)
         self.toolbar_container.setVisible(not simple)
+        # Only the visible page should drive the window's size hint. A
+        # QStackedWidget otherwise sizes to its largest page, so the compact
+        # Simple page would be inflated by the big Advanced tabs. Setting the
+        # hidden page's policy to Ignored zeroes its contribution to the hint,
+        # letting Simple shrink to its own minimum.
+        ignored = QSizePolicy.Policy.Ignored
+        live = QSizePolicy.Policy.Expanding
+        self.simple_page.setSizePolicy(live if simple else ignored,
+                                       live if simple else ignored)
+        self.tabs.setSizePolicy(ignored if simple else live,
+                                ignored if simple else live)
         AppSettings.set_ui_mode(mode)
+        # Resize to suit the new view on a live switch. At startup the window
+        # isn't shown yet (isVisible() is False) — showEvent applies the
+        # initial size once instead. isVisible() also lets the unit-test stub
+        # exercise the swap without the sizing helper.
+        if self.isVisible():
+            self._size_window_for_mode(mode)
+
+    def _size_window_for_mode(self, mode: str) -> None:
+        """Size the window to suit the active view (#180 follow-up).
+
+        Advanced always opens maximized (the full table wants the room);
+        Simple shrinks to the smallest size that still fits its one-button
+        page — the hidden Advanced page is set to Ignored in _apply_ui_mode so
+        it no longer inflates the stacked-widget hint. Called once at first
+        show and on every live mode switch, so the size tracks the mode rather
+        than whatever the window was last left at.
+        """
+        if mode == AppSettings.UI_MODE_ADVANCED:
+            self.showMaximized()
+        elif self.isMaximized() or self.isFullScreen():
+            # showNormal() restores the prior (maximized) geometry on the next
+            # event-loop tick, so a synchronous resize here would be clobbered.
+            # Shrink after that restore lands; guarded so a quick switch back
+            # to Advanced isn't shrunk out from under us.
+            self.showNormal()
+            QTimer.singleShot(0, lambda: self._shrink_to_fit_if_simple())
+        else:
+            # First show / already-normal window: no pending restore to race.
+            self.resize(self.minimumSizeHint())
+
+    def _shrink_to_fit_if_simple(self) -> None:
+        """Resize to the minimum that fits the Simple page, if still in Simple
+        mode. Deferred from _size_window_for_mode after an un-maximize so the
+        async geometry restore doesn't clobber the shrink."""
+        if AppSettings.get_ui_mode() == AppSettings.UI_MODE_SIMPLE:
+            self.resize(self.minimumSizeHint())
 
     def _on_tab_changed(self, new_index: int):
         """Revert unapplied enhancement checkbox changes when leaving the Enhancements tab."""
@@ -2902,6 +2951,13 @@ class MainWindow(QMainWindow):
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
+        # Apply the mode-driven window size once, on first show: Advanced opens
+        # maximized, Simple opens compact. Deferred to here (not __init__) so
+        # showMaximized/showNormal act on a window that is actually visible —
+        # doing it pre-show is unreliable. Guarded so it runs a single time.
+        if not getattr(self, "_initial_size_applied", False):
+            self._initial_size_applied = True
+            self._size_window_for_mode(AppSettings.get_ui_mode())
         self._maybe_start_first_run_tutorial()
 
     def keyPressEvent(self, event):
@@ -3937,7 +3993,7 @@ class MainWindow(QMainWindow):
 
         reply = QMessageBox.question(
             self, "Generate & Apply to Game",
-            "This will generate the latest enhancements with your default "
+            "This will generate the latest enhancements with your current "
             "settings and apply them to your game's global.ini. A timestamped "
             "backup is made first.\n\nThe first run can take a few minutes "
             "while DataForge is extracted. Continue?",
@@ -4216,8 +4272,8 @@ class MainWindow(QMainWindow):
             self._loader_worker.quit()
             self._loader_worker.wait()
 
-        # Save window state
-        AppSettings.set_window_geometry(self.saveGeometry())
+        # Persist only the dock/toolbar layout; window size is mode-driven and
+        # recomputed on next launch (see _size_window_for_mode).
         AppSettings.set_window_state(self.saveState())
 
         event.accept()
@@ -4531,20 +4587,13 @@ class MainWindow(QMainWindow):
         self._model.notify_entry_changed(entry_idx)
 
     def restore_window_state(self):
-        """Restore window geometry and state.
+        """Restore the dock / toolbar layout.
 
-        With no saved geometry (fresh install), open at the compact content
-        hint instead of a fixed large default — Simple mode is the default
-        view and a near-empty screen shouldn't open oversized (#180 follow-up).
-        Returning users keep whatever size they last left the window.
+        Window *size* is mode-driven (Simple opens compact, Advanced opens
+        maximized — see _size_window_for_mode), so geometry is intentionally
+        neither persisted nor restored; only the dock/toolbar arrangement is.
         """
-        geometry = AppSettings.get_window_geometry()
         state = AppSettings.get_window_state()
-
-        if geometry:
-            self.restoreGeometry(geometry)
-        else:
-            self.resize(self.sizeHint())
         if state:
             self.restoreState(state)
 
