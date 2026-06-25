@@ -203,8 +203,8 @@ class TestMissionDescStructure:
                     break
             # At least one recognizable line: stats (Reputation XP, Tier XP),
             # flags (Mission Type), or encounter data (Hostiles / Friendlies /
-            # Objectives / Unknown — the 1.4.1 four-bucket replacement for
-            # the pre-1.4.1 Enemies / Non-hostiles pair).
+            # Objectives — the player-facing buckets; the internal Unknown
+            # bucket is no longer rendered, see #187).
             has_content = (
                 "Reputation XP" in stats_section
                 or "Tier" in stats_section
@@ -212,7 +212,6 @@ class TestMissionDescStructure:
                 or "Hostiles:" in stats_section
                 or "Friendlies:" in stats_section
                 or "Objectives:" in stats_section
-                or "Unknown:" in stats_section
             )
             assert has_content, (
                 f"Stats block in {key} has no recognizable content"

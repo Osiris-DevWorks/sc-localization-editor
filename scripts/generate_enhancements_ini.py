@@ -2376,10 +2376,16 @@ def _extract_spawn_counts(element: ET.Element) -> SpawnBreakdown:
 def _format_spawn_lines(breakdown: SpawnBreakdown) -> list[str]:
     """Render a SpawnBreakdown as the MISSION DETAILS block lines.
 
-    Emits at most four ``<EM4>...</EM4>`` lines: Hostiles, Friendlies,
-    Objectives, Unknown. Each non-empty named bucket lists its types
-    alphabetically as ``Label xN``; Unknown collapses to a single count.
-    Empty buckets are omitted entirely.
+    Emits up to three ``<EM4>...</EM4>`` lines: Hostiles, Friendlies,
+    Objectives. Each non-empty named bucket lists its types alphabetically as
+    ``Label xN``; empty buckets are omitted entirely.
+
+    The Unknown bucket is intentionally NOT rendered (#187). It exists so an
+    unclassified spawn group is not miscounted as a hostile, but a bare
+    "Unknown: N" tells the player nothing actionable and reads as a bug — e.g.
+    the cargo ship you recover in a Ling delivery surfaced as "Unknown: 1".
+    Genuine player-hostile spawns are still recovered via
+    ``_wrapper_hostile_fallback`` before they ever land in Unknown.
     """
     lines: list[str] = []
     for bucket, header in (
@@ -2392,10 +2398,6 @@ def _format_spawn_lines(breakdown: SpawnBreakdown) -> list[str]:
             continue
         parts = [f"{lbl} x{cnt}" for lbl, cnt in sorted(items.items())]
         lines.append(f"<EM4>{header}:</EM4> {', '.join(parts)}")
-    unknown = breakdown.get(SPAWN_UNKNOWN) or {}
-    unknown_total = sum(unknown.values())
-    if unknown_total > 0:
-        lines.append(f"<EM4>Unknown:</EM4> {unknown_total}")
     return lines
 
 

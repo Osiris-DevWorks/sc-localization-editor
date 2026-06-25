@@ -396,17 +396,19 @@ class TestFormatSpawnLines:
         lines = gen_module._format_spawn_lines(breakdown)
         assert lines == ["<EM4>Hostiles:</EM4> Bandits x2, Pirates x4"]
 
-    def test_unknown_collapses_to_a_single_count(self, gen_module):
-        """The Unknown bucket renders as a single integer total — the
-        per-label keys inside are informational only and not surfaced."""
+    def test_unknown_bucket_is_not_rendered(self, gen_module):
+        """#187: the Unknown bucket is never surfaced. It guards against
+        miscounting unclassified spawns as hostiles, but a bare "Unknown: N"
+        (e.g. the cargo ship recovered in a Ling delivery) reads as a bug, so
+        it is suppressed in the MISSION DETAILS block."""
         breakdown = gen_module._empty_spawn_breakdown()
         breakdown[gen_module.SPAWN_UNKNOWN] = {"Unknown": 3}
-        lines = gen_module._format_spawn_lines(breakdown)
-        assert lines == ["<EM4>Unknown:</EM4> 3"]
+        assert gen_module._format_spawn_lines(breakdown) == []
 
     def test_mixed_buckets_emit_in_canonical_order(self, gen_module):
-        """Hostiles → Friendlies → Objectives → Unknown — the order matches
-        the visual hierarchy in the MISSION DETAILS block."""
+        """Hostiles → Friendlies → Objectives — the order matches the visual
+        hierarchy in the MISSION DETAILS block. The Unknown bucket, even when
+        populated, is omitted (#187)."""
         breakdown = gen_module._empty_spawn_breakdown()
         breakdown[gen_module.SPAWN_HOSTILE] = {"Pirates": 4}
         breakdown[gen_module.SPAWN_FRIENDLY] = {"Escort Wings": 1}
@@ -417,7 +419,6 @@ class TestFormatSpawnLines:
             "<EM4>Hostiles:</EM4> Pirates x4",
             "<EM4>Friendlies:</EM4> Escort Wings x1",
             "<EM4>Objectives:</EM4> Probe x3",
-            "<EM4>Unknown:</EM4> 2",
         ]
 
 
