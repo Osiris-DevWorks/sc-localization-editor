@@ -2356,20 +2356,11 @@ class MainWindow(QMainWindow):
             # Restore the backup
             shutil.copy2(str(backup_file_path), str(target_path))
 
-            # Reload the file with overrides
-            overrides_path = AppSettings.get_user_ini_path()
-            overrides_arg = str(overrides_path) if overrides_path.exists() else None
-            self.entries = load_source_files(str(target_path), overrides_arg)
-            self.load_default_values()
-            self.update_category_combo()
-            self._model.set_data_source(
-                self.entries, self.default_values, AppSettings.get_favorite_prefix(),
-            )
-            self.apply_filters()
-            self._recompute_owned()  # #157
-
-            # Update status bar with entry counts and per-source status
-            self._update_status_bar()
+            # Refresh the table from configured sources. The restore writes the
+            # game's global.ini (merged output); the editor view is source-backed
+            # (base.ini + user.ini + enhancements), so reload from settings rather
+            # than parsing the restored output file as if it were a source.
+            self.perform_merge_and_reload()
 
             logger.info(f"Restored backup from {backup_file} to {target_path}")
             QMessageBox.information(self, "Success", f"Backup restored from:\n{backup_file_path.name}")
