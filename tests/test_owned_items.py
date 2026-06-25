@@ -149,3 +149,28 @@ class TestModelOwnedColumn:
         m.set_owned_state({"Norfield"}, {"Norfield"})
         item_row = m.source_row_for_entry_index(0)
         assert m.data(m.index(item_row, COL_OWNED), Qt.ItemDataRole.DisplayRole) == "★"   # filled star
+
+    def test_sort_by_owned_floats_owned_to_top(self, qapp):
+        # #189: clicking the Owned header must group owned items, like Favorites,
+        # not sort stably by key. "Zeta" is owned but sorts after "Alpha"
+        # alphabetically, so owned-first ordering is the only thing that puts
+        # its row on top.
+        from src.gui.string_table_model import COL_OWNED, StringTableModel
+        from src.models.string_model import StringEntry
+
+        owned = StringEntry(key="item_NameZeta", source_file="global",
+                            category="Components", original_value="Zeta",
+                            custom_value="", status="Unmodified")
+        not_owned = StringEntry(key="item_NameAlpha", source_file="global",
+                                category="Components", original_value="Alpha",
+                                custom_value="", status="Unmodified")
+        m = StringTableModel()
+        m.set_data_source([owned, not_owned], {}, "*")
+        m.set_owned_state({"Zeta", "Alpha"}, {"Zeta"})
+
+        m.sort(COL_OWNED, Qt.SortOrder.AscendingOrder)
+        assert m.entry_index_for_row(0) == 0   # owned "Zeta" on top despite key
+
+        # The header arrow flips it: descending puts owned at the bottom.
+        m.sort(COL_OWNED, Qt.SortOrder.DescendingOrder)
+        assert m.entry_index_for_row(1) == 0

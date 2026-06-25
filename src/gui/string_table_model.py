@@ -127,8 +127,11 @@ def _group_sort_key(key: str) -> tuple[str, int]:
 # ---------------------------------------------------------------------------
 # Column key-function factories for sort()
 # ---------------------------------------------------------------------------
-def _make_sort_key(entries, default_values, sort_keys, col, grouped, favorite_prefix):
+def _make_sort_key(entries, default_values, sort_keys, col, grouped, favorite_prefix,
+                   owned_items=None, bp_item_names=None):
     """Return a key function for sorted() given the column and grouped-sort state."""
+    owned_items = owned_items or set()
+    bp_item_names = bp_item_names or set()
     if col == COL_KEY and grouped:
         return lambda idx: sort_keys[idx]
     if col == COL_CATEGORY:
@@ -144,8 +147,16 @@ def _make_sort_key(entries, default_values, sort_keys, col, grouped, favorite_pr
     if col == COL_STATUS:
         return lambda idx: entries[idx].status.lower()
     if col == COL_OWNED:
-        # The owned set lives on the model, not here, so sort stably by key.
-        return lambda idx: entries[idx].key.lower()
+        # Owned = a blueprint item the user has marked owned (the gold ★).
+        # Primary key 0 for owned, 1 otherwise → ascending floats owned rows to
+        # the top, like favorites; the header arrow flips it. Tie-break by key
+        # so ordering within each group is stable. (#189)
+        def owned_key(idx):
+            e = entries[idx]
+            name = normalize_item_name(e.custom_value or e.original_value)
+            is_owned = name in bp_item_names and name in owned_items
+            return (0 if is_owned else 1, e.key.lower())
+        return owned_key
     if col == COL_STAR:
         # Favorite = Ship with the configured prefix on its custom_value.
         # Primary key 0 for favorites, 1 for non-favorites → ascending puts
@@ -492,6 +503,7 @@ class StringTableModel(QAbstractTableModel):
         key_fn = _make_sort_key(
             self._entries, self._default_values, self._sort_keys,
             self._sort_column, self._grouped_sort, self._favorite_prefix,
+            self._owned_items, self._bp_item_names,
         )
         reverse = self._sort_order == Qt.SortOrder.DescendingOrder
         self._filtered_indices.sort(key=key_fn, reverse=reverse)
