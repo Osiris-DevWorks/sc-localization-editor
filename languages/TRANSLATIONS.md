@@ -47,6 +47,14 @@ The English file is the source: every leaf is `{"ht": "<source text>", "at": ""}
 - **portuguese_br** — human-translated by **Nxzzin**, process led by
   **Ishikudeska**. Same AI-fallback coverage as french (grep `"ht": ""`), plus the
   `HELP.md` / `ABOUT.md` / `LEGAL.md` documents.
-- **spanish** — stub (`_comment`, no translations). Hidden from the language
-  selector until human translations land. A fully machine-translated language is
-  not shipped as "available".
+- **spanish** — human-translated by **Thord82**. The in-app UI strings were
+  contributed as a full `ui.json` and converted to the `{ht, at}` shape (his
+  strings landed in `ht`; `at` left empty). A handful of newer keys added after
+  his contribution are still untranslated (grep `"ht": ""` — the simple-mode
+  page, FAQ tab, a few toolbar/filter/column labels); they fall back to English
+  until the pre-release AI backfill. The base `global.ini` for Spanish is sourced
+  from Thord82's repo (`Thord82/Star_citizen_ES`, branch `propuestas_thord`),
+  which tracks the current game build far more completely than the prior Dymerz
+  source (99.9% vs 78.4% key coverage). Spanish writes to the game's
+  `spanish_(spain)` Localization folder with `g_language = spanish_(spain)`
+  (`SC_LANGUAGE_IDS`), confirmed to render in-game.

@@ -40,7 +40,7 @@ def _bundled_language_sources() -> dict:
 SC_LANGUAGE_IDS: dict[str, str] = {
     "english":       "english",
     "french":        "french_(france)",
-    "spanish":       "spanish_(latin_america)",
+    "spanish":       "spanish_(spain)",
     "portuguese_br": "portuguese_(brazil)",
 }
 

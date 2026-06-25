@@ -1,3 +1,1062 @@
 {
-  "_comment": "Spanish UI translations. Only include keys that differ from English. Missing keys fall back to the English ui.json automatically."
+  "branding": {
+    "title": {
+      "ht": "SMART CITIZEN",
+      "at": ""
+    },
+    "tagline": {
+      "ht": "TEXTOS MÁS INTELIGENTES PARA STAR CITIZEN",
+      "at": ""
+    }
+  },
+  "window": {
+    "title": {
+      "ht": "Smart Citizen v{version}",
+      "at": ""
+    }
+  },
+  "simple_mode": {
+    "switch_to_advanced": {
+      "ht": "",
+      "at": ""
+    },
+    "switch_to_advanced_tip": {
+      "ht": "",
+      "at": ""
+    },
+    "generate_apply_btn": {
+      "ht": "",
+      "at": ""
+    },
+    "generate_apply_tip": {
+      "ht": "",
+      "at": ""
+    },
+    "defaults_hint": {
+      "ht": "",
+      "at": ""
+    }
+  },
+  "tabs": {
+    "string_editor": {
+      "ht": "Editor de textos",
+      "at": ""
+    },
+    "config": {
+      "ht": "Configuración",
+      "at": ""
+    },
+    "enhancements": {
+      "ht": "Mejoras",
+      "at": ""
+    },
+    "log": {
+      "ht": "Registro",
+      "at": ""
+    },
+    "about": {
+      "ht": "Acerca de",
+      "at": ""
+    },
+    "faq": {
+      "ht": "",
+      "at": ""
+    },
+    "legal": {
+      "ht": "Legal",
+      "at": ""
+    }
+  },
+  "toolbar": {
+    "apply_btn": {
+      "ht": "Aplicar mejoras",
+      "at": ""
+    },
+    "restore_backup_btn": {
+      "ht": "Restaurar copia",
+      "at": ""
+    },
+    "clear_btn": {
+      "ht": "Limpiar",
+      "at": ""
+    },
+    "import_export_btn": {
+      "ht": "Importar / Exportar",
+      "at": ""
+    },
+    "open_loc_dir_btn": {
+      "ht": "Abrir carpeta de localización",
+      "at": ""
+    },
+    "editor_btn": {
+      "ht": "Editor",
+      "at": ""
+    },
+    "help_btn": {
+      "ht": "Ayuda",
+      "at": ""
+    },
+    "tutorial_btn": {
+      "ht": "Tutorial",
+      "at": ""
+    },
+    "more_btn": {
+      "ht": "Más",
+      "at": ""
+    },
+    "menu_clear_localization": {
+      "ht": "Limpiar localización",
+      "at": ""
+    },
+    "menu_clear_cache": {
+      "ht": "Limpiar caché",
+      "at": ""
+    },
+    "menu_import_ini": {
+      "ht": "Importar INI...",
+      "at": ""
+    },
+    "menu_export_ini": {
+      "ht": "Exportar INI...",
+      "at": ""
+    },
+    "menu_test_plan": {
+      "ht": "",
+      "at": ""
+    },
+    "menu_switch_to_simple": {
+      "ht": "",
+      "at": ""
+    }
+  },
+  "filters": {
+    "category_label": {
+      "ht": "Categoría:",
+      "at": ""
+    },
+    "status_label": {
+      "ht": "Estado:",
+      "at": ""
+    },
+    "status_all": {
+      "ht": "Todo",
+      "at": ""
+    },
+    "status_modified": {
+      "ht": "Modificado",
+      "at": ""
+    },
+    "status_enhanced": {
+      "ht": "Mejorado",
+      "at": ""
+    },
+    "status_unmodified": {
+      "ht": "Sin modificar",
+      "at": ""
+    },
+    "status_new": {
+      "ht": "Nuevo",
+      "at": ""
+    },
+    "hide_unmodified": {
+      "ht": "Ocultar sin modificar",
+      "at": ""
+    },
+    "favorites_only": {
+      "ht": "★ Solo favoritos",
+      "at": ""
+    },
+    "bp_titles_only": {
+      "ht": "",
+      "at": ""
+    },
+    "bp_descs_only": {
+      "ht": "",
+      "at": ""
+    },
+    "group_sort_btn": {
+      "ht": "Ordenar por grupo",
+      "at": ""
+    },
+    "clear_filters_btn": {
+      "ht": "Limpiar filtros",
+      "at": ""
+    },
+    "copy_filtered_btn": {
+      "ht": "Copiar filtrados",
+      "at": ""
+    }
+  },
+  "strings_tab": {
+    "col_category": {
+      "ht": "Categoría",
+      "at": ""
+    },
+    "col_key": {
+      "ht": "Clave",
+      "at": ""
+    },
+    "col_default_value": {
+      "ht": "Valor predeterminado",
+      "at": ""
+    },
+    "col_current_value": {
+      "ht": "Valor actual",
+      "at": ""
+    },
+    "col_star": {
+      "ht": "★",
+      "at": ""
+    },
+    "col_order": {
+      "ht": "",
+      "at": ""
+    },
+    "col_custom_value": {
+      "ht": "Valor personalizado",
+      "at": ""
+    },
+    "col_status": {
+      "ht": "Estado",
+      "at": ""
+    },
+    "col_owned": {
+      "ht": "",
+      "at": ""
+    },
+    "no_data": {
+      "ht": "No hay datos cargados",
+      "at": ""
+    },
+    "preview_placeholder": {
+      "ht": "Selecciona una fila para previsualizar su texto renderizado.",
+      "at": ""
+    },
+    "context_underline": {
+      "ht": "Subrayar",
+      "at": ""
+    },
+    "context_highlight": {
+      "ht": "Resaltar",
+      "at": ""
+    }
+  },
+  "config": {
+    "title": {
+      "ht": "Configuración",
+      "at": ""
+    },
+    "instructions": {
+      "ht": "Configura la ruta de instalación de Star Citizen, extrae la localización base desde Data.p4k e importa archivos INI externos para personalizar los textos.",
+      "at": ""
+    },
+    "tools_group": {
+      "ht": "Herramientas",
+      "at": ""
+    },
+    "tools_desc": {
+      "ht": "Importa un archivo INI externo para fusionar textos personalizados en tu user.ini. Las claves se validan con base.ini y los conflictos se resuelven de forma interactiva.",
+      "at": ""
+    },
+    "import_ini_btn": {
+      "ht": "Importar INI...",
+      "at": ""
+    },
+    "reset_user_ini_btn": {
+      "ht": "Restablecer user.ini...",
+      "at": ""
+    },
+    "restore_user_ini_btn": {
+      "ht": "",
+      "at": ""
+    },
+    "preview_apply_btn": {
+      "ht": "Previsualizar aplicación",
+      "at": ""
+    },
+    "check_updates_btn": {
+      "ht": "Buscar actualizaciones",
+      "at": ""
+    },
+    "appearance_group": {
+      "ht": "Apariencia",
+      "at": ""
+    },
+    "theme_label": {
+      "ht": "Tema:",
+      "at": ""
+    },
+    "theme_default": {
+      "ht": "Predeterminado",
+      "at": ""
+    },
+    "theme_light": {
+      "ht": "Claro",
+      "at": ""
+    },
+    "theme_dark": {
+      "ht": "Oscuro",
+      "at": ""
+    },
+    "theme_odw": {
+      "ht": "ODW",
+      "at": ""
+    },
+    "star_citizen_group": {
+      "ht": "Star Citizen",
+      "at": ""
+    },
+    "installation_label": {
+      "ht": "Instalación",
+      "at": ""
+    },
+    "installation_desc": {
+      "ht": "Ruta a la raíz de instalación de Star Citizen (el directorio que contiene LIVE, PTU, EPTU, HOTFIX, TECH-PREVIEW).",
+      "at": ""
+    },
+    "browse_btn": {
+      "ht": "Examinar...",
+      "at": ""
+    },
+    "channel_label": {
+      "ht": "Canal:",
+      "at": ""
+    },
+    "language_label": {
+      "ht": "Idioma:",
+      "at": ""
+    },
+    "map_language_btn": {
+      "ht": "Asignar archivo de idioma",
+      "at": ""
+    },
+    "map_language_title": {
+      "ht": "Asignar archivo de idioma",
+      "at": ""
+    },
+    "map_language_desc": {
+      "ht": "Define una URL al global.ini de cada idioma. Al cambiar a ese idioma, Smart Citizen lo descarga y lo usa como textos base en lugar de la extracción inglesa de Data.p4k. La descarga queda en caché por idioma y solo se vuelve a obtener si cambia. Deja un campo vacío para usar el valor predeterminado incluido, si existe.",
+      "at": ""
+    },
+    "base_localization_label": {
+      "ht": "Localización base",
+      "at": ""
+    },
+    "base_localization_desc": {
+      "ht": "Extrae global.ini desde el Data.p4k instalado para obtener textos originales del juego que siempre coincidan con tu versión instalada.",
+      "at": ""
+    },
+    "extract_btn": {
+      "ht": "Extraer desde Data.p4k",
+      "at": ""
+    },
+    "data_group": {
+      "ht": "Datos de Smart Citizen",
+      "at": ""
+    },
+    "data_desc": {
+      "ht": "Carpeta para user.ini, caché de fuentes, INI de mejoras y copias de seguridad. Muévela fuera de Documentos sincronizado con OneDrive si falla la limpieza de caché. La caché XML de DataForge tiene su propia ruta abajo; ocupa unos 1,4 GB, así que por defecto se mantiene fuera de OneDrive automáticamente.",
+      "at": ""
+    },
+    "app_data_label": {
+      "ht": "Carpeta de datos de la app:",
+      "at": ""
+    },
+    "dataforge_cache_label": {
+      "ht": "Carpeta de caché de DataForge:",
+      "at": ""
+    },
+    "reset_btn": {
+      "ht": "Restablecer",
+      "at": ""
+    },
+    "p4k_group": {
+      "ht": "Localización base (extracción P4K)",
+      "at": ""
+    },
+    "p4k_desc": {
+      "ht": "Extrae global.ini desde el Data.p4k instalado para obtener textos originales del juego que siempre coincidan con tu versión instalada.",
+      "at": ""
+    },
+    "p4k_status_found_with_base": {
+      "ht": "Data.p4k encontrado  |  base.ini actualizado por última vez: {date}",
+      "at": ""
+    },
+    "p4k_status_found_no_base": {
+      "ht": "Data.p4k encontrado  |  base.ini aún no extraído",
+      "at": ""
+    },
+    "p4k_status_not_found": {
+      "ht": "Data.p4k no encontrado en: {path}",
+      "at": ""
+    },
+    "p4k_status_no_path": {
+      "ht": "Ruta de instalación del juego no configurada",
+      "at": ""
+    },
+    "select_sc_root": {
+      "ht": "Selecciona la raíz de instalación de Star Citizen",
+      "at": ""
+    },
+    "select_data_folder": {
+      "ht": "Selecciona la carpeta de datos de Smart Citizen",
+      "at": ""
+    },
+    "select_cache_folder": {
+      "ht": "Selecciona la carpeta de caché de DataForge",
+      "at": ""
+    },
+    "migrate_data_title": {
+      "ht": "¿Mover tus datos?",
+      "at": ""
+    },
+    "migrate_data_body": {
+      "ht": "¿Mover tus datos existentes de Smart Citizen (overrides, copias de seguridad, textos en caché) desde\n\n{old_dir}\n\na la nueva carpeta\n\n{new_dir}?\n\nLos archivos que ya existan en la nueva carpeta se conservarán. La carpeta antigua se limpiará después del traslado.",
+      "at": ""
+    },
+    "migrate_data_done_title": {
+      "ht": "Datos movidos",
+      "at": ""
+    },
+    "migrate_data_done_body": {
+      "ht": "Se han movido {count} archivo(s) a la nueva carpeta de datos.",
+      "at": ""
+    },
+    "migrate_data_failed_title": {
+      "ht": "Error de migración",
+      "at": ""
+    },
+    "migrate_data_failed_body": {
+      "ht": "No se pudieron migrar tus datos:\n{error}",
+      "at": ""
+    },
+    "channel_not_installed_title": {
+      "ht": "Canal no instalado",
+      "at": ""
+    },
+    "channel_not_installed_body": {
+      "ht": "{channel} no está instalado bajo la raíz actual. Instálalo desde RSI Launcher o elige otro canal.",
+      "at": ""
+    },
+    "invalid_data_folder_title": {
+      "ht": "Carpeta de datos no válida",
+      "at": ""
+    },
+    "invalid_cache_folder_title": {
+      "ht": "Carpeta de caché no válida",
+      "at": ""
+    },
+    "dataforge_cache_changed_title": {
+      "ht": "Ruta de caché de DataForge cambiada",
+      "at": ""
+    },
+    "dataforge_cache_changed_body": {
+      "ht": "Cambiar la ruta de caché de DataForge requiere volver a extraer desde Data.p4k.\n\n¿Qué debe ocurrir con la caché anterior cuando termine la nueva extracción?",
+      "at": ""
+    },
+    "re_extract_delete_old": {
+      "ht": "Reextraer y borrar la anterior",
+      "at": ""
+    },
+    "re_extract_keep_old": {
+      "ht": "Reextraer y conservar la anterior",
+      "at": ""
+    },
+    "preview_title": {
+      "ht": "Previsualización de aplicación",
+      "at": ""
+    },
+    "preview_header": {
+      "ht": "Previsualización de aplicación\n\nOrden de fusión (de arriba abajo):\n",
+      "at": ""
+    },
+    "preview_total": {
+      "ht": "\nClaves totales: {count:,}\nDesglose por estado:\n",
+      "at": ""
+    },
+    "no_sources_warning": {
+      "ht": "No hay fuentes disponibles para fusionar.",
+      "at": ""
+    }
+  },
+  "enhancements": {
+    "title": {
+      "ht": "Mejoras",
+      "at": ""
+    },
+    "desc": {
+      "ht": "Funciones opcionales que amplían los datos de localización base: categorías para el generador de mejoras, un prefijo de favoritos para la lista de naves del juego y un generador de etiquetas que personaliza las marcas entre corchetes en componentes, misiles y armas de nave.",
+      "at": ""
+    },
+    "enhancements_group": {
+      "ht": "Mejoras de localización",
+      "at": ""
+    },
+    "enhancements_desc": {
+      "ht": "Selecciona qué categorías de mejoras incluir. Haz clic en Aplicar para guardar los cambios. Las mejoras se generan desde tu Data.p4k instalado.",
+      "at": ""
+    },
+    "cat_desc_ships": {
+      "ht": "Rendimiento, equipamiento y tripulación de naves",
+      "at": ""
+    },
+    "cat_desc_ship_items": {
+      "ht": "Anotaciones y estadísticas de clase, tamaño y grado de componentes",
+      "at": ""
+    },
+    "cat_desc_gear": {
+      "ht": "Estadísticas de combate para armas FPS",
+      "at": ""
+    },
+    "cat_desc_missions": {
+      "ht": "Recompensas de XP y desbloqueos de blueprints en misiones",
+      "at": ""
+    },
+    "cat_desc_commodities": {
+      "ht": "Recetas de fabricación y uso de materiales",
+      "at": ""
+    },
+    "cat_desc_journal": {
+      "ht": "Compendio de minería con datos de fabricación por mineral",
+      "at": ""
+    },
+    "apply_btn": {
+      "ht": "Aplicar",
+      "at": ""
+    },
+    "generate_btn": {
+      "ht": "Generar mejoras",
+      "at": ""
+    },
+    "favorites_group": {
+      "ht": "Favoritos",
+      "at": ""
+    },
+    "favorites_desc": {
+      "ht": "Se antepone un prefijo configurable a los nombres de naves marcadas como favoritas en la lista generada para que aparezcan arriba en la selección de naves del juego.",
+      "at": ""
+    },
+    "sort_prefix_label": {
+      "ht": "Prefijo de ordenación:",
+      "at": ""
+    },
+    "tag_builder_group": {
+      "ht": "Generador de etiquetas",
+      "at": ""
+    },
+    "tag_builder_desc": {
+      "ht": "Personaliza las etiquetas entre corchetes en componentes, misiles y armas de nave. Los cambios se aplican después de hacer clic en Aplicar cambios de etiquetas y volver a ejecutar Generar mejoras.",
+      "at": ""
+    },
+    "preview_label": {
+      "ht": "Vista previa:",
+      "at": ""
+    },
+    "annotate_mission_descs_cb": {
+      "ht": "Anotar componentes en descripciones de misiones",
+      "at": ""
+    },
+    "apply_tag_changes_btn": {
+      "ht": "Aplicar cambios de etiquetas",
+      "at": ""
+    },
+    "reset_defaults_btn": {
+      "ht": "Restablecer valores predeterminados",
+      "at": ""
+    },
+    "edit_mapping_btn": {
+      "ht": "Editar mapeo...",
+      "at": ""
+    }
+  },
+  "log": {
+    "min_level_label": {
+      "ht": "Nivel mínimo:",
+      "at": ""
+    },
+    "auto_scroll_check": {
+      "ht": "Desplazamiento automático",
+      "at": ""
+    },
+    "clear_btn": {
+      "ht": "Limpiar",
+      "at": ""
+    },
+    "export_btn": {
+      "ht": "Exportar a archivo...",
+      "at": ""
+    },
+    "export_title": {
+      "ht": "Exportar registro",
+      "at": ""
+    },
+    "export_failed_title": {
+      "ht": "Error al exportar",
+      "at": ""
+    },
+    "lines_label": {
+      "ht": "{count} líneas",
+      "at": ""
+    }
+  },
+  "import_dialog": {
+    "title": {
+      "ht": "Conflictos de importación",
+      "at": ""
+    },
+    "conflicts_group": {
+      "ht": "Conflictos ({count} claves)",
+      "at": ""
+    },
+    "keep_all_btn": {
+      "ht": "Conservar todos los actuales",
+      "at": ""
+    },
+    "import_all_btn": {
+      "ht": "Importar todo",
+      "at": ""
+    },
+    "col_key": {
+      "ht": "Clave",
+      "at": ""
+    },
+    "col_current_value": {
+      "ht": "Valor actual",
+      "at": ""
+    },
+    "col_imported_value": {
+      "ht": "Valor importado",
+      "at": ""
+    },
+    "col_resolution": {
+      "ht": "Resolución",
+      "at": ""
+    },
+    "resolution_keep": {
+      "ht": "Conservar actual",
+      "at": ""
+    },
+    "resolution_use": {
+      "ht": "Usar importado",
+      "at": ""
+    },
+    "resolution_append": {
+      "ht": "Añadir importado",
+      "at": ""
+    },
+    "resolution_prepend": {
+      "ht": "Anteponer importado",
+      "at": ""
+    },
+    "resolution_custom": {
+      "ht": "Personalizado...",
+      "at": ""
+    },
+    "custom_value_title": {
+      "ht": "Valor personalizado",
+      "at": ""
+    },
+    "custom_value_prompt": {
+      "ht": "Introduce un valor personalizado para la clave:\n{key}",
+      "at": ""
+    },
+    "auto_add_summary": {
+      "ht": "{count} claves se añadirán automáticamente.",
+      "at": ""
+    },
+    "excluded_summary": {
+      "ht": "{count} claves excluidas (no están en base.ini).",
+      "at": ""
+    }
+  },
+  "coach": {
+    "back_btn": {
+      "ht": "Atrás",
+      "at": ""
+    },
+    "next_btn": {
+      "ht": "Siguiente",
+      "at": ""
+    },
+    "skip_btn": {
+      "ht": "Omitir",
+      "at": ""
+    },
+    "finish_btn": {
+      "ht": "Finalizar",
+      "at": ""
+    },
+    "step_counter": {
+      "ht": "Paso {current} de {total}",
+      "at": ""
+    }
+  },
+  "tag_mapping_dialog": {
+    "hint": {
+      "ht": "Edita cómo se muestra cada valor bruto en longitudes corta, media y larga. El desplegable de estilo del elemento en el generador de etiquetas elige qué longitud se usa.",
+      "at": ""
+    },
+    "reset_btn": {
+      "ht": "Restablecer valores predeterminados",
+      "at": ""
+    },
+    "col_value": {
+      "ht": "Valor",
+      "at": ""
+    },
+    "col_short": {
+      "ht": "Corto",
+      "at": ""
+    },
+    "col_medium": {
+      "ht": "Medio",
+      "at": ""
+    },
+    "col_long": {
+      "ht": "Largo",
+      "at": ""
+    }
+  },
+  "dialogs": {
+    "warning_title": {
+      "ht": "Advertencia",
+      "at": ""
+    },
+    "error_title": {
+      "ht": "Error",
+      "at": ""
+    },
+    "success_title": {
+      "ht": "Éxito",
+      "at": ""
+    },
+    "no_file_loaded": {
+      "ht": "Carga primero un archivo",
+      "at": ""
+    },
+    "no_game_path": {
+      "ht": "Configura la ruta de instalación del juego en la pestaña Configuración",
+      "at": ""
+    },
+    "missing_sources_title": {
+      "ht": "Faltan fuentes",
+      "at": ""
+    },
+    "missing_sources_body": {
+      "ht": "No se pudieron cargar las siguientes fuentes activadas:\n\n  {names}\n\nSus personalizaciones NO se incluirán en el archivo aplicado.\n\n¿Aplicar de todos modos?",
+      "at": ""
+    },
+    "apply_status": {
+      "ht": "Aplicado al juego | {user_count} ediciones de usuario | {enhancement_count} mejoras",
+      "at": ""
+    },
+    "apply_failed_status": {
+      "ht": "Error al aplicar: fallo de validación",
+      "at": ""
+    },
+    "validation_failed_title": {
+      "ht": "Validación fallida",
+      "at": ""
+    },
+    "validation_failed_body": {
+      "ht": "El archivo escrito no superó la validación y se ha eliminado.\n\n{msg}{restore_note}",
+      "at": ""
+    },
+    "nothing_to_clear_title": {
+      "ht": "Nada que limpiar",
+      "at": ""
+    },
+    "nothing_to_clear_body": {
+      "ht": "No se ha encontrado ningún global.ini personalizado en el directorio de localización del juego.\nEl juego ya está usando texto original.",
+      "at": ""
+    },
+    "clear_localization_title": {
+      "ht": "Limpiar localización",
+      "at": ""
+    },
+    "clear_localization_body": {
+      "ht": "Esto eliminará el global.ini personalizado de:\n{loc_dir}\n\nEl juego volverá a usar su texto predeterminado (vanilla).\n\nTus overrides se conservan en la aplicación y se pueden volver a aplicar en cualquier momento.\n\n¿Continuar?",
+      "at": ""
+    },
+    "clear_localization_done_title": {
+      "ht": "Hecho",
+      "at": ""
+    },
+    "clear_localization_done_body": {
+      "ht": "Localización personalizada eliminada.\nEl juego usará ahora su texto predeterminado.\n\nPara volver a aplicar tus overrides y descripciones con estadísticas, haz clic en Aplicar al juego.",
+      "at": ""
+    },
+    "clear_localization_status": {
+      "ht": "Localización limpiada: el juego ha vuelto al texto original",
+      "at": ""
+    },
+    "cache_empty_title": {
+      "ht": "Caché vacía",
+      "at": ""
+    },
+    "cache_empty_body": {
+      "ht": "El directorio de caché ya está vacío.",
+      "at": ""
+    },
+    "clear_cache_title": {
+      "ht": "Limpiar caché",
+      "at": ""
+    },
+    "dataforge_cache_title": {
+      "ht": "¿Limpiar caché de DataForge?",
+      "at": ""
+    },
+    "cache_cleared_title": {
+      "ht": "Caché limpiada",
+      "at": ""
+    },
+    "dir_not_found_title": {
+      "ht": "Directorio no encontrado",
+      "at": ""
+    },
+    "nothing_to_export_title": {
+      "ht": "Nada que exportar",
+      "at": ""
+    },
+    "nothing_to_export_body": {
+      "ht": "No se encontró ningún global.ini aplicado en el directorio de localización del juego.\n\nHaz clic primero en 'Aplicar al juego' para escribir tus personalizaciones y después expórtalas para compartirlas.",
+      "at": ""
+    },
+    "export_loc_pack_title": {
+      "ht": "Exportar paquete de localización",
+      "at": ""
+    },
+    "export_complete_title": {
+      "ht": "Exportación completada",
+      "at": ""
+    },
+    "export_complete_body": {
+      "ht": "Paquete de localización escrito en:\n{out_path}\n\nCanal: {channel}\nTamaño origen: {source_size:,} bytes\nTamaño zip: {zip_size:,} bytes",
+      "at": ""
+    },
+    "export_failed_title": {
+      "ht": "Error de exportación",
+      "at": ""
+    },
+    "export_failed_body": {
+      "ht": "No se pudo escribir el zip del paquete de localización:\n{error}",
+      "at": ""
+    },
+    "update_available_title": {
+      "ht": "Smart Citizen: actualización disponible",
+      "at": ""
+    },
+    "update_available_body": {
+      "ht": "Hay una nueva versión disponible: v{latest}\nEstás en v{current}.",
+      "at": ""
+    },
+    "update_open_release": {
+      "ht": "Abrir página de la versión",
+      "at": ""
+    },
+    "update_later": {
+      "ht": "Más tarde",
+      "at": ""
+    },
+    "up_to_date_title": {
+      "ht": "Smart Citizen: actualizado",
+      "at": ""
+    },
+    "up_to_date_body": {
+      "ht": "Estás en la última versión (v{current}).",
+      "at": ""
+    },
+    "update_check_failed_title": {
+      "ht": "Smart Citizen: fallo al buscar actualizaciones",
+      "at": ""
+    },
+    "update_check_failed_body": {
+      "ht": "No se pudieron buscar actualizaciones:\n\n{message}",
+      "at": ""
+    },
+    "nothing_to_reset_title": {
+      "ht": "Nada que restablecer",
+      "at": ""
+    },
+    "nothing_to_reset_body": {
+      "ht": "No existe user.ini para el canal {channel}; ya estás con los valores originales.\n\nRuta comprobada:\n{path}",
+      "at": ""
+    },
+    "reset_user_ini_title": {
+      "ht": "¿Restablecer user.ini?",
+      "at": ""
+    },
+    "reset_failed_title": {
+      "ht": "Error al restablecer",
+      "at": ""
+    },
+    "reset_failed_body": {
+      "ht": "No se pudo restablecer user.ini:\n\n{error}\n\nEl archivo sigue en su sitio. Cierra cualquier otra aplicación que pueda tenerlo abierto (editor de texto, cliente de sincronización) e inténtalo de nuevo.",
+      "at": ""
+    },
+    "no_sources_body": {
+      "ht": "No hay fuentes configuradas. Configura las fuentes de datos en la pestaña Configuración.",
+      "at": ""
+    },
+    "merge_failed": {
+      "ht": "Fallo en la fusión",
+      "at": ""
+    },
+    "merging_sources": {
+      "ht": "Fusionando fuentes...",
+      "at": ""
+    },
+    "language_changed_status": {
+      "ht": "Idioma cambiado a {language}: recargando fuentes...",
+      "at": ""
+    },
+    "language_downloading": {
+      "ht": "Descargando localización {language}...",
+      "at": ""
+    },
+    "language_no_url": {
+      "ht": "No hay URL de descarga configurada para {language}; se muestra la base inglesa. Usa Asignar archivo de idioma para configurar una.",
+      "at": ""
+    },
+    "language_download_failed": {
+      "ht": "No se pudo descargar la localización {language} y no se encontró ninguna copia en caché. Se mostrará la base inglesa. Revisa la URL en Asignar archivo de idioma y tu conexión, e inténtalo de nuevo.",
+      "at": ""
+    },
+    "language_generating_enhancements": {
+      "ht": "Generando mejoras de {language} desde DataForge...",
+      "at": ""
+    },
+    "file_not_found_title": {
+      "ht": "Archivo no encontrado",
+      "at": ""
+    },
+    "file_not_found_body": {
+      "ht": "El archivo no existe:\n{path}",
+      "at": ""
+    },
+    "empty_file_title": {
+      "ht": "Archivo vacío",
+      "at": ""
+    },
+    "empty_file_body": {
+      "ht": "El archivo importado no contiene entradas key=value válidas.",
+      "at": ""
+    },
+    "copy_filtered_title": {
+      "ht": "Copiar filtrados",
+      "at": ""
+    },
+    "copy_filtered_empty": {
+      "ht": "No hay filas que copiar.",
+      "at": ""
+    },
+    "copy_filtered_done": {
+      "ht": "Copiadas {count} filas al portapapeles.",
+      "at": ""
+    },
+    "copy_error_title": {
+      "ht": "Error de copia",
+      "at": ""
+    },
+    "copy_error_body": {
+      "ht": "No se pudo copiar al portapapeles: {error}",
+      "at": ""
+    }
+  },
+  "progress": {
+    "reading_sources": {
+      "ht": "Leyendo archivos fuente...",
+      "at": ""
+    },
+    "creating_entries": {
+      "ht": "Creando objetos StringEntry...",
+      "at": ""
+    },
+    "computing_sort_keys": {
+      "ht": "Calculando claves de ordenación...",
+      "at": ""
+    },
+    "ready": {
+      "ht": "Listo",
+      "at": ""
+    },
+    "applying_patches": {
+      "ht": "Aplicando parches de DataForge...",
+      "at": ""
+    },
+    "loading_generator": {
+      "ht": "Cargando generador de mejoras...",
+      "at": ""
+    },
+    "generating_enhancements": {
+      "ht": "Generando mejoras (puede tardar unos minutos en la primera ejecución)...",
+      "at": ""
+    },
+    "unp4k_launch": {
+      "ht": "Iniciando unp4k; puede tardar un minuto...",
+      "at": ""
+    },
+    "unp4k_launch_short": {
+      "ht": "Iniciando unp4k...",
+      "at": ""
+    },
+    "copy_global": {
+      "ht": "Copiando global.ini extraído a la caché...",
+      "at": ""
+    },
+    "copy_global_short": {
+      "ht": "Copiando global.ini extraído...",
+      "at": ""
+    },
+    "extract_dcb": {
+      "ht": "Extrayendo Game2.dcb desde Data.p4k...",
+      "at": ""
+    },
+    "unforge": {
+      "ht": "Convirtiendo base de datos DataForge; esto tarda varios minutos...",
+      "at": ""
+    },
+    "unforge_short": {
+      "ht": "Convirtiendo base de datos DataForge...",
+      "at": ""
+    },
+    "caching_entities": {
+      "ht": "Guardando archivos de entidades en caché...",
+      "at": ""
+    },
+    "snapshot_diff": {
+      "ht": "Creando instantánea de caché para diferencias...",
+      "at": ""
+    }
+  },
+  "status_bar": {
+    "update_checking": {
+      "ht": "Comprobando...",
+      "at": ""
+    },
+    "update_available": {
+      "ht": "v{version} disponible",
+      "at": ""
+    },
+    "update_up_to_date": {
+      "ht": "Actualizado (v{version})",
+      "at": ""
+    },
+    "update_check_failed": {
+      "ht": "Comprobación fallida",
+      "at": ""
+    },
+    "update_indicator_available": {
+      "ht": "v{current} - actualización disponible",
+      "at": ""
+    },
+    "update_indicator_up_to_date": {
+      "ht": "v{current} - actualizado",
+      "at": ""
+    },
+    "update_indicator_failed": {
+      "ht": "v{current} - comprobación fallida",
+      "at": ""
+    }
+  }
 }
