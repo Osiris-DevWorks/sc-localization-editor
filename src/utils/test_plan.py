@@ -32,6 +32,15 @@ TEST_SECTIONS: list[dict] = [
         ],
     },
     {
+        "title": "Test-build fixes (#185 / #186 / #187 / #189)",
+        "items": [
+            "Restore Backup (More menu): pick a backup and confirm it restores AND the table refreshes with no crash dialog (#185).",
+            "Regenerate, then filter a destroy-satellite mission (e.g. Foxwell); confirm its Hostiles line shows only that mission's own encounter, not a merged roster of sibling contracts (#186).",
+            "Filter a recovery / mercenary mission with a recoverable ship; confirm MISSION DETAILS shows the real spawn lines and NO \"Unknown: 1\" line (#187).",
+            "Strings table: click the Owned column header to sort; confirm owned blueprint items float to the top without needing a search first (#189).",
+        ],
+    },
+    {
         "title": "SC install root retention (#150)",
         "items": [
             "Set the Star Citizen install path, then change it to a different valid location.",
