@@ -1,0 +1,11 @@
+# Code owners for Smart Citizen.
+#
+# @Osiris-DevWorks owns the entire tree, so every pull request requests their
+# review automatically. Combined with the "Protect release branches" ruleset
+# (require_code_owner_review on release/*), this is the tighter gate: a PR into
+# a release branch needs an approval from @Osiris-DevWorks specifically, not
+# just any approving review.
+#
+# GitHub reads CODEOWNERS from the PR's base branch, so this file lives on main
+# (the default branch) and every release/X.Y.Z branched off main inherits it.
+* @Osiris-DevWorks
