@@ -448,12 +448,13 @@ class TestBlueprintNameTags:
         assert tag(arbor_desc) == "[MIN-S0]"
 
     def test_tagger_fallback_grade_only_no_known_item_type(self, gen_module):
-        """An item with Size + Grade but an Item Type we haven't added to
-        the abbreviation map still gets a usable tag — just without the
-        type prefix. Future-proofs against new ship-item categories."""
+        """#160: An item with Size + Grade but an Item Type not in the
+        abbreviation map returns None on the fallback path. A grade-only
+        [Sx-grade] tag conveys nothing useful without a type and was
+        incorrectly appearing on FPS gear / salvage heads in blueprint lists."""
         tag = gen_module._component_name_tag
         desc = "Item Type: Unrecognised Widget\\nSize: 2\\nGrade: A\\n"
-        assert tag(desc) == "[S2-A]"
+        assert tag(desc) is None
 
     def test_tagger_ship_weapons_tag_with_damage_type(self, gen_module):
         """1.4.1 regression: ship weapons in POTENTIAL BLUEPRINTS lists

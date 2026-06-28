@@ -786,13 +786,10 @@ def _component_name_tag(desc_value: str, root: ET.Element | None = None,
     if not type_abbrev and class_name:
         type_abbrev = _ITEM_TYPE_ABBREV.get(class_name)
 
-    if not (type_abbrev or grade_letter):
+    if not type_abbrev:
         return None
 
-    parts: list[str] = []
-    if type_abbrev:
-        parts.append(type_abbrev)
-    parts.append(f"S{size}")
+    parts: list[str] = [type_abbrev, f"S{size}"]
     if grade_letter:
         parts.append(grade_letter)
     return f"[{'-'.join(parts)}]"
@@ -2592,7 +2589,7 @@ def _extract_mission_flags(root: ET.Element) -> list[str]:
 
 def enhancements_mission(root: ET.Element, reputation_lookup: dict[str, int] | None = None,
                          rep_xp_label: str = _DEFAULT_REP_XP_LABEL,
-                         show_spawns: bool = True,
+                         show_fields: "dict | None" = None,
                          spawn_ambiguous_keys: "set[str] | None" = None) -> str:
     """Extract mission/contract reward stats (aUEC + Reputation XP) and flags.
 
@@ -2605,25 +2602,29 @@ def enhancements_mission(root: ET.Element, reputation_lookup: dict[str, int] | N
     lines = []
     reputation_lookup = reputation_lookup or {}
 
+    def _show(f: str) -> bool:
+        return bool((show_fields or {}).get(f, True))
+
     try:
         loc_key = _mission_loc_key(root) or _loc_key(root)
         lines.append(f"<EM4>Engagement Type:</EM4> {_classify_mission_engagement(loc_key)}")
 
         flags = _extract_mission_flags(root)
-        lines.append(f"<EM4>Mission Type:</EM4> {', '.join(flags) if flags else 'Standard'}")
+        if _show("mission_type"):
+            lines.append(f"<EM4>Mission Type:</EM4> {', '.join(flags) if flags else 'Standard'}")
 
         difficulty = _extract_difficulty(root)
-        if difficulty:
+        if difficulty and _show("difficulty"):
             lines.append(f"<EM4>Difficulty (1-7):</EM4> {difficulty}")
 
         total_rep_xp = _extract_mission_xp(root, reputation_lookup)
-        if total_rep_xp > 0:
+        if total_rep_xp > 0 and _show("reputation"):
             lines.append(f"<EM4>{rep_xp_label}:</EM4> +{total_rep_xp:,}")
 
         # Extract spawn/wave counts — bucketed Hostiles / Friendlies /
         # Objectives / Unknown rather than the pre-1.4.1 single-tally
         # Enemies + Non-hostiles. Empty buckets are dropped by the formatter.
-        # #163: gated by the Hostiles mission-detail toggle. The contractgen
+        # #163: gated by per-field show_fields (Hostiles toggle). The contractgen
         # path gates this too (via _show("spawns")); pu_missions / entities
         # missions reach the table through here, so without the gate salvage
         # contracts kept showing hostiles after the user turned them off.
@@ -2633,7 +2634,7 @@ def enhancements_mission(root: ET.Element, reputation_lookup: dict[str, int] | N
         # — a single body can't honestly show one count for both. The
         # consistent buckets (e.g. Friendlies "Salvageable Ships") still show.
         _ambiguous = loc_key in spawn_ambiguous_keys if spawn_ambiguous_keys else False
-        if show_spawns:
+        if _show("spawns"):
             _bd = _extract_spawn_counts(root)
             if _ambiguous:
                 _bd[SPAWN_HOSTILE] = {}
@@ -5055,7 +5056,6 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
 
     out: dict[str, str] = {}
     pu_missions_dir = records / "missionbroker" / "pu_missions"
-    _show_spawns = _show("spawns")  # #163: honor the Hostiles toggle here too
 
     # #165: pre-pass — a single mission description is often shared by many
     # pu_missions XMLs with DIFFERENT hostile spawns (every lawful AND unlawful
@@ -5094,7 +5094,7 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
             pu_missions_dir,
             lambda root: enhancements_mission(root, reputation_lookup,
                                               rep_xp_label=rep_xp_label,
-                                              show_spawns=_show_spawns,
+                                              show_fields=_mdf,
                                               spawn_ambiguous_keys=spawn_ambiguous_descs),
             loc=loc, loc_key_fn=_mission_loc_key,
             separator=mission_sep, capture_all=True,
@@ -5111,7 +5111,7 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
                 mission_dir,
                 lambda root: enhancements_mission(root, reputation_lookup,
                                                   rep_xp_label=rep_xp_label,
-                                                  show_spawns=_show_spawns,
+                                                  show_fields=_mdf,
                                                   spawn_ambiguous_keys=spawn_ambiguous_descs),
                 loc=loc, separator=mission_sep, capture_all=True,
                 xml_path_index=xml_path_index, records_dir=records,
@@ -5344,6 +5344,8 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
                 details_lines.append(f"<EM4>Difficulty (1-7):</EM4> {all_difficulties[0]}")
             if _show("spawns"):
                 details_lines.extend(_format_spawn_lines(agg_spawns))
+            if _show("ace") and bool(agg_spawns.get(SPAWN_HOSTILE, {}).get("Ace Pilots", 0)):
+                details_lines.append("<EM4>Ace Pilot:</EM4> Yes")
             nonzero_tiers = [(s, f, rn) for s, f, rn in desc_seen_tiers if s > 0]
             if _show("reputation"):
                 if len(nonzero_tiers) == 1:
