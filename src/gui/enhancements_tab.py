@@ -256,6 +256,21 @@ class EnhancementsTab(QWidget):
         )
         gl.addWidget(self._stats_prepend_check)
 
+        self._standardize_ship_names_check = QCheckBox("Standardize earnable ship names")
+        self._standardize_ship_names_check.setChecked(
+            AppSettings.get_standardize_earnable_ship_names()
+        )
+        self._standardize_ship_names_check.setStyleSheet("font-size: 11px;")
+        self._standardize_ship_names_check.setToolTip(
+            "Rename exec-hangar (PYX) and Wikelo (WIK) ship variants to include "
+            "a suffix that distinguishes them from the standard pledge-store version "
+            "(e.g. \"Anvil F8C Lightning PYX\"). Takes effect on the next Generate Enhancements."
+        )
+        self._standardize_ship_names_check.toggled.connect(
+            lambda checked: AppSettings.set_standardize_earnable_ship_names(checked)
+        )
+        gl.addWidget(self._standardize_ship_names_check)
+
         btn_row = QHBoxLayout()
 
         self._apply_categories_btn = QPushButton(tr("enhancements.apply_btn"))

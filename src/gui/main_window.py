@@ -4051,6 +4051,7 @@ class MainWindow(QMainWindow):
             mission_header_em_tag=AppSettings.get_mission_header_em_tag(),
             mission_detail_fields=AppSettings.get_mission_detail_fields(),
             stats_prepend=AppSettings.get_stats_prepend(),
+            standardize_earnable_ship_names=AppSettings.get_standardize_earnable_ship_names(),
             language=language,
         )
         self.enhancements_tab.set_operation_running("Generating enhancements…")

@@ -273,6 +273,7 @@ class AppSettings:
     # the actual component names elsewhere. Issue #31 follow-up.
     TAG_ANNOTATE_MISSION_DESCS = "tag_builder/annotate_mission_descs"
     STATS_PREPEND = "stats_prepend"  # #153: stats block above the description
+    STANDARDIZE_EARNABLE_SHIP_NAMES = "standardize_earnable_ship_names"
     OWNED_ITEMS = "owned_items"      # #157: blueprint items the user owns (JSON list of names)
 
     # Settings keys - Data sources (new)
@@ -794,6 +795,21 @@ class AppSettings:
     def set_stats_prepend(enabled: bool) -> None:
         """Persist the stats-above-description toggle (#153)."""
         AppSettings.settings().setValue(AppSettings.STATS_PREPEND, bool(enabled))
+        AppSettings.settings().sync()
+
+    @staticmethod
+    def get_standardize_earnable_ship_names() -> bool:
+        """Whether to apply standardized display names for earnable ships
+        (PYX exec-hangar and WIK Wikelo variants). Off by default."""
+        return bool(AppSettings.settings().value(
+            AppSettings.STANDARDIZE_EARNABLE_SHIP_NAMES, False, type=bool
+        ))
+
+    @staticmethod
+    def set_standardize_earnable_ship_names(enabled: bool) -> None:
+        AppSettings.settings().setValue(
+            AppSettings.STANDARDIZE_EARNABLE_SHIP_NAMES, bool(enabled)
+        )
         AppSettings.settings().sync()
 
     @staticmethod
