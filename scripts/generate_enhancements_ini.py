@@ -3882,31 +3882,47 @@ def enhancements_weapon(root: ET.Element, ammo_lookup: dict[str, ET.Element],
 # specifically search for these UI Keys
 #
 # FML
-# EARNABLE_SHIP_NAME_OVERRIDES: dict[str, str] = {
-#     "vehicle_Name???_???": "PYAM Exec Anvil F7A Hornet Mk II",  
-#     "vehicle_Name???_???": "PYAM Exec Anvil F8C Lightning",  
-#     "vehicle_Name???_???": "PYAM Exec Drake Cutlass Black",
-#     "vehicle_Name???_???": "PYAM Exec Drake Corsair", 
-#     "vehicle_Name???_???": "PYAM Exec Gatac Syulen",
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-#     "vehicle_name???_???": "Wikelo"
-# }
+EARNABLE_SHIP_NAME_OVERRIDES: dict[str, str] = {
+     "vehicle_NameANVL_Hornet_F7A_Mk2_PYAM_Exec": "Anvil F7A Hornet Mk II PYX", 
+     "vehicle_NameDRAK_Cutlass_Black_PYAM_Exec": "Drake Cutlass Black PYX",
+     "vehicle_NameRSI_Meteor_Collector_Military": "RSI Meteor Collector Military PYX",
+     "vehicle_NameANVL_Lightning_F8C_PYAM_Exec": "Anvil F8C Lightning PYX",
+     "vehicle_NameDRAK_Corsair_PYAM_Exec": "Drake Corsair PYX",
+     "vehicle_NameGAMA_Syulen_PYAM_Exec": "Gama Syulen PYX",
+     "TheCollector_ShipMod_MISC_Fortune_VehicleName": "MISC Fortune WIK",
+     "TheCollector_ShipMod_MRAI_GuardianQI_VehicleName": "Mirari Guardian QI WIK",
+     "TheCollector_ShipMod_MRAI_Pulse_VehicleName": "Mirai Pule WIK",
+     "TheCollector_ShipMod_URSA_Medivac_VehicleName": "RSI Ursa Medivac WIK",
+     "TheCollector_ShipMod_XIAN_Nox_VehicleName": "Aopoa Nox WIK",
+     "vehicle_NameCRUS_Spirit_C1_Collector_Civilian": "Crusader C1 Spirit WIK",
+     "vehicle_NameRSI_Polaris_Collector_Military": "RSI Polaris WIK",
+     "vehicle_NameAEGS_Firebird_Collector_Milt": "Aegis Sabre Firebird WIK War",
+     "vehicle_NameAEGS_Idris_P_Collector_Military": "Aegis Idris-P WIK War",
+     "vehicle_NameANVL_Asgard_Collector_Military": "",
+     "vehicle_NameANVL_Lightning_F8C_Collector_Military": "Anvil F8C Lightning WIK War",
+     "vehicle_NameCRUS_Starfighter_Inferno_Collector_Military": "Crusader Ares Star Fighter Inferno WIK War",
+     "vehicle_NameCRUS_Starlifter_A2_Collector_Military": "Crusader A2 Hercules Starlifter WIK War",
+     "vehicle_NameKRIG_L21_Wolf_Collector_Military": "Kruger L-21 Wolf WIK War",
+     "vehicle_NameKRIG_L22_Alpha_Wolf_Collector_Military": "Kruger L-22 Alpha Wolf WIK War",
+     "vehicle_NameMISC_Starlancer_TAC_Collector_Military": "MISC Starlancer TAC WIK War",
+     "vehicle_NameMRAI_Guardian_Collector_Military": "Mirai Guardian WIK War",
+     "vehicle_NameMRAI_Guardian_MX_Collector_Military": "Mirai Guardian MX WIK War",
+     "vehicle_NameRSI_Constellation_Taurus_Collector_Military": "RSI Constellation Taurus WIK War",
+     "vehicle_NameANVL_Lightning_F8C_Collector_Stealth": "Anvil F8C Lightning WIK Stealth",
+     "vehicle_NameCRUS_Starfighter_Ion_Collector_Stealth": "Crusader Ares Star Fighter Ion WIK Stealth",
+     "vehicle_NameKRIG_L21_Wolf_Collector_Stealth": "Kruger L-21 Wolf WIK Stealth",
+     "vehicle_NameRSI_Apollo_Triage_Collector_Stealth": "RSI Apollo Triage WIK Stealth",
+     "vehicle_NameRSI_Meteor_Collector_Stealth": "RSI Meteor WIK Stealth",
+     "vehicle_NameRSI_Scorpius_Collector_Stealth": "RSI Scorpius WIK Stealth",
+     "vehicle_NameARGO_RAFT_Collector_Indust": "Argo RAFT WIK Work",
+     "vehicle_NameCRUS_Intrepid_Collector_Indust": "Crusader Intrepid WIK Work",
+     "vehicle_NameDRAK_Golem_Collector_Indust": "Drake Golem WIK Work",
+     "vehicle_NameESPR_Prowler_Utility_Collector_Indust": "Prowler Utility WIK Work",
+     "vehicle_NameMISC_Prospector_Collector_Indust": "MISC Prospector WIK Work",
+     "vehicle_NameMISC_Starlancer_MAX_Collector_Indust": "MISC Starlancer MAX WIK Work",
+     "vehicle_NameRSI_Zeus_CL_Collector_Indust": "RSI Zeus Mk II CL WIK Work",
+     "vehicle_NameRSI_Zeus_ES_Collector_Indust": "RSI Zeus Mk II ES WIK Work",
+ }
 
 # ── Ship enhancements (DataForge-based) ──────────────────────────────────────────────
 
@@ -5705,7 +5721,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
     logger.info("Writing output files…")
     _flush()
     if _want("ship_descs"):
-        # out_ships.update(EARNABLE_SHIP_NAME_OVERRIDES)  # uncomment once keys are filled in
+        out_ships.update(EARNABLE_SHIP_NAME_OVERRIDES)  # uncomment once keys are filled in
         write_ini(output_dir / "ships_desc_enhancements.ini",       out_ships)
     if _want("component_descs"):
         write_ini(output_dir / "components_desc_enhancements.ini",  out_components)
