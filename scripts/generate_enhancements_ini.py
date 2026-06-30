@@ -4757,45 +4757,17 @@ def scan_entity_dir(
 # Progress ticks are intentionally omitted here — the main process ticks once
 # per future as it completes, keeping all Qt signal emission off subprocesses.
 
-def _run_gen_components(ctx: dict) -> dict[str, str]:
-    loc             = ctx["loc"]
-    ships_scitem    = ctx["ships_scitem"]
-    xml_path_index  = ctx.get("xml_path_index")
-    records         = ctx["records"]
-    tag_configs     = ctx.get("tag_configs") or {}
-    comp_cfg        = tag_configs.get("components") or DEFAULT_TAG_CONFIGS.get("components")
-    comp_placement  = getattr(comp_cfg, "placement", "prepend") if comp_cfg else "prepend"
-    _prepend        = ctx.get("stats_prepend", False)  # #153
+def _mirror_scitem_siblings(out: dict[str, str], loc: dict[str, str]) -> tuple[int, int]:
+    """Mirror component enhancements onto the loc-key spellings the game may render.
 
-    def _make_comp_tagger(comp_type: str):
-        def _tagger(desc_value: str, root: ET.Element | None = None) -> str | None:
-            return _component_name_tag(desc_value, root, config=comp_cfg, component_type=comp_type)
-        return _tagger
-
-    out: dict[str, str] = {}
-    for subdir, fn in [
-        ("shieldgenerator", enhancements_shield),
-        ("cooler",          enhancements_cooler),
-        ("powerplant",      enhancements_powerplant),
-        ("quantumdrive",    enhancements_quantum_drive),
-        ("bombcompartments", enhancements_bomb_rack),
-    ]:
-        tagger = _make_comp_tagger(_SUBDIR_TO_TYPE.get(subdir, ""))
-        out.update(scan_entity_dir(ships_scitem / subdir, fn, loc=loc, generate_name_tags=True,
-                                   name_tag_fn=tagger,
-                                   name_tag_placement=comp_placement,
-                                   xml_path_index=xml_path_index, records_dir=records,
-                                   tag_loc=ctx.get("tag_loc"), prepend=_prepend))
-    radar_dir = ships_scitem / "radar"
-    if radar_dir.exists():
-        tagger = _make_comp_tagger(_SUBDIR_TO_TYPE.get("radar", ""))
-        out.update(scan_entity_dir(radar_dir, enhancements_radar, loc=loc, generate_name_tags=True,
-                                   name_tag_fn=tagger,
-                                   name_tag_placement=comp_placement,
-                                   xml_path_index=xml_path_index, records_dir=records,
-                                   prepend=_prepend,
-                                   tag_loc=ctx.get("tag_loc")))
-
+    CIG ships some components under several loc-key spellings for one item: an
+    ``item_DescX_SCItem`` plus a bare ``item_DescX``, and lower/capitalized and
+    underscore/no-underscore forms. The generator only enhances the key the
+    entity XML references, so a sibling spelling the game actually displays would
+    show stock text with no stats / [CLASS-Sx-grade] tag. This propagates the
+    enhanced value onto those siblings in ``out``, in place, and returns
+    ``(scitem_sibling_count, legacy_sibling_count)`` for logging.
+    """
     comp_types = ("COOL", "SHLD", "POWR", "QDRV", "RADR")
     sibling_count = 0
     for key, value in list(out.items()):
@@ -4803,30 +4775,41 @@ def _run_gen_components(ctx: dict) -> dict[str, str]:
             continue
         base_key = key[:-len("_SCItem")]
 
-        # Mirror to the bare-key variant (just strip ``_SCItem``). CIG
-        # ships some components with BOTH ``item_DescX_SCItem`` and a bare
-        # ``item_DescX`` holding the same stock description — e.g. the S3
-        # Juno Starwerk and ARCCorp QDRVs on PTU 4.8 (Agni / Vesta /
-        # Fissure / Impulse). The game can render either key, and without
-        # this mirror the bare-key variant shows stock text with no
-        # annotations / stats / [CLASS-Sx-grade] tag. Done BEFORE the
-        # comp_types underscore-variant check below so both legacy
-        # siblings get propagated if both exist in stock.
-        if base_key in loc and base_key not in out:
-            if base_key.startswith("item_Desc"):
-                base_value = loc[base_key]
+        # Mirror to the bare-key variant(s) — both the as-is strip and the
+        # CAPITALIZED form. CIG ships some components with BOTH an
+        # ``item_DescX_SCItem`` and a same-case bare ``item_DescX`` holding the
+        # stock description — e.g. the S3 Juno Starwerk and ARCCorp QDRVs on
+        # PTU 4.8 (Agni / Vesta / Fissure / Impulse). Others reference a
+        # LOWERCASE ``item_name*`` / ``item_desc*`` _SCItem key from the entity
+        # XML while the game RENDERS the capitalized bare key (``item_Name*`` /
+        # ``item_Desc*``) — every S3 QDRV does this: Balandin, Erebos, Wanderer,
+        # Drifter, Ranger, Metis, Tyche, TS2 (#190). The game can render either
+        # key, and without this mirror the displayed bare key shows stock text
+        # with no annotations / stats / [CLASS-Sx-grade] tag. Done BEFORE the
+        # comp_types underscore-variant check below so all legacy siblings
+        # propagate.
+        bare_targets = [base_key]
+        if base_key.startswith("item_name"):
+            bare_targets.append("item_Name" + base_key[len("item_name"):])
+        elif base_key.startswith("item_desc"):
+            bare_targets.append("item_Desc" + base_key[len("item_desc"):])
+        for target in bare_targets:
+            if target not in loc or target in out:
+                continue
+            if target.startswith("item_Desc"):
+                base_value = loc[target]
                 if ENHANCEMENT_SEPARATOR in value:
-                    out[base_key] = base_value + value[value.index(ENHANCEMENT_SEPARATOR):]
+                    out[target] = base_value + value[value.index(ENHANCEMENT_SEPARATOR):]
                 else:
-                    out[base_key] = value
-            elif base_key.startswith("item_Name"):
+                    out[target] = value
+            elif target.startswith("item_Name"):
                 tag_match = re.search(r"\s(\[[A-Z0-9\-]+\])\s*$", value)
                 if tag_match:
-                    out[base_key] = f"{loc[base_key]} {tag_match.group(1)}"
+                    out[target] = f"{loc[target]} {tag_match.group(1)}"
                 else:
-                    out[base_key] = value
+                    out[target] = value
             else:
-                out[base_key] = value
+                out[target] = value
             sibling_count += 1
 
         for ct in comp_types:
@@ -4881,6 +4864,49 @@ def _run_gen_components(ctx: dict) -> dict[str, str]:
             inv_sibling_count += 1
             break
 
+    return sibling_count, inv_sibling_count
+
+
+def _run_gen_components(ctx: dict) -> dict[str, str]:
+    loc             = ctx["loc"]
+    ships_scitem    = ctx["ships_scitem"]
+    xml_path_index  = ctx.get("xml_path_index")
+    records         = ctx["records"]
+    tag_configs     = ctx.get("tag_configs") or {}
+    comp_cfg        = tag_configs.get("components") or DEFAULT_TAG_CONFIGS.get("components")
+    comp_placement  = getattr(comp_cfg, "placement", "prepend") if comp_cfg else "prepend"
+    _prepend        = ctx.get("stats_prepend", False)  # #153
+
+    def _make_comp_tagger(comp_type: str):
+        def _tagger(desc_value: str, root: ET.Element | None = None) -> str | None:
+            return _component_name_tag(desc_value, root, config=comp_cfg, component_type=comp_type)
+        return _tagger
+
+    out: dict[str, str] = {}
+    for subdir, fn in [
+        ("shieldgenerator", enhancements_shield),
+        ("cooler",          enhancements_cooler),
+        ("powerplant",      enhancements_powerplant),
+        ("quantumdrive",    enhancements_quantum_drive),
+        ("bombcompartments", enhancements_bomb_rack),
+    ]:
+        tagger = _make_comp_tagger(_SUBDIR_TO_TYPE.get(subdir, ""))
+        out.update(scan_entity_dir(ships_scitem / subdir, fn, loc=loc, generate_name_tags=True,
+                                   name_tag_fn=tagger,
+                                   name_tag_placement=comp_placement,
+                                   xml_path_index=xml_path_index, records_dir=records,
+                                   tag_loc=ctx.get("tag_loc"), prepend=_prepend))
+    radar_dir = ships_scitem / "radar"
+    if radar_dir.exists():
+        tagger = _make_comp_tagger(_SUBDIR_TO_TYPE.get("radar", ""))
+        out.update(scan_entity_dir(radar_dir, enhancements_radar, loc=loc, generate_name_tags=True,
+                                   name_tag_fn=tagger,
+                                   name_tag_placement=comp_placement,
+                                   xml_path_index=xml_path_index, records_dir=records,
+                                   prepend=_prepend,
+                                   tag_loc=ctx.get("tag_loc")))
+
+    sibling_count, inv_sibling_count = _mirror_scitem_siblings(out, loc)
     if sibling_count or inv_sibling_count:
         logger.info(
             f"Propagated enhancements to {sibling_count} _SCItem siblings "
