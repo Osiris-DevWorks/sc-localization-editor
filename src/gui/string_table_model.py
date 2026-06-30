@@ -337,9 +337,10 @@ class StringTableModel(QAbstractTableModel):
                 return base | Qt.ItemFlag.ItemIsEditable
             return Qt.ItemFlag.ItemIsEnabled  # non-ships: shown, not editable
         if col == COL_OWNED:
-            entry = self.entry_for_row(index.row())
-            if entry is not None and not self._is_bp_item(entry):
-                return Qt.ItemFlag.ItemIsEnabled  # non-blueprint rows: blank, not selectable
+            # Read-only indicator: ownership is managed by the Blueprints
+            # shuttle on the Enhancements tab, so the cell is never selectable
+            # or editable (blueprint rows show the star, others are blank).
+            return Qt.ItemFlag.ItemIsEnabled
         return base
 
     def data(self, index: QModelIndex, role=Qt.ItemDataRole.DisplayRole):
@@ -408,8 +409,8 @@ class StringTableModel(QAbstractTableModel):
             if col == COL_OWNED:
                 if self._is_bp_item(entry):
                     if self._owned_name(entry) in self._owned_items:
-                        return "Owned — click to unmark; [Owned] is removed from blueprint lists"
-                    return "Click to mark owned — appends [Owned] to this item in blueprint lists"
+                        return "Owned blueprint — manage ownership in the Enhancements tab's Blueprints list"
+                    return "Ownable blueprint — mark it owned in the Enhancements tab's Blueprints list"
                 return None
             return self.data(index, Qt.ItemDataRole.DisplayRole)
 

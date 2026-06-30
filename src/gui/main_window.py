@@ -296,6 +296,11 @@ class MainWindow(QMainWindow):
         # #157: item names (normalized) that appear in any POTENTIAL BLUEPRINTS
         # list — the rows eligible for the Owned star. Recomputed on each load.
         self._bp_item_names: set[str] = set()
+        # #157 follow-up: per-blueprint-item metadata (mission names + ship
+        # component type/class/size/grade) for the Blueprints shuttle filters.
+        # Built once per load (pure function of the loaded strings), so
+        # owned-toggles only re-partition rather than rescan ~87k entries.
+        self._blueprint_meta: dict = {}
 
         # Track whether we've prompted for enhancements on startup (prevents duplicate dialogs)
         self._enhancements_prompted_on_startup = False
@@ -413,6 +418,7 @@ class MainWindow(QMainWindow):
         self.enhancements_tab.merge_requested.connect(self.perform_merge_and_reload)
         self.enhancements_tab.enhancements_pipeline_requested.connect(self._run_enhancements_pipeline)
         self.enhancements_tab.favorite_prefix_changed.connect(self._on_favorite_prefix_changed)
+        self.enhancements_tab.owned_items_changed.connect(self._recompute_owned)
         self._enhancements_tab_index = self.tabs.addTab(self.enhancements_tab, tr("tabs.enhancements"))
 
         self.log_tab = LogTab()
@@ -1948,6 +1954,7 @@ class MainWindow(QMainWindow):
                     AppSettings.get_favorite_prefix(),
                 )
                 self.apply_filters()
+                self._rebuild_blueprint_metadata()  # #157 follow-up: filter data
                 self._recompute_owned()  # #157
 
                 # Update status bar with entry counts and per-source status
@@ -2738,6 +2745,7 @@ class MainWindow(QMainWindow):
             "enh_favorites":         {"target": lambda: self.enhancements_tab._favorites_group,                "pre_action": _switch_to(enh_tab)},
             "enh_mission_labels":    {"target": lambda: self.enhancements_tab.mission_labels_group,            "pre_action": _switch_to(enh_tab)},
             "enh_tag_builder":       {"target": lambda: self.enhancements_tab._tag_builder_group,              "pre_action": _switch_to(enh_tab)},
+            "enh_blueprints":        {"target": lambda: self.enhancements_tab._blueprints_group,               "pre_action": _switch_to(enh_tab)},
             # Config tab section deep-dive
             "cfg_appearance":        {"target": lambda: self.config_tab._appearance_group,                     "pre_action": _switch_to(config_tab)},
             "cfg_sc_install":        {"target": lambda: self.config_tab._loc_group,                            "pre_action": _switch_to(config_tab)},
@@ -3935,6 +3943,7 @@ class MainWindow(QMainWindow):
             sort_keys=sort_keys,
         )
         self.apply_filters()
+        self._rebuild_blueprint_metadata()  # #157 follow-up: filter data
         self._recompute_owned()  # #157: weave [Owned] tags + populate Owned stars
 
         # Update status bar with entry counts and per-source status
@@ -4522,39 +4531,45 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot(QModelIndex)
     def _on_cell_clicked(self, proxy_index: QModelIndex):
-        """Handle cell clicks — COL_STAR toggles favorite (Ships); COL_OWNED
-        toggles owned (#157) on blueprint-item rows."""
+        """Handle cell clicks — COL_STAR toggles favorite (Ships).
+
+        The Owned column (COL_OWNED) is a read-only indicator: ownership is now
+        managed by the Blueprints shuttle on the Enhancements tab, not by
+        clicking the star here.
+        """
         col = proxy_index.column()
         if col == COL_STAR:
             entry_idx = self._entry_index_for_row(proxy_index.row())
             if entry_idx < len(self.entries) and self.entries[entry_idx].category == "Ships":
                 self.toggle_favorite(proxy_index.row())
-        elif col == COL_OWNED:
-            entry_idx = self._entry_index_for_row(proxy_index.row())
-            if 0 <= entry_idx < len(self.entries):
-                from src.utils.owned_items import normalize_item_name
-                e = self.entries[entry_idx]
-                name = normalize_item_name(e.custom_value or e.original_value)
-                if name and name in self._bp_item_names:
-                    AppSettings.toggle_owned_item(name)
-                    self._recompute_owned()
+
+    def _rebuild_blueprint_metadata(self):
+        """#157 follow-up: scan loaded strings once to build the blueprint-item
+        metadata (eligible names + per-item mission/type/class/size/grade) the
+        Blueprints shuttle filters on. Pure function of the loaded strings, so
+        it runs on load — not on every owned-toggle (that path re-partitions
+        the cached result)."""
+        from src.utils.blueprint_meta import build_blueprint_metadata
+        self._blueprint_meta = build_blueprint_metadata(self.entries)
+        self._bp_item_names = set(self._blueprint_meta)
 
     def _recompute_owned(self):
-        """#157: rebuild the blueprint-item set, weave/strip [Owned] tags on
-        blueprint-list bullets to match the owned set, and refresh the table.
-        Called after every load and on every Owned toggle; the transform is
-        idempotent so repeated runs never double the tag."""
-        from src.utils.owned_items import extract_bp_item_names, apply_owned_to_value
+        """#157: weave/strip [Owned] tags on blueprint-list bullets to match the
+        owned set and refresh the table. Called after every load and on every
+        Owned change; the transform is idempotent so repeated runs never double
+        the tag. The eligible-name set + filter metadata are built separately by
+        `_rebuild_blueprint_metadata` (cached, not rescanned here)."""
+        from src.utils.owned_items import apply_owned_to_value
         owned = AppSettings.get_owned_items()
-        bp: set[str] = set()
-        for e in self.entries:
-            bp |= extract_bp_item_names(e.original_value)
-        self._bp_item_names = bp
         for e in self.entries:
             new_val = apply_owned_to_value(e.original_value, owned)
             if new_val != e.original_value:
                 e.original_value = new_val
-        self._model.set_owned_state(bp, owned)
+        self._model.set_owned_state(self._bp_item_names, owned)
+        # Feed the blueprint metadata to the Enhancements tab's Blueprints
+        # shuttle (it can't see the loaded strings the data is derived from).
+        if hasattr(self, "enhancements_tab"):
+            self.enhancements_tab.set_blueprint_items(self._blueprint_meta)
 
     def toggle_favorite(self, proxy_row: int):
         """Add or remove the sort prefix from a ship's custom value."""

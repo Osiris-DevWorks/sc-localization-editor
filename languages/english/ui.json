@@ -567,6 +567,70 @@
     "edit_mapping_btn": {
       "ht": "Edit Mapping...",
       "at": ""
+    },
+    "blueprints_group": {
+      "ht": "Blueprints",
+      "at": ""
+    },
+    "blueprints_desc": {
+      "ht": "Mark the blueprints you already own. Owned items get an [Owned] tag wherever they appear in a mission's potential blueprint rewards, so you can tell at a glance what's worth chasing. Select items on the left and use the arrows to move them to your owned list.",
+      "at": ""
+    },
+    "blueprints_empty_note": {
+      "ht": "Generate mission enhancements first to populate this list. Blueprints come from mission reward data.",
+      "at": ""
+    },
+    "blueprints_search_placeholder": {
+      "ht": "Search blueprints by name…",
+      "at": ""
+    },
+    "blueprints_mission_label": {
+      "ht": "Mission:",
+      "at": ""
+    },
+    "blueprints_facet_any": {
+      "ht": "Any",
+      "at": ""
+    },
+    "blueprints_facet_type": {
+      "ht": "Type:",
+      "at": ""
+    },
+    "blueprints_facet_class": {
+      "ht": "Class:",
+      "at": ""
+    },
+    "blueprints_facet_size": {
+      "ht": "Size:",
+      "at": ""
+    },
+    "blueprints_facet_grade": {
+      "ht": "Grade:",
+      "at": ""
+    },
+    "blueprints_filter_note": {
+      "ht": "Type sorts everything into components, FPS weapons, armor, or Other. Class, Size and Grade apply to ship components only.",
+      "at": ""
+    },
+    "blueprints_tooltip_missions": {
+      "ht": "Missions: {missions}",
+      "at": ""
+    },
+    "blueprints_available_label": {
+      "ht": "Available blueprints",
+      "at": ""
+    },
+    "blueprints_owned_label": {
+      "ht": "Owned blueprints",
+      "at": ""
+    },
+    "blueprints_add_tooltip": {
+      "ht": "Mark selected blueprints as owned",
+      "at": ""
+    },
+    "blueprints_remove_tooltip": {
+      "ht": "Remove selected blueprints from owned",
+      "at": ""
     }
   },
   "log": {
