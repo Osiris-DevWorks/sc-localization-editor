@@ -1,10 +1,10 @@
 ---
-description: Pre-release sanity check before merging release/X.Y.Z to main — runs quality checks, security review, and a contributor + tester acknowledgement audit
+description: Pre-release sanity check before merging release/X.Y.Z to main — runs quality checks, security review, a contributor + tester acknowledgement audit, and an issue close-on-verify pass
 ---
 
 # /pre_release
 
-Run before merging the active `release/X.Y.Z` integration branch to `main`. This is the final gate before the release ships — it confirms code quality, doc currency, test coverage, that every code contributor is acknowledged in the project's in-app About and the README, and that frequent issue reporters are recognized as testers.
+Run before merging the active `release/X.Y.Z` integration branch to `main`. This is the final gate before the release ships — it confirms code quality, doc currency, test coverage, that every code contributor is acknowledged in the project's in-app About and the README, that frequent issue reporters are recognized as testers, and that every issue fixed this cycle is closed (when tester-verified) or explicitly held.
 
 Work through every step in order. After each step, stop at the **CHECKPOINT** and wait for the user before continuing.
 
@@ -147,8 +147,48 @@ Add a second line if there are tester candidates: *"Tester candidates to conside
 
 **CHECKPOINT — pause and ask the user whether to draft additions to `docs/ABOUT.md` and `README.md`** (mirrored in both so they stay in sync): contributor names into the **Contributors** section, and any approved tester candidates into the **Acknowledgements** tester list. Do not edit either file without confirmation.
 
+## 6. Issue close-on-verify pass
+
+Every issue fixed this cycle should be resolved in the tracker before the merge. An open "fixed" issue at merge time means either a missed close or an unverified fix riding into the release. Close the ones a tester has confirmed; explicitly hold the ones still awaiting a test pass.
+
+### 6a. Gather the release's issues
+
+Two sources, unioned:
+
+- Issues tagged for this release: `gh issue list --state open --label next-release --json number,title,author`
+- Issues referenced by commits merged since the last release: `git log main..HEAD --oneline` and pull every `#NN` from the messages (these are the fixes that actually landed on the branch).
+
+### 6b. Classify each
+
+For each issue, find out whether a tester has confirmed the fix. Look for a confirming comment from the reporter or a tester on a preview build, a Discord-synced follow-up, or a clear "works now" reaction. Pull the conversation when unsure:
+
+```bash
+gh issue view <N> --json title,state,comments --jq '.title, (.comments[]?|"\(.user.login): \(.body[0:200])")'
+```
+
+Then bucket:
+
+- **Fixed + tester-verified** → close candidate.
+- **Fixed, awaiting verification** → hold (these carry the "potential fix, please test" comment but no confirmation yet). Do not close on the developer's say-so alone — a passing local test is not a tester sign-off.
+- **Not addressed** → flag. It should not carry `next-release` into the merge if it isn't shipping this cycle; surface it for the user to re-label or defer.
+
+### 6c. Report
+
+```
+**Verified — close candidates:**
+  #187 Unknown spawn line — confirmed by Narull on the a04fb98 build
+
+**Awaiting verification — hold open:**
+  #186 satellite hostiles — fix pushed, tester not yet confirmed
+
+**Not addressed — re-label or defer:**
+  #190 Balandin quantum drive — no fix on the branch
+```
+
+**CHECKPOINT — present the close / hold / flag list and ask before closing anything.** On confirmation, close each verified issue with a short comment in the project voice (plain thanks, the version the fix shipped in, a reopen path) and credit the tester who confirmed it. Do not close an issue without the user's go-ahead, and never close one that is only awaiting verification.
+
 ## Final summary
 
-After all five steps complete, give a one-line overall verdict for release readiness — the worst-case verdict across the five checks. List any remaining Critical/Major findings the user needs to address before the `release/X.Y.Z` → `main` merge.
+After all six steps complete, give a one-line overall verdict for release readiness — the worst-case verdict across the checks. List any remaining Critical/Major findings the user needs to address before the `release/X.Y.Z` → `main` merge, plus any issues still open that were expected to ship this cycle.
 
 Reminder: this command does not ship the release. Merging `release/X.Y.Z` to `main`, tagging, building the installer, and creating the GitHub release are separate steps documented in root `CLAUDE.md` → *Version & Release → Release checklist*.
