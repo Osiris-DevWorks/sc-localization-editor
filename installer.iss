@@ -1038,8 +1038,8 @@ begin
     CacheDirPage.ID,
     'Start Mode',
     'Choose how Smart Citizen opens.',
-    'Simple mode is a single "Generate & Apply to Game" button that does '
-    + 'everything with default settings — ideal if you just want enhanced '
+    'Simple mode provides a single button that generates Smart Citizen '
+    + 'enhancements with default settings — ideal if you just want enhanced '
     + 'strings fast. Advanced mode shows the full interface with every tab and '
     + 'option.'
     + #13#10 + #13#10 +
