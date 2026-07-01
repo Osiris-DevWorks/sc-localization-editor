@@ -197,3 +197,38 @@ class TestScanCraftingBlueprintsReturnShape:
         )
         assert out_commodities == {}
         assert out_journal == {}
+
+
+class TestCraftItemCondensing:
+    """Humanized category labels + consolidated quantum-drive buckets in the
+    journal / commodity BLUEPRINT DATA craft list (2.1 journal redesign)."""
+
+    def test_humanize_category(self, gen_module):
+        h = gen_module._humanize_craft_category
+        assert h("crafting/vehiclegear/powerplant") == "Power Plants"
+        assert h("crafting/vehiclegear/cooler") == "Coolers"
+        assert h("crafting/vehiclegear/refuelling/nozzle") == "Refuel Nozzles"
+        # Unknown category falls back to a title-cased last segment.
+        assert h("crafting/vehiclegear/somethingnew") == "Somethingnew"
+
+    def test_qd_size_range(self, gen_module):
+        r = gen_module._qd_size_range
+        assert r([3]) == "S3"
+        assert r([1, 2, 3]) == "S1-S3"
+        assert r([2, 4]) == "S2, S4"
+
+    def test_condense_humanizes_and_consolidates_qd(self, gen_module):
+        items = [
+            ("weapons/rifle", "Karna Rifle"),
+            ("crafting/vehiclegear/powerplant", "a"),
+            ("crafting/vehiclegear/quantumdrive/size1", "b"),
+            ("crafting/vehiclegear/quantumdrive/size2", "c"),
+            ("crafting/vehiclegear/quantumdrive/size3", "d"),
+        ]
+        out = gen_module._condense_crafted_items(items)
+        # Alphabetized, humanized, QD sizes consolidated into one line.
+        assert out == [
+            "Karna Rifle",
+            "Power Plants: 1 items",
+            "Quantum Drives: 3 items (S1-S3)",
+        ]

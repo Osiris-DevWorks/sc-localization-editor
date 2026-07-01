@@ -3540,12 +3540,68 @@ def _discover_commodity_loc_pairs(internal_name: str, loc: dict[str, str]) -> li
     return pairs
 
 
+# Friendly labels for the raw DataForge blueprint category paths (the fallback
+# grouped-component lines). Keyed on the trailing path segment (after any
+# ``vehiclegear/`` prefix), so ``vehiclegear/powerplant`` → "Power Plants".
+# Unknown segments fall back to a title-cased version of the last segment.
+_CRAFT_CATEGORY_LABELS: dict[str, str] = {
+    "powerplant": "Power Plants",
+    "cooler": "Coolers",
+    "radar": "Radars",
+    "shield": "Shields",
+    "quantumdrive": "Quantum Drives",
+    "jumpdrive": "Jump Drives",
+    "nozzle": "Refuel Nozzles",
+    "refuelling": "Refuel Nozzles",
+    "scanner": "Scanners",
+    "qed": "Quantum Enforcement Devices",
+}
+
+
+def _humanize_craft_category(cat: str) -> str:
+    """Turn a raw blueprint category path into a player-facing label.
+
+    ``vehiclegear/powerplant`` → "Power Plants"; ``vehiclegear/refuelling/nozzle``
+    → "Refuel Nozzles". Unknown categories title-case their last segment so the
+    output is always readable rather than a raw slash path.
+    """
+    parts = [p for p in cat.split("/") if p and p != "vehiclegear"]
+    if not parts:
+        return cat
+    label = _CRAFT_CATEGORY_LABELS.get(parts[-1].lower())
+    if label:
+        return label
+    if len(parts) >= 2:
+        label = _CRAFT_CATEGORY_LABELS.get("/".join(parts[-2:]).lower())
+        if label:
+            return label
+    return parts[-1].replace("_", " ").title()
+
+
+def _qd_size_range(sizes: list[int]) -> str:
+    """Render a sorted list of quantum-drive sizes as "S3", "S1-S3", or
+    "S1, S3" (compact contiguous range, else comma list)."""
+    sizes = sorted(set(sizes))
+    if len(sizes) == 1:
+        return f"S{sizes[0]}"
+    if sizes == list(range(sizes[0], sizes[-1] + 1)):
+        return f"S{sizes[0]}-S{sizes[-1]}"
+    return ", ".join(f"S{s}" for s in sizes)
+
+
+_QD_SIZE_RE = re.compile(r"quantumdrive/size(\d+)$", re.IGNORECASE)
+
+
 def _condense_crafted_items(items_list: list[tuple[str, str]]) -> list[str]:
-    """Condense crafted items into readable summary lines, grouped by blueprint category."""
+    """Condense crafted items into readable summary lines, grouped by blueprint
+    category. Category paths are humanized, quantum-drive size buckets are
+    consolidated into one line, and the result is sorted alphabetically."""
     by_cat: dict[str, list[str]] = defaultdict(list)
     for cat, name in items_list:
         by_cat[cat].append(name)
     lines = []
+    qd_count = 0
+    qd_sizes: list[int] = []
     for cat in sorted(by_cat.keys()):
         names = sorted(set(by_cat[cat]))
         parts = cat.split("/")
@@ -3584,7 +3640,15 @@ def _condense_crafted_items(items_list: list[tuple[str, str]]) -> list[str]:
             else:
                 lines.append(f"{label} ({armour_type})")
             continue
-        lines.append(f"{cat}: {len(names)} items")
+        qd = _QD_SIZE_RE.search(cat)
+        if qd:
+            qd_count += len(names)
+            qd_sizes.append(int(qd.group(1)))
+            continue
+        lines.append(f"{_humanize_craft_category(cat)}: {len(names)} items")
+    if qd_count:
+        lines.append(f"Quantum Drives: {qd_count} items ({_qd_size_range(qd_sizes)})")
+    lines.sort(key=str.lower)
     return lines
 
 
@@ -3822,12 +3886,11 @@ def scan_crafting_blueprints(
         # Without this, minerals whose internal stem and display spelling
         # diverge (most prominently aluminum/aluminium) silently lose their
         # crafting block.
-        mineral_crafting: dict[str, str] = {}
+        mineral_crafting: dict[str, list[str]] = {}
         for internal_name, items in commodity_items.items():
             condensed = _condense_crafted_items(items)
             if not condensed:
                 continue
-            crafting_text = ", ".join(condensed)
             lookup_keys: set[str] = {internal_name.lower()}
             for name_key, _desc_key in _discover_commodity_loc_pairs(internal_name, loc):
                 display = loc.get(name_key, "").strip().lower()
@@ -3841,18 +3904,32 @@ def scan_crafting_blueprints(
                 # setdefault — first writer wins on collisions (e.g. "iron"
                 # arriving from both raw and ore variants), which is fine
                 # since either crafting list is representative.
-                mineral_crafting.setdefault(k, crafting_text)
+                mineral_crafting.setdefault(k, condensed)
 
-        lines = base_content.split("\\n\\n")
+        # Reformat each mineral entry from the stock one-line "Name - loc, loc"
+        # into a structured block: underlined (EM3) name header, a blue (EM4)
+        # "Locations:" subheader with one dash-bulleted location per line
+        # (alphabetized), and, when the mineral feeds crafting, a blue "Used To
+        # Craft:" subheader with one dash-bulleted item per line (alphabetized).
+        # Intro prose and any non-mineral paragraph pass through untouched.
+        paras = base_content.split("\\n\\n")
         augmented_lines = []
-        for line in lines:
-            dash_idx = line.find(" - ")
-            if dash_idx > 0:
-                mineral_display = line[:dash_idx].strip()
-                mineral_lower = mineral_display.lower()
-                if mineral_lower in mineral_crafting:
-                    line = f"{line}\\n  <EM4>>> Crafting:</EM4> {mineral_crafting[mineral_lower]}"
-            augmented_lines.append(line)
+        for para in paras:
+            dash_idx = para.find(" - ")
+            name = para[:dash_idx].strip() if dash_idx > 0 else ""
+            if dash_idx > 0 and len(name) <= 40 and "\\n" not in para[:dash_idx]:
+                locations = [loc_.strip() for loc_ in para[dash_idx + 3:].split(",")
+                             if loc_.strip()]
+                locations.sort(key=str.lower)
+                block = [f"<EM3>{name}</EM3>", "", "<EM4>Locations:</EM4>"]
+                block += [f"- {loc_}" for loc_ in locations]
+                craft = mineral_crafting.get(name.lower())
+                if craft:
+                    block += ["", "<EM4>Used To Craft:</EM4>"]
+                    block += [f"- {item}" for item in craft]
+                augmented_lines.append("\\n".join(block))
+            else:
+                augmented_lines.append(para)
 
         out_journal[journal_content_key] = "\\n\\n".join(augmented_lines)
         logger.info(f"Journal: augmented Mining Compendium with crafting data for {len(mineral_crafting)} minerals")
