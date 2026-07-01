@@ -8,7 +8,7 @@ On launch, Smart Citizen reloads any customizations from your previous session a
 
 Smart Citizen opens in one of two modes, and you can switch anytime.
 
-- **Simple mode** is a single screen with one big **Apply Enhancements** button. Click it and Smart Citizen runs the whole chain with your current settings — extract, generate, apply — and backs up your game file first. It's the fast path when you just want the enhancements applied and don't need to hand-edit strings.
+- **Simple mode** is a two-button screen: one button, **Apply Enhancements**, runs the whole chain with your current settings (extract, generate, apply, with a backup of your game file taken first); the other switches you to **Advanced mode**. It's the fast path when you just want the enhancements applied and don't need to hand-edit strings.
 - **Advanced mode** is the full app: the strings table, filters, Enhancements tab, Config tab, and everything else in this guide.
 
 Pick your default during install, or flip between them from within the app. Simple mode uses whatever settings you last saved in Advanced.
