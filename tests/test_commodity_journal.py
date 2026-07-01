@@ -232,3 +232,32 @@ class TestCraftItemCondensing:
             "Power Plants: 1 items",
             "Quantum Drives: 3 items (S1-S3)",
         ]
+
+
+class TestCompendiumLocations:
+    """Shared Compendium location parsing feeding both the journal and the
+    individual commodity descriptions (2.1 commodity-desc revamp)."""
+
+    # INI values use the literal two-character sequence backslash-n as the
+    # line separator, so the test content must too (\\n in source == \n on disk).
+    _CONTENT = (
+        "Intro prose with no dash-entry shape here.\\n\\n"
+        "Agricium - ARC-L3, Cellin, CRU-L5, Daymar\\n\\n"
+        "Aluminium - Aaron Halo, ARC-L1"
+    )
+
+    def test_parse_skips_prose_and_sorts(self, gen_module):
+        locs = gen_module._parse_compendium_locations(self._CONTENT)
+        assert set(locs) == {"agricium", "aluminium"}
+        assert locs["agricium"] == ["ARC-L3", "Cellin", "CRU-L5", "Daymar"]
+
+    def test_lookup_by_display_first_word_and_internal(self, gen_module):
+        locs = gen_module._parse_compendium_locations(self._CONTENT)
+        assert gen_module._lookup_commodity_locations(locs, "Agricium", "agricium")[0] == "ARC-L3"
+        # First-word match: "Aluminium (Ore)" -> aluminium.
+        assert gen_module._lookup_commodity_locations(locs, "Aluminium (Ore)", "aluminum_ore") is not None
+        # Miss.
+        assert gen_module._lookup_commodity_locations(locs, "Gold", "gold") is None
+
+    def test_empty_content_is_empty(self, gen_module):
+        assert gen_module._parse_compendium_locations("") == {}

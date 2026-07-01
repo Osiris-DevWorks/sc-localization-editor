@@ -3815,6 +3815,50 @@ def _place_commodity_tag(base_name: str, tag: str, cfg) -> str:
     return f"{base_name} {tag}"
 
 
+def _parse_compendium_locations(base_content: str) -> dict:
+    """Map a Mining Compendium mineral name (lowercased) to its sorted mining
+    locations, parsed from the stock ``Name - loc, loc, ...`` paragraphs.
+
+    Shared by the journal reformat and the individual commodity descriptions so
+    both read the same locations from one place (they can't drift). Only
+    paragraphs shaped like a mineral entry (short name before the first
+    `` - ``, no internal newline) are captured; intro prose is skipped.
+    """
+    result: dict = {}
+    if not base_content:
+        return result
+    for para in base_content.split("\\n\\n"):
+        dash_idx = para.find(" - ")
+        name = para[:dash_idx].strip() if dash_idx > 0 else ""
+        if dash_idx > 0 and len(name) <= 40 and "\\n" not in para[:dash_idx]:
+            locs = sorted(
+                (loc_.strip() for loc_ in para[dash_idx + 3:].split(",") if loc_.strip()),
+                key=str.lower,
+            )
+            if locs:
+                result[name.lower()] = locs
+    return result
+
+
+def _lookup_commodity_locations(mineral_locations: dict, display: str,
+                                internal_name: str):
+    """Find a commodity's mining locations by display name, its first word
+    (``Aluminium (Ore)`` → ``aluminium``), or internal name — or None."""
+    candidates = []
+    d = (display or "").strip().lower()
+    if d:
+        candidates.append(d)
+        first = d.split()
+        if first:
+            candidates.append(first[0])
+    if internal_name:
+        candidates.append(internal_name.lower())
+    for k in candidates:
+        if k in mineral_locations:
+            return mineral_locations[k]
+    return None
+
+
 def scan_crafting_blueprints(
     bp_dir: Path,
     carryables_dir: Path,
@@ -3901,6 +3945,12 @@ def scan_crafting_blueprints(
     # Each commodity stem (iron, hephaestanite, …) pulls every matching loc
     # variant (refined, _ore, _raw, etc.) so the freight-elevator view tags
     # every form the player might see.
+    # Mining locations per mineral, parsed once from the Compendium so each
+    # commodity description can carry a "Locations:" section like the journal.
+    mineral_locations = _parse_compendium_locations(
+        loc.get("Journal_General_Mining_Compendium_Content", "")
+    )
+
     out: dict[str, str] = {}
     skipped_no_loc: list[str] = []
     for commodity in sorted(commodity_items.keys()):
@@ -3930,7 +3980,17 @@ def scan_crafting_blueprints(
 
             base_desc = loc.get(desc_key, "")
             if base_desc and desc_key not in out:
-                out[desc_key] = f"{base_desc}\\n\\n{enhancements_block}"
+                # Structured sections after the base description: a "Locations:"
+                # block (mineable commodities only) then the BLUEPRINT DATA
+                # block. Blue subheaders + dash bullets mirror the journal.
+                sections = []
+                loc_list = _lookup_commodity_locations(mineral_locations, base_name, commodity)
+                if loc_list:
+                    loc_block = (f"<{header_em_tag}>Locations:</{header_em_tag}>\\n"
+                                 + "\\n".join(f"- {loc_}" for loc_ in loc_list))
+                    sections.append(loc_block)
+                sections.append(enhancements_block)
+                out[desc_key] = f"{base_desc}\\n\\n" + "\\n\\n".join(sections)
 
     if skipped_no_loc:
         logger.warning(
@@ -4008,10 +4068,8 @@ def scan_crafting_blueprints(
         for para in paras:
             dash_idx = para.find(" - ")
             name = para[:dash_idx].strip() if dash_idx > 0 else ""
-            if dash_idx > 0 and len(name) <= 40 and "\\n" not in para[:dash_idx]:
-                locations = [loc_.strip() for loc_ in para[dash_idx + 3:].split(",")
-                             if loc_.strip()]
-                locations.sort(key=str.lower)
+            locations = mineral_locations.get(name.lower()) if name else None
+            if locations is not None:
                 block = [f"<EM3>{name}</EM3>", "", "<EM4>Locations:</EM4>"]
                 block += [f"- {loc_}" for loc_ in locations]
                 craft = mineral_crafting.get(name.lower())
