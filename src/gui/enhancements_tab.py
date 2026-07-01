@@ -21,6 +21,27 @@ from src.utils.tag_builder import (
 
 logger = logging.getLogger(__name__)
 
+
+class _NoScrollComboBox(QComboBox):
+    """A combo box that ignores the mouse wheel unless it has focus (#197).
+
+    The Enhancements tab lives in a scroll area with many dropdowns; by default
+    a wheel scroll over an unfocused combo changes its selection instead of
+    scrolling the page. StrongFocus stops the wheel from focusing the combo, and
+    wheelEvent passes the scroll through to the page when the combo isn't focused.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+    def wheelEvent(self, event):  # noqa: N802 (Qt override)
+        if self.hasFocus():
+            super().wheelEvent(event)
+        else:
+            event.ignore()
+
+
 # Sample values used by the live preview so the user can see what their
 # config will produce without re-running the generator.
 _PREVIEW_VALUES: dict[str, dict[str, str]] = {
@@ -367,7 +388,7 @@ class EnhancementsTab(QWidget):
         self._sort_prefix_label = QLabel(tr("enhancements.sort_prefix_label"))
         prefix_row.addWidget(self._sort_prefix_label)
 
-        self.favorite_prefix_combo = QComboBox()
+        self.favorite_prefix_combo = _NoScrollComboBox()
         self.favorite_prefix_combo.setToolTip("Character prepended to favorited ship names so they sort to the top of the in-game ship list. Click Apply Prefix after changing to update all existing favorites.")
         self.favorite_prefix_combo.setSizeAdjustPolicy(
             QComboBox.SizeAdjustPolicy.AdjustToContents
@@ -441,7 +462,7 @@ class EnhancementsTab(QWidget):
         grid.addWidget(self._rep_xp_label_input, 0, 5)
 
         grid.addWidget(QLabel("Header style:"), 1, 4)
-        self._header_em_combo = QComboBox()
+        self._header_em_combo = _NoScrollComboBox()
         # #164: show what the tags actually do in-game (EM3 underlines, EM4
         # renders blue) instead of the opaque EM3/EM4 names. The stored value
         # stays the EM tag, so the generator output is unchanged.
@@ -739,7 +760,7 @@ class EnhancementsTab(QWidget):
         self._blueprints_mission_label = QLabel(tr("enhancements.blueprints_mission_label"))
         self._blueprints_mission_label.setProperty("role", "secondary")
         mission_row.addWidget(self._blueprints_mission_label)
-        self._blueprints_mission_combo = QComboBox()
+        self._blueprints_mission_combo = _NoScrollComboBox()
         self._blueprints_mission_combo.addItem(tr("enhancements.blueprints_facet_any"), None)
         self._blueprints_mission_combo.currentIndexChanged.connect(
             self._refilter_blueprints_available
@@ -760,7 +781,7 @@ class EnhancementsTab(QWidget):
         ):
             lbl = QLabel(tr(label_key))
             lbl.setProperty("role", "secondary")
-            combo = QComboBox()
+            combo = _NoScrollComboBox()
             combo.addItem(tr("enhancements.blueprints_facet_any"), None)
             combo.currentIndexChanged.connect(self._refilter_blueprints_available)
             self._blueprints_facet_combos[attr] = combo
@@ -1076,7 +1097,7 @@ class _ElementRow(QWidget):
         self.label.setMinimumWidth(90)
         row.addWidget(self.label)
 
-        self.style_combo = QComboBox()
+        self.style_combo = _NoScrollComboBox()
         for style_key, style_label in STYLES_BY_KIND.get(spec.kind, ()):
             self.style_combo.addItem(
                 self._build_style_label(spec.kind, style_key, style_label),
@@ -1210,7 +1231,7 @@ class _TagBuilderPage(QWidget):
         ctrl_grid.setHorizontalSpacing(6)
 
         ctrl_grid.addWidget(QLabel("Separator:"), 0, 0)
-        self.sep_combo = QComboBox()
+        self.sep_combo = _NoScrollComboBox()
         for key, label, _ in SEPARATORS:
             # "None" is offered for every category, commodities included: a
             # deliberate no-separator commodity tag renders "[CFCollection]".
@@ -1222,7 +1243,7 @@ class _TagBuilderPage(QWidget):
         ctrl_grid.addWidget(self.sep_combo, 0, 1)
 
         ctrl_grid.addWidget(QLabel("Enclosing:"), 1, 0)
-        self.enc_combo = QComboBox()
+        self.enc_combo = _NoScrollComboBox()
         for key, label, _open, _close in ENCLOSINGS:
             self.enc_combo.addItem(label, userData=key)
         self._select_combo(self.enc_combo, config.enclosing)
@@ -1230,7 +1251,7 @@ class _TagBuilderPage(QWidget):
         ctrl_grid.addWidget(self.enc_combo, 1, 1)
 
         ctrl_grid.addWidget(QLabel("Placement:"), 2, 0)
-        self.placement_combo = QComboBox()
+        self.placement_combo = _NoScrollComboBox()
         for key, label in PLACEMENTS:
             self.placement_combo.addItem(label, userData=key)
         self._select_combo(self.placement_combo, config.placement)
@@ -1242,7 +1263,7 @@ class _TagBuilderPage(QWidget):
         self.usage_sep_combo = None
         if self.category == "commodities":
             ctrl_grid.addWidget(QLabel("Craft-usage separator:"), 3, 0)
-            self.usage_sep_combo = QComboBox()
+            self.usage_sep_combo = _NoScrollComboBox()
             for key, label, _ in SEPARATORS:
                 self.usage_sep_combo.addItem(label, userData=key)
             self._select_combo(self.usage_sep_combo, config.usage_separator)
@@ -1421,7 +1442,7 @@ class _TagBuilderPage(QWidget):
         grid.setVerticalSpacing(4)
 
         def _combo(items) -> QComboBox:
-            c = QComboBox()
+            c = _NoScrollComboBox()
             for entry in items:
                 c.addItem(entry[1], userData=entry[0])
             return c

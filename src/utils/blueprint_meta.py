@@ -24,6 +24,12 @@ from dataclasses import dataclass
 from typing import Optional
 
 from src.models.string_model import _ARMOR_GEAR_WORDS, _FPS_WEAPON_WORDS
+
+# Extra armour-piece key tokens beyond string_model's set (which is tuned for
+# the strings-table category, not blueprint classification). Armour blueprints
+# are keyed by piece (backpack / undersuit / ...) with no "armor" token, so
+# without these they fell into the "Other" type bucket (#195).
+_ARMOR_EXTRA_WORDS = ("backpack", "undersuit", "flightsuit", "torso", "_legs", "_arms")
 from src.utils.owned_items import extract_bp_item_names, normalize_item_name
 
 # Coarse type buckets for non-component blueprint items.
@@ -48,11 +54,15 @@ _TYPE_LABELS = {
     "BOMB": "Bomb",
 }
 
-# A leading component tag like "[MIL-S3-B]" -> (class, size, grade). Lenient on
-# the class code and size digits; grade is a single letter. This is the Tag
-# Builder default shape; a reconfigured tag that doesn't match simply yields no
-# attributes (the item then filters by mission + keyword only).
-_TAG_RE = re.compile(r"^\[([A-Za-z0-9]+)-S(\d+)-([A-Za-z])\]", re.IGNORECASE)
+# The leading bracketed tag on a component name, e.g. "[MIL-S3-B]" or the
+# user-reconfigured "[CMP.S1.B.PW]". Parsed by tokenizing the contents rather
+# than a fixed pattern, because the tag's separator, element order, and which
+# elements appear are all Tag-Builder-configurable (see parse_component_tag).
+_TAG_BRACKET_RE = re.compile(r"^\s*\[([^\]]+)\]")
+_SIZE_TOKEN_RE = re.compile(r"^S?(\d+)$", re.IGNORECASE)
+# Size straight from the loc key (stable regardless of tag config):
+# item_NamePOWR_ACOM_S01_StarHeart -> S1.
+_KEY_SIZE_RE = re.compile(r"_S0*(\d+)(?:_|$)", re.IGNORECASE)
 
 # A component name entry key: item_Name<code>... or item_Name_<code>...
 _NAME_CODE_RE = re.compile(r"^item_name_?([a-z]+)", re.IGNORECASE)
@@ -79,14 +89,42 @@ class BlueprintItem:
 
 
 def parse_component_tag(value: str):
-    """Return ``(class, size, grade)`` from a leading ``[MIL-S3-B]`` tag.
+    """Best-effort ``(class, size, grade)`` from a leading component tag.
 
-    All three are ``None`` when the value carries no recognizable tag.
+    Robust to the Tag Builder's configurable separator / element order / which
+    elements are shown, so it handles the default ``[MIL-S3-B]`` and a
+    reconfigured ``[CMP.S1.B.PW]`` alike. The tokens inside the leading ``[...]``
+    are split on any non-alphanumeric separator and classified: an ``S?<digits>``
+    token is the size, a lone A-F letter is the grade, and the first multi-letter
+    token is the class (type codes like ``PW`` come after the class in the tag,
+    so they don't win). Missing pieces are ``None``.
+
+    Limitation: a single-letter (Short-style) class code can't be told apart from
+    a grade letter, so class may be missed under a Short class style — size still
+    comes from the loc key and grade still resolves.
     """
-    m = _TAG_RE.match(value or "")
+    m = _TAG_BRACKET_RE.match(value or "")
     if not m:
         return (None, None, None)
-    return (m.group(1).upper(), "S" + m.group(2), m.group(3).upper())
+    cls = size = grade = None
+    for tok in re.split(r"[^A-Za-z0-9]+", m.group(1)):
+        if not tok:
+            continue
+        sm = _SIZE_TOKEN_RE.match(tok)
+        if sm and size is None:
+            size = "S" + str(int(sm.group(1)))  # strip zero-padding (S02 -> S2)
+        elif len(tok) == 1 and tok.upper() in "ABCDEF" and grade is None:
+            grade = tok.upper()
+        elif len(tok) >= 2 and cls is None and not sm:
+            cls = tok.upper()
+    return (cls, size, grade)
+
+
+def size_from_key(key: str):
+    """Component size straight from the loc key (``..._S01_...`` -> ``S1``), or
+    None. More reliable than the tag, which the user can reformat."""
+    m = _KEY_SIZE_RE.search(key or "")
+    return "S" + str(int(m.group(1))) if m else None
 
 
 def component_type_from_key(key: str):
@@ -113,7 +151,7 @@ def blueprint_type_from_key(key: str):
     kl = key.lower()
     if any(w in kl for w in _FPS_WEAPON_WORDS):
         return _TYPE_FPS_WEAPON
-    if any(w in kl for w in _ARMOR_GEAR_WORDS):
+    if any(w in kl for w in _ARMOR_GEAR_WORDS) or any(w in kl for w in _ARMOR_EXTRA_WORDS):
         return _TYPE_ARMOR
     return None
 
@@ -158,8 +196,12 @@ def build_blueprint_metadata(entries) -> dict:
             nm = normalize_item_name(val)
             if nm and nm not in name_to_key:
                 name_to_key[nm] = key
-            if cat == "Ship Items":
-                cls, size, grade = parse_component_tag(val)
+            # Class/size/grade only for recognized component types (Shield,
+            # Quantum Drive, ...); ship weapons etc. carry a different tag shape
+            # (e.g. [E-S2], no grade) that would pollute the facets.
+            if cat == "Ship Items" and component_type_from_key(key):
+                cls, tag_size, grade = parse_component_tag(val)
+                size = size_from_key(key) or tag_size
                 if (cls or size or grade) and nm and nm not in attrs:
                     attrs[nm] = (cls, size, grade)
 

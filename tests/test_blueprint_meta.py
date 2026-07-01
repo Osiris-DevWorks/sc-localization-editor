@@ -20,6 +20,7 @@ from src.utils.blueprint_meta import (  # noqa: E402
     clean_mission_title,
     component_type_from_key,
     parse_component_tag,
+    size_from_key,
 )
 
 pytestmark = [pytest.mark.unit, pytest.mark.regression]
@@ -37,6 +38,21 @@ def test_parse_component_tag():
     assert parse_component_tag("[ind-s1-a] Palisade") == ("IND", "S1", "A")
     assert parse_component_tag("Balandin") == (None, None, None)
     assert parse_component_tag("") == (None, None, None)
+
+
+def test_parse_component_tag_robust_to_config(gen_module=None):
+    # #196: robust to the user's configurable separator / order / type element.
+    assert parse_component_tag("[CMP.S1.B.PW] StarHeart") == ("CMP", "S1", "B")
+    assert parse_component_tag("[MIL.S02.C] Foo") == ("MIL", "S2", "C")  # zero-pad stripped
+    # A ship-weapon-style [E-S2] (no grade): class E is a lone letter -> grade,
+    # class None. That's fine — the builder only keeps attrs for typed components.
+    assert parse_component_tag("[E-S2] Gun")[1] == "S2"
+
+
+def test_size_from_key():
+    assert size_from_key("item_NamePOWR_ACOM_S01_StarHeart") == "S1"
+    assert size_from_key("item_NameQDRV_RSI_S02_Hemera") == "S2"
+    assert size_from_key("item_Name_no_size_here") is None
 
 
 def test_component_type_from_key():
