@@ -677,12 +677,21 @@ class AppSettings:
         AppSettings._migrate_tag_config_mapping(category, cfg)
         AppSettings._backfill_new_elements(category, cfg)
         # 1.5.0: commodities gained a second flag (Collection). A stored
-        # single-element config used separator "none", which would mash the
-        # two flags together as "[CFCollection]". Pipe is the intended joiner,
-        # and the separator was meaningless for the old single-element tag, so
-        # upgrading it is safe (#97).
-        if category == "commodities" and cfg.separator == "none":
-            cfg.separator = "pipe"
+        # single-element config used separator "none" (meaningless when there
+        # was only one flag), which post-1.5.0 would mash the two flags into
+        # "[CFCollection]". Upgrade that leftover to "pipe" ONCE (marker-gated)
+        # so existing users don't regress — but never clamp again, so a user
+        # can deliberately choose "none" and have it stick (#97 follow-up).
+        if category == "commodities":
+            marker = "tag_builder/commodities/sep_migrated"
+            if not AppSettings.settings().value(marker, False, type=bool):
+                if cfg.separator == "none":
+                    cfg.separator = "pipe"
+                    AppSettings.settings().setValue(
+                        f"tag_builder/{category}/config", cfg.to_json()
+                    )
+                AppSettings.settings().setValue(marker, True)
+                AppSettings.settings().sync()
         return cfg
 
     @staticmethod
