@@ -34,7 +34,8 @@ def json_backend(tmp_path):
 class TestRouteFormatting:
     def test_render_route_both_single_and_arrow(self):
         assert render_route("A", "B", "gt") == "A > B"
-        assert render_route("A", "B", "arrow") == "A → B"
+        # "->" not U+2192: mobiGlas has no glyph for the real arrow (#200).
+        assert render_route("A", "B", "arrow") == "A -> B"
         assert render_route("A", "B", "to") == "A to B"
         assert render_route("A", "", "gt") == "from A"
         assert render_route("", "B", "gt") == "to B"
@@ -59,8 +60,16 @@ class TestDefaultAndPersistence:
     def test_default_config_shape(self):
         cfg = default_config("mission_titles")
         assert route_enabled(cfg) is True
+        # location_detail defaults to "address" since 2.1.1 (#200): |name
+        # fails to resolve for some mission instances in-game.
         assert (cfg.placement, cfg.route_arrow, cfg.title_separator, cfg.location_detail) \
-            == ("prepend", "gt", "dash", "name")
+            == ("prepend", "gt", "dash", "address")
+
+    def test_from_dict_missing_location_detail_defaults_to_address(self):
+        """Pre-2.1 saved blobs have no location_detail key at all; they must
+        land on the safe |Address default, not the 2.1.0 "name" (#200)."""
+        cfg = TagConfig.from_dict({"elements": [{"kind": "route", "enabled": True}]})
+        assert cfg.location_detail == "address"
 
     def test_route_fields_round_trip(self):
         cfg = default_config("mission_titles")
@@ -71,6 +80,38 @@ class TestDefaultAndPersistence:
         back = TagConfig.from_json(cfg.to_json())
         assert (back.placement, back.route_arrow, back.location_detail, back.title_separator) \
             == ("replace", "arrow", "address", "pipe")
+
+
+class TestLocationDetailMigration:
+    """2.1.1 (#200): a 2.1.0-seeded location_detail "name" flips to "address"
+    exactly once; a deliberate Name pick afterward survives."""
+    _CFG_KEY = "tag_builder/mission_titles/config"
+    _MARKER = "tag_builder/mission_titles/location_detail_migrated"
+
+    def test_seeded_name_flips_to_address(self, json_backend):
+        cfg = default_config("mission_titles")
+        cfg.location_detail = "name"     # what every saved 2.1.0 config holds
+        cfg.placement = "replace"        # other fields must survive the flip
+        AppSettings.set_tag_config("mission_titles", cfg)
+        AppSettings.migrate_mission_titles_location_detail()
+        back = AppSettings.get_tag_config("mission_titles")
+        assert back.location_detail == "address"
+        assert back.placement == "replace"
+        assert json_backend.value(self._MARKER, False, type=bool) is True
+
+    def test_no_saved_config_only_sets_marker(self, json_backend):
+        # Fresh install: nothing to flip, defaults are already address.
+        AppSettings.migrate_mission_titles_location_detail()
+        assert not json_backend.value(self._CFG_KEY, "", type=str)
+        assert json_backend.value(self._MARKER, False, type=bool) is True
+
+    def test_runs_once_so_deliberate_name_survives(self, json_backend):
+        AppSettings.migrate_mission_titles_location_detail()
+        cfg = default_config("mission_titles")
+        cfg.location_detail = "name"     # deliberate post-2.1.1 choice
+        AppSettings.set_tag_config("mission_titles", cfg)
+        AppSettings.migrate_mission_titles_location_detail()
+        assert AppSettings.get_tag_config("mission_titles").location_detail == "name"
 
 
 class TestRouteToggleMigration:
