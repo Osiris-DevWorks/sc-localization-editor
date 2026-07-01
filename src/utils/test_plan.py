@@ -32,12 +32,58 @@ TEST_SECTIONS: list[dict] = [
         ],
     },
     {
-        "title": "Test-build fixes (#185 / #186 / #187 / #189)",
+        "title": "Test-build fix (#186, still under test)",
         "items": [
-            "Restore Backup (More menu): pick a backup and confirm it restores AND the table refreshes with no crash dialog (#185).",
-            "Regenerate, then filter a destroy-satellite mission (e.g. Foxwell); confirm its Hostiles line shows only that mission's own encounter, not a merged roster of sibling contracts (#186).",
-            "Filter a recovery / mercenary mission with a recoverable ship; confirm MISSION DETAILS shows the real spawn lines and NO \"Unknown: 1\" line (#187).",
-            "Strings table: click the Owned column header to sort; confirm owned blueprint items float to the top without needing a search first (#189).",
+            "Regenerate, then filter a security-threat / destroy-satellite mission; confirm its Hostiles line shows only that mission's own encounter, not a merged sibling roster (#186).",
+        ],
+    },
+    {
+        "title": "Blueprints ownership shuttle (Enhancements tab)",
+        "items": [
+            "Generate Enhancements, then open the Enhancements tab: the Blueprints section lists ownable items on the left and owned items on the right.",
+            "Select items on the left, click the right arrow: they move to Owned and gain a blue [Owned] tag in mission POTENTIAL BLUEPRINTS lists.",
+            "Use the search box and the Mission / Type / Class / Size / Grade filters; confirm the available list narrows as expected.",
+            "Move items back with the left arrow; restart the app and confirm the owned list persisted.",
+            "Strings table Owned column: still shows a star and sorts owned-first, but is now read-only (no click-to-toggle).",
+        ],
+    },
+    {
+        "title": "Commodity craft-usage tag + legend",
+        "items": [
+            "Generate Enhancements; open a crafting commodity in-game and confirm it carries a craft-usage tag between CF and Collection, e.g. [CF|QDRV|SHLD].",
+            "Tag Builder > Commodities: change the \"Used To Craft\" style (Short/Medium/Long) and the craft-usage separator; regenerate and confirm the tag updates.",
+            "Confirm the Mining Compendium journal starts with a \"Crafting Tag Key\" legend decoding the codes.",
+        ],
+    },
+    {
+        "title": "Commodity tag separator \"None\" (#97 follow-up)",
+        "items": [
+            "Tag Builder > Commodities: set Separator to None, regenerate; confirm a two-flag commodity renders as [CFCollection] and the choice persists across a restart.",
+        ],
+    },
+    {
+        "title": "Mining Compendium journal revamp",
+        "items": [
+            "In-game Journal > \"Mining Fundamentals #2: Where to Mine\": each mineral shows an underlined name, a blue \"Locations:\" list, and a blue \"Used To Craft:\" list.",
+            "Confirm locations and craft items are one-per-line with dash bullets, alphabetized, with blank lines above each subheader.",
+            "Confirm craft categories read as friendly names (e.g. \"Power Plants\", \"Quantum Drives: 7 items (S1-S3)\"), not raw paths.",
+        ],
+    },
+    {
+        "title": "Commodity descriptions",
+        "items": [
+            "Filter a mineable commodity (e.g. Agricium); its description shows a blue \"Locations:\" list of mining spots above the BLUEPRINT DATA block.",
+            "Confirm a non-mineable / refined commodity has no Locations block, just BLUEPRINT DATA.",
+        ],
+    },
+    {
+        "title": "Mission Titles route tab (#166)",
+        "items": [
+            "Tag Builder > Mission Titles: confirm Enable, Placement (Prepend/Append/Replace), Route arrow, Title separator, and Location detail controls with a live preview.",
+            "With Prepend + \">\" + Name, regenerate; filter a hauling/delivery/courier mission and confirm the title leads with the route (e.g. \"Area18 > Lorville - <original>\").",
+            "Apply to Game and confirm the route resolves to real place names in-game, not raw ~mission(...) text.",
+            "Switch Placement to Replace, regenerate; confirm the title becomes just the route and still keeps its [BP]/[REP] tags.",
+            "Set Location detail to Full address; confirm A-to-B titles show fuller addresses (courier \"from X\" is unaffected).",
         ],
     },
     {
@@ -79,23 +125,6 @@ TEST_SECTIONS: list[dict] = [
         ],
     },
     {
-        "title": "Hostiles toggle + salvage (#162 / #163 / #165)",
-        "items": [
-            "Enhancements tab: confirm the mission-detail toggle is now labelled \"Hostiles\" (was \"Spawns\").",
-            "Uncheck Hostiles, Generate Enhancements; confirm NO mission (including salvage contracts) shows a Hostiles line.",
-            "Re-check Hostiles and regenerate; filter on a Salvage Contractor mission and confirm it shows \"Salvageable Ships\" but NO bogus hostile wave (lawful salvage reads as peaceful).",
-            "Confirm normal combat missions still show their Hostiles counts.",
-        ],
-    },
-    {
-        "title": "Blueprint list tag cleanup (#160)",
-        "items": [
-            "Generate Enhancements, then open a mission with a POTENTIAL BLUEPRINTS list that includes armour / magazines / FPS gear.",
-            "Confirm those items show with NO trailing [S1-A]-style tag (they read as bare names).",
-            "Confirm real ship components still carry their class tag (e.g. [Mil-S1-A]).",
-        ],
-    },
-    {
         "title": "Header style label (#164)",
         "items": [
             "Enhancements tab: the mission header style dropdown reads \"Underline\" / \"Blue text\" (not EM3 / EM4).",
@@ -131,16 +160,6 @@ TEST_SECTIONS: list[dict] = [
             "Generate Enhancements with the \"Ace Pilot Tag\" toggle on.",
             "Filter for ambush/strike missions (e.g. Foxwell) and confirm ace-spawning missions carry an [ACE] title tag (or [ACE?] where only some variants spawn one), alongside [BP]/XP.",
             "Turn the Ace Pilot Tag toggle off, regenerate, and confirm the [ACE] tags disappear.",
-        ],
-    },
-    {
-        "title": "Owned blueprints (#157)",
-        "items": [
-            "Find an item that appears in mission POTENTIAL BLUEPRINTS lists (e.g. an Antium armour piece); its row shows an Owned star in the new Owned column.",
-            "Click the Owned star: it fills, and that item gains a blue [Owned] tag in every mission's POTENTIAL BLUEPRINTS list where it appears.",
-            "Click again to unmark: the [Owned] tag disappears everywhere.",
-            "Restart the app and confirm your owned marks persisted (the [Owned] tags reappear).",
-            "Apply to Game with an item owned, then confirm [Owned] shows in that blueprint list in-game.",
         ],
     },
 ]
