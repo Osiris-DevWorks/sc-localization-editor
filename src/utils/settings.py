@@ -728,9 +728,11 @@ class AppSettings:
     def _backfill_new_elements(category: str, cfg) -> None:
         """Insert element kinds added in a newer version that the stored config
         doesn't have yet (e.g. ``type`` added to components in 1.4.2, ``usage``
-        added to commodities in 2.1). New elements are added disabled so
-        existing output is unchanged, and inserted at their canonical position
-        in ``CATEGORY_ELEMENT_KINDS`` (not appended) so an element added in the
+        added to commodities in 2.1). New elements inherit the default config's
+        enabled state (usually disabled so existing output is unchanged; the
+        commodity ``usage`` element is on by default, so upgraded users pick it
+        up too), and are inserted at their canonical position in
+        ``CATEGORY_ELEMENT_KINDS`` (not appended) so an element added in the
         middle of the order — like ``usage`` between ``label`` and
         ``collection`` — renders in the right place for upgraded users too."""
         from src.utils.tag_builder import (

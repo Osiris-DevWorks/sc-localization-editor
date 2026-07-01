@@ -381,7 +381,7 @@ DEFAULT_TAG_CONFIGS: dict[str, TagConfig] = {
     "commodities": TagConfig(
         elements=[
             ElementSpec("label", True, "short"),        # CF
-            ElementSpec("usage", False, "long"),        # QDRV·SHLD… (off by default)
+            ElementSpec("usage", True, "long"),         # QDRV|SHLD… (on by default)
             ElementSpec("collection", True, "long"),    # Collection
         ],
         separator="pipe",

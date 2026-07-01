@@ -78,9 +78,18 @@ class TestUsageRender:
         assert out == "[CF|QDRVSHLD]"
 
     def test_disabled_usage_element_is_ignored(self):
-        cfg = default_config("commodities")  # usage disabled by default
+        cfg = default_config("commodities")
+        for e in cfg.elements:
+            if e.kind == "usage":
+                e.enabled = False
         out = render_tag(cfg, {"label": "Crafting", "usage": _usage("Quantum Drive")})
         assert out == "[CF]"
+
+    def test_usage_on_by_default(self):
+        cfg = default_config("commodities")
+        assert any(e.kind == "usage" and e.enabled for e in cfg.elements)
+        out = render_tag(cfg, {"label": "Crafting", "usage": _usage("Quantum Drive")})
+        assert out == "[CF|QDRV]"
 
 
 class TestUsageClassifier:
@@ -120,4 +129,8 @@ class TestJournalLegend:
         assert "- QD = Quantum Drive" in gen_module._build_craft_usage_legend(_commodities_cfg(style="med"))
 
     def test_legend_empty_when_usage_disabled(self, gen_module):
-        assert gen_module._build_craft_usage_legend(default_config("commodities")) == ""
+        cfg = default_config("commodities")
+        for e in cfg.elements:
+            if e.kind == "usage":
+                e.enabled = False
+        assert gen_module._build_craft_usage_legend(cfg) == ""
