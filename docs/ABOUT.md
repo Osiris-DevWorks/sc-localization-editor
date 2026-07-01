@@ -26,6 +26,7 @@ Thanks to those who've contributed code to Smart Citizen:
 - **Coerwyn**
 - **denis-coach** (h0use)
 - **scubamount**
+- **hkstrongside**
 
 ## Translators
 

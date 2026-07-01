@@ -202,6 +202,7 @@ Thanks to those who've contributed code to Smart Citizen:
 - [**Coerwyn**](https://github.com/Coerwyn)
 - [**denis-coach**](https://github.com/denis-coach) (also [h0use](https://github.com/h0useRus))
 - [**scubamount**](https://github.com/scubamount)
+- **hkstrongside**
 
 ## Acknowledgments
 
