@@ -132,10 +132,10 @@ class ConfigTab(QWidget):
         self._preview_btn = QPushButton(tr("config.preview_apply_btn"))
         self._preview_btn.setMaximumWidth(150)
         self._preview_btn.setToolTip(
-            "Dry-run summary of what Apply to Game would write — per-source key "
+            "Dry-run summary of what Apply Enhancements would write — per-source key "
             "counts (with Enhancements broken down by category) and a "
             "Modified / Enhanced / Unmodified / New status tally. Nothing is "
-            "written to the game until you click Apply to Game."
+            "written to the game until you click Apply Enhancements."
         )
         self._preview_btn.clicked.connect(self.preview_merge)
         button_layout.addWidget(self._preview_btn)
@@ -957,7 +957,7 @@ class ConfigTab(QWidget):
     # ── Preview ──────────────────────────────────────────────────────────────
 
     def preview_merge(self):
-        """Show a dry-run summary of what Apply to Game would write.
+        """Show a dry-run summary of what Apply Enhancements would write.
 
         Mirrors the post-Apply success dialog so the preview reads as
         a "what will I get" forecast: per-source key counts, with the

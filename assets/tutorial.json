@@ -75,7 +75,7 @@
     },
     {
       "id": "apply",
-      "title": "12. Apply to Game",
+      "title": "12. Apply Enhancements",
       "description": "Apply writes the merged result to the game's global.ini. A timestamped backup of the current global.ini is created first (up to 5 are kept, restorable from Restore Backup).",
       "preferred_side": "below"
     },

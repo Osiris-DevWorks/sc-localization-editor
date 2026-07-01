@@ -30,7 +30,11 @@ from src.models.string_model import _ARMOR_GEAR_WORDS, _FPS_WEAPON_WORDS
 # are keyed by piece (backpack / undersuit / ...) with no "armor" token, so
 # without these they fell into the "Other" type bucket (#195).
 _ARMOR_EXTRA_WORDS = ("backpack", "undersuit", "flightsuit", "torso", "_legs", "_arms")
-from src.utils.owned_items import extract_bp_item_names, normalize_item_name
+from src.utils.owned_items import (
+    BP_SECTION_HEADER,
+    extract_bp_item_names,
+    normalize_item_name,
+)
 
 # Coarse type buckets for non-component blueprint items.
 _TYPE_FPS_WEAPON = "FPS Weapon"
@@ -73,8 +77,6 @@ _DESC_KEY_RE = re.compile(r"^(?P<base>.*)_Desc(?:_(?P<num>\d+))?$", re.IGNORECAS
 
 # Trailing reward tags on a title, e.g. "<EM4>[BP]</EM4> <EM4>[150 REP]</EM4>".
 _TITLE_TAG_RE = re.compile(r"(?:\s*<EM\d>\[[^\]]*\]</EM\d>)+\s*$")
-
-_BP_HEADER = "POTENTIAL BLUEPRINTS"
 
 
 @dataclass(frozen=True)
@@ -210,7 +212,7 @@ def build_blueprint_metadata(entries) -> dict:
             titles[_title_pair_key(tm.group("base"), tm.group("num"))] = \
                 clean_mission_title(val)
 
-        if _BP_HEADER in val.upper():
+        if BP_SECTION_HEADER in val.upper():
             dm = _DESC_KEY_RE.match(key)
             pair = _title_pair_key(dm.group("base"), dm.group("num")) if dm else None
             bp_descs.append((pair, val))

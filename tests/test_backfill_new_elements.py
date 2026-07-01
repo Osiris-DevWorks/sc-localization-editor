@@ -179,3 +179,41 @@ class TestBackfillCommoditiesLabel:
         for key, val in DEFAULT_COMMODITY_LABEL_MAPPING.items():
             assert key in loaded.class_mapping
             assert loaded.class_mapping[key] == val
+
+
+class TestBackfillCommoditiesUsageMidInsert:
+    """2.1 (#166 follow-up): the commodities ``usage`` element was added
+    *between* the existing ``label`` and ``collection`` kinds. A saved pre-2.1
+    config has ``[label, collection]``; backfill must insert ``usage`` in the
+    middle (canonical order ``label, usage, collection``), not append it at the
+    end — otherwise upgraded users' tags render the usage element out of place.
+    """
+
+    def _legacy_label_collection_cfg(self) -> TagConfig:
+        """A pre-2.1 commodities config: the full default minus ``usage``."""
+        cfg = default_config("commodities")
+        cfg.elements = [e for e in cfg.elements if e.kind != "usage"]
+        return cfg
+
+    def test_usage_inserted_between_label_and_collection(self, json_backend):
+        # Sanity: the simulated legacy config really is [label, collection].
+        legacy = self._legacy_label_collection_cfg()
+        assert [e.kind for e in legacy.elements] == ["label", "collection"]
+
+        _save_config(json_backend, "commodities", legacy)
+        loaded = AppSettings.get_tag_config("commodities")
+
+        kinds = [e.kind for e in loaded.elements]
+        assert kinds == ["label", "usage", "collection"], (
+            "usage must land between label and collection, not appended"
+        )
+
+    def test_backfilled_usage_enabled_by_default(self, json_backend):
+        _save_config(json_backend, "commodities", self._legacy_label_collection_cfg())
+        loaded = AppSettings.get_tag_config("commodities")
+
+        usage = next(e for e in loaded.elements if e.kind == "usage")
+        assert usage.enabled is True, (
+            "the commodity usage element ships on by default, so upgraded "
+            "users should pick it up enabled"
+        )

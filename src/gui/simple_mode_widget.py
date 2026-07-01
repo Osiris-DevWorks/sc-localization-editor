@@ -1,7 +1,7 @@
 """Simple-mode landing page (#180).
 
 A deliberately near-empty screen for users who just want the result: one big
-**Generate & Apply to Game** button that runs the whole export with default
+**Apply Enhancements** button that runs the whole export with default
 settings, plus a way back to the full **Advanced** UI. The orchestration lives
 on ``MainWindow`` (`_run_simple_apply`, `_apply_ui_mode`); this widget only
 emits intent.

@@ -4,6 +4,15 @@
 
 On launch, Smart Citizen reloads any customizations from your previous session and checks for your Star Citizen installation — the installer pre-fills this path, but you can change it in the **Config** tab. All stock localization and DataForge data is sourced **directly from your installed `Data.p4k`** (no downloads, no community mirrors), so extracting once is a required first step after install or after any game patch.
 
+## Simple & Advanced Mode
+
+Smart Citizen opens in one of two modes, and you can switch anytime.
+
+- **Simple mode** is a single screen with one big **Apply Enhancements** button. Click it and Smart Citizen runs the whole chain with your current settings — extract, generate, apply — and backs up your game file first. It's the fast path when you just want the enhancements applied and don't need to hand-edit strings.
+- **Advanced mode** is the full app: the strings table, filters, Enhancements tab, Config tab, and everything else in this guide.
+
+Pick your default during install, or flip between them from within the app. Simple mode uses whatever settings you last saved in Advanced.
+
 ## 1. Extract Base Localization from Data.p4k
 
 Open the **Config** tab and click **Extract from Data.p4k**. This unpacks stock `global.ini` plus the DataForge entity XMLs used by the enhancement generator — ships, components, weapons, missions, blueprints, etc.
@@ -61,7 +70,7 @@ Use the **Category** filter to focus on one domain:
 
 ## 7. Apply Changes to Game
 
-Click **Apply to Game** to write your edits to the game installation. A timestamped backup of the current `global.ini` is created in `<data folder>\<channel>\backups\` before anything is overwritten.
+Click **Apply Enhancements** to write your edits to the game installation. A timestamped backup of the current `global.ini` is created in `<data folder>\<channel>\backups\` before anything is overwritten.
 
 Smart Citizen also stamps a small watermark onto the launcher version string (`Frontend_PU_Version`), appending `| Localizations Enhanced with Smart Citizen v{VERSION}`. That's how you can confirm in-game that your loc-pack is active — look at the version label on the Star Citizen main menu. The stamp is rewritten on each apply, so it never piles up across versions.
 
@@ -106,9 +115,12 @@ Want to help translate? Translation status per language is tracked in `languages
 ## Enhancements Tab
 
 - Toggle stat overlays that append numerical stats to descriptions — SCM speed, shield HP, DPS, cargo capacity, mining-laser beam stats (Fracture / Extraction), handheld salvage-tool rates, blueprint pools, mission XP, and more.
+- **Show stats above the description** — flip the stat block to sit at the top of a description instead of the bottom, so the numbers are the first thing you read in-game.
 - Enable or disable each enhancement category independently.
 - Configure the ship favorites prefix character.
-- **Tag Builder** — customize the bracketed tags placed on component, missile, ship-weapon, and commodity names. Reorder elements with ▲/▼, toggle individual elements off, change abbreviation length (`M` / `MIL` / `Military`), pick separator (none, hyphen, space, etc.) and brackets (square, round, none, etc.), and choose whether the tag appears before or after the name. Components also have an optional **Type** element (Shield, Cooler, Power Plant, etc.) — disabled by default. Click **Apply Tag Changes** to save and regenerate.
+- **Blueprints ownership** — mark the crafting blueprints you already own. Owned items get a star (the **Owned** column in blueprint lists), and you can filter the table to just blueprint titles or just blueprint descriptions to find and tag them fast. It's a way to see at a glance, in mission and craft listings, what you still need to hunt down.
+- **Tag Builder** — customize the bracketed tags placed on component, missile, ship-weapon, and commodity names. Reorder elements with ▲/▼, toggle individual elements off, change abbreviation length (`M` / `MIL` / `Military`), pick separator (none, hyphen, space, etc.) and brackets (square, round, none, etc.), and choose whether the tag appears before or after the name. Components also have an optional **Type** element (Shield, Cooler, Power Plant, etc.) — disabled by default. Commodities have a **Usage** element that shows what a commodity's crafting materials feed into. Click **Apply Tag Changes** to save and regenerate.
+- **Mission Titles** (Tag Builder tab) — lead hauling, delivery, and courier mission titles with their route. Pick placement (Prepend, Append, or Replace the title), the route arrow (`>`, `→`, etc.), the title separator, and how much of the location to show, with a live preview. A hauling run reads like `Area18 > Lorville - <original title>` so you can see the job at a glance in the contract list.
 - **Mission Labels** — customize the section headers used in mission enhancement blocks (MISSION DETAILS, POTENTIAL BLUEPRINTS, ITEM REWARDS, BLUEPRINT DATA), the XP label shown on missions without a specific reputation rank (default "Rep"), and the emphasis tag (EM3 = underline, EM4 = color) used for headers.
 - **Mission Details fields** — show or hide each line of the MISSION DETAILS block individually (mission type, difficulty, spawns, reputation, blueprints, and the `[BP]` title tag), so your mission descriptions carry only the data you care about.
 - Click **Generate Enhancements** to extract DataForge data from `Data.p4k` and rebuild the enhancement INI files. Declarative patches under `patches/` are re-applied idempotently on every regen so known CIG data bugs stay fixed without waiting for a game patch.
@@ -121,6 +133,7 @@ Want to help translate? Translation status per language is tracked in `languages
 - **Base Localization (P4K Extraction)** — click **Extract from Data.p4k** to unpack stock localization plus DataForge entity data directly from your installed game. This is the sole source for base strings and enhancement data.
 - **Import INI** — fold an existing INI file into your overrides via the conflict-resolution dialog.
 - **Reset user.ini** — wipe all of your personal edits for the active channel. Prompts for confirmation and auto-backs up the current `user.ini` before clearing it.
+- **Restore user.ini** — roll your personal edits back to an earlier snapshot. Smart Citizen keeps rotating backups of `user.ini` (up to 5, taken automatically before each change), so if an import or edit goes wrong you can pick a previous version and get your strings back. The restore itself is reversible: the current file is snapshotted first.
 
 ## Log Tab
 
@@ -143,6 +156,10 @@ Shows the count of loaded / modified entries and the state of any running backgr
 
 Click the **Tutorial** button on the toolbar at any time to replay the guided tour — a step-by-step walkthrough of the core workflow with on-screen callouts pointing at each control. The tour also runs automatically the first time you launch a new version, so a fresh install never lands cold. Hit **Skip** any time to dismiss it.
 
+## FAQ Tab
+
+The **FAQ** tab answers the questions we get most often, right inside the app — what files Smart Citizen touches, whether you can get banned for using it, why Windows flags the installer, and how to undo your changes. Check there first; if your question isn't covered, the Discord is one click away.
+
 ## Keyboard Shortcuts
 
 - **Ctrl+Shift+C** — Copy filtered rows to clipboard (key=value format).
@@ -151,7 +168,7 @@ Click the **Tutorial** button on the toolbar at any time to replay the guided to
 
 - **Nothing in the table** — Make sure **Extract from Data.p4k** has completed and the post-extract reload has finished, then check the **Log Tab** for parse errors.
 - **Enhancements empty or missing items** — Run **Generate Enhancements** from the Enhancements tab; it needs a DataForge cache (click **Extract from Data.p4k** first if you haven't).
-- **Apply to Game fails** — Confirm the Star Citizen install path in the **Config Tab** and that the game isn't running.
+- **Apply Enhancements fails** — Confirm the Star Citizen install path in the **Config Tab** and that the game isn't running.
 - **Stale data after game update** — Re-run **Extract from Data.p4k**, then regenerate enhancements.
 
 ## Known Issues

@@ -67,7 +67,7 @@ The non-English game strings are community translations:
 ### 🎯 Core Features
 - **Load & Edit**: Load `global.ini` from your Star Citizen installation and customize strings in an intuitive table view
 - **Multi-Channel Support**: LIVE / PTU / EPTU / HOTFIX / TECH-PREVIEW each get their own isolated `user.ini`, cache, backups, and DataForge extraction — switch channels from the Config tab without restarting
-- **Multi-Language Support**: Switch the app and game strings between English, French, and Brazilian Portuguese from the Config tab. Non-English languages layer a community-translated `global.ini` over the English base, with English fallback for anything untranslated. More languages will be exposed as community translations land (see `languages/TRANSLATIONS.md`)
+- **Multi-Language Support**: Switch the app and game strings between English, French, Spanish, and Brazilian Portuguese from the Config tab. Non-English languages layer a community-translated `global.ini` over the English base, with English fallback for anything untranslated. More languages will be exposed as community translations land (see `languages/TRANSLATIONS.md`)
 - **Mission Contracts**: Edit mission contract and briefing text from the dedicated Missions category
 - **Smart Filtering**: Search strings, filter by category (Ships, Ship Items, Missions, Gear, Commodities, Journal, Other), or modification status
 - **Per-Column Filters**: Type directly into filter boxes below each column header for fine-grained searching
@@ -77,6 +77,8 @@ The non-English game strings are community translations:
 - **Restore Backups**: Keep up to 5 backup versions per channel — revert changes anytime with one click
 - **Clear Localization**: Revert your game to vanilla text without losing your saved overrides
 - **Import INI**: Import an existing INI file and resolve conflicts key-by-key with the built-in conflict dialog
+- **Simple & Advanced Mode**: Open to a one-button **Apply Enhancements** screen that runs the whole extract-generate-apply chain with your saved settings, or switch to the full Advanced UI (table, filters, Enhancements, Config) whenever you want to hand-edit. Pick your default at install and flip between them in-app
+- **FAQ Tab**: The questions we hear most, answered right in the app — what files get touched, ban risk, the Windows unrecognized-app warning, and how to undo changes
 - **Guided Tutorial**: A coach-mark tour walks new users through the workflow on first launch of each version — replayable any time from the Tutorial button
 
 ### 🔄 Data Sourcing & Persistence
@@ -92,7 +94,10 @@ The non-English game strings are community translations:
 - **Mission Annotations**: `[BP]` / `[BP?]` blueprint reward tags on titles, plus structured *MISSION DETAILS*, *POTENTIAL BLUEPRINTS*, and *ITEM REWARDS* blocks in descriptions. Reputation tier lines show actual rank names (Rookie, Jr. Contractor, etc.) instead of generic numbering
 - **Journal Cross-References**: Mining Compendium entries get crafting cross-references; commodities used in crafting get a customizable `[CF]` name tag and a list of every blueprint that calls for them
 - **Ship Favorites**: Star a ship to prepend a configurable prefix (default `*`) so favorites sort to the top of the in-game ASOP terminal
-- **Tag Builder**: Customize the bracketed tags on components, missiles, ship weapons, and commodities — reorder elements, change abbreviation length (M / MIL / Military), pick separators and brackets, or place the tag after the name instead of before. Components have an optional Type element (Shield, Cooler, etc.)
+- **Tag Builder**: Customize the bracketed tags on components, missiles, ship weapons, and commodities — reorder elements, change abbreviation length (M / MIL / Military), pick separators and brackets, or place the tag after the name instead of before. Components have an optional Type element (Shield, Cooler, etc.); commodities have a Usage element showing what their crafting materials feed into
+- **Mission Titles**: Lead hauling, delivery, and courier titles with their route (e.g. `Area18 > Lorville`) — configurable placement, arrow, separator, and location detail, with a live preview
+- **Stats Above or Below**: Choose whether a stat block sits at the top or the bottom of the description
+- **Blueprints Ownership**: Mark the crafting blueprints you already own — owned items get a star in an **Owned** column, and blueprint-title / blueprint-description filters help you find and tag them quickly, so you can see at a glance what you still need
 - **Mission Labels**: Rename the section headers (MISSION DETAILS, POTENTIAL BLUEPRINTS, etc.), the XP label, and the emphasis tag used for headers
 - **Declarative CIG Data-Bug Patches**: A patch system applies fixes to known DataForge bugs at extraction time so in-game text reads correctly without waiting on CIG
 - **Selective Categories**: Enable or disable each enhancement category independently from the Enhancements tab
@@ -114,7 +119,7 @@ The non-English game strings are community translations:
 1. **First Launch**: App auto-detects your Star Citizen installation (editable in the **Config** tab)
 2. **Extract**: Click **Extract from Data.p4k** in the Config tab to unpack stock localization + DataForge entity data from your installed game — the strings load into the table automatically when extraction finishes
 3. **Edit Strings**: Use the search and filter tools, then double-click any Custom Value cell to customize text
-4. **Apply**: Click **Apply to Game** — your changes are saved and applied with an automatic backup
+4. **Apply**: Click **Apply Enhancements** — your changes are saved and applied with an automatic backup
 5. **Enhancements (Optional)**: Open the Enhancements tab to enable stat overlays for ships, components, weapons, and mission rewards
 6. **After Game Updates**: Re-run Extract from Data.p4k — your edits reapply automatically
 

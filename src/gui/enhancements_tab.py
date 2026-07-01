@@ -634,7 +634,7 @@ class EnhancementsTab(QWidget):
         self._apply_tag_btn.setToolTip(
             "Save the Components / Missiles / Ship Weapons tag configs and "
             "re-run the enhancement generator. New tags appear in-game after "
-            "the next Apply to game."
+            "the next Apply Enhancements."
         )
         self._apply_tag_btn.clicked.connect(self._apply_tag_builder)
         btn_row.addWidget(self._apply_tag_btn)

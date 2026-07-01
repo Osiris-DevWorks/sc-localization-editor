@@ -26,7 +26,7 @@ TEST_SECTIONS: list[dict] = [
         "items": [
             "Launch the app: it opens to the strings table with no crash dialog.",
             "Config tab: extract DataForge from Data.p4k; the progress bar runs start to finish and the table reloads.",
-            "Edit a string's Custom Value, then Apply to Game; confirm the change shows in-game.",
+            "Edit a string's Custom Value, then Apply Enhancements; confirm the change shows in-game.",
             "Restore Backup (More menu): a previous global.ini is offered and restores cleanly.",
             "Switch language on the Config tab and back; the table reloads without error.",
         ],
@@ -81,7 +81,7 @@ TEST_SECTIONS: list[dict] = [
         "items": [
             "Tag Builder > Mission Titles: confirm Enable, Placement (Prepend/Append/Replace), Route arrow, Title separator, and Location detail controls with a live preview.",
             "With Prepend + \">\" + Name, regenerate; filter a hauling/delivery/courier mission and confirm the title leads with the route (e.g. \"Area18 > Lorville - <original>\").",
-            "Apply to Game and confirm the route resolves to real place names in-game, not raw ~mission(...) text.",
+            "Apply Enhancements and confirm the route resolves to real place names in-game, not raw ~mission(...) text.",
             "Switch Placement to Replace, regenerate; confirm the title becomes just the route and still keeps its [BP]/[REP] tags.",
             "Set Location detail to Full address; confirm A-to-B titles show fuller addresses (courier \"from X\" is unaffected).",
         ],
@@ -106,7 +106,7 @@ TEST_SECTIONS: list[dict] = [
         "title": "Ship sort order for ASOP (#142)",
         "items": [
             "On a Ship row, set a number in the new # column (a 0-99 spin box); 0 clears it.",
-            "Number two or three favourite ships (e.g. 1, 2, 3) and Apply to Game; in-game the name reads like \"01-ShipName\" (number, dash, name).",
+            "Number two or three favourite ships (e.g. 1, 2, 3) and Apply Enhancements; in-game the name reads like \"01-ShipName\" (number, dash, name).",
             "In-game ASOP: confirm the numbered ships sort in that order (01 before 02 before 10).",
             "Click the # column header to sort: numbered ships come first, ascending.",
             "On a ship whose name starts with digits (e.g. 300i, 600i, 890 Jump), confirm the # column is BLANK until you set a number (no phantom order).",

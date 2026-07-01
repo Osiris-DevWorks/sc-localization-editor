@@ -847,7 +847,7 @@
       "at": ""
     },
     "clear_localization_done_body": {
-      "ht": "Custom localization removed.\nThe game will now use its default text.\n\nTo re-apply your overrides and stat descriptions, click Apply to Game.",
+      "ht": "Custom localization removed.\nThe game will now use its default text.\n\nTo re-apply your overrides and stat descriptions, click Apply Enhancements.",
       "at": ""
     },
     "clear_localization_status": {
@@ -883,7 +883,7 @@
       "at": ""
     },
     "nothing_to_export_body": {
-      "ht": "No applied global.ini was found in the game’s localization directory.\n\nClick ‘Apply to Game’ first to write your customizations, then Export to package them for sharing.",
+      "ht": "No applied global.ini was found in the game’s localization directory.\n\nClick ‘Apply Enhancements’ first to write your customizations, then Export to package them for sharing.",
       "at": ""
     },
     "export_loc_pack_title": {
