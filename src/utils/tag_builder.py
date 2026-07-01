@@ -32,7 +32,7 @@ CATEGORY_ELEMENT_KINDS: dict[str, tuple[str, ...]] = {
     "components":   ("class", "size", "grade", "type"),
     "missiles":     ("ordinance", "size"),
     "ship_weapons": ("damage", "size"),
-    "commodities":  ("label", "collection"),
+    "commodities":  ("label", "usage", "collection"),
 }
 
 
@@ -81,6 +81,11 @@ STYLES_COLLECTION: tuple[tuple[str, str], ...] = (
     ("med",   "Medium (Collect)"),
     ("long",  "Long (Collection)"),
 )
+STYLES_USAGE: tuple[tuple[str, str], ...] = (
+    ("short", "Short (Q)"),
+    ("med",   "Medium (QD)"),
+    ("long",  "Long (QDRV)"),
+)
 
 STYLES_BY_KIND: dict[str, tuple[tuple[str, str], ...]] = {
     "class":      STYLES_CLASS,
@@ -91,6 +96,7 @@ STYLES_BY_KIND: dict[str, tuple[tuple[str, str], ...]] = {
     "type":       STYLES_TYPE,
     "label":      STYLES_LABEL,
     "collection": STYLES_COLLECTION,
+    "usage":      STYLES_USAGE,
 }
 
 # Human-friendly element kind labels for the UI.
@@ -102,6 +108,7 @@ ELEMENT_LABELS: dict[str, str] = {
     "damage":    "Damage type",
     "type":       "Type",
     "label":      "Label",
+    "usage":      "Used To Craft",
     "collection": "Collection",
 }
 
@@ -197,6 +204,42 @@ DEFAULT_COMMODITY_COLLECTION_MAPPING: dict[str, tuple[str, str, str]] = {
     "Collection": ("Col", "Collect", "Collection"),
 }
 
+# Craft-usage categories: the item groups a commodity's crafting materials feed
+# into (the "usage" element between CF and Collection). Single source of truth
+# for the category name, its (short, med, long) codes, and its legend group —
+# shared by the tag mapping AND the generator's raw-path classifier
+# (_craft_usage_key) so the two can't drift when CIG adds a category. The name
+# is the mapping key, so the classifier MUST return these exact strings or
+# _style_value would surface the raw name unstyled.
+CRAFT_USAGE_CATEGORIES: tuple[tuple[str, str, str, str, str], ...] = (
+    # (name, short, med, long, legend group)
+    ("Power Plant",              "P",  "PP",  "POWR", "Ship Components"),
+    ("Cooler",                   "C",  "CL",  "COOL", "Ship Components"),
+    ("Shield",                   "S",  "SH",  "SHLD", "Ship Components"),
+    ("Radar",                    "R",  "RD",  "RADR", "Ship Components"),
+    ("Quantum Drive",            "Q",  "QD",  "QDRV", "Ship Components"),
+    ("Mining Laser",             "M",  "ML",  "MINE", "Ship Components"),
+    ("Tractor Beam",             "T",  "TB",  "TRAC", "Ship Components"),
+    ("Salvage Module",           "SV", "SLV", "SALV", "Ship Components"),
+    ("Refuel Nozzle",            "F",  "RF",  "FUEL", "Ship Components"),
+    ("Ship Weapon (Ballistic)",  "B",  "BW",  "BGUN", "Ship Components"),
+    ("Ship Weapon (Energy)",     "E",  "EW",  "EGUN", "Ship Components"),
+    ("Ship Weapon (Distortion)", "D",  "DW",  "DGUN", "Ship Components"),
+    ("FPS Weapon",               "G",  "FW",  "FPSW", "FPS Gear"),
+    ("Ammo",                     "A",  "AM",  "AMMO", "FPS Gear"),
+    ("Armor",                    "AR", "ARM", "ARMR", "FPS Gear"),
+    ("Mission Item",             "MI", "MIT", "MITM", "Other"),
+)
+
+DEFAULT_COMMODITY_USAGE_MAPPING: dict[str, tuple[str, str, str]] = {
+    name: (short, med, long) for name, short, med, long, _group in CRAFT_USAGE_CATEGORIES
+}
+
+# The literal separator used INSIDE a values-dict "usage" entry to delimit the
+# category-name list (chosen so it can't collide with a category name). Not the
+# rendered separator — that's TagConfig.usage_separator.
+USAGE_INPUT_SEP = "\x1f"
+
 DEFAULT_KIND_MAPPINGS: dict[str, dict[str, tuple[str, str, str]]] = {
     "class":     DEFAULT_COMPONENT_CLASS_MAPPING,
     "type":      DEFAULT_COMPONENT_TYPE_MAPPING,
@@ -204,7 +247,12 @@ DEFAULT_KIND_MAPPINGS: dict[str, dict[str, tuple[str, str, str]]] = {
     "damage":    DEFAULT_SHIP_WEAPON_DAMAGE_MAPPING,
     "label":     DEFAULT_COMMODITY_LABEL_MAPPING,
     "collection": DEFAULT_COMMODITY_COLLECTION_MAPPING,
+    "usage":      DEFAULT_COMMODITY_USAGE_MAPPING,
 }
+
+# Element kinds that render a *list* of mapped values (joined by the config's
+# usage_separator) rather than a single value.
+MULTI_VALUE_KINDS: frozenset[str] = frozenset({"usage"})
 
 # Element kinds whose value resolves through a variant mapping (vs. derived
 # kinds like size/grade). Single source of truth — the renderer and the UI's
@@ -231,10 +279,13 @@ PLACEMENTS: tuple[tuple[str, str], ...] = (
 @dataclass
 class TagConfig:
     elements: list[ElementSpec] = field(default_factory=list)
-    separator: str = "hyphen"      # key from SEPARATORS
+    separator: str = "hyphen"      # key from SEPARATORS (between elements)
     enclosing: str = "square"      # key from ENCLOSINGS
     placement: str = "prepend"     # one of "prepend" / "append"
     class_mapping: dict[str, tuple[str, str, str]] = field(default_factory=dict)
+    # Separator INSIDE a multi-value element (the commodity "usage" list),
+    # independent of `separator`. Key from SEPARATORS. Only commodities use it.
+    usage_separator: str = "pipe"
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -273,6 +324,7 @@ class TagConfig:
             enclosing=data.get("enclosing", "square") or "square",
             placement=placement,
             class_mapping=mapping,
+            usage_separator=data.get("usage_separator", "pipe") or "pipe",
         )
 
     @classmethod
@@ -328,15 +380,18 @@ DEFAULT_TAG_CONFIGS: dict[str, TagConfig] = {
     # the pre-1.5.0 single-label default.
     "commodities": TagConfig(
         elements=[
-            ElementSpec("label", True, "short"),       # CF
-            ElementSpec("collection", True, "long"),   # Collection
+            ElementSpec("label", True, "short"),        # CF
+            ElementSpec("usage", False, "long"),        # QDRV·SHLD… (off by default)
+            ElementSpec("collection", True, "long"),    # Collection
         ],
         separator="pipe",
         enclosing="square",
         placement="append",
+        usage_separator="pipe",
         class_mapping={
             **DEFAULT_COMMODITY_LABEL_MAPPING,
             **DEFAULT_COMMODITY_COLLECTION_MAPPING,
+            **DEFAULT_COMMODITY_USAGE_MAPPING,
         },
     ),
 }
@@ -351,6 +406,7 @@ def default_config(category: str) -> TagConfig:
         enclosing=src.enclosing,
         placement=src.placement,
         class_mapping=dict(src.class_mapping),
+        usage_separator=src.usage_separator,
     )
 
 
@@ -409,9 +465,23 @@ def render_tag(config: TagConfig, values: dict[str, str]) -> str:
     sep = _SEPARATOR_BY_KEY.get(config.separator, "-")
     open_c, close_c = _ENCLOSING_BY_KEY.get(config.enclosing, ("[", "]"))
 
+    usage_sep = _SEPARATOR_BY_KEY.get(config.usage_separator, "|")
+
     parts: list[str] = []
     for el in config.elements:
         if not el.enabled:
+            continue
+        if el.kind in MULTI_VALUE_KINDS:
+            # A list element: the value is USAGE_INPUT_SEP-joined category
+            # names; style each and join with the element's own separator.
+            raw = str(values.get(el.kind, "") or "")
+            styled_vals = [
+                _style_value(el.kind, el.style or "", name, config.class_mapping)
+                for name in raw.split(USAGE_INPUT_SEP) if name
+            ]
+            styled_vals = [v for v in styled_vals if v]
+            if styled_vals:
+                parts.append(usage_sep.join(styled_vals))
             continue
         raw = str(values.get(el.kind, "") or "")
         styled = _style_value(el.kind, el.style or "", raw, config.class_mapping)

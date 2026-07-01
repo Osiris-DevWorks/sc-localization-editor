@@ -45,14 +45,18 @@ try:
     if str(_gen_root) not in sys.path:
         sys.path.insert(0, str(_gen_root))
     from src.utils.tag_builder import (
-        DAMAGE_LABEL_TO_MAPPING_KEY, DEFAULT_COMPONENT_CLASS_MAPPING,
-        DEFAULT_TAG_CONFIGS, TagConfig, render_tag,
+        CRAFT_USAGE_CATEGORIES, DAMAGE_LABEL_TO_MAPPING_KEY,
+        DEFAULT_COMMODITY_USAGE_MAPPING, DEFAULT_COMPONENT_CLASS_MAPPING,
+        DEFAULT_TAG_CONFIGS, TagConfig, USAGE_INPUT_SEP, render_tag,
     )
 except ImportError:  # pragma: no cover — only triggers if src/ is removed
+    CRAFT_USAGE_CATEGORIES = ()  # type: ignore[assignment]
     DAMAGE_LABEL_TO_MAPPING_KEY = {}  # type: ignore[assignment]
+    DEFAULT_COMMODITY_USAGE_MAPPING = {}  # type: ignore[assignment]
     DEFAULT_COMPONENT_CLASS_MAPPING = {}  # type: ignore[assignment]
     DEFAULT_TAG_CONFIGS = {}  # type: ignore[assignment]
     TagConfig = None  # type: ignore[assignment]
+    USAGE_INPUT_SEP = "\x1f"  # type: ignore[assignment]
     render_tag = None  # type: ignore[assignment]
 
 
@@ -3578,6 +3582,82 @@ def _humanize_craft_category(cat: str) -> str:
     return parts[-1].replace("_", " ").title()
 
 
+def _craft_usage_key(category_path: str):
+    """Classify a raw blueprint category path into a craft-usage category name
+    (a key of tag_builder.DEFAULT_COMMODITY_USAGE_MAPPING), or None to skip.
+
+    This is the tag-side classifier. It is finer-grained than the journal's
+    ``_humanize_craft_category`` on purpose (ship weapons split by damage type),
+    but both read the same ``crafting/…`` path vocabulary — keep them in sync
+    when CIG adds a category. Returns the exact mapping-key name so render_tag
+    styles it (a mismatch would surface the raw name unstyled).
+    """
+    p = (category_path or "").lower()
+    if "$templates" in p:
+        return None
+    if "quantumdrive" in p:
+        return "Quantum Drive"
+    if "powerplant" in p:
+        return "Power Plant"
+    if "cooler" in p:
+        return "Cooler"
+    if "/shield" in p:
+        return "Shield"
+    if "/radar" in p:
+        return "Radar"
+    if "mininglaser" in p:
+        return "Mining Laser"
+    if "tractorbeam" in p:
+        return "Tractor Beam"
+    if "/salvage" in p:
+        return "Salvage Module"
+    if "nozzle" in p or "refuelling" in p:
+        return "Refuel Nozzle"
+    if "weapons/ballistic" in p:
+        return "Ship Weapon (Ballistic)"
+    if "weapons/laser" in p:
+        return "Ship Weapon (Energy)"
+    if "weapons/distortion" in p:
+        return "Ship Weapon (Distortion)"
+    if "fpsgear/weapons" in p:
+        return "FPS Weapon"
+    if "ammo" in p:
+        return "Ammo"
+    if "armour" in p or "armor" in p:
+        return "Armor"
+    if "missionitems" in p:
+        return "Mission Item"
+    return None
+
+
+def _build_craft_usage_legend(cfg) -> str:
+    """Legend block decoding the craft-usage codes, for the top of the Mining
+    Compendium. Empty string when the commodity ``usage`` element is disabled
+    (no codes appear in tags, so no key is needed). Reflects the active usage
+    style (short/med/long) and the config's mapping so user edits carry over."""
+    if cfg is None or not getattr(cfg, "elements", None):
+        return ""
+    usage_el = next((e for e in cfg.elements if e.kind == "usage" and e.enabled), None)
+    if usage_el is None or not CRAFT_USAGE_CATEGORIES:
+        return ""
+    idx = {"short": 0, "med": 1, "long": 2}.get(usage_el.style or "long", 2)
+    mapping = getattr(cfg, "class_mapping", None) or {}
+    groups: dict[str, list[str]] = {}
+    for name, s, m, long, group in CRAFT_USAGE_CATEGORIES:
+        variants = mapping.get(name) or DEFAULT_COMMODITY_USAGE_MAPPING.get(name, (s, m, long))
+        code = variants[idx] if idx < len(variants) else variants[0]
+        groups.setdefault(group, []).append(f"- {code} = {name}")
+    parts = ["<EM3>Crafting Tag Key</EM3>"]
+    for group in ("Ship Components", "FPS Gear", "Other"):
+        rows = groups.get(group)
+        if not rows:
+            continue
+        parts.append("")
+        parts.append(f"<EM4>{group}:</EM4>")
+        parts.extend(rows)
+    return "\\n".join(parts)
+
+
 def _qd_size_range(sizes: list[int]) -> str:
     """Render a sorted list of quantum-drive sizes as "S3", "S1-S3", or
     "S1, S3" (compact contiguous range, else comma list)."""
@@ -3695,18 +3775,24 @@ COLLECTION_ITEM_KEYS: frozenset[str] = frozenset({
 })
 
 
-def _commodity_tag(cfg, *, crafting: bool, collection: bool) -> str:
+def _commodity_tag(cfg, *, crafting: bool, collection: bool,
+                   usage_keys: "list[str] | None" = None) -> str:
     """Render the commodity name tag for the applicable flags, wrapped in EM4.
 
     Builds the values dict from which flags apply and lets render_tag honour
     the user's config (element enabled-state, order, separator, style). An
     item that is both crafting and collection yields e.g. ``<EM4>[CF|
     Collection]</EM4>``; a single-flag item drops the empty flag and stays
-    ``<EM4>[CF]</EM4>`` / ``<EM4>[Collection]</EM4>``. Returns "" when no flag
-    resolves (e.g. the user disabled both elements)."""
+    ``<EM4>[CF]</EM4>`` / ``<EM4>[Collection]</EM4>``. When *usage_keys* is
+    given (the craft-usage categories this commodity feeds) and the config's
+    ``usage`` element is enabled, they render between CF and Collection, e.g.
+    ``<EM4>[CF|QDRV|SHLD|Collection]</EM4>``. Returns "" when no flag resolves
+    (e.g. the user disabled every element)."""
     values: dict[str, str] = {}
     if crafting:
         values["label"] = "Crafting"
+    if usage_keys:
+        values["usage"] = USAGE_INPUT_SEP.join(usage_keys)
     if collection:
         values["collection"] = "Collection"
     if not values:
@@ -3825,6 +3911,10 @@ def scan_crafting_blueprints(
         condensed = _condense_crafted_items(commodity_items[commodity])
         bp_block = "\\n".join(f"- {line}" for line in condensed)
         enhancements_block = f"<{header_em_tag}>{blueprint_data_header}</{header_em_tag}>\\n{bp_block}"
+        # Craft-usage categories this commodity feeds (for the usage tag element).
+        usage_keys = sorted({
+            k for cat, _ in commodity_items[commodity] if (k := _craft_usage_key(cat))
+        })
 
         for name_key, desc_key in pairs:
             base_name = loc.get(name_key, "")
@@ -3834,6 +3924,7 @@ def scan_crafting_blueprints(
                 # Collection-mission objective → "[CF|Collection]" (#97).
                 tag = _commodity_tag(
                     cfg, crafting=True, collection=name_key in COLLECTION_ITEM_KEYS,
+                    usage_keys=usage_keys,
                 )
                 out[name_key] = _place_commodity_tag(base_name, tag, cfg) if tag else base_name
 
@@ -3930,6 +4021,12 @@ def scan_crafting_blueprints(
                 augmented_lines.append("\\n".join(block))
             else:
                 augmented_lines.append(para)
+
+        # Prepend the craft-usage code legend when the usage tag element is on
+        # (otherwise no codes appear in commodity tags, so no key is needed).
+        legend = _build_craft_usage_legend(tag_config or DEFAULT_TAG_CONFIGS.get("commodities"))
+        if legend:
+            augmented_lines.insert(0, legend)
 
         out_journal[journal_content_key] = "\\n\\n".join(augmented_lines)
         logger.info(f"Journal: augmented Mining Compendium with crafting data for {len(mineral_crafting)} minerals")

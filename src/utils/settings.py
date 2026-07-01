@@ -726,9 +726,13 @@ class AppSettings:
 
     @staticmethod
     def _backfill_new_elements(category: str, cfg) -> None:
-        """Append element kinds added in a newer version that the stored
-        config doesn't have yet (e.g. ``type`` added to components in 1.4.2).
-        New elements are appended disabled so existing output is unchanged."""
+        """Insert element kinds added in a newer version that the stored config
+        doesn't have yet (e.g. ``type`` added to components in 1.4.2, ``usage``
+        added to commodities in 2.1). New elements are added disabled so
+        existing output is unchanged, and inserted at their canonical position
+        in ``CATEGORY_ELEMENT_KINDS`` (not appended) so an element added in the
+        middle of the order — like ``usage`` between ``label`` and
+        ``collection`` — renders in the right place for upgraded users too."""
         from src.utils.tag_builder import (
             CATEGORY_ELEMENT_KINDS, DEFAULT_TAG_CONFIGS, DEFAULT_KIND_MAPPINGS,
             ElementSpec,
@@ -736,16 +740,24 @@ class AppSettings:
         expected_kinds = CATEGORY_ELEMENT_KINDS.get(category, ())
         existing_kinds = {e.kind for e in cfg.elements}
         defaults = DEFAULT_TAG_CONFIGS.get(category)
-        for kind in expected_kinds:
+        for pos, kind in enumerate(expected_kinds):
             if kind not in existing_kinds:
                 default_spec = None
                 if defaults:
                     default_spec = next((e for e in defaults.elements if e.kind == kind), None)
-                cfg.elements.append(ElementSpec(
+                new_spec = ElementSpec(
                     kind=kind,
                     enabled=default_spec.enabled if default_spec else False,
                     style=default_spec.style if default_spec else "",
-                ))
+                )
+                # Insert just after the last already-present element that
+                # precedes `kind` in canonical order; falls back to `pos`.
+                preceding = {k for k in expected_kinds[:pos]}
+                insert_at = 0
+                for i, el in enumerate(cfg.elements):
+                    if el.kind in preceding:
+                        insert_at = i + 1
+                cfg.elements.insert(insert_at, new_spec)
             kind_mapping = DEFAULT_KIND_MAPPINGS.get(kind, {})
             for key, val in kind_mapping.items():
                 if key not in cfg.class_mapping:

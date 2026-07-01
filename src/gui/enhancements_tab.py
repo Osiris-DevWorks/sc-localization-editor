@@ -14,8 +14,8 @@ from src.utils.i18n import tr
 from src.utils.settings import AppSettings
 from src.utils.tag_builder import (
     CATEGORIES, ELEMENT_LABELS, ENCLOSINGS, MAPPED_KIND_NAMES,
-    PLACEMENTS, SEPARATORS, STYLES_BY_KIND, TagConfig, default_config,
-    render_tag,
+    PLACEMENTS, SEPARATORS, STYLES_BY_KIND, TagConfig, USAGE_INPUT_SEP,
+    default_config, render_tag,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,9 @@ _PREVIEW_VALUES: dict[str, dict[str, str]] = {
     "components":   {"class": "Military", "size": "2", "grade": "A", "type": "Shield Generator"},
     "missiles":     {"ordinance": "Infrared", "size": "1"},
     "ship_weapons": {"damage": "Energy",   "size": "2"},
-    "commodities":  {"label": "Crafting", "collection": "Collection"},
+    "commodities":  {"label": "Crafting",
+                     "usage": USAGE_INPUT_SEP.join(["Quantum Drive", "Shield"]),
+                     "collection": "Collection"},
 }
 _PREVIEW_NAMES: dict[str, str] = {
     "components":   "FR-76",
@@ -1232,6 +1234,18 @@ class _TagBuilderPage(QWidget):
         self.placement_combo.currentIndexChanged.connect(self._on_placement_changed)
         ctrl_grid.addWidget(self.placement_combo, 2, 1)
 
+        # Commodities get a second separator: the one used INSIDE the multi-value
+        # "Used To Craft" element, independent of the element separator above.
+        self.usage_sep_combo = None
+        if self.category == "commodities":
+            ctrl_grid.addWidget(QLabel("Craft-usage separator:"), 3, 0)
+            self.usage_sep_combo = QComboBox()
+            for key, label, _ in SEPARATORS:
+                self.usage_sep_combo.addItem(label, userData=key)
+            self._select_combo(self.usage_sep_combo, config.usage_separator)
+            self.usage_sep_combo.currentIndexChanged.connect(self._on_usage_sep_changed)
+            ctrl_grid.addWidget(self.usage_sep_combo, 3, 1)
+
         right.addLayout(ctrl_grid)
 
         self.preview_label = QLabel()
@@ -1334,6 +1348,12 @@ class _TagBuilderPage(QWidget):
             self.config.placement = data
             self._refresh_preview()
 
+    def _on_usage_sep_changed(self, _idx: int):
+        data = self.usage_sep_combo.currentData()
+        if data is not None:
+            self.config.usage_separator = data
+            self._refresh_preview()
+
     # ── Mapping editor ───────────────────────────────────────────────────
 
     def _open_mapping_dialog(self, kind: str | None = None):
@@ -1342,13 +1362,19 @@ class _TagBuilderPage(QWidget):
         Filters the shared class_mapping to only the keys belonging to
         *kind* so the user sees Class entries OR Type entries, not both.
         On accept, merges the edited subset back into the full mapping."""
-        from src.utils.tag_builder import DEFAULT_KIND_MAPPINGS
+        from src.utils.tag_builder import CATEGORY_ELEMENT_KINDS, DEFAULT_KIND_MAPPINGS
         kind_defaults = DEFAULT_KIND_MAPPINGS.get(kind, {})
-        # Keys that belong to OTHER kinds — exclude them from this dialog.
+        # Keys that belong to OTHER kinds *in this category* — exclude them from
+        # this dialog. Scoped to the category (not all kinds globally) because
+        # some keys collide across categories: component "type" and commodity
+        # "usage" both map "Power Plant" / "Cooler" / "Quantum Drive" / "Radar"
+        # with different codes, so a global exclusion would hide those rows when
+        # editing commodity usage.
+        category_kinds = set(CATEGORY_ELEMENT_KINDS.get(self.category, ()))
         other_keys = set()
-        for other_kind, other_map in DEFAULT_KIND_MAPPINGS.items():
+        for other_kind in category_kinds:
             if other_kind != kind:
-                other_keys.update(other_map.keys())
+                other_keys.update(DEFAULT_KIND_MAPPINGS.get(other_kind, {}).keys())
         kind_mapping = {k: v for k, v in self.config.class_mapping.items() if k not in other_keys}
 
         kind_label = ELEMENT_LABELS.get(kind, kind or self.category)
@@ -1388,6 +1414,8 @@ class _TagBuilderPage(QWidget):
         self._select_combo(self.sep_combo, fresh.separator)
         self._select_combo(self.enc_combo, fresh.enclosing)
         self._select_combo(self.placement_combo, fresh.placement)
+        if self.usage_sep_combo is not None:
+            self._select_combo(self.usage_sep_combo, fresh.usage_separator)
         self._repopulate_list()
         self._refresh_preview()
 
