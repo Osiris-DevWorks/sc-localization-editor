@@ -659,12 +659,12 @@ class TestSpawnGatingInEnhancementsMission:
         )
 
     def test_show_spawns_true_emits_hostiles(self, gen_module):
-        body = gen_module.enhancements_mission(self._mission(), show_spawns=True)
+        body = gen_module.enhancements_mission(self._mission(), show_fields={"spawns": True})
         assert "Hostiles:" in body and "Pirates" in body
 
     def test_show_spawns_false_drops_all_spawn_lines(self, gen_module):
         # #163: with the Hostiles toggle off, no spawn bucket is emitted.
-        body = gen_module.enhancements_mission(self._mission(), show_spawns=False)
+        body = gen_module.enhancements_mission(self._mission(), show_fields={"spawns": False})
         assert "Hostiles:" not in body
         assert "Salvageable Ships" not in body
 
@@ -674,7 +674,7 @@ class TestSpawnGatingInEnhancementsMission:
         root = self._mission()
         key = gen_module._mission_loc_key(root)
         body = gen_module.enhancements_mission(
-            root, show_spawns=True, spawn_ambiguous_keys={key}
+            root, spawn_ambiguous_keys={key}
         )
         assert "Hostiles:" not in body
         assert "Salvageable Ships" in body

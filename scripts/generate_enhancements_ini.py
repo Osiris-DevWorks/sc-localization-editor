@@ -795,13 +795,10 @@ def _component_name_tag(desc_value: str, root: ET.Element | None = None,
     if not type_abbrev and class_name:
         type_abbrev = _ITEM_TYPE_ABBREV.get(class_name)
 
-    if not (type_abbrev or grade_letter):
+    if not type_abbrev:
         return None
 
-    parts: list[str] = []
-    if type_abbrev:
-        parts.append(type_abbrev)
-    parts.append(f"S{size}")
+    parts: list[str] = [type_abbrev, f"S{size}"]
     if grade_letter:
         parts.append(grade_letter)
     return f"[{'-'.join(parts)}]"
@@ -2608,7 +2605,7 @@ def _extract_mission_flags(root: ET.Element) -> list[str]:
 
 def enhancements_mission(root: ET.Element, reputation_lookup: dict[str, int] | None = None,
                          rep_xp_label: str = _DEFAULT_REP_XP_LABEL,
-                         show_spawns: bool = True,
+                         show_fields: "dict | None" = None,
                          spawn_ambiguous_keys: "set[str] | None" = None) -> str:
     """Extract mission/contract reward stats (aUEC + Reputation XP) and flags.
 
@@ -2621,25 +2618,29 @@ def enhancements_mission(root: ET.Element, reputation_lookup: dict[str, int] | N
     lines = []
     reputation_lookup = reputation_lookup or {}
 
+    def _show(f: str) -> bool:
+        return bool((show_fields or {}).get(f, True))
+
     try:
         loc_key = _mission_loc_key(root) or _loc_key(root)
         lines.append(f"<EM4>Engagement Type:</EM4> {_classify_mission_engagement(loc_key)}")
 
         flags = _extract_mission_flags(root)
-        lines.append(f"<EM4>Mission Type:</EM4> {', '.join(flags) if flags else 'Standard'}")
+        if _show("mission_type"):
+            lines.append(f"<EM4>Mission Type:</EM4> {', '.join(flags) if flags else 'Standard'}")
 
         difficulty = _extract_difficulty(root)
-        if difficulty:
+        if difficulty and _show("difficulty"):
             lines.append(f"<EM4>Difficulty (1-7):</EM4> {difficulty}")
 
         total_rep_xp = _extract_mission_xp(root, reputation_lookup)
-        if total_rep_xp > 0:
+        if total_rep_xp > 0 and _show("reputation"):
             lines.append(f"<EM4>{rep_xp_label}:</EM4> +{total_rep_xp:,}")
 
         # Extract spawn/wave counts — bucketed Hostiles / Friendlies /
         # Objectives / Unknown rather than the pre-1.4.1 single-tally
         # Enemies + Non-hostiles. Empty buckets are dropped by the formatter.
-        # #163: gated by the Hostiles mission-detail toggle. The contractgen
+        # #163: gated by per-field show_fields (Hostiles toggle). The contractgen
         # path gates this too (via _show("spawns")); pu_missions / entities
         # missions reach the table through here, so without the gate salvage
         # contracts kept showing hostiles after the user turned them off.
@@ -2649,7 +2650,7 @@ def enhancements_mission(root: ET.Element, reputation_lookup: dict[str, int] | N
         # — a single body can't honestly show one count for both. The
         # consistent buckets (e.g. Friendlies "Salvageable Ships") still show.
         _ambiguous = loc_key in spawn_ambiguous_keys if spawn_ambiguous_keys else False
-        if show_spawns:
+        if _show("spawns"):
             _bd = _extract_spawn_counts(root)
             if _ambiguous:
                 _bd[SPAWN_HOSTILE] = {}
@@ -4504,6 +4505,56 @@ def _armor_stats_block(armor_root: ET.Element) -> str:
     return "\\n".join(lines)
 
 
+# ── Earnable ship name overrides ─────────────────────────────────────────────
+# One-off vehicle_Name* renames for ships only earnable in-game (exec hangar
+# PYX ships and Wikelo WIK ships), where CIG's loc key doesn't distinguish the
+# variant from the pledge-store version. Applied at write time when the
+# "Standardize earnable ship names" option is enabled.
+# Empty-string values are placeholders and are skipped — they won't overwrite
+# the existing name.
+EARNABLE_SHIP_NAME_OVERRIDES: dict[str, str] = {
+    "vehicle_NameANVL_Hornet_F7A_Mk2_PYAM_Exec":             "Anvil F7A Hornet Mk II PYX",
+    "vehicle_NameDRAK_Cutlass_Black_PYAM_Exec":               "Drake Cutlass Black PYX",
+    "vehicle_NameRSI_Meteor_Collector_Military":               "RSI Meteor Collector Military PYX",
+    "vehicle_NameANVL_Lightning_F8C_PYAM_Exec":               "Anvil F8C Lightning PYX",
+    "vehicle_NameDRAK_Corsair_PYAM_Exec":                     "Drake Corsair PYX",
+    "vehicle_NameGAMA_Syulen_PYAM_Exec":                      "Gama Syulen PYX",
+    "TheCollector_ShipMod_MISC_Fortune_VehicleName":          "MISC Fortune WIK",
+    "TheCollector_ShipMod_MRAI_GuardianQI_VehicleName":       "Mirai Guardian QI WIK",
+    "TheCollector_ShipMod_MRAI_Pulse_VehicleName":            "Mirai Pulse WIK",
+    "TheCollector_ShipMod_URSA_Medivac_VehicleName":          "RSI Ursa Medivac WIK",
+    "TheCollector_ShipMod_XIAN_Nox_VehicleName":              "Aopoa Nox WIK",
+    "vehicle_NameCRUS_Spirit_C1_Collector_Civilian":           "Crusader C1 Spirit WIK",
+    "vehicle_NameRSI_Polaris_Collector_Military":              "RSI Polaris WIK",
+    "vehicle_NameAEGS_Firebird_Collector_Milt":                "Aegis Sabre Firebird WIK War",
+    "vehicle_NameAEGS_Idris_P_Collector_Military":             "Aegis Idris-P WIK War",
+    "vehicle_NameANVL_Asgard_Collector_Military":              "",  # placeholder — skipped
+    "vehicle_NameANVL_Lightning_F8C_Collector_Military":       "Anvil F8C Lightning WIK War",
+    "vehicle_NameCRUS_Starfighter_Inferno_Collector_Military": "Crusader Ares Star Fighter Inferno WIK War",
+    "vehicle_NameCRUS_Starlifter_A2_Collector_Military":       "Crusader A2 Hercules Starlifter WIK War",
+    "vehicle_NameKRIG_L21_Wolf_Collector_Military":            "Kruger L-21 Wolf WIK War",
+    "vehicle_NameKRIG_L22_Alpha_Wolf_Collector_Military":      "Kruger L-22 Alpha Wolf WIK War",
+    "vehicle_NameMISC_Starlancer_TAC_Collector_Military":      "MISC Starlancer TAC WIK War",
+    "vehicle_NameMRAI_Guardian_Collector_Military":            "Mirai Guardian WIK War",
+    "vehicle_NameMRAI_Guardian_MX_Collector_Military":         "Mirai Guardian MX WIK War",
+    "vehicle_NameRSI_Constellation_Taurus_Collector_Military": "RSI Constellation Taurus WIK War",
+    "vehicle_NameANVL_Lightning_F8C_Collector_Stealth":        "Anvil F8C Lightning WIK Stealth",
+    "vehicle_NameCRUS_Starfighter_Ion_Collector_Stealth":      "Crusader Ares Star Fighter Ion WIK Stealth",
+    "vehicle_NameKRIG_L21_Wolf_Collector_Stealth":             "Kruger L-21 Wolf WIK Stealth",
+    "vehicle_NameRSI_Apollo_Triage_Collector_Stealth":         "RSI Apollo Triage WIK Stealth",
+    "vehicle_NameRSI_Meteor_Collector_Stealth":                "RSI Meteor WIK Stealth",
+    "vehicle_NameRSI_Scorpius_Collector_Stealth":              "RSI Scorpius WIK Stealth",
+    "vehicle_NameARGO_RAFT_Collector_Indust":                  "Argo RAFT WIK Work",
+    "vehicle_NameCRUS_Intrepid_Collector_Indust":              "Crusader Intrepid WIK Work",
+    "vehicle_NameDRAK_Golem_Collector_Indust":                 "Drake Golem WIK Work",
+    "vehicle_NameESPR_Prowler_Utility_Collector_Indust":       "Prowler Utility WIK Work",
+    "vehicle_NameMISC_Prospector_Collector_Indust":            "MISC Prospector WIK Work",
+    "vehicle_NameMISC_Starlancer_MAX_Collector_Indust":        "MISC Starlancer MAX WIK Work",
+    "vehicle_NameRSI_Zeus_CL_Collector_Indust":                "RSI Zeus Mk II CL WIK Work",
+    "vehicle_NameRSI_Zeus_ES_Collector_Indust":                "RSI Zeus Mk II ES WIK Work",
+}
+
+
 def enhancements_ship_dataforge(
     root: ET.Element,
     controller_root: ET.Element | None,
@@ -5325,7 +5376,6 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
 
     out: dict[str, str] = {}
     pu_missions_dir = records / "missionbroker" / "pu_missions"
-    _show_spawns = _show("spawns")  # #163: honor the Hostiles toggle here too
 
     # #165: pre-pass — a single mission description is often shared by many
     # pu_missions XMLs with DIFFERENT hostile spawns (every lawful AND unlawful
@@ -5364,7 +5414,7 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
             pu_missions_dir,
             lambda root: enhancements_mission(root, reputation_lookup,
                                               rep_xp_label=rep_xp_label,
-                                              show_spawns=_show_spawns,
+                                              show_fields=_mdf,
                                               spawn_ambiguous_keys=spawn_ambiguous_descs),
             loc=loc, loc_key_fn=_mission_loc_key,
             separator=mission_sep, capture_all=True,
@@ -5381,7 +5431,7 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
                 mission_dir,
                 lambda root: enhancements_mission(root, reputation_lookup,
                                                   rep_xp_label=rep_xp_label,
-                                                  show_spawns=_show_spawns,
+                                                  show_fields=_mdf,
                                                   spawn_ambiguous_keys=spawn_ambiguous_descs),
                 loc=loc, separator=mission_sep, capture_all=True,
                 xml_path_index=xml_path_index, records_dir=records,
@@ -5615,6 +5665,8 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
                 details_lines.append(f"<EM4>Difficulty (1-7):</EM4> {all_difficulties[0]}")
             if _show("spawns"):
                 details_lines.extend(_format_spawn_lines(agg_spawns))
+            if _show("ace") and bool(agg_spawns.get(SPAWN_HOSTILE, {}).get("Ace Pilots", 0)):
+                details_lines.append("<EM4>Ace Pilot:</EM4> Yes")
             nonzero_tiers = [(s, f, rn) for s, f, rn in desc_seen_tiers if s > 0]
             if _show("reputation"):
                 if len(nonzero_tiers) == 1:
@@ -5874,6 +5926,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
          mission_header_em_tag: str = _DEFAULT_MISSION_HEADER_EM_TAG,
          mission_detail_fields: dict | None = None,
          stats_prepend: bool = False,
+         standardize_earnable_ship_names: bool = False,
          english_base_ini_path: Path | None = None) -> None:
     import sys as sys_mod
     # Deferred import — the script is loaded by both the app worker (where
@@ -6220,6 +6273,10 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
     logger.info("Writing output files…")
     _flush()
     if _want("ship_descs"):
+        if standardize_earnable_ship_names:
+            applied = {k: v for k, v in EARNABLE_SHIP_NAME_OVERRIDES.items() if v}
+            out_ships.update(applied)
+            logger.info(f"Earnable ship name overrides: applied {len(applied)} entries")
         write_ini(output_dir / "ships_desc_enhancements.ini",       out_ships)
     if _want("component_descs"):
         write_ini(output_dir / "components_desc_enhancements.ini",  out_components)
