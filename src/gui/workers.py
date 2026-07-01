@@ -542,9 +542,22 @@ class TestPlanSubmitWorker(QThread):
         self._webhook_url = webhook_url
         self._chunks = chunks
 
+    def _redact(self, text: str) -> str:
+        """Strip the webhook URL (a bearer secret) out of any message so it
+        never lands in the Log tab, an exported log bundle, or an error toast."""
+        if self._webhook_url:
+            return text.replace(self._webhook_url, "<webhook>")
+        return text
+
     def run(self):
         import json as _json
         import urllib.request
+
+        # Only speak HTTPS to a webhook — reject file:// / ftp:// and other
+        # schemes rather than hand a user-supplied string straight to urlopen.
+        if not str(self._webhook_url).lower().startswith("https://"):
+            self.finished.emit(False, "Webhook URL must start with https://")
+            return
 
         try:
             for chunk in self._chunks:
@@ -561,5 +574,7 @@ class TestPlanSubmitWorker(QThread):
                         return
             self.finished.emit(True, "Report sent to Discord.")
         except Exception as e:
-            logger.exception("Test plan report submission failed")
-            self.finished.emit(False, f"Could not send report: {e}")
+            # Static message + no traceback dump: the webhook URL can appear in
+            # a urllib exception's text, so scrub it before it reaches the log.
+            logger.error("Test plan report submission failed: %s", self._redact(str(e)))
+            self.finished.emit(False, f"Could not send report: {self._redact(str(e))}")

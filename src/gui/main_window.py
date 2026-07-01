@@ -28,7 +28,8 @@ from src.gui.log_tab import LogTab
 from src.gui.simple_mode_widget import SimpleModeWidget
 from src.gui.markdown_renderer import markdown_to_html as _md_to_html
 from src.gui.string_table_model import (
-    StringTableModel, COL_STAR, COL_ORDER, COL_CUSTOM, COL_STATUS, COL_OWNED,
+    StringTableModel, COL_CATEGORY, COL_KEY, COL_DEFAULT, COL_CURRENT,
+    COL_STAR, COL_ORDER, COL_CUSTOM, COL_STATUS, COL_OWNED,
     status_color,
 )
 from src.gui.theme import (
@@ -1096,9 +1097,12 @@ class MainWindow(QMainWindow):
             tr("strings_tab.col_custom_value"),
             tr("strings_tab.col_status"),
         ]
-        # Skip text-filter boxes on the non-text columns: category (0), ★ (4),
-        # order (5, a spin box), and status (7).
-        self.filter_header = FilterHeaderView(column_names, self.table, skip_columns={0, 4, 5, 7})
+        # Skip text-filter boxes on the non-text columns: category, ★,
+        # order (a spin box), and status.
+        self.filter_header = FilterHeaderView(
+            column_names, self.table,
+            skip_columns={COL_CATEGORY, COL_STAR, COL_ORDER, COL_STATUS},
+        )
         self.table.setHorizontalHeader(self.filter_header)
         self.filter_header.filter_changed.connect(self.apply_filters)
 
@@ -1114,15 +1118,15 @@ class MainWindow(QMainWindow):
 
         # Set column widths
         header = self.filter_header
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # Category
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)           # Key
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)           # Default Value
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)           # Current Value
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)  # ★
-        header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)  # Order #
-        header.setSectionResizeMode(6, QHeaderView.ResizeMode.Stretch)           # Custom Value
-        header.setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)  # Status
-        header.setSectionResizeMode(COL_OWNED, QHeaderView.ResizeMode.ResizeToContents)  # Owned (#157)
+        header.setSectionResizeMode(COL_CATEGORY, QHeaderView.ResizeMode.ResizeToContents)  # Category
+        header.setSectionResizeMode(COL_KEY, QHeaderView.ResizeMode.Stretch)                # Key
+        header.setSectionResizeMode(COL_DEFAULT, QHeaderView.ResizeMode.Stretch)            # Default Value
+        header.setSectionResizeMode(COL_CURRENT, QHeaderView.ResizeMode.Stretch)            # Current Value
+        header.setSectionResizeMode(COL_STAR, QHeaderView.ResizeMode.ResizeToContents)      # ★
+        header.setSectionResizeMode(COL_ORDER, QHeaderView.ResizeMode.ResizeToContents)     # Order #
+        header.setSectionResizeMode(COL_CUSTOM, QHeaderView.ResizeMode.Stretch)             # Custom Value
+        header.setSectionResizeMode(COL_STATUS, QHeaderView.ResizeMode.ResizeToContents)    # Status
+        header.setSectionResizeMode(COL_OWNED, QHeaderView.ResizeMode.ResizeToContents)     # Owned (#157)
 
         # Set custom delegates: Custom Value text editor + Sort Order spin box.
         # Parent each to the table so Qt's object tree owns them: the view does
@@ -2052,7 +2056,7 @@ class MainWindow(QMainWindow):
             f"(user.ini.bak-YYYYMMDD-HHMMSS) so you can restore by renaming it "
             f"back to user.ini.\n\n"
             f"This does NOT touch the game's global.ini — to revert what "
-            f"the game sees in-game, run Apply to Game after the reset, or "
+            f"the game sees in-game, run Apply Enhancements after the reset, or "
             f"use Restore Backup.\n\n"
             f"Proceed?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
@@ -2163,7 +2167,7 @@ class MainWindow(QMainWindow):
         QMessageBox.information(
             self, "user.ini Restored",
             f"Restored your overrides for the {channel} channel from:\n{chosen.name}\n\n"
-            f"Run Apply to Game to push the restored overrides in-game.",
+            f"Run Apply Enhancements to push the restored overrides in-game.",
         )
 
     def _handle_import_ini(self):
@@ -3992,7 +3996,7 @@ class MainWindow(QMainWindow):
             return
 
         reply = QMessageBox.question(
-            self, "Generate & Apply to Game",
+            self, "Apply Enhancements",
             "This will generate the latest enhancements with your current "
             "settings and apply them to your game's global.ini. A timestamped "
             "backup is made first.\n\nThe first run can take a few minutes "
@@ -4101,11 +4105,17 @@ class MainWindow(QMainWindow):
         self._enhancements_worker.finished.connect(self._on_enhancements_generation_finished)
         self._enhancements_worker.start()
 
+    def _end_simple_run(self):
+        """End the Simple-mode one-button flow: clear the active flag and let
+        the Simple page leave its busy state. Idempotent — safe to call when no
+        Simple run is in progress (both are already idle)."""
+        self._simple_run_active = False
+        self.simple_page.set_busy(False)
+
     def _on_enhancements_generation_error(self, message: str):
         logger.error(f"Enhancements generation error: {message}")
         # #180: abandon any in-flight Simple-mode flow so it doesn't apply.
-        self._simple_run_active = False
-        self.simple_page.set_busy(False)
+        self._end_simple_run()
         # Close progress dialog on error
         if self._enhancements_progress_dialog is not None:
             self._enhancements_progress_dialog.close()
@@ -4129,16 +4139,14 @@ class MainWindow(QMainWindow):
             # the just-written enhancement INIs are picked up; the table reload
             # below keeps the (hidden) Advanced view consistent afterward.
             if self._simple_run_active:
-                self._simple_run_active = False
-                self.simple_page.set_busy(False)
+                self._end_simple_run()
                 self.statusBar().showMessage("Enhancements generated — applying to game…")
                 self.apply_to_game()
             else:
                 self.statusBar().showMessage("Enhancements generated — reloading entries…")
             self._show_loading_progress("Reloading strings with updated enhancements…")
         else:
-            self._simple_run_active = False
-            self.simple_page.set_busy(False)
+            self._end_simple_run()
             self.statusBar().showMessage("Enhancement generation failed — check the Log tab for details")
 
     def _run_dataforge_extraction(self):
@@ -4171,8 +4179,7 @@ class MainWindow(QMainWindow):
     def _on_dataforge_extract_error(self, message: str):
         logger.error(f"DataForge extraction error: {message}")
         # #180: abandon any in-flight Simple-mode flow so it doesn't apply.
-        self._simple_run_active = False
-        self.simple_page.set_busy(False)
+        self._end_simple_run()
         if getattr(self, "_forge_progress_dialog", None) is not None:
             self._forge_progress_dialog.close()
             self._forge_progress_dialog = None
@@ -4204,8 +4211,7 @@ class MainWindow(QMainWindow):
             self._run_enhancements_generation()
         else:
             # #180: extraction failed, so the Simple-mode flow can't continue.
-            self._simple_run_active = False
-            self.simple_page.set_busy(False)
+            self._end_simple_run()
             if getattr(self, "_forge_progress_dialog", None) is not None:
                 self._forge_progress_dialog.close()
                 self._forge_progress_dialog = None

@@ -54,7 +54,7 @@ def write_locpack_zip(source_global_ini: Path, output_zip_path: Path) -> int:
     if not source_global_ini.exists():
         raise FileNotFoundError(
             f"Applied global.ini not found at {source_global_ini}. "
-            "Click 'Apply to Game' first, then Export."
+            "Click 'Apply Enhancements' first, then Export."
         )
 
     source_size = source_global_ini.stat().st_size

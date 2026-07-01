@@ -10,19 +10,23 @@ A Windows desktop app for customizing Star Citizen's localization strings. Layer
 ## Features
 
 - **Multi-Channel Star Citizen Support**: LIVE / PTU / EPTU / HOTFIX / TECH-PREVIEW each get their own isolated workspace — independent `user.ini`, cache, backups, DataForge extraction, and enhancement INIs. Switch channels from the Config tab without restarting.
-- **Multi-Language Support**: Switch the app and game strings between English, French, and Brazilian Portuguese from the Config tab. Non-English languages layer a community-translated `global.ini` (from [Dymerz/StarCitizen-Localization](https://github.com/Dymerz/StarCitizen-Localization)) over the English base, with English fallback for anything untranslated.
+- **Multi-Language Support**: Switch the app and game strings between English, French, Spanish, and Brazilian Portuguese from the Config tab. Non-English languages layer a community-translated `global.ini` (from [Dymerz/StarCitizen-Localization](https://github.com/Dymerz/StarCitizen-Localization)) over the English base, with English fallback for anything untranslated.
+- **Simple & Advanced Mode**: A one-button **Apply Enhancements** screen that runs the whole extract-generate-apply chain with your saved settings, or the full Advanced UI (table, filters, Enhancements, Config) for hand-editing. Pick your default at install; switch anytime in-app.
 - **Multi-Source Merge System**: Sources (stock base, language overlay, enhancements, user) merge in a drag-and-drop priority order, with user overrides always applied last so your edits never get overwritten.
 - **Sourced from Data.p4k**: All stock localization and DataForge entity data is extracted directly from your installed game — no community mirrors, no version drift, no network required after install.
 - **Inline Editing & Live Preview**: Double-click any cell in the *Custom Value* column to edit. A preview pane next to the toolbar renders the selected string with the game's loc-tokens (line breaks, EM3/EM4 emphasis, mission placeholders) translated to styled HTML so you see roughly how it will appear in-game.
 - **Persistent Edits**: Your customizations are saved to `user.ini` per channel and automatically re-applied across game updates.
-- **Auto-Generated Enhancements**: Stat overlays for ships, ship components, ship weapons, FPS weapons, missions (with `[BP]`/`[BP?]` blueprint reward tags + structured detail blocks), journal entries, and commodity crafting cross-references — all togglable per category in the Enhancements tab.
+- **Auto-Generated Enhancements**: Stat overlays for ships, ship components, ship weapons, FPS weapons, missions (with `[BP]`/`[BP?]` blueprint reward tags + structured detail blocks), journal entries, and commodity crafting cross-references — all togglable per category in the Enhancements tab. Stat blocks can sit above or below the description.
+- **Tag Builder & Mission Titles**: Customize the bracketed name tags on components, missiles, ship weapons, and commodities, and lead hauling/delivery/courier mission titles with their route (e.g. `Area18 > Lorville`) — configurable placement, arrow, separator, and location detail, with a live preview.
+- **Blueprints Ownership**: Mark the crafting blueprints you already own — owned items get a star in an **Owned** column, and blueprint-title / blueprint-description filters help you find and tag them, so you can see at a glance what you still need.
 - **Declarative CIG Data-Bug Patches**: A patch system applies fixes to known DataForge bugs at extraction time so the in-game text reads correctly without waiting on CIG.
 - **Search & Filter**: Free-text search, category filter (Ships, Ship Items, Missions, Gear, Commodities, Journal, Other), modified/unmodified status, plus per-column filter rows under every header.
 - **Ship Favorites**: Star a ship to prepend a configurable prefix (default `*`) so your favorites sort to the top of the in-game ASOP terminal.
-- **Apply to Game**: Writes the merged result to your `global.ini`, takes a timestamped backup first, and validates the output against the stock key set — auto-rolls back on any mismatch.
+- **Apply Enhancements**: Writes the merged result to your `global.ini`, takes a timestamped backup first, and validates the output against the stock key set — auto-rolls back on any mismatch.
 - **Backup & Restore**: Up to 5 automatic backups per channel, oldest auto-pruned. One-click restore from any of them.
 - **Clear Localization**: Revert your game to vanilla text without losing your saved overrides.
 - **Guided Tutorial**: A coach-mark tour walks new users through the workflow on first launch of each version. Replayable any time from the Tutorial button.
+- **In-App FAQ**: A FAQ tab answers the common questions (what files get touched, ban risk, the Windows unrecognized-app warning, undoing changes) without leaving the app.
 - **In-App Log Viewer**: Real-time application log with level filter, auto-scroll, and an Export button for bug reports.
 - **Auto-Update Notifier**: Smart Citizen checks GitHub Releases every 6 hours and surfaces a non-blocking notification when a newer installer is available.
 - **Themes**: Four built-in themes — SCLE (default deep-navy mobiGlas), Light, Dark, and ODW (Osiris DevWorks signature).
@@ -84,12 +88,12 @@ See **[docs/CONTRIBUTOR_GUIDE.md](docs/CONTRIBUTOR_GUIDE.md)** for local setup (
 1. **Find & Edit**:
    - Use the **Search** box to find strings, the **Category** filter to narrow by domain (Ships, Ship Items, Missions, Gear, Commodities, Journal, Other), and per-column filter boxes for fine-grained narrowing.
    - Double-click the **Custom Value** column to edit. The preview pane shows the rendered result.
-2. **Apply Changes**: Click **Apply to Game**. Your edits are persisted to `user.ini`, the merged file is written to your game's `global.ini`, and a timestamped backup is created automatically.
+2. **Apply Changes**: Click **Apply Enhancements**. Your edits are persisted to `user.ini`, the merged file is written to your game's `global.ini`, and a timestamped backup is created automatically.
 3. **Restore** (if needed): Click **Restore Backup** to revert to a previous version.
 
 ### After Star Citizen Updates
 1. Re-run **Extract from Data.p4k** in the Config tab to pull fresh stock strings and DataForge entity data from the patched game. The table reloads automatically and your customizations re-apply on top.
-2. Click **Apply to Game** to push the updated merge into the new build.
+2. Click **Apply Enhancements** to push the updated merge into the new build.
 
 ## Configuration
 
@@ -100,13 +104,14 @@ All settings are stored in Windows Registry under:
 The Config tab lets you set:
 - **Star Citizen install path** (the SC root folder containing `LIVE/`, `PTU/`, etc. — auto-detected at install time)
 - **Active channel** (LIVE / PTU / EPTU / HOTFIX / TECH-PREVIEW)
-- **Language** (English, French, Brazilian Portuguese; switches the app UI and the game strings)
+- **Language** (English, French, Spanish, Brazilian Portuguese; switches the app UI and the game strings)
 - **Smart Citizen data folder** (where `user.ini`, cache, DataForge extraction, enhancement INIs, and backups live)
 - **Theme**
 - **Data sources**: enable/disable, drag-drop merge priority
 - **Import INI**: fold an external `.ini` into your overrides
+- **Reset / Restore user.ini**: wipe your edits for the channel (with an auto-backup), or roll them back to an earlier rotating snapshot
 
-The Enhancements tab lets you toggle each enhancement category (ship stats, weapon stats, mission tags, etc.), configure the ship favorite prefix, customize the **Tag Builder** for components, missiles, ship weapons, and commodities, and adjust **Mission Labels** (section headers, XP label, emphasis tag).
+The Enhancements tab lets you toggle each enhancement category (ship stats, weapon stats, mission tags, etc.), configure the ship favorite prefix, customize the **Tag Builder** for components, missiles, ship weapons, and commodities (plus **Mission Titles** route tags), mark owned crafting blueprints, and adjust **Mission Labels** (section headers, XP label, emphasis tag).
 
 ### Data Storage
 

@@ -22,8 +22,19 @@ from src.utils.onedrive import (  # noqa: E402
     onedrive_roots,
     suggest_local_data_dir,
 )
+from src.utils.json_settings import JsonSettings  # noqa: E402
+from src.utils.settings import AppSettings  # noqa: E402
 
 pytestmark = pytest.mark.unit
+
+
+@pytest.fixture
+def json_backend(tmp_path):
+    """Swap AppSettings._backend for a tmp JsonSettings so each test is hermetic."""
+    saved = AppSettings._backend
+    AppSettings._backend = JsonSettings(tmp_path / "config.json")
+    yield AppSettings._backend
+    AppSettings._backend = saved
 
 ENV = {"OneDrive": r"C:\Users\aabou\OneDrive", "USERPROFILE": r"C:\Users\aabou"}
 
@@ -105,3 +116,20 @@ class TestSuggestLocalDataDir:
     def test_suggestion_is_not_onedrive(self):
         # The whole point: the suggested folder must not itself be in OneDrive.
         assert not is_onedrive_path(suggest_local_data_dir(ENV), ENV)
+
+
+# ── OneDrive-warning "don't warn me again" flag (#172) ───────────────────────
+
+class TestOneDriveWarningDismissed:
+    def test_defaults_false(self, json_backend):
+        # Fresh install: the startup warning has not been dismissed.
+        assert AppSettings.get_onedrive_warning_dismissed() is False
+
+    def test_set_true_persists(self, json_backend):
+        AppSettings.set_onedrive_warning_dismissed(True)
+        assert AppSettings.get_onedrive_warning_dismissed() is True
+
+    def test_round_trip_back_to_false(self, json_backend):
+        AppSettings.set_onedrive_warning_dismissed(True)
+        AppSettings.set_onedrive_warning_dismissed(False)
+        assert AppSettings.get_onedrive_warning_dismissed() is False

@@ -32,10 +32,15 @@ _OWNED_STRIP_RE = re.compile(r"\s*<EM4>\[Owned\]</EM4>")
 _LEADING_TAG_RE = re.compile(r"^\[[^\]]*\]\s*")
 
 # Marks the start of a POTENTIAL BLUEPRINTS section. The header text is
-# user-configurable but the default is "POTENTIAL BLUEPRINTS"; we match the
-# default case-insensitively. A value with no such header has no bullets to
-# tag, so it passes through untouched.
-_BP_HEADER_RE = re.compile(r"POTENTIAL BLUEPRINTS", re.IGNORECASE)
+# user-configurable (AppSettings.MISSION_HEADER_DEFAULTS["blueprints"]) but the
+# default is BP_SECTION_HEADER; we match that default case-insensitively. This
+# module stays settings-free by design, so it owns the default literal rather
+# than importing AppSettings, and the settings default is kept in sync with it.
+# blueprint_meta.py and entry_filter.py import BP_SECTION_HEADER from here so
+# the three matchers share one source of truth. A value with no such header has
+# no bullets to tag, so it passes through untouched.
+BP_SECTION_HEADER = "POTENTIAL BLUEPRINTS"
+_BP_HEADER_RE = re.compile(BP_SECTION_HEADER, re.IGNORECASE)
 
 
 def normalize_item_name(name: str) -> str:

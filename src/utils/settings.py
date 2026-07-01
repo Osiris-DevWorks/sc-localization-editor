@@ -137,6 +137,8 @@ class AppSettings:
     }
     MISSION_HEADER_DEFAULTS = {
         "details": "MISSION DETAILS",
+        # Kept in sync with owned_items.BP_SECTION_HEADER (the settings-free
+        # matcher modules can't import AppSettings, so they carry the default).
         "blueprints": "POTENTIAL BLUEPRINTS",
         "items": "ITEM REWARDS",
         "blueprint_data": "BLUEPRINT DATA",

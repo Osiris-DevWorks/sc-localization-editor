@@ -15,11 +15,15 @@ Your personal edits live in `user.ini` in your Smart Citizen data folder, separa
 
 Smart Citizen only edits localization text (the words the game shows you), it doesn't touch game logic, give you any advantage, or talk to CIG's servers. Our modifications **should** be fine.
 
+CIG has publicly backed community localization. Their [Community Localization Update](https://robertsspaceindustries.com/spectrum/community/SC/forum/1/thread/star-citizen-community-localization-update) post lays out official support for player-made translations, which we understand to explicitly allow the kind of localization editing Smart Citizen does.
+
+High-visibility streamers run similar localization projects out in the open, and none of them have been told to stop.
+
 That said: the way you use Smart Citizen is at your own risk. Our changes should be okay, but anything you do yourself, you and your associates are liable for the damages that may occur. If you're ever unsure whether a change is appropriate, keep it cosmetic and keep a backup.
 
 ## What files does Smart Citizen modify?
 
-Just one, and only when you click **Apply to Game**:
+Just one, and only when you click **Apply Enhancements**:
 
 - `StarCitizen\<channel>\data\Localization\<language>\global.ini` — the game's localization file for the channel (LIVE, PTU, etc.) and language you've selected. Smart Citizen backs up the existing file first, then writes the merged result.
 - It also makes sure `g_language` is set in your `user.cfg` so the game loads the right localization. Nothing else in your game install is touched.

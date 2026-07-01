@@ -109,12 +109,12 @@ class TestWriteLocpackZip:
         )
 
     def test_missing_source_raises_filenotfounderror(self, tmp_path):
-        """The GUI handler converts this into a friendly "Apply to Game
+        """The GUI handler converts this into a friendly "Apply Enhancements
         first" message, but the raw exception type is part of the API
         contract — locks it in. The literal apostrophes in the message
         text mean we match against a quote-less substring."""
         src = tmp_path / "does_not_exist.ini"
         dst = tmp_path / "out.zip"
 
-        with pytest.raises(FileNotFoundError, match=r"Apply to Game"):
+        with pytest.raises(FileNotFoundError, match=r"Apply Enhancements"):
             write_locpack_zip(src, dst)
