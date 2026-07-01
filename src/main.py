@@ -116,6 +116,10 @@ def main():
 
         # Move user data files from old AppData location to Documents (idempotent)
         AppSettings.migrate_data_to_documents()
+
+        # 2.1: the #166 "route" mission-detail toggle became the Mission Titles
+        # Tag Builder tab; carry a user's off-state into the new config (once).
+        AppSettings.migrate_route_toggle_to_mission_titles()
     else:
         # Portable mode also seeds defaults — the migrator does both
         # ("seed defaults if no settings exist" + "migrate legacy"); we

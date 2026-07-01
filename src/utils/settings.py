@@ -117,9 +117,13 @@ class AppSettings:
     # DETAILS body. All default on (the pre-#121 behaviour). Baked at
     # generation time, so a change takes effect on the next Generate
     # Enhancements run.
+    # NOTE: the 2.0 "route" field moved to the Mission Titles Tag Builder tab in
+    # 2.1 (route arrow / placement / location detail live there now), so it is
+    # no longer a mission-detail toggle. migrate_route_toggle_to_mission_titles()
+    # carries a user's old off-state into the new config.
     MISSION_FIELD_KEYS = (
         "mission_type", "difficulty", "spawns", "reputation",
-        "blueprints", "blueprint_tag", "route", "ace",
+        "blueprints", "blueprint_tag", "ace",
     )
     _MISSION_FIELD_SETTING = {
         "mission_type":  "mission_field/mission_type",
@@ -128,9 +132,6 @@ class AppSettings:
         "reputation":    "mission_field/reputation",
         "blueprints":    "mission_field/blueprints",
         "blueprint_tag": "mission_field/blueprint_tag",
-        # #166: pickup→dropoff route appended to haul/delivery TITLES
-        # (e.g. ` | ~mission(Location|name) > ~mission(Destination|name)`).
-        "route":         "mission_field/route",
         # #158: [ACE]/[ACE?] title tag for missions that spawn an ace pilot.
         "ace":           "mission_field/ace",
     }
@@ -629,6 +630,29 @@ class AppSettings:
     @staticmethod
     def set_mission_header_em_tag(tag: str) -> None:
         AppSettings.settings().setValue(AppSettings.MISSION_HEADER_EM_TAG, tag)
+
+    @staticmethod
+    def migrate_route_toggle_to_mission_titles() -> None:
+        """One-time (2.1): carry the retired #166 ``route`` mission-detail toggle
+        into the new mission_titles tag config. Only acts when the user had route
+        explicitly OFF and hasn't configured the new tab yet — so a deliberate
+        opt-out survives the move and nobody is silently flipped back on."""
+        s = AppSettings.settings()
+        marker = "mission_field/route_migrated"
+        if s.value(marker, False, type=bool):
+            return
+        old = s.value("mission_field/route", None)
+        was_off = old is not None and str(old).strip().lower() in ("false", "0")
+        already = s.value("tag_builder/mission_titles/config", "", type=str)
+        if was_off and not already:
+            from src.utils.tag_builder import default_config
+            cfg = default_config("mission_titles")
+            for e in cfg.elements:
+                if e.kind == "route":
+                    e.enabled = False
+            AppSettings.set_tag_config("mission_titles", cfg)
+        s.setValue(marker, True)
+        s.sync()
 
     @staticmethod
     def get_mission_detail_fields() -> dict:

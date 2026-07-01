@@ -13,9 +13,10 @@ from src.gui.tag_mapping_dialog import TagMappingDialog
 from src.utils.i18n import tr
 from src.utils.settings import AppSettings
 from src.utils.tag_builder import (
-    CATEGORIES, ELEMENT_LABELS, ENCLOSINGS, MAPPED_KIND_NAMES,
-    PLACEMENTS, SEPARATORS, STYLES_BY_KIND, TagConfig, USAGE_INPUT_SEP,
-    default_config, render_tag,
+    CATEGORIES, ELEMENT_LABELS, ENCLOSINGS, LOCATION_DETAILS,
+    MAPPED_KIND_NAMES, MISSION_TITLE_PLACEMENTS, PLACEMENTS, ROUTE_ARROWS,
+    SEPARATORS, STYLES_BY_KIND, TITLE_SEPARATORS, TagConfig, USAGE_INPUT_SEP,
+    apply_mission_title, default_config, render_route, render_tag, route_enabled,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ _CATEGORY_LABELS: dict[str, str] = {
     "missiles":     "Missiles",
     "ship_weapons": "Ship Weapons",
     "commodities":  "Commodities",
+    "mission_titles": "Mission Titles",
 }
 
 
@@ -192,7 +194,6 @@ class EnhancementsTab(QWidget):
             ("reputation",    "Reputation"),
             ("blueprints",    "Blueprints"),
             ("blueprint_tag", "Blueprint Tag"),
-            ("route",         "Route in Title"),
             ("ace",           "Ace Pilot Tag"),
         ]
         # The blueprint_tag field controls the [BP]/[BP?] marker on the mission
@@ -203,11 +204,6 @@ class EnhancementsTab(QWidget):
             "blueprint_tag": (
                 "Show the [BP] / [BP?] marker on the mission title. "
                 "Independent of the Blueprints body section. "
-                "Takes effect on the next Generate Enhancements."
-            ),
-            "route": (
-                "Add the pickup → dropoff route to hauling / delivery "
-                "mission titles (the game fills in the real locations). "
                 "Takes effect on the next Generate Enhancements."
             ),
             "ace": (
@@ -1175,6 +1171,13 @@ class _TagBuilderPage(QWidget):
         self.category = category
         self.config = config
         self._rows: list[_ElementRow] = []
+        self.usage_sep_combo = None
+
+        # Mission Titles is a purpose-built page (route controls, not element
+        # rows + variant mappings), so it has its own layout branch.
+        if category == "mission_titles":
+            self._build_mission_titles_page()
+            return
 
         # Rows + separator/preview/reset go directly into the page's own
         # QVBoxLayout. An earlier iteration wrapped this in a QScrollArea
@@ -1391,9 +1394,108 @@ class _TagBuilderPage(QWidget):
             self._repopulate_list()
             self._refresh_preview()
 
+    # ── Mission Titles page (route controls) ─────────────────────────────
+
+    def _build_mission_titles_page(self) -> None:
+        """Purpose-built page for the mission-title route: an enable toggle plus
+        placement / arrow / separator / location-detail combos and a preview."""
+        col = QVBoxLayout(self)
+        col.setContentsMargins(10, 6, 10, 6)
+        col.setSpacing(6)
+
+        self._mt_enable = QCheckBox("Add route to hauling / delivery / courier titles")
+        route_el = next((e for e in self.config.elements if e.kind == "route"), None)
+        self._mt_enable.setChecked(bool(route_el and route_el.enabled))
+        self._mt_enable.toggled.connect(self._on_mt_enable)
+        col.addWidget(self._mt_enable)
+
+        hint = QLabel("The game fills in the real pickup and drop-off locations "
+                      "when the mission is accepted.")
+        hint.setProperty("role", "secondary")
+        hint.setStyleSheet("font-size: 11px;")
+        hint.setWordWrap(True)
+        col.addWidget(hint)
+
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(6)
+        grid.setVerticalSpacing(4)
+
+        def _combo(items) -> QComboBox:
+            c = QComboBox()
+            for entry in items:
+                c.addItem(entry[1], userData=entry[0])
+            return c
+
+        self._mt_placement = _combo(MISSION_TITLE_PLACEMENTS)
+        self._mt_arrow = _combo(ROUTE_ARROWS)
+        self._mt_sep = _combo(TITLE_SEPARATORS)
+        self._mt_detail = _combo(LOCATION_DETAILS)
+        self._select_combo(self._mt_placement, self.config.placement)
+        self._select_combo(self._mt_arrow, self.config.route_arrow)
+        self._select_combo(self._mt_sep, self.config.title_separator)
+        self._select_combo(self._mt_detail, self.config.location_detail)
+        rows = [
+            ("Placement:", self._mt_placement),
+            ("Route arrow:", self._mt_arrow),
+            ("Title separator:", self._mt_sep),
+            ("Location detail:", self._mt_detail),
+        ]
+        for r, (lbl, combo) in enumerate(rows):
+            grid.addWidget(QLabel(lbl), r, 0)
+            combo.currentIndexChanged.connect(self._on_mt_changed)
+            grid.addWidget(combo, r, 1)
+        col.addLayout(grid)
+
+        self.preview_label = QLabel()
+        self.preview_label.setMinimumHeight(28)
+        self.preview_label.setWordWrap(True)
+        self.preview_label.setStyleSheet(
+            "font-family: Consolas, 'Courier New', monospace; "
+            "font-size: 12px; padding: 4px; "
+            "background: rgba(0, 0, 0, 30); border-radius: 3px;"
+        )
+        col.addWidget(self.preview_label)
+        col.addStretch()
+        self._set_mt_controls_enabled(self._mt_enable.isChecked())
+        self._refresh_preview()
+
+    def _set_mt_controls_enabled(self, on: bool) -> None:
+        for c in (self._mt_placement, self._mt_arrow, self._mt_sep, self._mt_detail):
+            c.setEnabled(on)
+
+    def _on_mt_enable(self, checked: bool) -> None:
+        for e in self.config.elements:
+            if e.kind == "route":
+                e.enabled = checked
+        self._set_mt_controls_enabled(checked)
+        self._refresh_preview()
+
+    def _on_mt_changed(self, _idx: int) -> None:
+        self.config.placement = self._mt_placement.currentData() or self.config.placement
+        self.config.route_arrow = self._mt_arrow.currentData() or self.config.route_arrow
+        self.config.title_separator = self._mt_sep.currentData() or self.config.title_separator
+        self.config.location_detail = self._mt_detail.currentData() or self.config.location_detail
+        self._refresh_preview()
+
+    def _refresh_mt_preview(self) -> None:
+        sample_title = "Corporal Rank - Direct Medium Cargo Haul"
+        if not route_enabled(self.config):
+            self.preview_label.setText(f"Preview:  {sample_title} [50 REP]  (route off)")
+            return
+        if self.config.location_detail == "address":
+            frm, to = "Area18, Crusader", "Lorville, Hurston"
+        else:
+            frm, to = "Area18", "Lorville"
+        route = render_route(frm, to, self.config.route_arrow)
+        title = apply_mission_title(sample_title, route, self.config)
+        self.preview_label.setText(f"Preview:  {title} [50 REP]")
+
     # ── Preview ──────────────────────────────────────────────────────────
 
     def _refresh_preview(self):
+        if self.category == "mission_titles":
+            self._refresh_mt_preview()
+            return
         tag = render_tag(self.config, _PREVIEW_VALUES.get(self.category, {}))
         name = _PREVIEW_NAMES.get(self.category, "Sample")
         if tag:
@@ -1411,6 +1513,16 @@ class _TagBuilderPage(QWidget):
         # row list, resync separator/enclosing/placement combos + preview.
         fresh = default_config(self.category)
         self.config = fresh
+        if self.category == "mission_titles":
+            route_el = next((e for e in fresh.elements if e.kind == "route"), None)
+            self._mt_enable.setChecked(bool(route_el and route_el.enabled))
+            self._select_combo(self._mt_placement, fresh.placement)
+            self._select_combo(self._mt_arrow, fresh.route_arrow)
+            self._select_combo(self._mt_sep, fresh.title_separator)
+            self._select_combo(self._mt_detail, fresh.location_detail)
+            self._set_mt_controls_enabled(self._mt_enable.isChecked())
+            self._refresh_preview()
+            return
         self._select_combo(self.sep_combo, fresh.separator)
         self._select_combo(self.enc_combo, fresh.enclosing)
         self._select_combo(self.placement_combo, fresh.placement)
