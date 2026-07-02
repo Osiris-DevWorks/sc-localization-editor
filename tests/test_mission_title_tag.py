@@ -14,6 +14,7 @@ from src.utils.json_settings import JsonSettings  # noqa: E402
 from src.utils.settings import AppSettings  # noqa: E402
 from src.utils.tag_builder import (  # noqa: E402
     TagConfig,
+    abbreviate_title,
     apply_mission_title,
     default_config,
     render_route,
@@ -40,6 +41,17 @@ class TestRouteFormatting:
         assert render_route("A", "", "gt") == "from A"
         assert render_route("", "B", "gt") == "to B"
         assert render_route("", "", "gt") == ""
+
+    def test_shape_arrow_encodes_multiplicity(self):
+        """#200 follow-up: "-" one endpoint, "=" several, per side."""
+        assert render_route("A", "B", "shape") == "A ->- B"
+        assert render_route("A", "B, C", "shape", to_many=True) == "A ->= B, C"
+        assert render_route("A, B", "C", "shape", from_many=True) == "A, B =>- C"
+        assert render_route("A, B", "C, D", "shape", True, True) == "A, B =>= C, D"
+        # One-sided degenerates carry no arrow, so no shape glyph.
+        assert render_route("A", "", "shape", to_many=True) == "from A"
+        # Non-shape arrows ignore the multiplicity flags.
+        assert render_route("A", "B, C", "gt", to_many=True) == "A > B, C"
 
     def test_apply_placements(self):
         cfg = default_config("mission_titles")  # dash separator, prepend
@@ -80,6 +92,41 @@ class TestDefaultAndPersistence:
         back = TagConfig.from_json(cfg.to_json())
         assert (back.placement, back.route_arrow, back.location_detail, back.title_separator) \
             == ("replace", "arrow", "address", "pipe")
+
+
+class TestAbbreviateTitle:
+    """#200 follow-up: curated stock-title shortening for hauling titles."""
+
+    def test_phrase_map_on_real_title_shapes(self):
+        assert abbreviate_title(
+            "~mission(ReputationRank) Rank - ~mission(CargoGradeToken) Cargo Haul"
+        ) == "~mission(ReputationRank) - ~mission(CargoGradeToken) Haul"
+        assert abbreviate_title(
+            "~mission(ReputationRank) Rank - Direct ~mission(CargoGradeToken) Cargo Haul"
+        ) == "~mission(ReputationRank) - Direct ~mission(CargoGradeToken) Haul"
+        assert abbreviate_title(
+            "~mission(ReputationRank) Hauler Needed for ~mission(CargoGradeToken) Shipment"
+        ) == "~mission(ReputationRank) - ~mission(CargoGradeToken) Shipment"
+        assert abbreviate_title("Covalex Local Shipment Route") == "Covalex Route"
+        assert abbreviate_title(
+            "Opportunity for Independent Cargo Hauler"
+        ) == "Intro Haul"
+
+    def test_unmapped_title_passes_through(self):
+        assert abbreviate_title("Quantum Sensitive Delivery") == "Quantum Sensitive Delivery"
+
+    def test_tokens_never_touched(self):
+        # No phrase in the map may rewrite inside a ~mission(...) token.
+        s = "~mission(CargoGradeToken) and ~mission(ReputationRank)"
+        assert abbreviate_title(s) == s
+
+    def test_config_default_off_and_round_trip(self):
+        cfg = default_config("mission_titles")
+        assert cfg.abbreviate_title is False
+        cfg.abbreviate_title = True
+        assert TagConfig.from_json(cfg.to_json()).abbreviate_title is True
+        # Pre-2.1.1 blobs have no key at all: default off.
+        assert TagConfig.from_dict({}).abbreviate_title is False
 
 
 class TestLocationDetailMigration:

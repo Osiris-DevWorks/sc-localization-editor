@@ -95,7 +95,7 @@ The non-English game strings are community translations:
 - **Journal Cross-References**: Mining Compendium entries get crafting cross-references; commodities used in crafting get a customizable `[CF]` name tag and a list of every blueprint that calls for them
 - **Ship Favorites**: Star a ship to prepend a configurable prefix (default `*`) so favorites sort to the top of the in-game ASOP terminal
 - **Tag Builder**: Customize the bracketed tags on components, missiles, ship weapons, and commodities — reorder elements, change abbreviation length (M / MIL / Military), pick separators and brackets, or place the tag after the name instead of before. Components have an optional Type element (Shield, Cooler, etc.); commodities have a Usage element showing what their crafting materials feed into
-- **Mission Titles**: Lead hauling, delivery, and courier titles with their route (e.g. `Area18 > Lorville`) — configurable placement, arrow, separator, and location detail, with a live preview
+- **Mission Titles**: Lead hauling titles with their route (e.g. `Area18 > Lorville`) — configurable placement, arrow, separator, and location detail, plus optional stock-title shortening, with a live preview
 - **Stats Above or Below**: Choose whether a stat block sits at the top or the bottom of the description
 - **Blueprints Ownership**: Mark the crafting blueprints you already own — owned items get a star in an **Owned** column, and blueprint-title / blueprint-description filters help you find and tag them quickly, so you can see at a glance what you still need
 - **Mission Labels**: Rename the section headers (MISSION DETAILS, POTENTIAL BLUEPRINTS, etc.), the XP label, and the emphasis tag used for headers

@@ -48,7 +48,8 @@ try:
         CRAFT_USAGE_CATEGORIES, DAMAGE_LABEL_TO_MAPPING_KEY,
         DEFAULT_COMMODITY_USAGE_MAPPING, DEFAULT_COMPONENT_CLASS_MAPPING,
         DEFAULT_TAG_CONFIGS, TagConfig, USAGE_INPUT_SEP,
-        apply_mission_title, render_route, render_tag, route_enabled,
+        abbreviate_title, apply_mission_title, render_route, render_tag,
+        route_enabled,
     )
 except ImportError:  # pragma: no cover — only triggers if src/ is removed
     CRAFT_USAGE_CATEGORIES = ()  # type: ignore[assignment]
@@ -61,6 +62,7 @@ except ImportError:  # pragma: no cover — only triggers if src/ is removed
     render_tag = None  # type: ignore[assignment]
     render_route = None  # type: ignore[assignment]
     apply_mission_title = None  # type: ignore[assignment]
+    abbreviate_title = None  # type: ignore[assignment]
     def route_enabled(_cfg):  # type: ignore[misc]
         return False
 
@@ -1214,7 +1216,11 @@ def _derive_route_fragment(desc_bodies: list[str], cfg=None, loc=None, expand_ca
     to_str = ", ".join(
         _title_route_token(v, t, detail) for v, t in to_tokens.items()
     )
-    return render_route(from_str, to_str, arrow) if render_route else ""
+    if not render_route:
+        return ""
+    return render_route(
+        from_str, to_str, arrow, len(from_tokens) > 1, len(to_tokens) > 1
+    )
 
 
 def _resource_amount(amount_el: ET.Element) -> str | None:
@@ -5652,7 +5658,6 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         _bp_partial = (
             has_blueprints and _any_variant_has_bp and not _has_dominant_no_bp_bucket
         )
-        augmented_title = base_title
         # Mission Titles tag feature (2.1, #166 successor): add the
         # pickup→dropoff route to haul/delivery/courier titles, placed per the
         # config (prepend/append/replace) BEFORE the [BP]/XP tags below.
@@ -5660,6 +5665,13 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         # a route token so we don't double it. Route variables are read from the
         # mission's own desc bodies so the game is guaranteed to resolve them.
         _mt_cfg = tag_configs.get("mission_titles") or DEFAULT_TAG_CONFIGS.get("mission_titles")
+        # #200 follow-up: optional stock-title shortening so the route plus
+        # [BP]/XP tags don't overflow the contract list. Independent of the
+        # route toggle; same key-family scope.
+        if (abbreviate_title and _is_route_title(title_key)
+                and getattr(_mt_cfg, "abbreviate_title", False)):
+            base_title = abbreviate_title(base_title)
+        augmented_title = base_title
         if (route_enabled(_mt_cfg) and _is_route_title(title_key)
                 and not _title_has_route_token(base_title)):
             _route_descs = pu_title_to_descs.get(title_key, set()) | {
@@ -5938,9 +5950,13 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
             continue
         # #200: pu-only haul/delivery/courier titles (ContractLegacy spawn
         # paths contractgen never covers, e.g. Covalex_HaulCargo_MultiToSingle)
-        # get the same route treatment as the contractgen loop above. Guarded
-        # to pure pu titles (not already in out) so a desc entry sharing the
-        # key is never mangled.
+        # get the same route + shortening treatment as the contractgen loop
+        # above. Guarded to pure pu titles (not already in out) so a desc
+        # entry sharing the key is never mangled.
+        if (title_key not in out and abbreviate_title
+                and _is_route_title(title_key)
+                and getattr(_mt_cfg2, "abbreviate_title", False)):
+            current = abbreviate_title(current)
         if (title_key not in out and route_enabled(_mt_cfg2)
                 and _is_route_title(title_key)
                 and not _title_has_route_token(base_title)):
