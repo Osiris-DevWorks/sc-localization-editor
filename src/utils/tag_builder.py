@@ -149,8 +149,15 @@ _ENCLOSING_BY_KEY = {k: (o, c) for k, _, o, c in ENCLOSINGS}
 # (key, label, render_string)
 ROUTE_ARROWS: tuple[tuple[str, str, str], ...] = (
     ("gt",    "Greater-than ( > )", ">"),
-    ("arrow", "Arrow ( → )",   "→"),
+    # "->" not "→": mobiGlas has no glyph for U+2192 and draws a box (#200).
+    ("arrow", "Arrow ( -> )",  "->"),
     ("to",    "Word ( to )",        "to"),
+    # Shape-encoding arrow (#200 follow-up): each side is "-" for one endpoint
+    # and "=" for several, so the glyph carries the route shape (->- one to
+    # one, ->= one to many, =>- many to one, =>= many to many). The render
+    # string below is the 1:1 fallback; render_route builds the real glyph
+    # from the endpoint counts. Only characters proven to render in mobiGlas.
+    ("shape", "Route shape ( ->- / ->= / =>- / =>= )", "->-"),
 )
 # The separator between the route and the original title (prepend/append).
 # (key, label, render_string) — spaces are part of the render string.
@@ -177,6 +184,48 @@ MISSION_TITLE_PLACEMENTS: tuple[tuple[str, str], ...] = (
 
 _ROUTE_ARROW_BY_KEY = {k: s for k, _, s in ROUTE_ARROWS}
 _TITLE_SEP_BY_KEY = {k: s for k, _, s in TITLE_SEPARATORS}
+
+# Curated phrase map for the "shorten original titles" toggle (#200 follow-up).
+# Applied to the LITERAL text of stock hauling titles; ~mission(...) tokens are
+# never touched. Ordered longest-first so specific phrases win over fragments.
+# Unmapped titles pass through unchanged, so a new CIG title can never break.
+TITLE_ABBREVIATIONS: tuple[tuple[str, str], ...] = (
+    ("Opportunity for Independent Cargo Hauler", "Intro"),
+    ("Hauler Needed for", "-"),
+    ("Local Shipment Route", "Route"),
+    ("Cargo Haul", ""),
+    (" Rank -", " -"),
+    (" Rank,", ","),
+)
+
+
+# Cargo-grade size words → abbreviations, applied with the Shorten toggle
+# (#200 follow-up). The ~mission(CargoGradeToken) title token resolves through
+# the HaulCargo_CargoGrade_* / HaulCargo_CargoScale_* loc keys, so the
+# generator overrides those VALUES (exact match only; an unmapped grade passes
+# through untouched). Ordered longest-first for literal-text use (preview).
+SIZE_ABBREVIATIONS: tuple[tuple[str, str], ...] = (
+    ("Extra Small", "XS"),
+    ("Extra Large", "XL"),
+    ("Small", "S"),
+    ("Medium", "M"),
+    ("Large", "L"),
+)
+SIZE_ABBREV_BY_WORD: dict[str, str] = dict(SIZE_ABBREVIATIONS)
+
+
+def abbreviate_title(title: str) -> str:
+    """Shorten a stock mission title via the curated phrase map.
+
+    Plain literal replacement plus whitespace collapse and a trailing
+    separator trim (a removed phrase can leave a dangling " -"); game tokens
+    pass through untouched. Single source for the generator and the tab
+    preview.
+    """
+    out = title
+    for phrase, short in TITLE_ABBREVIATIONS:
+        out = out.replace(phrase, short)
+    return " ".join(out.split()).rstrip(" -,")
 
 
 # ── Built-in class/ordinance/damage variant mappings ─────────────────────────
@@ -329,7 +378,13 @@ class TagConfig:
     # Mission-title route config (only the "mission_titles" category uses these).
     route_arrow: str = "gt"        # key from ROUTE_ARROWS (origin > destination)
     title_separator: str = "dash"  # key from TITLE_SEPARATORS (route <-> title)
-    location_detail: str = "name"  # "name" or "address" (token modifier)
+    # "address" or "name" (token modifier). Address is the default: it is what
+    # mission bodies themselves resolve, so it never falls back to raw variable
+    # text in-game; |name fails for some mission instances (#200).
+    location_detail: str = "address"
+    # Shorten stock hauling titles via TITLE_ABBREVIATIONS so the route plus
+    # tags don't overflow the contract list (#200 follow-up). Off by default.
+    abbreviate_title: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -371,7 +426,8 @@ class TagConfig:
             usage_separator=data.get("usage_separator", "pipe") or "pipe",
             route_arrow=data.get("route_arrow", "gt") or "gt",
             title_separator=data.get("title_separator", "dash") or "dash",
-            location_detail=data.get("location_detail", "name") or "name",
+            location_detail=data.get("location_detail", "address") or "address",
+            abbreviate_title=bool(data.get("abbreviate_title", False)),
         )
 
     @classmethod
@@ -448,12 +504,13 @@ DEFAULT_TAG_CONFIGS["mission_titles"] = TagConfig(
     # A single "route" element whose enabled-flag is the feature on/off. The
     # look is driven by route_arrow / title_separator / location_detail +
     # placement, not by element styles. Default: route-led (prepend), ">",
-    # " - " join, short place name. Absorbs the #166 route-in-title toggle.
+    # " - " join, full address (2.1.1, #200: short |name can fail to resolve
+    # for some mission instances). Absorbs the #166 route-in-title toggle.
     elements=[ElementSpec("route", True, "")],
     placement="prepend",
     route_arrow="gt",
     title_separator="dash",
-    location_detail="name",
+    location_detail="address",
 )
 
 
@@ -464,14 +521,20 @@ def route_enabled(cfg) -> bool:
     return any(e.kind == "route" and e.enabled for e in cfg.elements)
 
 
-def render_route(from_disp: str, to_disp: str, arrow_key: str) -> str:
+def render_route(from_disp: str, to_disp: str, arrow_key: str,
+                 from_many: bool = False, to_many: bool = False) -> str:
     """Render the route core from two endpoint strings (tokens or names).
 
     Both present → ``from <arrow> to``; only one → ``from <x>`` / ``to <y>``;
-    neither → "". Single source for the tab preview and the generator so the
+    neither → "". The "shape" arrow builds its glyph from the endpoint
+    multiplicity flags ("-" one, "=" several per side); the other arrow keys
+    ignore them. Single source for the tab preview and the generator so the
     format can't drift.
     """
-    arrow = _ROUTE_ARROW_BY_KEY.get(arrow_key, ">")
+    if arrow_key == "shape":
+        arrow = ("=" if from_many else "-") + ">" + ("=" if to_many else "-")
+    else:
+        arrow = _ROUTE_ARROW_BY_KEY.get(arrow_key, ">")
     if from_disp and to_disp:
         return f"{from_disp} {arrow} {to_disp}"
     if from_disp:
@@ -511,6 +574,7 @@ def default_config(category: str) -> TagConfig:
         route_arrow=src.route_arrow,
         title_separator=src.title_separator,
         location_detail=src.location_detail,
+        abbreviate_title=src.abbreviate_title,
     )
 
 

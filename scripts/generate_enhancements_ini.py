@@ -47,8 +47,9 @@ try:
     from src.utils.tag_builder import (
         CRAFT_USAGE_CATEGORIES, DAMAGE_LABEL_TO_MAPPING_KEY,
         DEFAULT_COMMODITY_USAGE_MAPPING, DEFAULT_COMPONENT_CLASS_MAPPING,
-        DEFAULT_TAG_CONFIGS, TagConfig, USAGE_INPUT_SEP,
-        apply_mission_title, render_route, render_tag, route_enabled,
+        DEFAULT_TAG_CONFIGS, SIZE_ABBREV_BY_WORD, TagConfig, USAGE_INPUT_SEP,
+        abbreviate_title, apply_mission_title, render_route, render_tag,
+        route_enabled,
     )
 except ImportError:  # pragma: no cover — only triggers if src/ is removed
     CRAFT_USAGE_CATEGORIES = ()  # type: ignore[assignment]
@@ -61,6 +62,8 @@ except ImportError:  # pragma: no cover — only triggers if src/ is removed
     render_tag = None  # type: ignore[assignment]
     render_route = None  # type: ignore[assignment]
     apply_mission_title = None  # type: ignore[assignment]
+    abbreviate_title = None  # type: ignore[assignment]
+    SIZE_ABBREV_BY_WORD = {}  # type: ignore[assignment]
     def route_enabled(_cfg):  # type: ignore[misc]
         return False
 
@@ -1060,76 +1063,189 @@ def _title_has_route_token(title: str) -> bool:
     )
 
 
-def _title_route_token(var: str, body_token: str, location_detail: str = "name") -> str:
+# Loc-key prefixes the ~mission(CargoGradeToken) title token resolves through.
+_CARGO_GRADE_KEY_PREFIXES = ("HaulCargo_CargoGrade_", "HaulCargo_CargoScale_")
+
+
+def _size_abbreviation_overrides(loc) -> dict:
+    """Loc-key overrides that shorten cargo-grade size words (#200 follow-up).
+
+    When the Shorten-original-titles toggle is on, the grade words a haul
+    title's ``~mission(CargoGradeToken)`` resolves through are abbreviated at
+    the source ("Extra Small" -> "XS") by overriding the
+    ``HaulCargo_CargoGrade_*`` / ``CargoScale_*`` loc keys. Exact value match
+    only, so an unmapped grade passes through untouched.
+    """
+    out: dict = {}
+    if not SIZE_ABBREV_BY_WORD:
+        return out
+    for key, value in (loc or {}).items():
+        if key.startswith(_CARGO_GRADE_KEY_PREFIXES):
+            short = SIZE_ABBREV_BY_WORD.get(value)
+            if short:
+                out[key] = short
+    return out
+
+
+# Canonical route-endpoint family: Location / Destination plus their numbered
+# siblings (Destination1, Location2, ...). Deliberately anchored, not a bare
+# startswith: that also matched vars like a hypothetical LocationName, which
+# must copy the body token verbatim (#200).
+_CANONICAL_ENDPOINT_RE = re.compile(r"(?i)^(location|destination)\d*$")
+
+
+def _title_route_token(var: str, body_token: str, location_detail: str = "address") -> str:
     """Render a route endpoint for a mission TITLE.
 
-    For the canonical ``Location`` / ``Destination`` variables, emit the
-    configurable modifier: ``|name`` (short place name, StarStrings-validated)
-    or ``|Address`` (full address). For any other endpoint variable
-    (Pickup*/Dropoff*) copy the exact token the body uses — those bodies
-    resolve ``|Address``, not ``|name``, so reusing the body token verbatim
-    guarantees the title resolves too (the location_detail toggle only safely
-    reaches Location/Destination).
+    For the canonical ``Location`` / ``Destination`` family (including the
+    numbered ``Destination1``-style siblings) emit the configurable modifier:
+    ``|Address`` (full address, the default; it is what the bodies themselves
+    resolve, so it never falls back to raw variable text in-game) or ``|name``
+    (short place name; fails to resolve for some mission instances, #200).
+    Any other endpoint variable (Pickup*/Dropoff*) copies the exact token the
+    body uses, which the game is guaranteed to resolve.
     """
-    low = var.lower()
-    if low.startswith("location") or low.startswith("destination"):
-        mod = "Address" if location_detail == "address" else "name"
+    if _CANONICAL_ENDPOINT_RE.match(var):
+        mod = "name" if location_detail == "name" else "Address"
         return f"~mission({var}|{mod})"
     return body_token
 
 
-def _derive_route_fragment(desc_bodies: list[str], cfg=None) -> str:
+def _expand_nested_route_vars(var: str, loc, cache=None) -> tuple[dict, dict]:
+    """Endpoints hidden behind a bare ``~mission(<var>)`` loc-token indirection.
+
+    CIG hides haul endpoints one level down: a body says
+    ``~mission(SingleToMultiToken)`` and the game resolves it to one of the
+    loc keys ending ``_SingleToMultiToken`` (``HaulCargo_2/3/4_...`` for
+    2/3/4 drop-offs), whose text holds the real ``~mission(Destination|...)``
+    tokens (#200). Returns ``(from_tokens, to_tokens)`` limited to variables
+    present in EVERY candidate expansion, so a shared title only references
+    variables that resolve no matter which variant an instance uses. Only
+    ``*Token``-suffixed vars are expanded (CIG's naming for these
+    indirections); anything else returns empty.
+    """
+    if cache is not None and var in cache:
+        return cache[var]
+    from_tokens: dict[str, str] = {}
+    to_tokens: dict[str, str] = {}
+    if loc and var.lower().endswith("token"):
+        suffix = "_" + var
+        candidates = [v for k, v in loc.items() if k.endswith(suffix)]
+        per_from: list[dict[str, str]] = []
+        per_to: list[dict[str, str]] = []
+        for text in candidates:
+            frm: dict[str, str] = {}
+            to: dict[str, str] = {}
+            for m in _ROUTE_TOKEN_RE.finditer(text or ""):
+                v2 = m.group(1)
+                role = _route_token_role(v2)
+                if role is None:
+                    continue
+                token = f"~mission({v2}{m.group(2) or ''})"
+                (frm if role == "from" else to).setdefault(v2, token)
+            per_from.append(frm)
+            per_to.append(to)
+        # Strict intersection: a variant without the var means the var is not
+        # guaranteed to register, so the shared title must not reference it.
+        if per_from:
+            common_f = set(per_from[0])
+            common_t = set(per_to[0])
+            for d in per_from[1:]:
+                common_f &= set(d)
+            for d in per_to[1:]:
+                common_t &= set(d)
+            from_tokens = {v: t for v, t in per_from[0].items() if v in common_f}
+            to_tokens = {v: t for v, t in per_to[0].items() if v in common_t}
+    result = (from_tokens, to_tokens)
+    if cache is not None:
+        cache[var] = result
+    return result
+
+
+def _agreed_endpoint_tokens(per_body: list[dict]) -> dict:
+    """Intersect per-body endpoint vars; bodies with none on this side abstain.
+
+    Different pooled bodies may name the same endpoint differently
+    (``Location`` vs ``Location1``); a title token must resolve for every
+    variant, so only vars every contributing body agrees on survive. Bodies
+    with no vars on a side don't veto: several CIG haul descs are pure
+    ``~mission(Contractor|...)`` indirections whose resolved text carries the
+    endpoints, invisible to a static scan; treating them as vetoes would strip
+    routes that demonstrably resolve in-game. First body's order/tokens win.
+    """
+    if not per_body:
+        return {}
+    common = set(per_body[0])
+    for d in per_body[1:]:
+        common &= set(d)
+    return {v: t for v, t in per_body[0].items() if v in common}
+
+
+def _derive_route_fragment(desc_bodies: list[str], cfg=None, loc=None, expand_cache=None) -> str:
     """Build the route CORE for a haul/delivery/courier title (no separator,
-    no placement — the caller places it via ``apply_mission_title``).
+    no placement; the caller places it via ``apply_mission_title``).
 
-    Returns "" when no unambiguous route applies. The shape is driven by how
-    many distinct from/to *variables* the mission's own body resolves:
+    Returns "" when no route applies. Per side (from/to), the endpoint
+    variables are those every contributing body agrees on (see
+    ``_agreed_endpoint_tokens``), after expanding one level of bare
+    ``~mission(*Token)`` indirection against *loc* (see
+    ``_expand_nested_route_vars``). Shapes (#200 rework):
 
-    - one source, one dest       → ``<from> <arrow> <to>``   (A→B)
-    - one source, many/zero dest  → ``from <from>``           (single-to-multi)
-    - one dest, many/zero source  → ``to <to>``               (multi-to-single)
-    - many sources AND many dests → omitted (ambiguous; one title can't carry
-      two routes — the heterogeneous-shared-title guard)
+    - one var per side              → ``<from> <arrow> <to>``   (A→B)
+    - several vars on a side        → comma-separated list
+      (single-to-multi: ``A > B, C``; multi-to-single: ``B, C > A``)
+    - one side empty                → ``from <x>`` / ``to <y>``
+    - both sides empty              → omitted
 
     The arrow and the Location/Destination modifier come from *cfg* (the
     mission_titles TagConfig). A token is only emitted when its variable
-    appears in the body, so the game is guaranteed to resolve it (no raw
+    appears in (or behind) a body, so the game resolves it (no raw
     ``~mission(...)`` text leaks into a title).
     """
     arrow = getattr(cfg, "route_arrow", "gt") if cfg is not None else "gt"
-    detail = getattr(cfg, "location_detail", "name") if cfg is not None else "name"
-    # var name -> the exact ~mission(...) token string first seen in a body.
-    from_tokens: dict[str, str] = {}
-    to_tokens: dict[str, str] = {}
+    detail = getattr(cfg, "location_detail", "address") if cfg is not None else "address"
+    # Per body: var name -> the exact ~mission(...) token string first seen.
+    per_body_from: list[dict[str, str]] = []
+    per_body_to: list[dict[str, str]] = []
     for body in desc_bodies:
         if not body:
             continue
+        frm: dict[str, str] = {}
+        to: dict[str, str] = {}
         for m in _ROUTE_TOKEN_RE.finditer(body):
             var = m.group(1)
             role = _route_token_role(var)
-            if role is None:
-                continue
             token = f"~mission({var}{m.group(2) or ''})"
-            bucket = from_tokens if role == "from" else to_tokens
-            bucket.setdefault(var, token)
+            if role == "from":
+                frm.setdefault(var, token)
+            elif role == "to":
+                to.setdefault(var, token)
+            elif not m.group(2):
+                nested_from, nested_to = _expand_nested_route_vars(var, loc, expand_cache)
+                for v, t in nested_from.items():
+                    frm.setdefault(v, t)
+                for v, t in nested_to.items():
+                    to.setdefault(v, t)
+        if frm:
+            per_body_from.append(frm)
+        if to:
+            per_body_to.append(to)
 
+    from_tokens = _agreed_endpoint_tokens(per_body_from)
+    to_tokens = _agreed_endpoint_tokens(per_body_to)
     if not from_tokens and not to_tokens:
         return ""
-
-    single_from = len(from_tokens) == 1
-    single_to = len(to_tokens) == 1
-
-    from_str = to_str = ""
-    if single_from:
-        fv, ft = next(iter(from_tokens.items()))
-        from_str = _title_route_token(fv, ft, detail)
-    if single_to:
-        tv, tt = next(iter(to_tokens.items()))
-        to_str = _title_route_token(tv, tt, detail)
-    # Many-from AND many-to → ambiguous, omit (render_route on two empties = "").
-    if not single_from and not single_to:
+    from_str = ", ".join(
+        _title_route_token(v, t, detail) for v, t in from_tokens.items()
+    )
+    to_str = ", ".join(
+        _title_route_token(v, t, detail) for v, t in to_tokens.items()
+    )
+    if not render_route:
         return ""
-    return render_route(from_str, to_str, arrow) if render_route else ""
+    return render_route(
+        from_str, to_str, arrow, len(from_tokens) > 1, len(to_tokens) > 1
+    )
 
 
 def _resource_amount(amount_el: ET.Element) -> str | None:
@@ -5513,6 +5629,10 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
                 continue
 
     mission_titles_augmented = 0
+    # Shared memo for _expand_nested_route_vars: the same *Token var (e.g.
+    # SingleToMultiToken) recurs across many titles and each expansion scans
+    # every loc key for the suffix match.
+    _route_expand_cache: dict = {}
     for title_key, variants in contractgen_missions.items():
         base_title = (loc or {}).get(title_key)
         is_discovered_title = not base_title
@@ -5563,7 +5683,6 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         _bp_partial = (
             has_blueprints and _any_variant_has_bp and not _has_dominant_no_bp_bucket
         )
-        augmented_title = base_title
         # Mission Titles tag feature (2.1, #166 successor): add the
         # pickup→dropoff route to haul/delivery/courier titles, placed per the
         # config (prepend/append/replace) BEFORE the [BP]/XP tags below.
@@ -5571,12 +5690,21 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         # a route token so we don't double it. Route variables are read from the
         # mission's own desc bodies so the game is guaranteed to resolve them.
         _mt_cfg = tag_configs.get("mission_titles") or DEFAULT_TAG_CONFIGS.get("mission_titles")
+        # #200 follow-up: optional stock-title shortening so the route plus
+        # [BP]/XP tags don't overflow the contract list. Independent of the
+        # route toggle; same key-family scope.
+        if (abbreviate_title and _is_route_title(title_key)
+                and getattr(_mt_cfg, "abbreviate_title", False)):
+            base_title = abbreviate_title(base_title)
+        augmented_title = base_title
         if (route_enabled(_mt_cfg) and _is_route_title(title_key)
                 and not _title_has_route_token(base_title)):
             _route_descs = pu_title_to_descs.get(title_key, set()) | {
                 v[3] for v in variants if v[3]
             }
-            _route = _derive_route_fragment([loc.get(dk) for dk in _route_descs], _mt_cfg)
+            _route = _derive_route_fragment(
+                [loc.get(dk) for dk in _route_descs], _mt_cfg, loc, _route_expand_cache
+            )
             if _route and apply_mission_title:
                 augmented_title = apply_mission_title(base_title, _route, _mt_cfg)
         if _show("blueprint_tag"):
@@ -5837,6 +5965,16 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
                 continue
 
     xp_tag_re = re.compile(r"<EM4>\[\d[\d,]*(?:[–\-]\d[\d,]*)?\s*\w+\]</EM4>")
+    _mt_cfg2 = tag_configs.get("mission_titles") or DEFAULT_TAG_CONFIGS.get("mission_titles")
+    # #200 follow-up: with Shorten on, abbreviate the cargo-grade size words
+    # haul titles resolve through ("Extra Small" -> "XS") at the loc-key level.
+    if getattr(_mt_cfg2, "abbreviate_title", False):
+        _size_overrides = _size_abbreviation_overrides(loc)
+        if _size_overrides:
+            out.update(_size_overrides)
+            logger.info(
+                f"Abbreviated {len(_size_overrides)} cargo-grade size strings"
+            )
     for title_key, xps in pu_title_xps.items():
         base_title = (loc or {}).get(title_key)
         if not base_title:
@@ -5844,6 +5982,24 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         current = out.get(title_key, base_title)
         if xp_tag_re.search(current):
             continue
+        # #200: pu-only haul/delivery/courier titles (ContractLegacy spawn
+        # paths contractgen never covers, e.g. Covalex_HaulCargo_MultiToSingle)
+        # get the same route + shortening treatment as the contractgen loop
+        # above. Guarded to pure pu titles (not already in out) so a desc
+        # entry sharing the key is never mangled.
+        if (title_key not in out and abbreviate_title
+                and _is_route_title(title_key)
+                and getattr(_mt_cfg2, "abbreviate_title", False)):
+            current = abbreviate_title(current)
+        if (title_key not in out and route_enabled(_mt_cfg2)
+                and _is_route_title(title_key)
+                and not _title_has_route_token(base_title)):
+            _route = _derive_route_fragment(
+                [loc.get(dk) for dk in pu_title_to_descs.get(title_key, set())],
+                _mt_cfg2, loc, _route_expand_cache
+            )
+            if _route and apply_mission_title:
+                current = apply_mission_title(current, _route, _mt_cfg2)
         unique_xp = sorted(set(xps))
         if len(unique_xp) == 1:
             current += f" <EM4>[{unique_xp[0]:,} {rep_xp_label}]</EM4>"

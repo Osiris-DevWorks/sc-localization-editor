@@ -16,7 +16,7 @@ Smart Citizen (formerly SC Localization Editor) is a Windows-only PyQt6 GUI for 
 
 **Branding**: User-facing strings, registry path (`Osiris DevWorks\Smart Citizen`), and the default data root (`Documents\Smart Citizen\`) use the new name. `AppSettings` keeps one-shot migrators for the legacy `Osiris DevWorks\SC Localization Editor` registry tree and `Documents\SC Localization Editor\` folder (rebrand was 0.9.0); keep them while pre-0.9 users may upgrade.
 
-**Version**: `VERSION.TXT` is the sole source of truth. Now 2.1.0.
+**Version**: `VERSION.TXT` is the sole source of truth. Now 2.1.1.
 
 Build modes are covered in `src/utils/CLAUDE.md` under *Portable vs registry build mode*.
 
@@ -203,7 +203,8 @@ Anchor examples already in-tree: `COL_*` constants in `src/gui/string_table_mode
 | Change per-language base.ini download / URL mapping | `src/gui/workers.py`, `src/utils/settings.py`, `languages/sources.json` | `LanguageBaseDownloadWorker`, `get_language_base_url()`, `LanguageSourceDialog` (Config tab's *Map Language File*) |
 | Change per-language cache or enhancements layout | `src/utils/settings.py` | `get_base_ini_path(language)`, `get_enhancements_dir(language)`, `get_/set_enhancements_stamp()` |
 | Toggle mission-detail fields per user | `src/gui/enhancements_tab.py`, `src/utils/settings.py` | `_MISSION_FIELD_SETTING` (per-field show/hide for mission bodies, #121); the `route` key adds the haul route to titles (#166) |
-| Change hauling/delivery route-in-title | `scripts/generate_enhancements_ini.py` | `_derive_route_fragment()` / `_route_token_role()` / `_title_route_token()` (#166; archetype-driven `from > to`, gated by the `route` mission-detail toggle, appended before the [BP]/XP tags) |
+| Change hauling/delivery route-in-title | `scripts/generate_enhancements_ini.py` | `_derive_route_fragment()` / `_route_token_role()` / `_title_route_token()` / `_expand_nested_route_vars()` (#166, reworked in #200: |Address default, comma-listed endpoints, one-level `*Token` expansion, per-body intersection; applied in both the contractgen title loop and the pu-only second pass; placed before the [BP]/XP tags via the mission_titles TagConfig) |
+| Change stock-title shortening (Mission Titles) | `src/utils/tag_builder.py`, `scripts/generate_enhancements_ini.py` | `TITLE_ABBREVIATIONS` phrase map + `abbreviate_title()`; `SIZE_ABBREVIATIONS` + `_size_abbreviation_overrides()` (cargo-grade words to XS/S/M/L via loc-key overrides); gated by `TagConfig.abbreviate_title` (off by default), applied at both title-emission sites (#200 follow-up) |
 | Change Simple/Advanced view mode | `src/gui/main_window.py`, `src/gui/simple_mode_widget.py`, `src/utils/settings.py`, `installer.iss` | `_apply_ui_mode()` (QStackedWidget swap), `_run_simple_apply()` (one-button extract→generate→apply chain via the `_simple_run_active` flag), `get_/set_ui_mode()`, installer `ModeChoicePage` writing `ui_mode` (#180) |
 | Change data-folder move behavior | `src/utils/user_ini_manager.py`, `src/gui/config_tab.py` | `migrate_user_data_dir(old, new, move=...)` (merge-never-overwrite; `move=True` deletes migrated originals and prunes empty dirs) |
 | Change the OneDrive data-root warning | `src/utils/onedrive.py`, `src/gui/main_window.py`, `src/gui/config_tab.py` | `is_onedrive_path()` / `suggest_local_data_dir()`; `_maybe_warn_onedrive_data_dir()` (startup, suppressible) + Config-tab folder-pick warning; `ConfigTab.change_data_dir_to()` for the one-click move (#172) |

@@ -15,8 +15,9 @@ from src.utils.settings import AppSettings
 from src.utils.tag_builder import (
     CATEGORIES, ELEMENT_LABELS, ENCLOSINGS, LOCATION_DETAILS,
     MAPPED_KIND_NAMES, MISSION_TITLE_PLACEMENTS, PLACEMENTS, ROUTE_ARROWS,
-    SEPARATORS, STYLES_BY_KIND, TITLE_SEPARATORS, TagConfig, USAGE_INPUT_SEP,
-    apply_mission_title, default_config, render_route, render_tag, route_enabled,
+    SEPARATORS, SIZE_ABBREVIATIONS, STYLES_BY_KIND, TITLE_SEPARATORS, TagConfig,
+    USAGE_INPUT_SEP, abbreviate_title, apply_mission_title, default_config,
+    render_route, render_tag, route_enabled,
 )
 
 logger = logging.getLogger(__name__)
@@ -1439,7 +1440,7 @@ class _TagBuilderPage(QWidget):
         col.setContentsMargins(10, 6, 10, 6)
         col.setSpacing(6)
 
-        self._mt_enable = QCheckBox("Add route to hauling / delivery / courier titles")
+        self._mt_enable = QCheckBox("Add route to hauling mission titles")
         route_el = next((e for e in self.config.elements if e.kind == "route"), None)
         self._mt_enable.setChecked(bool(route_el and route_el.enabled))
         self._mt_enable.toggled.connect(self._on_mt_enable)
@@ -1451,6 +1452,12 @@ class _TagBuilderPage(QWidget):
         hint.setStyleSheet("font-size: 11px;")
         hint.setWordWrap(True)
         col.addWidget(hint)
+
+        # #200 follow-up: shorten the stock title so the route + tags fit.
+        self._mt_abbrev = QCheckBox("Shorten original titles (drops \"Rank\", \"Cargo Haul\", ...)")
+        self._mt_abbrev.setChecked(bool(getattr(self.config, "abbreviate_title", False)))
+        self._mt_abbrev.toggled.connect(self._on_mt_abbrev)
+        col.addWidget(self._mt_abbrev)
 
         grid = QGridLayout()
         grid.setHorizontalSpacing(6)
@@ -1506,6 +1513,10 @@ class _TagBuilderPage(QWidget):
         self._set_mt_controls_enabled(checked)
         self._refresh_preview()
 
+    def _on_mt_abbrev(self, checked: bool) -> None:
+        self.config.abbreviate_title = checked
+        self._refresh_preview()
+
     def _on_mt_changed(self, _idx: int) -> None:
         self.config.placement = self._mt_placement.currentData() or self.config.placement
         self.config.route_arrow = self._mt_arrow.currentData() or self.config.route_arrow
@@ -1514,7 +1525,13 @@ class _TagBuilderPage(QWidget):
         self._refresh_preview()
 
     def _refresh_mt_preview(self) -> None:
-        sample_title = "Corporal Rank - Direct Medium Cargo Haul"
+        sample_title = "Master Rank - Direct Medium Cargo Haul"
+        if getattr(self.config, "abbreviate_title", False):
+            sample_title = abbreviate_title(sample_title)
+            # In-game the size comes from the CargoGradeToken loc keys the
+            # generator overrides; mirror that on the literal sample here.
+            for word, short in SIZE_ABBREVIATIONS:
+                sample_title = sample_title.replace(word, short)
         if not route_enabled(self.config):
             self.preview_label.setText(f"Preview:  {sample_title} [50 REP]  (route off)")
             return
@@ -1552,6 +1569,7 @@ class _TagBuilderPage(QWidget):
         if self.category == "mission_titles":
             route_el = next((e for e in fresh.elements if e.kind == "route"), None)
             self._mt_enable.setChecked(bool(route_el and route_el.enabled))
+            self._mt_abbrev.setChecked(bool(fresh.abbreviate_title))
             self._select_combo(self._mt_placement, fresh.placement)
             self._select_combo(self._mt_arrow, fresh.route_arrow)
             self._select_combo(self._mt_sep, fresh.title_separator)

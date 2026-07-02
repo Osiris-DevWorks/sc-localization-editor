@@ -2,12 +2,15 @@
 
 The pure route helpers in scripts/generate_enhancements_ini.py
 (`_derive_route_fragment`, `_route_token_role`, `_title_route_token`,
-`_is_route_title`) driven with synthetic bodies. In 2.1 the route became a
-Tag Builder feature: `_derive_route_fragment` returns the route CORE (no ` | `
-separator, no placement — the caller places it via tag_builder.apply_mission_title),
-the arrow and Location/Destination modifier come from the mission_titles config,
-and courier titles are eligible. The stale `kraken_4.7.ini` fixture is deliberately
-not used as ground truth.
+`_is_route_title`, `_expand_nested_route_vars`) driven with synthetic bodies.
+In 2.1 the route became a Tag Builder feature: `_derive_route_fragment` returns
+the route CORE (no ` | ` separator, no placement; the caller places it via
+tag_builder.apply_mission_title), the arrow and Location/Destination modifier
+come from the mission_titles config, and courier titles are eligible. The 2.1.1
+hotfix (#200) reworked the shapes: |Address is the default modifier, endpoint
+sides render comma lists, bare ``*Token`` vars expand one level against the loc
+table, and per-body intersection guards shared titles. The stale
+`kraken_4.7.ini` fixture is deliberately not used as ground truth.
 """
 from __future__ import annotations
 
@@ -58,23 +61,32 @@ def test_role_none(gen_module, var):
 # ── Route CORE shape (no separator; caller places it) ───────────────────────
 
 def test_atob_full_route(gen_module):
-    """One source, one dest → ``from > to`` with the short |name modifier."""
+    """One source, one dest → ``from > to`` with the |Address modifier
+    (2.1.1 default, #200: |name fails to resolve for some instances)."""
     body = "stash at <EM4>~mission(Location|Address)</EM4>, deliver to ~mission(Destination|Address)"
     assert gen_module._derive_route_fragment([body]) == (
-        "~mission(Location|name) > ~mission(Destination|name)"
+        "~mission(Location|Address) > ~mission(Destination|Address)"
     )
 
 
-def test_multi_to_single_shows_dest_only(gen_module):
+def test_multi_to_single_lists_sources(gen_module):
+    """#200: multiple pickups render as a comma list, not a degraded 'to'."""
     body = ("grab from ~mission(Location1|Address) and ~mission(Location2|Address), "
             "bring to ~mission(Destination|Address)")
-    assert gen_module._derive_route_fragment([body]) == "to ~mission(Destination|name)"
+    assert gen_module._derive_route_fragment([body]) == (
+        "~mission(Location1|Address), ~mission(Location2|Address)"
+        " > ~mission(Destination|Address)"
+    )
 
 
-def test_single_to_multi_shows_source_only(gen_module):
+def test_single_to_multi_lists_destinations(gen_module):
+    """#200: multiple drop-offs render as a comma list, not 'from X' only."""
     body = ("collect at ~mission(Location|Address), deliver to "
             "~mission(Destination1|Address) and ~mission(Destination2|Address)")
-    assert gen_module._derive_route_fragment([body]) == "from ~mission(Location|name)"
+    assert gen_module._derive_route_fragment([body]) == (
+        "~mission(Location|Address) > "
+        "~mission(Destination1|Address), ~mission(Destination2|Address)"
+    )
 
 
 def test_pickup_dropoff_copied_verbatim(gen_module):
@@ -87,7 +99,7 @@ def test_pickup_dropoff_copied_verbatim(gen_module):
 
 def test_source_only_when_no_dest(gen_module):
     body = "objective located at ~mission(Location|Address)"
-    assert gen_module._derive_route_fragment([body]) == "from ~mission(Location|name)"
+    assert gen_module._derive_route_fragment([body]) == "from ~mission(Location|Address)"
 
 
 def test_no_route_tokens_omitted(gen_module):
@@ -95,10 +107,39 @@ def test_no_route_tokens_omitted(gen_module):
     assert gen_module._derive_route_fragment([body]) == ""
 
 
-def test_ambiguous_multi_multi_omitted(gen_module):
+def test_single_body_multi_multi_lists_both_sides(gen_module):
+    """All four vars in ONE body are all registered → both comma lists render
+    (#200 rework: the old many-many guard only applies across bodies)."""
     body = ("~mission(Location1|Address) ~mission(Location2|Address) -> "
             "~mission(Destination1|Address) ~mission(Destination2|Address)")
-    assert gen_module._derive_route_fragment([body]) == ""
+    assert gen_module._derive_route_fragment([body]) == (
+        "~mission(Location1|Address), ~mission(Location2|Address) > "
+        "~mission(Destination1|Address), ~mission(Destination2|Address)"
+    )
+
+
+def test_cross_body_var_disagreement_omits_side(gen_module):
+    """Pooled bodies naming the pickup differently can't share a title token:
+    the from side is dropped; the agreed Destination survives."""
+    bodies = [
+        "from ~mission(Location|Address) to ~mission(Destination|Address)",
+        "from ~mission(Location1|Address) to ~mission(Destination|Address)",
+    ]
+    assert gen_module._derive_route_fragment(bodies) == (
+        "to ~mission(Destination|Address)"
+    )
+
+
+def test_body_without_side_vars_abstains(gen_module):
+    """A pooled body with no endpoint vars (pure Contractor indirection) must
+    not veto the route the other bodies agree on."""
+    bodies = [
+        "~mission(Contractor|HaulCargo_AtoB) plain text, no endpoints",
+        "from ~mission(Location|Address) to ~mission(Destination|Address)",
+    ]
+    assert gen_module._derive_route_fragment(bodies) == (
+        "~mission(Location|Address) > ~mission(Destination|Address)"
+    )
 
 
 def test_empty_and_none_bodies_safe(gen_module):
@@ -106,24 +147,105 @@ def test_empty_and_none_bodies_safe(gen_module):
     assert gen_module._derive_route_fragment([None, "", "no tokens here"]) == ""
 
 
+# ── Nested *Token indirection (#200) ─────────────────────────────────────────
+
+_SM_LOC = {
+    "HaulCargo_2_SingleToMultiToken": (
+        "- Freight elevator at ~mission(Destination|Address)\\n"
+        "- Freight elevator at ~mission(Destination1|Address)"
+    ),
+    "HaulCargo_3_SingleToMultiToken": (
+        "- Freight elevator at ~mission(Destination|Address)\\n"
+        "- Freight elevator at ~mission(Destination1|Address)\\n"
+        "- Freight elevator at ~mission(Destination2|Address)"
+    ),
+}
+
+
+def test_nested_token_expansion_lists_guaranteed_drops(gen_module):
+    """SingleToMulti hauls hide drop-offs behind ~mission(SingleToMultiToken);
+    the title gets the drops EVERY variant registers (intersection: the 3-drop
+    variant's Destination2 is excluded, a 2-drop instance can't resolve it)."""
+    body = ("cargo at <EM4>~mission(Location|Address)</EM4> "
+            "DROP OFF LOCATIONS\\n~mission(SingleToMultiToken)\\nthanks")
+    assert gen_module._derive_route_fragment([body], None, _SM_LOC) == (
+        "~mission(Location|Address) > "
+        "~mission(Destination|Address), ~mission(Destination1|Address)"
+    )
+
+
+def test_nested_expansion_only_follows_token_suffixed_vars(gen_module):
+    """Bare vars not ending in 'Token' are never expanded, even when a
+    suffix-matching loc key exists."""
+    loc = {"HaulCargo_2_DropSpots": "~mission(Destination|Address)"}
+    body = "at ~mission(Location|Address), see ~mission(DropSpots)"
+    assert gen_module._derive_route_fragment([body], None, loc) == (
+        "from ~mission(Location|Address)"
+    )
+
+
+def test_nested_expansion_cache_reused(gen_module):
+    cache: dict = {}
+    body = "at ~mission(Location|Address) ~mission(SingleToMultiToken)"
+    first = gen_module._derive_route_fragment([body], None, _SM_LOC, cache)
+    assert "SingleToMultiToken" in cache
+    # Same result served from the memo, even against an emptied loc table.
+    assert gen_module._derive_route_fragment([body], None, {}, cache) == first
+
+
 # ── Config-driven arrow + location detail ───────────────────────────────────
 
 def test_arrow_from_config(gen_module):
+    """The 'arrow' option renders '->': mobiGlas has no glyph for U+2192 (#200)."""
     cfg = default_config("mission_titles")
     cfg.route_arrow = "arrow"
     body = "at ~mission(Location|Address) to ~mission(Destination|Address)"
     assert gen_module._derive_route_fragment([body], cfg) == (
-        "~mission(Location|name) → ~mission(Destination|name)"
+        "~mission(Location|Address) -> ~mission(Destination|Address)"
     )
 
 
-def test_location_detail_address_only_affects_canonical(gen_module):
+def test_size_abbreviation_overrides(gen_module):
+    """#200 follow-up: Shorten also abbreviates the cargo-grade words the
+    CargoGradeToken resolves through, via exact-value loc-key overrides."""
+    loc = {
+        "HaulCargo_CargoGrade_ExtraSmall": "Extra Small",
+        "HaulCargo_CargoGrade_Supply": "Medium",
+        "HaulCargo_CargoScale_Large": "Large",
+        "HaulCargo_CargoGrade_Odd": "Gargantuan",  # unmapped grade: untouched
+        "Unrelated_Key": "Small",                  # wrong prefix: untouched
+    }
+    assert gen_module._size_abbreviation_overrides(loc) == {
+        "HaulCargo_CargoGrade_ExtraSmall": "XS",
+        "HaulCargo_CargoGrade_Supply": "M",
+        "HaulCargo_CargoScale_Large": "L",
+    }
+    assert gen_module._size_abbreviation_overrides(None) == {}
+
+
+def test_shape_arrow_from_derivation(gen_module):
+    """The shape arrow picks up the derived endpoint counts (#200 follow-up):
+    one pickup, two drop-offs renders the one-to-many glyph."""
     cfg = default_config("mission_titles")
-    cfg.location_detail = "address"
-    # Location/Destination honor the toggle...
-    body = "at ~mission(Location|Address) to ~mission(Destination|Address)"
+    cfg.route_arrow = "shape"
+    body = ("collect at ~mission(Location|Address), deliver to "
+            "~mission(Destination1|Address) and ~mission(Destination2|Address)")
     assert gen_module._derive_route_fragment([body], cfg) == (
-        "~mission(Location|Address) > ~mission(Destination|Address)"
+        "~mission(Location|Address) ->= "
+        "~mission(Destination1|Address), ~mission(Destination2|Address)"
+    )
+
+
+def test_location_detail_name_covers_canonical_family(gen_module):
+    """|name opt-in reaches Location/Destination AND their numbered siblings
+    (a mixed name/Address comma list would look broken)..."""
+    cfg = default_config("mission_titles")
+    cfg.location_detail = "name"
+    body = ("at ~mission(Location|Address) to "
+            "~mission(Destination|Address) and ~mission(Destination1|Address)")
+    assert gen_module._derive_route_fragment([body], cfg) == (
+        "~mission(Location|name) > "
+        "~mission(Destination|name), ~mission(Destination1|name)"
     )
     # ...but Pickup/Dropoff keep the body's own modifier regardless.
     body2 = "pick up ~mission(Pickup1|Address), drop at ~mission(Dropoff1|Address)"
