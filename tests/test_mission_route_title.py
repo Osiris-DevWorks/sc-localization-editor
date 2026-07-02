@@ -205,6 +205,24 @@ def test_arrow_from_config(gen_module):
     )
 
 
+def test_size_abbreviation_overrides(gen_module):
+    """#200 follow-up: Shorten also abbreviates the cargo-grade words the
+    CargoGradeToken resolves through, via exact-value loc-key overrides."""
+    loc = {
+        "HaulCargo_CargoGrade_ExtraSmall": "Extra Small",
+        "HaulCargo_CargoGrade_Supply": "Medium",
+        "HaulCargo_CargoScale_Large": "Large",
+        "HaulCargo_CargoGrade_Odd": "Gargantuan",  # unmapped grade: untouched
+        "Unrelated_Key": "Small",                  # wrong prefix: untouched
+    }
+    assert gen_module._size_abbreviation_overrides(loc) == {
+        "HaulCargo_CargoGrade_ExtraSmall": "XS",
+        "HaulCargo_CargoGrade_Supply": "M",
+        "HaulCargo_CargoScale_Large": "L",
+    }
+    assert gen_module._size_abbreviation_overrides(None) == {}
+
+
 def test_shape_arrow_from_derivation(gen_module):
     """The shape arrow picks up the derived endpoint counts (#200 follow-up):
     one pickup, two drop-offs renders the one-to-many glyph."""
