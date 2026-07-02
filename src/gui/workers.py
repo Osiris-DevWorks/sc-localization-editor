@@ -460,18 +460,33 @@ class SelectAllDelegate(QStyledItemDelegate):
     - Selects all text when the editor opens so typing overwrites but Esc keeps it.
     - Extends the editor's right-click menu with <EM3>/<EM4> wrap actions so
       authors can apply Star Citizen emphasis tags around the selected text.
+    - Supports ``cursor_at_start`` mode: when set, the editor opens with the
+      cursor at position 0 instead of selecting all (used by the double-click-
+      on-Current-Value shortcut).
     """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._cursor_at_start = False
+
+    def set_cursor_at_start(self, flag: bool) -> None:
+        """Next editor will open with the cursor at position 0."""
+        self._cursor_at_start = flag
 
     def createEditor(self, parent, option, index):
         from PyQt6.QtWidgets import QLineEdit
         editor = super().createEditor(parent, option, index)
-        if hasattr(editor, 'selectAll'):
-            editor.selectAll()
         if isinstance(editor, QLineEdit):
             editor.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
             editor.customContextMenuRequested.connect(
                 lambda pos, ed=editor: SelectAllDelegate._show_editor_menu(ed, pos)
             )
+        if self._cursor_at_start:
+            self._cursor_at_start = False
+            if hasattr(editor, 'setCursorPosition'):
+                editor.setCursorPosition(0)
+        elif hasattr(editor, 'selectAll'):
+            editor.selectAll()
         return editor
 
     @staticmethod

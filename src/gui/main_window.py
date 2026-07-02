@@ -1133,10 +1133,13 @@ class MainWindow(QMainWindow):
         # not take ownership, and PyQt's per-method keep-reference holds only the
         # last delegate, so a second unparented setItemDelegateForColumn would
         # let the first (Custom Value) delegate be garbage-collected.
-        self.table.setItemDelegateForColumn(COL_CUSTOM, SelectAllDelegate(self.table))
+        self._custom_value_delegate = SelectAllDelegate(self.table)
+        self.table.setItemDelegateForColumn(COL_CUSTOM, self._custom_value_delegate)
         self.table.setItemDelegateForColumn(COL_ORDER, OrderSpinBoxDelegate(self.table))
         # Star column click handling
         self.table.clicked.connect(self._on_cell_clicked)
+        # Double-click: copy Current Value → Custom Value and open for edit
+        self.table.doubleClicked.connect(self._on_cell_double_clicked)
 
         layout.addWidget(self.table)
 
@@ -4549,6 +4552,28 @@ class MainWindow(QMainWindow):
             entry_idx = self._entry_index_for_row(proxy_index.row())
             if entry_idx < len(self.entries) and self.entries[entry_idx].category == "Ships":
                 self.toggle_favorite(proxy_index.row())
+
+    @pyqtSlot(QModelIndex)
+    def _on_cell_double_clicked(self, proxy_index: QModelIndex):
+        """Double-click on Current Value copies it to Custom Value and opens
+        the Custom Value cell for editing with the cursor at the start."""
+        if proxy_index.column() != COL_CURRENT:
+            return
+        entry_idx = self._entry_index_for_row(proxy_index.row())
+        if entry_idx >= len(self.entries):
+            return
+        entry = self.entries[entry_idx]
+        current_value = entry.original_value or ""
+        if not current_value:
+            return
+        entry.custom_value = current_value
+        entry.status = "Modified"
+        self._model.notify_entry_changed(entry_idx)
+        # Open the Custom Value editor with cursor at the beginning
+        self._custom_value_delegate.set_cursor_at_start(True)
+        custom_index = self._model.index(proxy_index.row(), COL_CUSTOM)
+        self.table.setCurrentIndex(custom_index)
+        self.table.edit(custom_index)
 
     def _rebuild_blueprint_metadata(self):
         """#157 follow-up: scan loaded strings once to build the blueprint-item
