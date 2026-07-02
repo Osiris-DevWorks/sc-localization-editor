@@ -190,10 +190,10 @@ _TITLE_SEP_BY_KEY = {k: s for k, _, s in TITLE_SEPARATORS}
 # never touched. Ordered longest-first so specific phrases win over fragments.
 # Unmapped titles pass through unchanged, so a new CIG title can never break.
 TITLE_ABBREVIATIONS: tuple[tuple[str, str], ...] = (
-    ("Opportunity for Independent Cargo Hauler", "Intro Haul"),
+    ("Opportunity for Independent Cargo Hauler", "Intro"),
     ("Hauler Needed for", "-"),
     ("Local Shipment Route", "Route"),
-    ("Cargo Haul", "Haul"),
+    ("Cargo Haul", ""),
     (" Rank -", " -"),
     (" Rank,", ","),
 )
@@ -202,13 +202,15 @@ TITLE_ABBREVIATIONS: tuple[tuple[str, str], ...] = (
 def abbreviate_title(title: str) -> str:
     """Shorten a stock mission title via the curated phrase map.
 
-    Plain literal replacement plus whitespace collapse; game tokens pass
-    through untouched. Single source for the generator and the tab preview.
+    Plain literal replacement plus whitespace collapse and a trailing
+    separator trim (a removed phrase can leave a dangling " -"); game tokens
+    pass through untouched. Single source for the generator and the tab
+    preview.
     """
     out = title
     for phrase, short in TITLE_ABBREVIATIONS:
         out = out.replace(phrase, short)
-    return " ".join(out.split())
+    return " ".join(out.split()).rstrip(" -,")
 
 
 # ── Built-in class/ordinance/damage variant mappings ─────────────────────────
