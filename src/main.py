@@ -127,6 +127,11 @@ def main():
         # registry-cleanup half.
         AppSettings.migrate_legacy_settings()
 
+    # 2.1.1 (#200): flip a 2.1.0-seeded mission_titles location_detail "name"
+    # to "address" (|name fails to resolve for some mission instances). Runs
+    # in both build modes; portable configs carry the same seeded value.
+    AppSettings.migrate_mission_titles_location_detail()
+
     # Always keep user source path in sync with canonical user.ini location
     AppSettings.set_source_path(AppSettings.SOURCE_USER, str(AppSettings.get_user_ini_path()))
 

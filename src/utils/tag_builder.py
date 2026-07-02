@@ -149,7 +149,8 @@ _ENCLOSING_BY_KEY = {k: (o, c) for k, _, o, c in ENCLOSINGS}
 # (key, label, render_string)
 ROUTE_ARROWS: tuple[tuple[str, str, str], ...] = (
     ("gt",    "Greater-than ( > )", ">"),
-    ("arrow", "Arrow ( → )",   "→"),
+    # "->" not "→": mobiGlas has no glyph for U+2192 and draws a box (#200).
+    ("arrow", "Arrow ( -> )",  "->"),
     ("to",    "Word ( to )",        "to"),
 )
 # The separator between the route and the original title (prepend/append).
@@ -329,7 +330,10 @@ class TagConfig:
     # Mission-title route config (only the "mission_titles" category uses these).
     route_arrow: str = "gt"        # key from ROUTE_ARROWS (origin > destination)
     title_separator: str = "dash"  # key from TITLE_SEPARATORS (route <-> title)
-    location_detail: str = "name"  # "name" or "address" (token modifier)
+    # "address" or "name" (token modifier). Address is the default: it is what
+    # mission bodies themselves resolve, so it never falls back to raw variable
+    # text in-game; |name fails for some mission instances (#200).
+    location_detail: str = "address"
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -371,7 +375,7 @@ class TagConfig:
             usage_separator=data.get("usage_separator", "pipe") or "pipe",
             route_arrow=data.get("route_arrow", "gt") or "gt",
             title_separator=data.get("title_separator", "dash") or "dash",
-            location_detail=data.get("location_detail", "name") or "name",
+            location_detail=data.get("location_detail", "address") or "address",
         )
 
     @classmethod
@@ -448,12 +452,13 @@ DEFAULT_TAG_CONFIGS["mission_titles"] = TagConfig(
     # A single "route" element whose enabled-flag is the feature on/off. The
     # look is driven by route_arrow / title_separator / location_detail +
     # placement, not by element styles. Default: route-led (prepend), ">",
-    # " - " join, short place name. Absorbs the #166 route-in-title toggle.
+    # " - " join, full address (2.1.1, #200: short |name can fail to resolve
+    # for some mission instances). Absorbs the #166 route-in-title toggle.
     elements=[ElementSpec("route", True, "")],
     placement="prepend",
     route_arrow="gt",
     title_separator="dash",
-    location_detail="name",
+    location_detail="address",
 )
 
 

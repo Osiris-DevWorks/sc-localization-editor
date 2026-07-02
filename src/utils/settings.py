@@ -658,6 +658,34 @@ class AppSettings:
         s.sync()
 
     @staticmethod
+    def migrate_mission_titles_location_detail() -> None:
+        """One-time (2.1.1, #200): flip a saved mission_titles config from the
+        2.1.0-seeded ``location_detail: "name"`` to ``"address"``. The short
+        ``|name`` modifier fails to resolve for some mission instances in-game
+        (raw "Locationname" text in the title); ``|Address`` is what mission
+        bodies themselves use and always resolves. 2.1.0 seeded "name" as the
+        default, so a saved "name" was never a deliberate choice. Marker-gated:
+        a user who picks Name afterward isn't re-flipped."""
+        s = AppSettings.settings()
+        marker = "tag_builder/mission_titles/location_detail_migrated"
+        if s.value(marker, False, type=bool):
+            return
+        raw = s.value("tag_builder/mission_titles/config", "", type=str)
+        if raw:
+            try:
+                from src.utils.tag_builder import TagConfig
+                cfg = TagConfig.from_json(raw)
+                if cfg.location_detail == "name":
+                    cfg.location_detail = "address"
+                    AppSettings.set_tag_config("mission_titles", cfg)
+            except Exception:
+                # Unreadable blob: leave it, get_tag_config already falls
+                # back to the (now address-defaulted) default config.
+                pass
+        s.setValue(marker, True)
+        s.sync()
+
+    @staticmethod
     def get_mission_detail_fields() -> dict:
         """Return {field: enabled} for the mission DETAILS body fields (#121).
 
