@@ -98,19 +98,23 @@ class TestAbbreviateTitle:
     """#200 follow-up: curated stock-title shortening for hauling titles."""
 
     def test_phrase_map_on_real_title_shapes(self):
+        # "Haul" is dropped entirely from shortened titles, not abbreviated.
         assert abbreviate_title(
             "~mission(ReputationRank) Rank - ~mission(CargoGradeToken) Cargo Haul"
-        ) == "~mission(ReputationRank) - ~mission(CargoGradeToken) Haul"
+        ) == "~mission(ReputationRank) - ~mission(CargoGradeToken)"
         assert abbreviate_title(
             "~mission(ReputationRank) Rank - Direct ~mission(CargoGradeToken) Cargo Haul"
-        ) == "~mission(ReputationRank) - Direct ~mission(CargoGradeToken) Haul"
+        ) == "~mission(ReputationRank) - Direct ~mission(CargoGradeToken)"
         assert abbreviate_title(
             "~mission(ReputationRank) Hauler Needed for ~mission(CargoGradeToken) Shipment"
         ) == "~mission(ReputationRank) - ~mission(CargoGradeToken) Shipment"
         assert abbreviate_title("Covalex Local Shipment Route") == "Covalex Route"
         assert abbreviate_title(
             "Opportunity for Independent Cargo Hauler"
-        ) == "Intro Haul"
+        ) == "Intro"
+
+    def test_removed_phrase_never_leaves_dangling_separator(self):
+        assert abbreviate_title("Something - Cargo Haul") == "Something"
 
     def test_unmapped_title_passes_through(self):
         assert abbreviate_title("Quantum Sensitive Delivery") == "Quantum Sensitive Delivery"

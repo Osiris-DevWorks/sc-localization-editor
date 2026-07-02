@@ -1454,7 +1454,7 @@ class _TagBuilderPage(QWidget):
         col.addWidget(hint)
 
         # #200 follow-up: shorten the stock title so the route + tags fit.
-        self._mt_abbrev = QCheckBox("Shorten original titles (\"Rank - Cargo Haul\" reads \"- Haul\")")
+        self._mt_abbrev = QCheckBox("Shorten original titles (drops \"Rank\", \"Cargo Haul\", ...)")
         self._mt_abbrev.setChecked(bool(getattr(self.config, "abbreviate_title", False)))
         self._mt_abbrev.toggled.connect(self._on_mt_abbrev)
         col.addWidget(self._mt_abbrev)
@@ -1525,7 +1525,7 @@ class _TagBuilderPage(QWidget):
         self._refresh_preview()
 
     def _refresh_mt_preview(self) -> None:
-        sample_title = "Corporal Rank - Direct Medium Cargo Haul"
+        sample_title = "Master Rank - Direct Medium Cargo Haul"
         if getattr(self.config, "abbreviate_title", False):
             sample_title = abbreviate_title(sample_title)
         if not route_enabled(self.config):
