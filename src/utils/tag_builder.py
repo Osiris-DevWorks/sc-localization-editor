@@ -452,7 +452,7 @@ DEFAULT_TAG_CONFIGS["mission_titles"] = TagConfig(
     # A single "route" element whose enabled-flag is the feature on/off. The
     # look is driven by route_arrow / title_separator / location_detail +
     # placement, not by element styles. Default: route-led (prepend), ">",
-    # " - " join, full address (2.1.1, #200 — short |name can fail to resolve
+    # " - " join, full address (2.1.1, #200: short |name can fail to resolve
     # for some mission instances). Absorbs the #166 route-in-title toggle.
     elements=[ElementSpec("route", True, "")],
     placement="prepend",

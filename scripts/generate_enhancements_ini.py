@@ -1072,7 +1072,7 @@ def _title_route_token(var: str, body_token: str, location_detail: str = "addres
 
     For the canonical ``Location`` / ``Destination`` family (including the
     numbered ``Destination1``-style siblings) emit the configurable modifier:
-    ``|Address`` (full address — the default; it is what the bodies themselves
+    ``|Address`` (full address, the default; it is what the bodies themselves
     resolve, so it never falls back to raw variable text in-game) or ``|name``
     (short place name; fails to resolve for some mission instances, #200).
     Any other endpoint variable (Pickup*/Dropoff*) copies the exact token the
@@ -1141,7 +1141,7 @@ def _agreed_endpoint_tokens(per_body: list[dict]) -> dict:
     Different pooled bodies may name the same endpoint differently
     (``Location`` vs ``Location1``); a title token must resolve for every
     variant, so only vars every contributing body agrees on survive. Bodies
-    with no vars on a side don't veto — several CIG haul descs are pure
+    with no vars on a side don't veto: several CIG haul descs are pure
     ``~mission(Contractor|...)`` indirections whose resolved text carries the
     endpoints, invisible to a static scan; treating them as vetoes would strip
     routes that demonstrably resolve in-game. First body's order/tokens win.
@@ -1156,7 +1156,7 @@ def _agreed_endpoint_tokens(per_body: list[dict]) -> dict:
 
 def _derive_route_fragment(desc_bodies: list[str], cfg=None, loc=None, expand_cache=None) -> str:
     """Build the route CORE for a haul/delivery/courier title (no separator,
-    no placement — the caller places it via ``apply_mission_title``).
+    no placement; the caller places it via ``apply_mission_title``).
 
     Returns "" when no route applies. Per side (from/to), the endpoint
     variables are those every contributing body agrees on (see

@@ -4,7 +4,7 @@ The pure route helpers in scripts/generate_enhancements_ini.py
 (`_derive_route_fragment`, `_route_token_role`, `_title_route_token`,
 `_is_route_title`, `_expand_nested_route_vars`) driven with synthetic bodies.
 In 2.1 the route became a Tag Builder feature: `_derive_route_fragment` returns
-the route CORE (no ` | ` separator, no placement — the caller places it via
+the route CORE (no ` | ` separator, no placement; the caller places it via
 tag_builder.apply_mission_title), the arrow and Location/Destination modifier
 come from the mission_titles config, and courier titles are eligible. The 2.1.1
 hotfix (#200) reworked the shapes: |Address is the default modifier, endpoint
@@ -62,7 +62,7 @@ def test_role_none(gen_module, var):
 
 def test_atob_full_route(gen_module):
     """One source, one dest → ``from > to`` with the |Address modifier
-    (2.1.1 default — |name fails to resolve for some instances, #200)."""
+    (2.1.1 default, #200: |name fails to resolve for some instances)."""
     body = "stash at <EM4>~mission(Location|Address)</EM4>, deliver to ~mission(Destination|Address)"
     assert gen_module._derive_route_fragment([body]) == (
         "~mission(Location|Address) > ~mission(Destination|Address)"
@@ -119,7 +119,7 @@ def test_single_body_multi_multi_lists_both_sides(gen_module):
 
 
 def test_cross_body_var_disagreement_omits_side(gen_module):
-    """Pooled bodies naming the pickup differently can't share a title token —
+    """Pooled bodies naming the pickup differently can't share a title token:
     the from side is dropped; the agreed Destination survives."""
     bodies = [
         "from ~mission(Location|Address) to ~mission(Destination|Address)",

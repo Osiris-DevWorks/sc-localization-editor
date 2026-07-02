@@ -679,7 +679,7 @@ class AppSettings:
                     cfg.location_detail = "address"
                     AppSettings.set_tag_config("mission_titles", cfg)
             except Exception:
-                # Unreadable blob: leave it — get_tag_config already falls
+                # Unreadable blob: leave it, get_tag_config already falls
                 # back to the (now address-defaulted) default config.
                 pass
         s.setValue(marker, True)
