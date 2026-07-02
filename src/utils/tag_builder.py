@@ -199,6 +199,21 @@ TITLE_ABBREVIATIONS: tuple[tuple[str, str], ...] = (
 )
 
 
+# Cargo-grade size words → abbreviations, applied with the Shorten toggle
+# (#200 follow-up). The ~mission(CargoGradeToken) title token resolves through
+# the HaulCargo_CargoGrade_* / HaulCargo_CargoScale_* loc keys, so the
+# generator overrides those VALUES (exact match only; an unmapped grade passes
+# through untouched). Ordered longest-first for literal-text use (preview).
+SIZE_ABBREVIATIONS: tuple[tuple[str, str], ...] = (
+    ("Extra Small", "XS"),
+    ("Extra Large", "XL"),
+    ("Small", "S"),
+    ("Medium", "M"),
+    ("Large", "L"),
+)
+SIZE_ABBREV_BY_WORD: dict[str, str] = dict(SIZE_ABBREVIATIONS)
+
+
 def abbreviate_title(title: str) -> str:
     """Shorten a stock mission title via the curated phrase map.
 

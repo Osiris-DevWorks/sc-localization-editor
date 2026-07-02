@@ -13,6 +13,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from src.utils.json_settings import JsonSettings  # noqa: E402
 from src.utils.settings import AppSettings  # noqa: E402
 from src.utils.tag_builder import (  # noqa: E402
+    SIZE_ABBREV_BY_WORD,
+    SIZE_ABBREVIATIONS,
     TagConfig,
     abbreviate_title,
     apply_mission_title,
@@ -115,6 +117,15 @@ class TestAbbreviateTitle:
 
     def test_removed_phrase_never_leaves_dangling_separator(self):
         assert abbreviate_title("Something - Cargo Haul") == "Something"
+
+    def test_size_abbreviations_order_and_content(self):
+        # Longest-first so a literal-text pass can't turn "Extra Small"
+        # into "Extra S".
+        words = [w for w, _ in SIZE_ABBREVIATIONS]
+        assert words.index("Extra Small") < words.index("Small")
+        assert words.index("Extra Large") < words.index("Large")
+        assert SIZE_ABBREV_BY_WORD["Extra Small"] == "XS"
+        assert SIZE_ABBREV_BY_WORD["Medium"] == "M"
 
     def test_unmapped_title_passes_through(self):
         assert abbreviate_title("Quantum Sensitive Delivery") == "Quantum Sensitive Delivery"

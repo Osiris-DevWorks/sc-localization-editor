@@ -47,7 +47,7 @@ try:
     from src.utils.tag_builder import (
         CRAFT_USAGE_CATEGORIES, DAMAGE_LABEL_TO_MAPPING_KEY,
         DEFAULT_COMMODITY_USAGE_MAPPING, DEFAULT_COMPONENT_CLASS_MAPPING,
-        DEFAULT_TAG_CONFIGS, TagConfig, USAGE_INPUT_SEP,
+        DEFAULT_TAG_CONFIGS, SIZE_ABBREV_BY_WORD, TagConfig, USAGE_INPUT_SEP,
         abbreviate_title, apply_mission_title, render_route, render_tag,
         route_enabled,
     )
@@ -63,6 +63,7 @@ except ImportError:  # pragma: no cover — only triggers if src/ is removed
     render_route = None  # type: ignore[assignment]
     apply_mission_title = None  # type: ignore[assignment]
     abbreviate_title = None  # type: ignore[assignment]
+    SIZE_ABBREV_BY_WORD = {}  # type: ignore[assignment]
     def route_enabled(_cfg):  # type: ignore[misc]
         return False
 
@@ -1060,6 +1061,30 @@ def _title_has_route_token(title: str) -> bool:
         _route_token_role(m.group(1)) is not None
         for m in _ROUTE_TOKEN_RE.finditer(title)
     )
+
+
+# Loc-key prefixes the ~mission(CargoGradeToken) title token resolves through.
+_CARGO_GRADE_KEY_PREFIXES = ("HaulCargo_CargoGrade_", "HaulCargo_CargoScale_")
+
+
+def _size_abbreviation_overrides(loc) -> dict:
+    """Loc-key overrides that shorten cargo-grade size words (#200 follow-up).
+
+    When the Shorten-original-titles toggle is on, the grade words a haul
+    title's ``~mission(CargoGradeToken)`` resolves through are abbreviated at
+    the source ("Extra Small" -> "XS") by overriding the
+    ``HaulCargo_CargoGrade_*`` / ``CargoScale_*`` loc keys. Exact value match
+    only, so an unmapped grade passes through untouched.
+    """
+    out: dict = {}
+    if not SIZE_ABBREV_BY_WORD:
+        return out
+    for key, value in (loc or {}).items():
+        if key.startswith(_CARGO_GRADE_KEY_PREFIXES):
+            short = SIZE_ABBREV_BY_WORD.get(value)
+            if short:
+                out[key] = short
+    return out
 
 
 # Canonical route-endpoint family: Location / Destination plus their numbered
@@ -5941,6 +5966,15 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
 
     xp_tag_re = re.compile(r"<EM4>\[\d[\d,]*(?:[–\-]\d[\d,]*)?\s*\w+\]</EM4>")
     _mt_cfg2 = tag_configs.get("mission_titles") or DEFAULT_TAG_CONFIGS.get("mission_titles")
+    # #200 follow-up: with Shorten on, abbreviate the cargo-grade size words
+    # haul titles resolve through ("Extra Small" -> "XS") at the loc-key level.
+    if getattr(_mt_cfg2, "abbreviate_title", False):
+        _size_overrides = _size_abbreviation_overrides(loc)
+        if _size_overrides:
+            out.update(_size_overrides)
+            logger.info(
+                f"Abbreviated {len(_size_overrides)} cargo-grade size strings"
+            )
     for title_key, xps in pu_title_xps.items():
         base_title = (loc or {}).get(title_key)
         if not base_title:

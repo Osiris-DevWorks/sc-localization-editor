@@ -15,9 +15,9 @@ from src.utils.settings import AppSettings
 from src.utils.tag_builder import (
     CATEGORIES, ELEMENT_LABELS, ENCLOSINGS, LOCATION_DETAILS,
     MAPPED_KIND_NAMES, MISSION_TITLE_PLACEMENTS, PLACEMENTS, ROUTE_ARROWS,
-    SEPARATORS, STYLES_BY_KIND, TITLE_SEPARATORS, TagConfig, USAGE_INPUT_SEP,
-    abbreviate_title, apply_mission_title, default_config, render_route,
-    render_tag, route_enabled,
+    SEPARATORS, SIZE_ABBREVIATIONS, STYLES_BY_KIND, TITLE_SEPARATORS, TagConfig,
+    USAGE_INPUT_SEP, abbreviate_title, apply_mission_title, default_config,
+    render_route, render_tag, route_enabled,
 )
 
 logger = logging.getLogger(__name__)
@@ -1528,6 +1528,10 @@ class _TagBuilderPage(QWidget):
         sample_title = "Master Rank - Direct Medium Cargo Haul"
         if getattr(self.config, "abbreviate_title", False):
             sample_title = abbreviate_title(sample_title)
+            # In-game the size comes from the CargoGradeToken loc keys the
+            # generator overrides; mirror that on the literal sample here.
+            for word, short in SIZE_ABBREVIATIONS:
+                sample_title = sample_title.replace(word, short)
         if not route_enabled(self.config):
             self.preview_label.setText(f"Preview:  {sample_title} [50 REP]  (route off)")
             return
