@@ -205,6 +205,19 @@ def test_arrow_from_config(gen_module):
     )
 
 
+def test_shape_arrow_from_derivation(gen_module):
+    """The shape arrow picks up the derived endpoint counts (#200 follow-up):
+    one pickup, two drop-offs renders the one-to-many glyph."""
+    cfg = default_config("mission_titles")
+    cfg.route_arrow = "shape"
+    body = ("collect at ~mission(Location|Address), deliver to "
+            "~mission(Destination1|Address) and ~mission(Destination2|Address)")
+    assert gen_module._derive_route_fragment([body], cfg) == (
+        "~mission(Location|Address) ->= "
+        "~mission(Destination1|Address), ~mission(Destination2|Address)"
+    )
+
+
 def test_location_detail_name_covers_canonical_family(gen_module):
     """|name opt-in reaches Location/Destination AND their numbered siblings
     (a mixed name/Address comma list would look broken)..."""
