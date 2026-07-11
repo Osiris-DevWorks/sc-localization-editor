@@ -1067,20 +1067,21 @@ def _title_has_route_token(title: str) -> bool:
 _CARGO_GRADE_KEY_PREFIXES = ("HaulCargo_CargoGrade_", "HaulCargo_CargoScale_")
 
 
-def _size_abbreviation_overrides(loc) -> dict:
+def _size_abbreviation_overrides(loc, shortened_sizes: frozenset = frozenset()) -> dict:
     """Loc-key overrides that shorten cargo-grade size words (#200 follow-up).
 
-    When the Shorten-original-titles toggle is on, the grade words a haul
-    title's ``~mission(CargoGradeToken)`` resolves through are abbreviated at
-    the source ("Extra Small" -> "XS") by overriding the
-    ``HaulCargo_CargoGrade_*`` / ``CargoScale_*`` loc keys. Exact value match
-    only, so an unmapped grade passes through untouched.
+    Each size is independently opted in via its own None/abbreviation
+    dropdown (`TagConfig.shortened_sizes`). For sizes in *shortened_sizes*,
+    the grade words a haul title's ``~mission(CargoGradeToken)`` resolves
+    through are abbreviated at the source ("Extra Small" -> "XS") by
+    overriding the ``HaulCargo_CargoGrade_*`` / ``CargoScale_*`` loc keys.
+    Exact value match only, so an unmapped grade passes through untouched.
     """
     out: dict = {}
-    if not SIZE_ABBREV_BY_WORD:
+    if not shortened_sizes:
         return out
     for key, value in (loc or {}).items():
-        if key.startswith(_CARGO_GRADE_KEY_PREFIXES):
+        if key.startswith(_CARGO_GRADE_KEY_PREFIXES) and value in shortened_sizes:
             short = SIZE_ABBREV_BY_WORD.get(value)
             if short:
                 out[key] = short
@@ -5705,10 +5706,17 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         _mt_cfg = tag_configs.get("mission_titles") or DEFAULT_TAG_CONFIGS.get("mission_titles")
         # #200 follow-up: optional stock-title shortening so the route plus
         # [BP]/XP tags don't overflow the contract list. Independent of the
-        # route toggle; same key-family scope.
-        if (abbreviate_title and _is_route_title(title_key)
-                and getattr(_mt_cfg, "abbreviate_title", False)):
-            base_title = abbreviate_title(base_title)
+        # route toggle; same key-family scope. Generalized to per-word/phrase
+        # checkboxes (Cargo/Haul/Rank, Rank merged to one checkbox for both
+        # contexts). Always called (not gated on any checkbox) because the
+        # separator-after-Rank normalization is itself an independent,
+        # always-on feature — the word/phrase toggles inside abbreviate_title
+        # are what stay individually gated on `abbreviated_phrases`.
+        _mt_phrases = getattr(_mt_cfg, "abbreviated_phrases", frozenset())
+        if abbreviate_title and _is_route_title(title_key):
+            base_title = abbreviate_title(
+                base_title, _mt_phrases, getattr(_mt_cfg, "rank_separator", "dash")
+            )
         augmented_title = base_title
         if (route_enabled(_mt_cfg) and _is_route_title(title_key)
                 and not _title_has_route_token(base_title)):
@@ -5979,10 +5987,13 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
 
     xp_tag_re = re.compile(r"<EM4>\[\d[\d,]*(?:[–\-]\d[\d,]*)?\s*\w+\]</EM4>")
     _mt_cfg2 = tag_configs.get("mission_titles") or DEFAULT_TAG_CONFIGS.get("mission_titles")
-    # #200 follow-up: with Shorten on, abbreviate the cargo-grade size words
-    # haul titles resolve through ("Extra Small" -> "XS") at the loc-key level.
-    if getattr(_mt_cfg2, "abbreviate_title", False):
-        _size_overrides = _size_abbreviation_overrides(loc)
+    # #200 follow-up: per-size abbreviation, independent of the word/phrase
+    # removal checkboxes — each size opts in via its own None/abbreviation
+    # dropdown. Overrides the cargo-grade size words haul titles resolve
+    # through ("Extra Small" -> "XS") at the loc-key level.
+    _mt_sizes = getattr(_mt_cfg2, "shortened_sizes", frozenset())
+    if _mt_sizes:
+        _size_overrides = _size_abbreviation_overrides(loc, _mt_sizes)
         if _size_overrides:
             out.update(_size_overrides)
             logger.info(
@@ -6000,10 +6011,14 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         # get the same route + shortening treatment as the contractgen loop
         # above. Guarded to pure pu titles (not already in out) so a desc
         # entry sharing the key is never mangled.
-        if (title_key not in out and abbreviate_title
-                and _is_route_title(title_key)
-                and getattr(_mt_cfg2, "abbreviate_title", False)):
-            current = abbreviate_title(current)
+        # Same "always call" rationale as the contractgen loop above — the
+        # Rank separator is an independent always-on feature, not gated on
+        # any checkbox.
+        _mt2_phrases = getattr(_mt_cfg2, "abbreviated_phrases", frozenset())
+        if title_key not in out and abbreviate_title and _is_route_title(title_key):
+            current = abbreviate_title(
+                current, _mt2_phrases, getattr(_mt_cfg2, "rank_separator", "dash")
+            )
         if (title_key not in out and route_enabled(_mt_cfg2)
                 and _is_route_title(title_key)
                 and not _title_has_route_token(base_title)):

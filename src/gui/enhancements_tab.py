@@ -14,11 +14,15 @@ from src.utils.i18n import tr
 from src.utils.settings import AppSettings
 from src.utils.tag_builder import (
     CATEGORIES, ELEMENT_LABELS, ENCLOSINGS, LOCATION_DETAILS,
-    MAPPED_KIND_NAMES, MISSION_TITLE_PLACEMENTS, PLACEMENTS, ROUTE_ARROWS,
-    SEPARATORS, SIZE_ABBREVIATIONS, STYLES_BY_KIND, TITLE_SEPARATORS, TagConfig,
-    USAGE_INPUT_SEP, abbreviate_title, apply_mission_title, default_config,
-    render_route, render_tag, route_enabled,
+    MAPPED_KIND_NAMES, MISSION_TITLE_PLACEMENTS, PLACEMENTS, RANK_SEPARATORS,
+    REMOVE_WORD_OPTIONS, ROUTE_ARROWS, SEPARATORS, SHORTEN_PHRASE_OPTIONS,
+    SIZE_ABBREV_BY_WORD, STYLES_BY_KIND, TITLE_SEPARATORS, TagConfig,
+    UNDERLINE_OPTIONS, USAGE_INPUT_SEP, abbreviate_title, apply_mission_title,
+    default_config, render_route, render_tag, route_enabled,
 )
+
+# All cargo-size words, for the single "Shorten cargo sizes" master toggle.
+_ALL_SIZE_WORDS: frozenset[str] = frozenset(SIZE_ABBREV_BY_WORD)
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +45,15 @@ class _NoScrollComboBox(QComboBox):
             super().wheelEvent(event)
         else:
             event.ignore()
+
+    def showPopup(self):  # noqa: N802 (Qt override)
+        # Qt's default popup placement flips the list above the box when it
+        # judges there isn't room below (common in this tab's scroll area,
+        # even when there visually is room) — force it below every time so
+        # the option list is always where the user expects it.
+        super().showPopup()
+        popup = self.view().window()
+        popup.move(self.mapToGlobal(self.rect().bottomLeft()))
 
 
 # Sample values used by the live preview so the user can see what their
@@ -1463,9 +1476,19 @@ class _TagBuilderPage(QWidget):
     def _build_mission_titles_page(self) -> None:
         """Purpose-built page for the mission-title route: an enable toggle plus
         placement / arrow / separator / location-detail combos and a preview."""
-        col = QVBoxLayout(self)
-        col.setContentsMargins(10, 6, 10, 6)
+        # Hauling missions get their own titled box rather than filling the
+        # whole page, so future mission types (bounty, delivery, etc.) can
+        # sit as sibling boxes in the empty space to the right without a
+        # layout rework later.
+        page = QHBoxLayout(self)
+        page.setContentsMargins(10, 6, 10, 6)
+        page.setSpacing(12)
+
+        group = QGroupBox("Hauling Missions")
+        col = QVBoxLayout(group)
+        col.setContentsMargins(10, 10, 10, 10)
         col.setSpacing(6)
+        page.addWidget(group)
 
         self._mt_enable = QCheckBox("Add route to hauling mission titles")
         route_el = next((e for e in self.config.elements if e.kind == "route"), None)
@@ -1480,45 +1503,113 @@ class _TagBuilderPage(QWidget):
         hint.setWordWrap(True)
         col.addWidget(hint)
 
-        # #200 follow-up: shorten the stock title so the route + tags fit.
-        self._mt_abbrev = QCheckBox("Shorten original titles (drops \"Rank\", \"Cargo Haul\", ...)")
-        self._mt_abbrev.setChecked(bool(getattr(self.config, "abbreviate_title", False)))
-        self._mt_abbrev.toggled.connect(self._on_mt_abbrev)
-        col.addWidget(self._mt_abbrev)
-
-        grid = QGridLayout()
-        grid.setHorizontalSpacing(6)
-        grid.setVerticalSpacing(4)
-
         def _combo(items) -> QComboBox:
             c = _NoScrollComboBox()
             for entry in items:
                 c.addItem(entry[1], userData=entry[0])
+            # AdjustToContents (rather than the default
+            # AdjustToContentsOnFirstShow) so sizeHint() below reflects every
+            # item's width immediately, before the widget is ever shown.
+            c.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
             return c
 
+        enabled_phrases = set(getattr(self.config, "abbreviated_phrases", frozenset()))
+        shortened_sizes = set(getattr(self.config, "shortened_sizes", frozenset()))
+        _shorten_phrase_keys = frozenset(k for k, *_ in SHORTEN_PHRASE_OPTIONS)
+
+        # #200 follow-up, generalized: one grid pairs each dropdown with a
+        # checkbox on the same row (label | combo | gap | checkbox), so the
+        # page reads as 5 aligned rows instead of separate blocks. Column 2
+        # is a deliberately empty spacer — tight label-to-combo spacing plus
+        # one wider gap before the checkboxes, rather than uniform spacing
+        # everywhere. Rank separator moved in here (after Title separator)
+        # instead of its own row. Each checkbox's example lives in
+        # parentheses in its own label (one line) instead of a separate
+        # description widget. "Underline Direct" doesn't pair with a
+        # dropdown, so it sits as its own row below the grid.
         self._mt_placement = _combo(MISSION_TITLE_PLACEMENTS)
         self._mt_arrow = _combo(ROUTE_ARROWS)
         self._mt_sep = _combo(TITLE_SEPARATORS)
+        self._mt_rank_sep = _combo(RANK_SEPARATORS)
         self._mt_detail = _combo(LOCATION_DETAILS)
         self._select_combo(self._mt_placement, self.config.placement)
         self._select_combo(self._mt_arrow, self.config.route_arrow)
         self._select_combo(self._mt_sep, self.config.title_separator)
+        self._select_combo(self._mt_rank_sep, self.config.rank_separator)
         self._select_combo(self._mt_detail, self.config.location_detail)
-        rows = [
-            ("Placement:", self._mt_placement),
-            ("Route arrow:", self._mt_arrow),
-            ("Title separator:", self._mt_sep),
-            ("Location detail:", self._mt_detail),
-        ]
-        for r, (lbl, combo) in enumerate(rows):
-            grid.addWidget(QLabel(lbl), r, 0)
+        for combo in (self._mt_placement, self._mt_arrow, self._mt_sep, self._mt_detail):
             combo.currentIndexChanged.connect(self._on_mt_changed)
+        self._mt_rank_sep.currentIndexChanged.connect(self._on_mt_rank_sep_changed)
+
+        self._mt_shorten_titles = QCheckBox(
+            'Shorten original titles (Shortens stock phrases, e.g. "Local Shipment Route" → "Route")'
+        )
+        self._mt_shorten_titles.setChecked(_shorten_phrase_keys <= enabled_phrases)
+        self._mt_shorten_titles.toggled.connect(self._on_mt_shorten_titles_toggle)
+
+        self._mt_shorten_sizes = QCheckBox(
+            'Shorten cargo sizes (Abbreviates cargo sizes, e.g. "Extra Small" → "XS")'
+        )
+        self._mt_shorten_sizes.setChecked(_ALL_SIZE_WORDS <= shortened_sizes)
+        self._mt_shorten_sizes.toggled.connect(self._on_mt_shorten_sizes_toggle)
+
+        self._mt_abbrev_boxes: dict[str, QCheckBox] = {}
+        for key, label, *_rest in REMOVE_WORD_OPTIONS:
+            box = QCheckBox(label)
+            box.setChecked(key in enabled_phrases)
+            box.toggled.connect(lambda checked, k=key: self._on_mt_abbrev_toggle(k, checked))
+            self._mt_abbrev_boxes[key] = box
+
+        # Explicit fixed widths instead of leaving it to Qt's auto-sizing —
+        # sharing a plain grid column let one combo's natural sizeHint (e.g.
+        # Route arrow's "Route shape ( ->- / ->= / =>- / =>= )") inflate
+        # every other row too, pushing dropdowns much further right than
+        # their own label needed. Uniform width here instead sized to
+        # whichever of the 5 combos actually needs the most room, via Qt's
+        # own sizeHint (accounts for the widest item's text plus the
+        # dropdown arrow and frame padding) — so the longest option always
+        # displays in full, in whichever combo it belongs to.
+        _LABEL_WIDTH = 110
+        _mt_combos = (self._mt_placement, self._mt_arrow, self._mt_sep,
+                      self._mt_rank_sep, self._mt_detail)
+        _COMBO_WIDTH = max(c.sizeHint().width() for c in _mt_combos) + 10  # small safety margin
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(6)
+        grid.setVerticalSpacing(4)
+        grid.setColumnMinimumWidth(2, 24)  # gap between dropdowns and checkboxes
+        grid_rows = [
+            ("Placement:", self._mt_placement, self._mt_shorten_titles),
+            ("Route arrow:", self._mt_arrow, self._mt_shorten_sizes),
+            ("Title separator:", self._mt_sep, self._mt_abbrev_boxes["cargo"]),
+            ("Rank separator:", self._mt_rank_sep, self._mt_abbrev_boxes["haul"]),
+            ("Location detail:", self._mt_detail, self._mt_abbrev_boxes["rank"]),
+        ]
+        for r, (lbl, combo, box) in enumerate(grid_rows):
+            lbl_widget = QLabel(lbl)
+            lbl_widget.setFixedWidth(_LABEL_WIDTH)
+            combo.setFixedWidth(_COMBO_WIDTH)
+            grid.addWidget(lbl_widget, r, 0)
             grid.addWidget(combo, r, 1)
+            grid.addWidget(box, r, 3)
         col.addLayout(grid)
+
+        underline_row = QHBoxLayout()
+        self._mt_underline_direct = QCheckBox(
+            'Underline "Direct" (Adds emphasis to "Direct" hauls in-game)'
+        )
+        self._mt_underline_direct.setChecked("underline_direct" in enabled_phrases)
+        self._mt_underline_direct.toggled.connect(
+            lambda checked: self._on_mt_abbrev_toggle("underline_direct", checked)
+        )
+        self._mt_abbrev_boxes["underline_direct"] = self._mt_underline_direct
+        underline_row.addWidget(self._mt_underline_direct)
+        underline_row.addStretch()
+        col.addLayout(underline_row)
 
         self.preview_label = QLabel()
         self.preview_label.setMinimumHeight(28)
         self.preview_label.setWordWrap(True)
+        self.preview_label.setTextFormat(Qt.TextFormat.RichText)
         self.preview_label.setStyleSheet(
             "font-family: Consolas, 'Courier New', monospace; "
             "font-size: 12px; padding: 4px; "
@@ -1528,6 +1619,27 @@ class _TagBuilderPage(QWidget):
         col.addStretch()
         self._set_mt_controls_enabled(self._mt_enable.isChecked())
         self._refresh_preview()
+
+        # Demo only — shows how a second mission-type box sits in the space
+        # freed up to the right. Not wired to any config/generator logic yet;
+        # a real Scanning Missions box would follow the same checkbox/dropdown
+        # pattern as Hauling Missions above, backed by its own TagConfig
+        # fields once that feature is actually built.
+        scan_group = QGroupBox("Scanning Missions")
+        scan_col = QVBoxLayout(scan_group)
+        scan_col.setContentsMargins(10, 10, 10, 10)
+        scan_col.setSpacing(6)
+        scan_hint = QLabel("Preview only — not yet functional.")
+        scan_hint.setProperty("role", "secondary")
+        scan_hint.setStyleSheet("font-size: 11px;")
+        scan_col.addWidget(scan_hint)
+        scan_col.addWidget(QCheckBox("Shorten original titles"))
+        scan_col.addWidget(QCheckBox('Show scan difficulty (adds "[Easy]"/"[Hard]" etc.)'))
+        scan_col.addWidget(QCheckBox("Highlight distress beacons"))
+        scan_col.addStretch()
+        page.addWidget(scan_group)
+
+        page.addStretch()
 
     def _set_mt_controls_enabled(self, on: bool) -> None:
         for c in (self._mt_placement, self._mt_arrow, self._mt_sep, self._mt_detail):
@@ -1540,8 +1652,28 @@ class _TagBuilderPage(QWidget):
         self._set_mt_controls_enabled(checked)
         self._refresh_preview()
 
-    def _on_mt_abbrev(self, checked: bool) -> None:
-        self.config.abbreviate_title = checked
+    def _on_mt_abbrev_toggle(self, key: str, checked: bool) -> None:
+        phrases = set(getattr(self.config, "abbreviated_phrases", frozenset()))
+        if checked:
+            phrases.add(key)
+        else:
+            phrases.discard(key)
+        self.config.abbreviated_phrases = frozenset(phrases)
+        self._refresh_preview()
+
+    def _on_mt_shorten_titles_toggle(self, checked: bool) -> None:
+        phrases = set(getattr(self.config, "abbreviated_phrases", frozenset()))
+        keys = {k for k, *_ in SHORTEN_PHRASE_OPTIONS}
+        phrases = (phrases | keys) if checked else (phrases - keys)
+        self.config.abbreviated_phrases = frozenset(phrases)
+        self._refresh_preview()
+
+    def _on_mt_shorten_sizes_toggle(self, checked: bool) -> None:
+        self.config.shortened_sizes = frozenset(_ALL_SIZE_WORDS) if checked else frozenset()
+        self._refresh_preview()
+
+    def _on_mt_rank_sep_changed(self, _idx: int) -> None:
+        self.config.rank_separator = self._mt_rank_sep.currentData() or self.config.rank_separator
         self._refresh_preview()
 
     def _on_mt_changed(self, _idx: int) -> None:
@@ -1551,16 +1683,33 @@ class _TagBuilderPage(QWidget):
         self.config.location_detail = self._mt_detail.currentData() or self.config.location_detail
         self._refresh_preview()
 
+    # In-game emphasis tag written to the real generated INI — must stay
+    # exactly this for _EM3_DISPLAY_MARKUP below to find and swap it.
+    _EM3_DIRECT = "<EM3>DIRECT</EM3>"
+
     def _refresh_mt_preview(self) -> None:
         sample_title = "Master Rank - Direct Medium Cargo Haul"
-        if getattr(self.config, "abbreviate_title", False):
-            sample_title = abbreviate_title(sample_title)
-            # In-game the size comes from the CargoGradeToken loc keys the
-            # generator overrides; mirror that on the literal sample here.
-            for word, short in SIZE_ABBREVIATIONS:
+        enabled_phrases = getattr(self.config, "abbreviated_phrases", frozenset())
+        # Always applied — the Rank separator is an independent, always-on
+        # feature and doesn't need any checkbox ticked; the word/phrase
+        # toggles inside abbreviate_title stay individually gated. This is
+        # the SAME function the generator calls, so when "underline_direct"
+        # is on, sample_title genuinely contains the real <EM3>DIRECT</EM3>
+        # in-game emphasis tag — swapped for a visual underline only when
+        # displayed below, never in the data itself.
+        sample_title = abbreviate_title(
+            sample_title, enabled_phrases, self.config.rank_separator
+        )
+        # In-game the size comes from the CargoGradeToken loc keys the
+        # generator overrides; mirror that on the literal sample here, per
+        # size, independent of the word/phrase removal checkboxes above.
+        for word in getattr(self.config, "shortened_sizes", frozenset()):
+            short = SIZE_ABBREV_BY_WORD.get(word)
+            if short:
                 sample_title = sample_title.replace(word, short)
         if not route_enabled(self.config):
-            self.preview_label.setText(f"Preview:  {sample_title} [50 REP]  (route off)")
+            display = sample_title.replace(self._EM3_DIRECT, "<u>DIRECT</u>")
+            self.preview_label.setText(f"Preview:  {display} [50 REP]  (route off)")
             return
         if self.config.location_detail == "address":
             frm, to = "Area18, Crusader", "Lorville, Hurston"
@@ -1568,7 +1717,8 @@ class _TagBuilderPage(QWidget):
             frm, to = "Area18", "Lorville"
         route = render_route(frm, to, self.config.route_arrow)
         title = apply_mission_title(sample_title, route, self.config)
-        self.preview_label.setText(f"Preview:  {title} [50 REP]")
+        display = title.replace(self._EM3_DIRECT, "<u>DIRECT</u>")
+        self.preview_label.setText(f"Preview:  {display} [50 REP]")
 
     # ── Preview ──────────────────────────────────────────────────────────
 
@@ -1596,7 +1746,12 @@ class _TagBuilderPage(QWidget):
         if self.category == "mission_titles":
             route_el = next((e for e in fresh.elements if e.kind == "route"), None)
             self._mt_enable.setChecked(bool(route_el and route_el.enabled))
-            self._mt_abbrev.setChecked(bool(fresh.abbreviate_title))
+            _shorten_phrase_keys = frozenset(k for k, *_ in SHORTEN_PHRASE_OPTIONS)
+            self._mt_shorten_titles.setChecked(_shorten_phrase_keys <= fresh.abbreviated_phrases)
+            self._mt_shorten_sizes.setChecked(_ALL_SIZE_WORDS <= fresh.shortened_sizes)
+            for key, box in self._mt_abbrev_boxes.items():
+                box.setChecked(key in fresh.abbreviated_phrases)
+            self._select_combo(self._mt_rank_sep, fresh.rank_separator)
             self._select_combo(self._mt_placement, fresh.placement)
             self._select_combo(self._mt_arrow, fresh.route_arrow)
             self._select_combo(self._mt_sep, fresh.title_separator)

@@ -206,8 +206,9 @@ def test_arrow_from_config(gen_module):
 
 
 def test_size_abbreviation_overrides(gen_module):
-    """#200 follow-up: Shorten also abbreviates the cargo-grade words the
-    CargoGradeToken resolves through, via exact-value loc-key overrides."""
+    """Each size is independently opted in via `shortened_sizes` (its own
+    None/abbreviation dropdown); exact-value loc-key overrides only cover
+    sizes the user selected."""
     loc = {
         "HaulCargo_CargoGrade_ExtraSmall": "Extra Small",
         "HaulCargo_CargoGrade_Supply": "Medium",
@@ -215,12 +216,19 @@ def test_size_abbreviation_overrides(gen_module):
         "HaulCargo_CargoGrade_Odd": "Gargantuan",  # unmapped grade: untouched
         "Unrelated_Key": "Small",                  # wrong prefix: untouched
     }
-    assert gen_module._size_abbreviation_overrides(loc) == {
+    all_sizes = frozenset({"Extra Small", "Medium", "Large", "Small", "Extra Large"})
+    assert gen_module._size_abbreviation_overrides(loc, all_sizes) == {
         "HaulCargo_CargoGrade_ExtraSmall": "XS",
         "HaulCargo_CargoGrade_Supply": "M",
         "HaulCargo_CargoScale_Large": "L",
     }
-    assert gen_module._size_abbreviation_overrides(None) == {}
+    # Only the sizes actually selected produce an override.
+    assert gen_module._size_abbreviation_overrides(loc, frozenset({"Medium"})) == {
+        "HaulCargo_CargoGrade_Supply": "M",
+    }
+    # Nothing selected (default) or no loc table: no overrides at all.
+    assert gen_module._size_abbreviation_overrides(loc) == {}
+    assert gen_module._size_abbreviation_overrides(None, all_sizes) == {}
 
 
 def test_shape_arrow_from_derivation(gen_module):
