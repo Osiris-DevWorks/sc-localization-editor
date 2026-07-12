@@ -221,18 +221,62 @@ class TestAbbreviateTitle:
     def test_hauler_needed_for_tracks_rank_separator(self):
         # RedWind haul titles use "Hauler Needed for" in the exact slot
         # other titles fill with a literal " Rank -"/" Rank," — CIG's
-        # phrasing just never spells "Rank" there. Regression: this used to
-        # be hardcoded to a bare "-" regardless of rank_separator.
+        # phrasing just never spells "Rank" there. The word "Rank" is
+        # re-inserted so "Rookie" reads as "Rookie Rank", matching every
+        # other haul title shape, unless the shared "rank" removal
+        # checkbox is also on. Regression: this used to be hardcoded to a
+        # bare "-" (no word, wrong separator) regardless of rank_separator.
         title = "~mission(ReputationRank) Hauler Needed for ~mission(CargoGradeToken) Shipment"
         enabled = frozenset({"hauler_needed_for"})
         assert abbreviate_title(title, enabled, "dash") == \
-            "~mission(ReputationRank) - ~mission(CargoGradeToken) Shipment"
+            "~mission(ReputationRank) Rank - ~mission(CargoGradeToken) Shipment"
         assert abbreviate_title(title, enabled, "pipe") == \
-            "~mission(ReputationRank) | ~mission(CargoGradeToken) Shipment"
+            "~mission(ReputationRank) Rank | ~mission(CargoGradeToken) Shipment"
         assert abbreviate_title(title, enabled, "colon") == \
-            "~mission(ReputationRank) : ~mission(CargoGradeToken) Shipment"
+            "~mission(ReputationRank) Rank: ~mission(CargoGradeToken) Shipment"
         assert abbreviate_title(title, enabled, "space") == \
-            "~mission(ReputationRank) ~mission(CargoGradeToken) Shipment"
+            "~mission(ReputationRank) Rank ~mission(CargoGradeToken) Shipment"
+        # "rank" removal checkbox also on: word drops, separator remains.
+        assert abbreviate_title(title, enabled | {"rank"}, "dash") == \
+            "~mission(ReputationRank) - ~mission(CargoGradeToken) Shipment"
+
+    def test_ling_family_rank_inserts_word_and_separator(self):
+        # Ling Family haul titles put "Cargo" directly after the rank token
+        # with no "Rank" word and no separator at all (unlike the dash/comma
+        # RANK_TRIGGERS shapes and unlike "Hauler Needed for", which at
+        # least sits between two spaced-out pieces of text). Both the word
+        # and the separator have to be inserted from scratch.
+        title = "Ling Family ~mission(ReputationRank) Cargo Haul - ~mission(CargoGradeToken) Scale"
+        enabled = frozenset({"ling_family_rank"})
+        assert abbreviate_title(title, enabled, "dash") == \
+            "Ling Family ~mission(ReputationRank) Rank - Cargo Haul - ~mission(CargoGradeToken) Scale"
+        assert abbreviate_title(title, enabled, "pipe") == \
+            "Ling Family ~mission(ReputationRank) Rank | Cargo Haul - ~mission(CargoGradeToken) Scale"
+        assert abbreviate_title(title, enabled, "colon") == \
+            "Ling Family ~mission(ReputationRank) Rank: Cargo Haul - ~mission(CargoGradeToken) Scale"
+        assert abbreviate_title(title, enabled, "space") == \
+            "Ling Family ~mission(ReputationRank) Rank Cargo Haul - ~mission(CargoGradeToken) Scale"
+        # "rank" removal checkbox also on: word drops, separator remains.
+        assert abbreviate_title(title, enabled | {"rank"}, "dash") == \
+            "Ling Family ~mission(ReputationRank) - Cargo Haul - ~mission(CargoGradeToken) Scale"
+        # Untouched when the option isn't enabled.
+        assert abbreviate_title(title, frozenset(), "dash") == title
+
+    def test_ling_family_prefix_removed_with_rank_intact(self):
+        # "Ling Family" is the contract-giver name prefixed onto the haul
+        # title itself (unlike Covalex/RedWind/DeadSaints, which don't
+        # prefix a company name onto the title text). Removing it is a
+        # separate opt-in from the rank-separator fix above, but both share
+        # the "shorten original titles" checkbox family so ticking one
+        # master checkbox turns both on together.
+        title = "Ling Family ~mission(ReputationRank) Cargo Haul - ~mission(CargoGradeToken) Scale"
+        enabled = frozenset({"ling_family_rank", "ling_family_prefix"})
+        assert abbreviate_title(title, enabled, "dash") == \
+            "~mission(ReputationRank) Rank - Cargo Haul - ~mission(CargoGradeToken) Scale"
+        # Prefix removal alone (rank option off) leaves the un-normalized
+        # rank-adjacent text as-is — the two options are independent.
+        assert abbreviate_title(title, frozenset({"ling_family_prefix"}), "dash") == \
+            "~mission(ReputationRank) Cargo Haul - ~mission(CargoGradeToken) Scale"
 
     def test_config_default_off_and_round_trip(self):
         cfg = default_config("mission_titles")
@@ -306,6 +350,106 @@ class TestAbbreviateTitle:
         from src.utils.tag_builder import RANK_SEPARATORS, TITLE_SEPARATORS
         assert RANK_SEPARATORS == TITLE_SEPARATORS
         assert [k for k, *_ in RANK_SEPARATORS] == ["dash", "pipe", "colon", "space"]
+
+
+class TestStandardizeHaulingNames:
+    """Top-of-page "Standardize hauling mission names" toggle: rewrites any
+    title carrying both the rank + cargo-size tokens into one canonical
+    "Rank <sep> [Direct] Size Cargo Haul [Circuit]" shape, regardless of
+    company wording. Real stock title shapes pulled from base.ini."""
+
+    # Real stock title text per company (2.1.2 base.ini), covering every
+    # distinct phrasing this feature has to normalize.
+    _COVALEX_PLAIN = "~mission(ReputationRank) Rank - ~mission(CargoGradeToken) Cargo Haul"
+    _COVALEX_DIRECT = "~mission(ReputationRank) Rank - Direct ~mission(CargoGradeToken) Cargo Haul"
+    _COVALEX_CIRCUIT = "~mission(ReputationRank) Rank - ~mission(CargoGradeToken) Cargo Haul Circuit"
+    _DEADSAINTS = "DEAD SAINTS -- ~mission(ReputationRank) Rank, ~mission(CargoGradeToken) Scale Cargo Run"
+    _REDWIND_PLAIN = "~mission(ReputationRank) Hauler Needed for ~mission(CargoGradeToken) Shipment"
+    _REDWIND_DIRECT = "~mission(ReputationRank) Hauler Needed for Direct ~mission(CargoGradeToken) Shipment"
+    _LING_FAMILY = "Ling Family ~mission(ReputationRank) Cargo Haul - ~mission(CargoGradeToken) Scale"
+    _NO_TOKENS = "RESOURCE DRIVE: MEDIUM SHIPMENT"  # GoblinG — no rank/size data to standardize with
+    _ONE_TOKEN_ONLY = "Red Wind Direct Cargo Haul"    # one-off, neither token present
+
+    def test_covalex_shapes_are_already_canonical(self):
+        # Covalex's stock phrasing already matches the target template, so
+        # standardizing is a no-op (aside from whitespace normalization).
+        assert abbreviate_title(self._COVALEX_PLAIN, frozenset(), "dash", True) == \
+            self._COVALEX_PLAIN
+        assert abbreviate_title(self._COVALEX_DIRECT, frozenset(), "dash", True) == \
+            self._COVALEX_DIRECT
+        assert abbreviate_title(self._COVALEX_CIRCUIT, frozenset(), "dash", True) == \
+            self._COVALEX_CIRCUIT
+
+    def test_deadsaints_prefix_and_wording_normalized(self):
+        # "DEAD SAINTS --" prefix dropped; "Scale Cargo Run" -> "Cargo Haul".
+        assert abbreviate_title(self._DEADSAINTS, frozenset(), "dash", True) == \
+            self._COVALEX_PLAIN
+
+    def test_redwind_wording_normalized_and_direct_preserved(self):
+        # "Hauler Needed for" -> "Rank -"; "Shipment" -> "Cargo Haul".
+        assert abbreviate_title(self._REDWIND_PLAIN, frozenset(), "dash", True) == \
+            self._COVALEX_PLAIN
+        assert abbreviate_title(self._REDWIND_DIRECT, frozenset(), "dash", True) == \
+            self._COVALEX_DIRECT
+
+    def test_ling_family_prefix_dropped_and_reordered(self):
+        # Company prefix dropped; Size+"Scale" duplicate collapses into the
+        # single CargoGradeToken already carrying the size.
+        assert abbreviate_title(self._LING_FAMILY, frozenset(), "dash", True) == \
+            self._COVALEX_PLAIN
+
+    def test_titles_without_both_tokens_pass_through_untouched(self):
+        # No rank/size data to build a template from — GoblinG's fixed
+        # resource-drive text and one-off titles with only one (or no)
+        # token are left exactly as CIG wrote them.
+        assert abbreviate_title(self._NO_TOKENS, frozenset(), "dash", True) == self._NO_TOKENS
+        assert abbreviate_title(self._ONE_TOKEN_ONLY, frozenset(), "dash", True) == \
+            self._ONE_TOKEN_ONLY
+
+    def test_disabled_by_default_leaves_company_wording_untouched(self):
+        # standardize_hauling defaults False — company prefixes and each
+        # company's own wording survive. (The always-on Rank-separator
+        # normalization is independent and still runs regardless — that's
+        # covered by TestAbbreviateTitle, not re-asserted here.)
+        assert "DEAD SAINTS" in abbreviate_title(self._DEADSAINTS, frozenset())
+        assert "Scale Cargo Run" in abbreviate_title(self._DEADSAINTS, frozenset())
+        assert "Hauler Needed for" in abbreviate_title(self._REDWIND_PLAIN, frozenset())
+        assert abbreviate_title(self._LING_FAMILY, frozenset()) == self._LING_FAMILY
+
+    def test_composes_with_rank_separator(self):
+        assert abbreviate_title(self._LING_FAMILY, frozenset(), "pipe", True) == \
+            "~mission(ReputationRank) Rank | ~mission(CargoGradeToken) Cargo Haul"
+        assert abbreviate_title(self._LING_FAMILY, frozenset(), "colon", True) == \
+            "~mission(ReputationRank) Rank: ~mission(CargoGradeToken) Cargo Haul"
+        assert abbreviate_title(self._LING_FAMILY, frozenset(), "space", True) == \
+            "~mission(ReputationRank) Rank ~mission(CargoGradeToken) Cargo Haul"
+
+    def test_composes_with_rank_removal_checkbox(self):
+        # Runs first, so "Remove Rank" still strips the word Standardize
+        # just inserted — the two checkboxes stay independently toggleable.
+        assert abbreviate_title(self._LING_FAMILY, frozenset({"rank"}), "dash", True) == \
+            "~mission(ReputationRank) - ~mission(CargoGradeToken) Cargo Haul"
+
+    def test_composes_with_cargo_and_haul_removal(self):
+        assert abbreviate_title(self._LING_FAMILY, frozenset({"cargo"}), "dash", True) == \
+            "~mission(ReputationRank) Rank - ~mission(CargoGradeToken) Haul"
+        assert abbreviate_title(self._LING_FAMILY, frozenset({"haul"}), "dash", True) == \
+            "~mission(ReputationRank) Rank - ~mission(CargoGradeToken) Cargo"
+
+    def test_composes_with_underline_direct(self):
+        # The word "Direct" standardize inserts is a real word other
+        # checkboxes can act on — underline still finds and wraps it.
+        assert abbreviate_title(self._COVALEX_DIRECT, frozenset({"underline_direct"}), "dash", True) == \
+            "~mission(ReputationRank) Rank - <EM3>DIRECT</EM3> ~mission(CargoGradeToken) Cargo Haul"
+
+    def test_config_default_off_and_round_trip(self):
+        cfg = default_config("mission_titles")
+        assert cfg.standardize_hauling_names is False
+        cfg.standardize_hauling_names = True
+        back = TagConfig.from_json(cfg.to_json())
+        assert back.standardize_hauling_names is True
+        # Pre-2.2.0 blobs have no key at all: defaults off.
+        assert TagConfig.from_dict({}).standardize_hauling_names is False
 
 
 class TestLocationDetailMigration:

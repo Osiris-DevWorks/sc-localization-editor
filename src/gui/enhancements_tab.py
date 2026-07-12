@@ -6,7 +6,8 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QAbstractItemView, QCheckBox, QComboBox, QFrame, QGridLayout, QGroupBox,
     QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMessageBox,
-    QPushButton, QScrollArea, QSizePolicy, QTabWidget, QVBoxLayout, QWidget,
+    QPushButton, QScrollArea, QSizePolicy, QTabBar, QTabWidget, QVBoxLayout,
+    QWidget,
 )
 
 from src.gui.tag_mapping_dialog import TagMappingDialog
@@ -54,6 +55,20 @@ class _NoScrollComboBox(QComboBox):
         super().showPopup()
         popup = self.view().window()
         popup.move(self.mapToGlobal(self.rect().bottomLeft()))
+
+
+class _NoScrollTabBar(QTabBar):
+    """A tab bar that never switches tabs on mouse wheel scroll.
+
+    Unlike a combo box (_NoScrollComboBox above), there's no legitimate case
+    for wheel-scrolling through tabs here — a hover-scroll over the Tag
+    Builder's category tabs (Components/Missiles/.../Mission Titles) should
+    scroll the page, not silently jump categories. Always ignores the wheel
+    event so it bubbles up to the enclosing scroll area instead.
+    """
+
+    def wheelEvent(self, event):  # noqa: N802 (Qt override)
+        event.ignore()
 
 
 # Sample values used by the live preview so the user can see what their
@@ -228,22 +243,17 @@ class EnhancementsTab(QWidget):
             ("spawns",        "Hostiles"),
             ("reputation",    "Reputation"),
             ("blueprints",    "Blueprints"),
-            ("blueprint_tag", "Blueprint Tag"),
-            ("ace",           "Ace Pilot Tag"),
+            ("ace",           "Ace Pilot"),
         ]
-        # The blueprint_tag field controls the [BP]/[BP?] marker on the mission
-        # TITLE, not a body line — it gets its own tooltip. Turning the body
-        # section off while leaving the title tag on is intentional (compact
-        # at-a-glance signal); the two are independent so the user picks.
+        # 2.2.0: the [BP]/[ACE]/rep-xp mission-TITLE markers moved to their own
+        # "General Tags" section (independent of this body-fields group) —
+        # see AppSettings.get_mission_title_tags(). "ace" here now controls
+        # ONLY the "Ace Pilot: Yes" body line.
         _MISSION_FIELD_TOOLTIPS = {
-            "blueprint_tag": (
-                "Show the [BP] / [BP?] marker on the mission title. "
-                "Independent of the Blueprints body section. "
-                "Takes effect on the next Generate Enhancements."
-            ),
             "ace": (
-                "Flag missions that spawn an ace pilot with an [ACE] title tag "
-                "([ACE?] when only some variants of that mission do). "
+                "Show an \"Ace Pilot: Yes\" line in the mission details body "
+                "when the mission spawns an ace pilot. The [ACE] title tag is "
+                "a separate toggle under General Tags. "
                 "Takes effect on the next Generate Enhancements."
             ),
         }
@@ -627,6 +637,7 @@ class EnhancementsTab(QWidget):
         gl.addWidget(self._tag_builder_desc_label)
 
         self._tag_builder_tabs = QTabWidget()
+        self._tag_builder_tabs.setTabBar(_NoScrollTabBar())
         self._tag_builder_pages: dict[str, _TagBuilderPage] = {}
         for cat in CATEGORIES:
             cfg = AppSettings.get_tag_config(cat)
@@ -1490,11 +1501,24 @@ class _TagBuilderPage(QWidget):
         col.setSpacing(6)
         page.addWidget(group)
 
+        top_row = QHBoxLayout()
         self._mt_enable = QCheckBox("Add route to hauling mission titles")
         route_el = next((e for e in self.config.elements if e.kind == "route"), None)
         self._mt_enable.setChecked(bool(route_el and route_el.enabled))
         self._mt_enable.toggled.connect(self._on_mt_enable)
-        col.addWidget(self._mt_enable)
+        top_row.addWidget(self._mt_enable)
+
+        self._mt_standardize = QCheckBox(
+            'Standardize hauling mission names (e.g. "Medium Cargo Haul" '
+            'for every company, instead of "Large Shipment" / "Haul - Small Scale")'
+        )
+        self._mt_standardize.setChecked(
+            getattr(self.config, "standardize_hauling_names", False)
+        )
+        self._mt_standardize.toggled.connect(self._on_mt_standardize_toggle)
+        top_row.addWidget(self._mt_standardize)
+        top_row.addStretch()
+        col.addLayout(top_row)
 
         hint = QLabel("The game fills in the real pickup and drop-off locations "
                       "when the mission is accepted.")
@@ -1620,24 +1644,42 @@ class _TagBuilderPage(QWidget):
         self._set_mt_controls_enabled(self._mt_enable.isChecked())
         self._refresh_preview()
 
-        # Demo only — shows how a second mission-type box sits in the space
-        # freed up to the right. Not wired to any config/generator logic yet;
-        # a real Scanning Missions box would follow the same checkbox/dropdown
-        # pattern as Hauling Missions above, backed by its own TagConfig
-        # fields once that feature is actually built.
-        scan_group = QGroupBox("Scanning Missions")
-        scan_col = QVBoxLayout(scan_group)
-        scan_col.setContentsMargins(10, 10, 10, 10)
-        scan_col.setSpacing(6)
-        scan_hint = QLabel("Preview only — not yet functional.")
-        scan_hint.setProperty("role", "secondary")
-        scan_hint.setStyleSheet("font-size: 11px;")
-        scan_col.addWidget(scan_hint)
-        scan_col.addWidget(QCheckBox("Shorten original titles"))
-        scan_col.addWidget(QCheckBox('Show scan difficulty (adds "[Easy]"/"[Hard]" etc.)'))
-        scan_col.addWidget(QCheckBox("Highlight distress beacons"))
-        scan_col.addStretch()
-        page.addWidget(scan_group)
+        # "General Tags" (2.2.0): show/hide the [REP]/[BP]/[ACE] markers on
+        # the mission TITLE only, across every mission type — independent of
+        # the "Mission detail fields" body toggles above (which is per-
+        # category, per-#121) and independent of the Hauling Missions
+        # TagConfig to its left. Persisted directly via AppSettings, same
+        # pattern as the mission-detail-field checkboxes.
+        tags_group = QGroupBox("General Tags")
+        tags_col = QVBoxLayout(tags_group)
+        tags_col.setContentsMargins(10, 10, 10, 10)
+        tags_col.setSpacing(6)
+        tags_hint = QLabel(
+            "Show or hide these tags on the mission title only — separate "
+            "from the Mission Detail Fields body toggles."
+        )
+        tags_hint.setProperty("role", "secondary")
+        tags_hint.setStyleSheet("font-size: 11px;")
+        tags_hint.setWordWrap(True)
+        tags_col.addWidget(tags_hint)
+
+        _TITLE_TAG_LABELS = [
+            ("rep",       'Rep Tag (adds "[500 REP]")'),
+            ("blueprint", 'BP Tag (adds "[BP]" / "[BP?]")'),
+            ("ace",       'ACE Tag (adds "[ACE]" / "[ACE?]")'),
+        ]
+        self._title_tag_checkboxes: dict = {}
+        _tt_saved = AppSettings.get_mission_title_tags()
+        for _field, _label in _TITLE_TAG_LABELS:
+            cb = QCheckBox(_label)
+            cb.setChecked(_tt_saved.get(_field, True))
+            cb.toggled.connect(
+                lambda checked, f=_field: AppSettings.set_mission_title_tag(f, checked)
+            )
+            tags_col.addWidget(cb)
+            self._title_tag_checkboxes[_field] = cb
+        tags_col.addStretch()
+        page.addWidget(tags_group)
 
         page.addStretch()
 
@@ -1650,6 +1692,10 @@ class _TagBuilderPage(QWidget):
             if e.kind == "route":
                 e.enabled = checked
         self._set_mt_controls_enabled(checked)
+        self._refresh_preview()
+
+    def _on_mt_standardize_toggle(self, checked: bool) -> None:
+        self.config.standardize_hauling_names = checked
         self._refresh_preview()
 
     def _on_mt_abbrev_toggle(self, key: str, checked: bool) -> None:
@@ -1698,7 +1744,8 @@ class _TagBuilderPage(QWidget):
         # in-game emphasis tag — swapped for a visual underline only when
         # displayed below, never in the data itself.
         sample_title = abbreviate_title(
-            sample_title, enabled_phrases, self.config.rank_separator
+            sample_title, enabled_phrases, self.config.rank_separator,
+            getattr(self.config, "standardize_hauling_names", False)
         )
         # In-game the size comes from the CargoGradeToken loc keys the
         # generator overrides; mirror that on the literal sample here, per
@@ -1746,6 +1793,7 @@ class _TagBuilderPage(QWidget):
         if self.category == "mission_titles":
             route_el = next((e for e in fresh.elements if e.kind == "route"), None)
             self._mt_enable.setChecked(bool(route_el and route_el.enabled))
+            self._mt_standardize.setChecked(fresh.standardize_hauling_names)
             _shorten_phrase_keys = frozenset(k for k, *_ in SHORTEN_PHRASE_OPTIONS)
             self._mt_shorten_titles.setChecked(_shorten_phrase_keys <= fresh.abbreviated_phrases)
             self._mt_shorten_sizes.setChecked(_ALL_SIZE_WORDS <= fresh.shortened_sizes)

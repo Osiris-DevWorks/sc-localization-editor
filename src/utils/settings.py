@@ -121,9 +121,12 @@ class AppSettings:
     # 2.1 (route arrow / placement / location detail live there now), so it is
     # no longer a mission-detail toggle. migrate_route_toggle_to_mission_titles()
     # carries a user's old off-state into the new config.
+    # "blueprint_tag" moved out entirely (2.2.0) — it never controlled a body
+    # line, only the [BP]/[BP?] title tag, so it now lives under
+    # MISSION_TITLE_TAG_KEYS below with the other title-only toggles.
     MISSION_FIELD_KEYS = (
         "mission_type", "difficulty", "spawns", "reputation",
-        "blueprints", "blueprint_tag", "ace",
+        "blueprints", "ace",
     )
     _MISSION_FIELD_SETTING = {
         "mission_type":  "mission_field/mission_type",
@@ -131,9 +134,23 @@ class AppSettings:
         "spawns":        "mission_field/spawns",
         "reputation":    "mission_field/reputation",
         "blueprints":    "mission_field/blueprints",
-        "blueprint_tag": "mission_field/blueprint_tag",
-        # #158: [ACE]/[ACE?] title tag for missions that spawn an ace pilot.
+        # #158, split from the title tag in 2.2.0 (see MISSION_TITLE_TAG_KEYS):
+        # this key now controls ONLY the "Ace Pilot: Yes" body line.
         "ace":           "mission_field/ace",
+    }
+
+    # Mission TITLE tags (2.2.0, "General Tags" section): independent of the
+    # mission-detail body fields above — these gate the [BP]/[ACE]/[REP]
+    # markers appended to the mission TITLE only. All default on (prior
+    # behaviour: blueprint_tag was already title-only and on by default; the
+    # ace title tag and the rep/xp title tag were both unconditionally shown
+    # before this split). migrate_title_tag_settings() carries a user's prior
+    # blueprint_tag / ace choice forward once.
+    MISSION_TITLE_TAG_KEYS = ("rep", "blueprint", "ace")
+    _MISSION_TITLE_TAG_SETTING = {
+        "rep":       "mission_title_tag/rep",
+        "blueprint": "mission_title_tag/blueprint",
+        "ace":       "mission_title_tag/ace",
     }
     MISSION_HEADER_DEFAULTS = {
         "details": "MISSION DETAILS",
@@ -699,6 +716,48 @@ class AppSettings:
         reg_key = AppSettings._MISSION_FIELD_SETTING.get(field)
         if reg_key:
             AppSettings.settings().setValue(reg_key, enabled)
+
+    @staticmethod
+    def get_mission_title_tags() -> dict:
+        """Return {field: enabled} for the mission TITLE tags (2.2.0, "General
+        Tags"): rep/xp, blueprint, ace. Independent of
+        get_mission_detail_fields() — see MISSION_TITLE_TAG_KEYS. Every field
+        defaults to True, matching prior (unsplit) behaviour."""
+        s = AppSettings.settings()
+        return {
+            field: bool(s.value(reg_key, True, type=bool))
+            for field, reg_key in AppSettings._MISSION_TITLE_TAG_SETTING.items()
+        }
+
+    @staticmethod
+    def set_mission_title_tag(field: str, enabled: bool) -> None:
+        """Persist one mission-title-tag toggle. Unknown keys are ignored."""
+        reg_key = AppSettings._MISSION_TITLE_TAG_SETTING.get(field)
+        if reg_key:
+            AppSettings.settings().setValue(reg_key, enabled)
+
+    @staticmethod
+    def migrate_title_tag_settings() -> None:
+        """One-shot (2.2.0): the [BP]/[ACE] title tags used to share a
+        toggle with mission-detail-body settings — "blueprint_tag" already
+        controlled only the title (just lived in the wrong group);
+        "ace" controlled BOTH a body line and the title tag together. The
+        new independent "General Tags" toggles need a starting value that
+        respects whatever the user had already chosen, so this copies the
+        old blueprint_tag/ace values into the new keys once. Reading the old
+        key with its own default (True) makes this a safe no-op for anyone
+        who never touched those checkboxes — only an explicit prior "off"
+        carries forward. After this runs, the two evolve independently."""
+        s = AppSettings.settings()
+        marker = "mission_title_tag/migrated"
+        if s.value(marker, False, type=bool):
+            return
+        old_bp = s.value("mission_field/blueprint_tag", True, type=bool)
+        old_ace = s.value("mission_field/ace", True, type=bool)
+        s.setValue(AppSettings._MISSION_TITLE_TAG_SETTING["blueprint"], bool(old_bp))
+        s.setValue(AppSettings._MISSION_TITLE_TAG_SETTING["ace"], bool(old_ace))
+        s.setValue(marker, True)
+        s.sync()
 
     @staticmethod
     def get_tag_config(category: str):

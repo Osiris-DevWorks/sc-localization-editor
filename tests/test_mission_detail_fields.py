@@ -66,14 +66,16 @@ def test_unknown_key_ignored(isolated_settings):
 # ── Generator gating (replica of the _run_gen_missions DETAILS block) ───────
 
 def _render(fields: dict, *, difficulty=True, spawns=("Spawn: 3",),
-            tiers=1, has_bp=True) -> tuple[list[str], bool, str]:
-    """Replica of the generator's per-field gating. Returns (detail_lines,
-    blueprint_section_shown, title). `fields` maps field -> bool; missing
-    defaults to on, exactly like ``_show`` in _run_gen_missions.
+            tiers=1, has_bp=True) -> tuple[list[str], bool]:
+    """Replica of the generator's per-field gating for the mission DETAILS
+    body. Returns (detail_lines, blueprint_section_shown). `fields` maps
+    field -> bool; missing defaults to on, exactly like ``_show`` in
+    _run_gen_missions.
 
-    The title's [BP] tag is gated by the independent ``blueprint_tag`` field,
-    NOT ``blueprints`` — mirroring the generator's augmented_title block so the
-    body section and title marker can be toggled separately (issue #121)."""
+    2.2.0: the mission-TITLE [BP]/[ACE]/rep-xp tags moved to their own
+    independent settings group (AppSettings.get_mission_title_tags(), gated
+    by ``_show_title_tag`` in the generator) — see test_mission_title_tags.py.
+    This replica now covers ONLY the body fields ``_show`` still gates."""
     def _show(f):
         return bool(fields.get(f, True))
 
@@ -93,20 +95,16 @@ def _render(fields: dict, *, difficulty=True, spawns=("Spawn: 3",),
     bp_shown = has_bp and _show("blueprints")
     if bp_shown:
         lines.append("Blueprint Reward: Guaranteed")
-    title = "Eliminate the Threat"
-    if has_bp and _show("blueprint_tag"):
-        title += " [BP]"
-    return lines, bp_shown, title
+    return lines, bp_shown
 
 
 def test_all_on_emits_every_field():
-    lines, bp, title = _render({})  # empty config -> all default on
+    lines, bp = _render({})  # empty config -> all default on
     assert any("Mission Type" in s for s in lines)
     assert any("Difficulty" in s for s in lines)
     assert any("Spawn" in s for s in lines)
     assert any("Rep" in s for s in lines)
     assert bp is True
-    assert "[BP]" in title
 
 
 @pytest.mark.parametrize("field,needle", [
@@ -116,51 +114,16 @@ def test_all_on_emits_every_field():
     ("reputation", "Rep"),
 ])
 def test_each_field_off_omits_its_line(field, needle):
-    lines, _, _ = _render({field: False})
+    lines, _ = _render({field: False})
     assert not any(needle in s for s in lines), f"{field} off should omit its line"
-    # Turning one field off leaves the others present.
-    others = [k for k in AppSettings.MISSION_FIELD_KEYS if k not in (field, "blueprints")]
-    for other in others:
-        pass  # presence of others is covered by test_all_on_emits_every_field
 
 
 def test_reputation_off_omits_both_tier_branches():
-    lines, _, _ = _render({"reputation": False}, tiers=3)
+    lines, _ = _render({"reputation": False}, tiers=3)
     assert not any("Rep" in s for s in lines)
 
 
 def test_blueprints_off_omits_blueprint_section():
-    lines, bp, _ = _render({"blueprints": False})
+    lines, bp = _render({"blueprints": False})
     assert bp is False
     assert not any("Blueprint" in s for s in lines)
-
-
-# ── Blueprint body vs title tag are independent (issue #121 follow-up) ───────
-
-def test_blueprints_off_keeps_title_tag_by_default():
-    """Body section off, tag untouched: title still carries [BP] (the user
-    opted to hide the body list but keep the compact title marker)."""
-    lines, bp, title = _render({"blueprints": False})
-    assert bp is False
-    assert not any("Blueprint" in s for s in lines)
-    assert "[BP]" in title
-
-
-def test_blueprint_tag_off_strips_title_tag_only():
-    """Tag off, body untouched: title loses [BP] but the body list stays."""
-    lines, bp, title = _render({"blueprint_tag": False})
-    assert bp is True
-    assert any("Blueprint Reward" in s for s in lines)
-    assert "[BP]" not in title
-
-
-def test_both_blueprint_controls_off():
-    lines, bp, title = _render({"blueprints": False, "blueprint_tag": False})
-    assert bp is False
-    assert not any("Blueprint" in s for s in lines)
-    assert "[BP]" not in title
-
-
-def test_blueprint_tag_field_in_keys_and_defaults_on(isolated_settings):
-    assert "blueprint_tag" in AppSettings.MISSION_FIELD_KEYS
-    assert AppSettings.get_mission_detail_fields()["blueprint_tag"] is True

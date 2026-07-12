@@ -244,6 +244,7 @@ class EnhancementsGeneratorWorker(QThread):
                  mission_headers: dict[str, str] | None = None,
                  mission_header_em_tag: str = AppSettings.DEFAULT_MISSION_HEADER_EM_TAG,
                  mission_detail_fields: dict | None = None,
+                 mission_title_tags: dict | None = None,
                  stats_prepend: bool = False,
                  standardize_earnable_ship_names: bool = False,
                  language: str | None = None):
@@ -255,6 +256,7 @@ class EnhancementsGeneratorWorker(QThread):
         self.mission_headers = mission_headers
         self.mission_header_em_tag = mission_header_em_tag
         self.mission_detail_fields = mission_detail_fields
+        self.mission_title_tags = mission_title_tags
         self.stats_prepend = stats_prepend
         self.standardize_earnable_ship_names = standardize_earnable_ship_names
         # Which language's base.ini to generate against. None resolves to the
@@ -351,6 +353,7 @@ class EnhancementsGeneratorWorker(QThread):
                      mission_headers=self.mission_headers,
                      mission_header_em_tag=self.mission_header_em_tag,
                      mission_detail_fields=self.mission_detail_fields,
+                     mission_title_tags=self.mission_title_tags,
                      stats_prepend=self.stats_prepend,
                      standardize_earnable_ship_names=self.standardize_earnable_ship_names,
                      english_base_ini_path=AppSettings.get_base_ini_path(

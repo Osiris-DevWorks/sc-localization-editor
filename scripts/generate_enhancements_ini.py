@@ -5486,6 +5486,13 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
 
     def _show(_field: str) -> bool:
         return bool(_mdf.get(_field, True))
+    # 2.2.0 ("General Tags"): independent show/hide for the [BP]/[ACE]/rep-xp
+    # markers appended to the mission TITLE, separate from the body fields
+    # above. Missing/unknown keys default to True (prior, unsplit behaviour).
+    _mtt = ctx.get("mission_title_tags") or {}
+
+    def _show_title_tag(_field: str) -> bool:
+        return bool(_mtt.get(_field, True))
     tag_configs       = ctx.get("tag_configs") or {}
     # User toggle (Enhancements tab) for the inline component annotation
     # in mission descriptions. Default True preserves v1.4.0 behavior. When
@@ -5715,7 +5722,8 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         _mt_phrases = getattr(_mt_cfg, "abbreviated_phrases", frozenset())
         if abbreviate_title and _is_route_title(title_key):
             base_title = abbreviate_title(
-                base_title, _mt_phrases, getattr(_mt_cfg, "rank_separator", "dash")
+                base_title, _mt_phrases, getattr(_mt_cfg, "rank_separator", "dash"),
+                getattr(_mt_cfg, "standardize_hauling_names", False),
             )
         augmented_title = base_title
         if (route_enabled(_mt_cfg) and _is_route_title(title_key)
@@ -5728,7 +5736,7 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
             )
             if _route and apply_mission_title:
                 augmented_title = apply_mission_title(base_title, _route, _mt_cfg)
-        if _show("blueprint_tag"):
+        if _show_title_tag("blueprint"):
             if _all_have_bp and not _surviving_no_bp_cargo:
                 augmented_title += " <EM4>[BP]</EM4>"
             elif _bp_partial or (_all_have_bp and _surviving_no_bp_cargo):
@@ -5739,7 +5747,7 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         # (mirrors [BP]/[BP?] for shared/ambiguous titles). The ace always
         # spawns when its group is present — there is no probability in the
         # data — so there is no percentage to show.
-        if _show("ace"):
+        if _show_title_tag("ace"):
             _ace_flags = [
                 "Ace Pilots" in (v[5] or {}).get(SPAWN_HOSTILE, {}) for v in variants
             ]
@@ -5747,7 +5755,7 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
                 augmented_title += " <EM4>[ACE]</EM4>"
             elif any(_ace_flags):
                 augmented_title += " <EM4>[ACE?]</EM4>"
-        nonzero_xp = [x for x in unique_xp if x > 0]
+        nonzero_xp = [x for x in unique_xp if x > 0] if _show_title_tag("rep") else []
         if len(nonzero_xp) == 1:
             augmented_title += f" <EM4>[{nonzero_xp[0]:,} {rep_xp_label}]</EM4>"
         elif len(nonzero_xp) > 1:
@@ -6017,7 +6025,8 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         _mt2_phrases = getattr(_mt_cfg2, "abbreviated_phrases", frozenset())
         if title_key not in out and abbreviate_title and _is_route_title(title_key):
             current = abbreviate_title(
-                current, _mt2_phrases, getattr(_mt_cfg2, "rank_separator", "dash")
+                current, _mt2_phrases, getattr(_mt_cfg2, "rank_separator", "dash"),
+                getattr(_mt_cfg2, "standardize_hauling_names", False),
             )
         if (title_key not in out and route_enabled(_mt_cfg2)
                 and _is_route_title(title_key)
@@ -6028,10 +6037,10 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
             )
             if _route and apply_mission_title:
                 current = apply_mission_title(current, _route, _mt_cfg2)
-        unique_xp = sorted(set(xps))
+        unique_xp = sorted(set(xps)) if _show_title_tag("rep") else []
         if len(unique_xp) == 1:
             current += f" <EM4>[{unique_xp[0]:,} {rep_xp_label}]</EM4>"
-        else:
+        elif len(unique_xp) > 1:
             current += f" <EM4>[{min(unique_xp):,}\u2013{max(unique_xp):,} {rep_xp_label}]</EM4>"
         out[title_key] = current
         mission_titles_augmented += 1
@@ -6109,6 +6118,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
          mission_headers: dict[str, str] | None = None,
          mission_header_em_tag: str = _DEFAULT_MISSION_HEADER_EM_TAG,
          mission_detail_fields: dict | None = None,
+         mission_title_tags: dict | None = None,
          stats_prepend: bool = False,
          standardize_earnable_ship_names: bool = False,
          english_base_ini_path: Path | None = None) -> None:
@@ -6386,6 +6396,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
         "mission_headers":   mission_headers or dict(_DEFAULT_MISSION_HEADERS),
         "mission_header_em": mission_header_em_tag or _DEFAULT_MISSION_HEADER_EM_TAG,
         "mission_detail_fields": mission_detail_fields or {},
+        "mission_title_tags": mission_title_tags or {},
         "stats_prepend":     bool(stats_prepend),
     }
 

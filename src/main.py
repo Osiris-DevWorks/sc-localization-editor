@@ -132,6 +132,12 @@ def main():
     # in both build modes; portable configs carry the same seeded value.
     AppSettings.migrate_mission_titles_location_detail()
 
+    # 2.2.0: the [BP]/[ACE] mission-title tags used to share their toggle
+    # with mission-detail-body settings; split into an independent "General
+    # Tags" group. Carries a user's prior blueprint_tag/ace choice forward
+    # once. Runs in both build modes.
+    AppSettings.migrate_title_tag_settings()
+
     # Always keep user source path in sync with canonical user.ini location
     AppSettings.set_source_path(AppSettings.SOURCE_USER, str(AppSettings.get_user_ini_path()))
 

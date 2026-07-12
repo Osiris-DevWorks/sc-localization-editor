@@ -205,6 +205,16 @@ SHORTEN_PHRASE_OPTIONS: tuple[tuple[str, str, str, str], ...] = (
      "Hauler Needed for", "-"),
     ("local_shipment_route", 'Shorten "Local Shipment Route" to "Route"',
      "Local Shipment Route", "Route"),
+    # Ling Family haul titles ("Ling Family ~mission(ReputationRank) Cargo
+    # Haul - ...") put "Cargo" directly after the rank token with no "Rank"
+    # word and no separator at all — a third stock phrasing distinct from
+    # both the dash/comma RANK_TRIGGERS and "Hauler Needed for". Fallback
+    # text here is unused — abbreviate_title() overrides it with the live
+    # word + rank_separator at render time (see the special-case there).
+    ("ling_family_rank", 'Add the Rank separator to Ling Family haul titles',
+     "~mission(ReputationRank) Cargo", "~mission(ReputationRank) Rank Cargo"),
+    ("ling_family_prefix", 'Shorten "Ling Family" by removing it',
+     "Ling Family ", ""),
 )
 
 # Curated word toggles that REMOVE a word outright rather than shortening a
@@ -252,6 +262,42 @@ RANK_SEPARATORS: tuple[tuple[str, str, str], ...] = (
 )
 _RANK_SEP_BY_KEY = {k: s for k, _, s in RANK_SEPARATORS}
 
+# "Standardize hauling mission names" (top-of-page toggle, separate from the
+# per-word/phrase checkboxes): rewrites a stock haul title into ONE canonical
+# shape instead of shortening whatever CIG happened to write. Only titles
+# carrying BOTH tokens below are eligible — the procedural Covalex/DeadSaints/
+# RedWind/Ling Family archetypes. Fixed one-off titles (region-link specials,
+# GoblinG's resource-drive chain, intro/rehire text) have no rank or size to
+# build a template from, so they pass through untouched.
+_HAUL_RANK_TOKEN = "~mission(ReputationRank)"
+_HAUL_SIZE_TOKEN = "~mission(CargoGradeToken)"
+_HAUL_DIRECT_RE = re.compile(r"\bDirect\b")
+_HAUL_CIRCUIT_RE = re.compile(r"\bCircuit\b")
+
+
+def _standardize_hauling_title(title: str, remove_rank: bool, sep: str) -> str:
+    """Rewrite *title* into the canonical "Rank <sep> [Direct] Size Cargo
+    Haul [Circuit]" shape when it carries both the rank and size tokens.
+
+    Ignores whatever wording/order/company-prefix the stock title used
+    (e.g. Ling Family's "Ling Family Rank Size Cargo - Size Scale" or
+    RedWind's "Rank Hauler Needed for Size Shipment") and rebuilds from
+    scratch, preserving only the Direct/Circuit flags detected in the
+    original text. `remove_rank` mirrors the same "rank" checkbox the
+    RANK_TRIGGERS block below honors, so Standardize composes with it
+    instead of always forcing the word "Rank" in.
+    """
+    if _HAUL_RANK_TOKEN not in title or _HAUL_SIZE_TOKEN not in title:
+        return title
+    direct = "Direct " if _HAUL_DIRECT_RE.search(title) else ""
+    circuit = " Circuit" if _HAUL_CIRCUIT_RE.search(title) else ""
+    word = "" if remove_rank else "Rank"
+    return (
+        f"{_HAUL_RANK_TOKEN} {word}{sep} {direct}{_HAUL_SIZE_TOKEN} "
+        f"Cargo Haul{circuit}"
+    )
+
+
 # Keys covered by the legacy `abbreviate_title: true` bool migration — scoped
 # to the original shortening feature only. UNDERLINE_OPTIONS is a distinct,
 # newer feature and deliberately excluded so upgrading users don't get a
@@ -292,7 +338,8 @@ def _replace_word(text: str, word: str, replacement: str) -> str:
 
 
 def abbreviate_title(title: str, enabled: frozenset[str] = frozenset(),
-                      rank_separator: str = "dash") -> str:
+                      rank_separator: str = "dash",
+                      standardize_hauling: bool = False) -> str:
     """Shorten a stock mission title per the *enabled* option keys.
 
     Each `SHORTEN_PHRASE_OPTIONS` / `REMOVE_WORD_OPTIONS` entry (other than
@@ -304,9 +351,18 @@ def abbreviate_title(title: str, enabled: frozenset[str] = frozenset(),
     replacement plus whitespace collapse and a trailing-separator trim (a
     removed phrase can leave a dangling " -"); game tokens pass through
     untouched. Single source for the generator and the tab preview.
+
+    `standardize_hauling` runs FIRST, ahead of every other option — it's a
+    template rewrite (see `_standardize_hauling_title`), not a shorten/
+    remove pass, so the word/phrase checkboxes below still apply on top of
+    its output (e.g. "Remove Cargo" still strips "Cargo" from the freshly
+    standardized text).
     """
     out = title
     sep = _RANK_SEP_BY_KEY.get(rank_separator, "")
+    remove_rank = "rank" in enabled
+    if standardize_hauling:
+        out = _standardize_hauling_title(out, remove_rank, sep)
     for key, _label, phrase, short in (*SHORTEN_PHRASE_OPTIONS, *REMOVE_WORD_OPTIONS, *UNDERLINE_OPTIONS):
         if key not in enabled or key == "rank":
             continue
@@ -314,14 +370,25 @@ def abbreviate_title(title: str, enabled: frozenset[str] = frozenset(),
             # CIG's "Hauler Needed for" phrasing (RedWind haul titles) sits
             # in the exact same slot as the literal " Rank -"/" Rank,"
             # triggers below — a separator between the reputation rank and
-            # the mission subject — but never spells out the word "Rank".
-            # It must track rank_separator too, not the fixed dash the
-            # option used to hardcode (whitespace collapse below absorbs
-            # the extra padding either side).
-            short = sep
+            # the mission subject — but never spells out the word "Rank"
+            # itself. Render it the same way those triggers do: keep the
+            # word "Rank" (so "Rookie" reads as "Rookie Rank", matching
+            # every other haul title) unless the shared "rank" removal
+            # checkbox is also on, then track rank_separator either way
+            # instead of the fixed dash the option used to hardcode
+            # (whitespace collapse below absorbs the extra padding).
+            short = sep if remove_rank else f"Rank{sep}"
+        elif key == "ling_family_rank":
+            # Ling Family haul titles put "Cargo" directly after the rank
+            # token with no "Rank" word and no separator at all — insert
+            # both here the same way the dash/comma RANK_TRIGGERS do,
+            # anchored on the literal token text since there's no existing
+            # word/punctuation to key off of.
+            word = "" if remove_rank else "Rank"
+            fragment = f" {word}{sep}" if word else f" {sep}"
+            short = f"~mission(ReputationRank){fragment}Cargo"
         out = out.replace(phrase, short) if " " in phrase else _replace_word(out, phrase, short)
 
-    remove_rank = "rank" in enabled
     for trigger in RANK_TRIGGERS:
         if trigger not in out:
             continue
@@ -501,6 +568,11 @@ class TagConfig:
     # size via its own None/abbreviation dropdown. Empty by default — off
     # until the user opts in per size.
     shortened_sizes: frozenset[str] = field(default_factory=frozenset)
+    # "Standardize hauling mission names" (top-of-page toggle, sibling of the
+    # route-enable checkbox — not part of `abbreviated_phrases` since it's a
+    # template rewrite, not a shorten/remove pass; see
+    # `_standardize_hauling_title`). Off by default.
+    standardize_hauling_names: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -568,6 +640,7 @@ class TagConfig:
             abbreviated_phrases=abbreviated_phrases,
             rank_separator=rank_separator,
             shortened_sizes=shortened_sizes,
+            standardize_hauling_names=bool(data.get("standardize_hauling_names", False)),
         )
 
     @classmethod
@@ -718,6 +791,7 @@ def default_config(category: str) -> TagConfig:
         abbreviated_phrases=frozenset(src.abbreviated_phrases),
         rank_separator=src.rank_separator,
         shortened_sizes=frozenset(src.shortened_sizes),
+        standardize_hauling_names=src.standardize_hauling_names,
     )
 
 
