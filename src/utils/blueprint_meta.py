@@ -39,6 +39,43 @@ from src.utils.owned_items import (
     extract_bp_item_names,
     normalize_item_name,
 )
+from src.utils.tag_builder import DEFAULT_COMPONENT_CLASS_MAPPING
+
+# The Class facet should read as a full word ("Military") regardless of the
+# Tag Builder style the tag was actually rendered in (Short "M" / Medium
+# "MIL" / Long "Military" — user-configurable per #157's parse_component_tag
+# limitation notwithstanding). Built from the same table the Tag Builder's
+# default component class mapping uses, so it stays in sync automatically.
+_CLASS_ABBREV_TO_FULL: dict[str, str] = {}
+for _full, (_short, _med, _long) in DEFAULT_COMPONENT_CLASS_MAPPING.items():
+    _CLASS_ABBREV_TO_FULL[_short.upper()] = _long
+    _CLASS_ABBREV_TO_FULL[_med.upper()] = _long
+    _CLASS_ABBREV_TO_FULL[_long.upper()] = _long
+del _full, _short, _med, _long
+
+
+def expand_class_full_word(cls: Optional[str]) -> Optional[str]:
+    """Map a class token (any Tag Builder length) to its full word.
+
+    Falls through unchanged for anything not in the default component class
+    table (e.g. a user's custom class_mapping label) — best-effort, not a
+    hard requirement, matching parse_component_tag's own best-effort framing.
+    """
+    if not cls:
+        return cls
+    return _CLASS_ABBREV_TO_FULL.get(cls.upper(), cls)
+
+
+def strip_size_prefix(size: Optional[str]) -> Optional[str]:
+    """Drop the leading "S" from a size token ("S3" -> "3") for display.
+
+    size_from_key / parse_component_tag keep the "S" prefix for their own
+    contract (it round-trips into loc-key lookups elsewhere); this is purely
+    the Size facet's own preference to show a bare number.
+    """
+    if not size:
+        return size
+    return size[1:] if size[:1].upper() == "S" else size
 
 # Loc-key prefix for item names; ship-weapon detection slices it off to
 # inspect the manufacturer token that follows.
@@ -97,6 +134,14 @@ class BlueprintItem:
     cls: Optional[str] = None
     size: Optional[str] = None
     grade: Optional[str] = None
+    # The item's own item_Name value, tag and all (e.g. "Norfield [MIL-S1-A]"
+    # or "10-Series Greatsword Cannon [Physical-S2]") — whatever the Tag
+    # Builder actually rendered, leading or trailing per the category's
+    # placement setting. Falls back to the bare `name` when the item never
+    # resolved to a loc key (landed in "Other"). `name` stays the stable,
+    # tag-free identity used for matching/filtering/Owned-tracking; this is
+    # purely for the optional "show tags" display toggle.
+    tagged_name: str = ""
 
 
 def parse_component_tag(value: str):
@@ -202,6 +247,7 @@ def build_blueprint_metadata(entries) -> dict:
     # Pass 1: name->key map (for type), component tag attrs, mission titles,
     # and the blueprint-bearing desc values.
     name_to_key: dict = {}      # normalized display name -> its loc key
+    name_to_value: dict = {}    # normalized display name -> its raw item_Name value (tag intact)
     attrs: dict = {}            # normalized name -> (cls, size, grade)
     titles: dict = {}           # (base_lower, num) -> cleaned mission name
     bp_descs: list = []         # (pair_key | None, value)
@@ -216,12 +262,14 @@ def build_blueprint_metadata(entries) -> dict:
             nm = normalize_item_name(val)
             if nm and nm not in name_to_key:
                 name_to_key[nm] = key
+                name_to_value[nm] = val.strip()
             # Class/size/grade only for recognized component types (Shield,
             # Quantum Drive, ...); ship weapons etc. carry a different tag shape
             # (e.g. [E-S2], no grade) that would pollute the facets.
             if cat == "Ship Items" and component_type_from_key(key):
                 cls, tag_size, grade = parse_component_tag(val)
-                size = size_from_key(key) or tag_size
+                cls = expand_class_full_word(cls)
+                size = strip_size_prefix(size_from_key(key) or tag_size)
                 if (cls or size or grade) and nm and nm not in attrs:
                     attrs[nm] = (cls, size, grade)
 
@@ -255,5 +303,6 @@ def build_blueprint_metadata(entries) -> dict:
             cls=cls,
             size=size,
             grade=grade,
+            tagged_name=name_to_value.get(nm) or nm,
         )
     return result

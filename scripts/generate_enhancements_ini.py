@@ -5013,12 +5013,21 @@ def build_scitem_lookups(
         if ref and desc_loc_key:
             desc_value = loc.get(desc_loc_key, "")
             _parts = {p.lower() for p in xml_file.parts}
-            # FPS weapons must never carry a component-style name tag.
-            # _component_name_tag keys off Size:/Grade:/Class: data that FPS
-            # weapons also expose, so without this guard they pick up nonsense
-            # tags like "[S30-A] Rifle" in blueprint lists. FPS weapons are
-            # meant to pass through bare (per request + the docstring above).
-            if desc_value and "fps_weapons" not in _parts:
+            # Weapons of any kind must never carry a component-style name tag.
+            # _component_name_tag keys off Size:/Grade:/Class: data that ship
+            # weapons and FPS weapons also expose in their description, so
+            # without this guard they pick up nonsense tags — FPS guns got
+            # "[S30-A] Rifle", and ship weapons got a components-flavoured
+            # "[B-S2-A]" that doesn't match the "[Physical-S2]" tag their own
+            # item_Name entry carries (from _ship_weapon_name_tag_factory),
+            # breaking the Blueprints tracker's name matching for every ship
+            # weapon (#220). All weapon/missile/rocket-pod entities live under
+            # a "weapons" parent dir, distinct from the component subdirs in
+            # _SUBDIR_TO_TYPE, so excluding that whole subtree here is safe.
+            # Weapons/missiles are meant to pass through bare (per request +
+            # the docstring above) since they have their own tag mechanisms
+            # (or none) that aren't wired into blueprint-pool weaving.
+            if desc_value and "weapons" not in _parts:
                 # Derive the component type from the entity's subdir so the
                 # blueprint-list tag carries the same Type element the
                 # standalone component path emits (#101). Non-component

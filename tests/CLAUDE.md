@@ -16,6 +16,8 @@ Split by domain:
 - `test_missile_name_tag.py` — 1.4.1: bomb name tags carry their ordinance letter, not size-only, so the variant column distinguishes `[BOMB-X-…]` from `[BOMB-Y-…]`.
 - `test_commodity_journal.py` — 1.4.1 generator guard for the `commodity_journal` unpack crash when the crafting cache directory is missing.
 - `test_blueprint_pools.py` — multi-source pool merge regression, component-style tag annotation, CIG-prefix strip, pool rank-tier label.
+- `test_blueprint_log_scanner.py` — #223 "Scan Logs for Owned Blueprints": `extract_blueprint_names` regex against real Game.log notification lines (bare names, component-tagged names, embedded-quote paint variants, repeated-notification dedup, unrelated "blueprint" mentions ignored); `find_log_files` / `scan_log_files` directory walking and per-file progress callback.
+- `test_blueprints_shuttle.py` — Blueprint Tracker's Available/Owned split (`BlueprintTrackerTab._available_blueprints`, a pure staticmethod).
 - `test_pak_extraction.py` — P4K/DataForge.
 - `test_progress_sink.py` — thread-safe progress coalescing.
 - `test_dataforge_patcher.py` — declarative XML patching.

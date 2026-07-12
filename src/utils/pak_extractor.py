@@ -29,6 +29,30 @@ P4K_SIZE_STAMP = ".p4k_size"
 _RMTREE_CB_KWARG = "onexc" if sys.version_info >= (3, 12) else "onerror"
 
 
+def _win_long_path(path) -> str:
+    """Return *path* as a Windows extended-length path string when needed.
+
+    DataForge's ~28k-file entity tree uses long CIG-authored filenames
+    (e.g. ``softlock_terminal_standard_lowtech_commoditykiosk_console_
+    transfers_1_straight_a.xml``); once nested under a user's install
+    directory plus the per-channel cache layout, the destination path can
+    exceed the legacy 260-char ``MAX_PATH``, and ``shutil``/``os`` raise
+    ``WinError 3`` ("The system cannot find the path specified") even
+    though the path is otherwise valid (#221). The ``\\\\?\\`` prefix tells
+    the Win32 API to skip that check (paths up to ~32,767 chars). No-op on
+    non-Windows platforms and on paths that are already prefixed.
+    """
+    if sys.platform != "win32":
+        return str(path)
+    p = str(Path(path).resolve())
+    if p.startswith("\\\\?\\"):
+        return p
+    if p.startswith("\\\\"):
+        # UNC path: \\server\share\... -> \\?\UNC\server\share\...
+        return "\\\\?\\UNC\\" + p[2:]
+    return "\\\\?\\" + p
+
+
 def _robust_rmtree(path: Path, attempts: int = 6) -> None:
     """Delete *path* recursively, surviving transient Windows locks.
 
@@ -69,7 +93,7 @@ def _robust_rmtree(path: Path, attempts: int = 6) -> None:
     for i in range(attempts):
         try:
             gc.collect()  # drop any lingering XML file handles we own
-            shutil.rmtree(path, **{_RMTREE_CB_KWARG: _on_error})
+            shutil.rmtree(_win_long_path(path), **{_RMTREE_CB_KWARG: _on_error})
             return
         except OSError as e:
             last_err = e
@@ -154,7 +178,7 @@ def _copy_filtered_records(src_libs: Path, dst_libs: Path) -> tuple[int, int]:
             f"unforge output missing expected 'foundry/records/' layout at {records_src}"
         )
 
-    records_dst.mkdir(parents=True, exist_ok=True)
+    Path(_win_long_path(records_dst)).mkdir(parents=True, exist_ok=True)
 
     copied = 0
     skipped = 0
@@ -169,8 +193,11 @@ def _copy_filtered_records(src_libs: Path, dst_libs: Path) -> tuple[int, int]:
             logger.debug(f"DataForge keep-path not in this build, skipping: {rel}")
             skipped += 1
             continue
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(src, dst)
+        Path(_win_long_path(dst.parent)).mkdir(parents=True, exist_ok=True)
+        # Long-path-prefixed on both sides: the deepest entries under
+        # entities/scitem/mission_entities/ routinely push the destination
+        # past 260 chars once nested under a user's install dir (#221).
+        shutil.copytree(_win_long_path(src), _win_long_path(dst))
         copied += 1
 
     return copied, skipped

@@ -30,6 +30,13 @@ _OWNED_TAG = " <EM4>[Owned]</EM4>"
 _OWNED_STRIP_RE = re.compile(r"\s*<EM4>\[Owned\]</EM4>")
 # A leading bracketed component tag on a bullet name, e.g. "[Mil-S1-A] ".
 _LEADING_TAG_RE = re.compile(r"^\[[^\]]*\]\s*")
+# A trailing bracketed tag, e.g. "10-Series Greatsword Cannon [B-S2-A]". The
+# Tag Builder's placement setting is per-category and user-configurable
+# (prepend/append), so the same class/size/grade tag can land on either side
+# of the name depending on which category (components vs. ship_weapons vs.
+# missiles) it came from. Stripping both sides keeps matching independent of
+# that setting instead of only handling the default leading placement.
+_TRAILING_TAG_RE = re.compile(r"\s*\[[^\]]*\]\s*$")
 
 # Marks the start of a POTENTIAL BLUEPRINTS section. The header text is
 # user-configurable (AppSettings.MISSION_HEADER_DEFAULTS["blueprints"]) but the
@@ -46,14 +53,17 @@ _BP_HEADER_RE = re.compile(BP_SECTION_HEADER, re.IGNORECASE)
 def normalize_item_name(name: str) -> str:
     """Reduce a bullet/name to a stable identity for matching.
 
-    Strips a leading component tag (``[Mil-S1-A] Norfield`` -> ``Norfield``),
-    any ``[Owned]`` tag, and surrounding whitespace. Used for both the owned
-    set and bullet matching so a tagged bullet matches its bare item row.
+    Strips a leading OR trailing component tag (``[Mil-S1-A] Norfield`` /
+    ``Norfield [Mil-S1-A]`` -> ``Norfield``), any ``[Owned]`` tag, and
+    surrounding whitespace. Used for both the owned set and bullet matching
+    so a tagged bullet matches its bare item row regardless of which side of
+    the name the Tag Builder's placement setting put the tag on.
     """
     if not name:
         return ""
     s = _OWNED_STRIP_RE.sub("", name)
     s = _LEADING_TAG_RE.sub("", s)
+    s = _TRAILING_TAG_RE.sub("", s)
     return s.strip()
 
 

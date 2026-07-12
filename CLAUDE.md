@@ -173,6 +173,9 @@ Anchor examples already in-tree: `COL_*` constants in `src/gui/string_table_mode
 | Change stats/favorites UI | `src/gui/enhancements_tab.py` | `setup_ui()` |
 | Manage Config tab UI | `src/gui/config_tab.py` | `setup_ui()`, drag-drop hierarchy |
 | Manage Enhancements tab UI | `src/gui/enhancements_tab.py` | `setup_ui()`, stats toggle, favorites config |
+| Manage Blueprint Tracker tab UI | `src/gui/blueprint_tracker_tab.py` | `setup_ui()`, `set_blueprint_items()`, `_render_blueprint_lists()` |
+| Change blueprint type/class/size/grade classification | `src/utils/blueprint_meta.py` | `build_blueprint_metadata()`, `blueprint_type_from_key()` |
+| Change the "Scan Logs for Owned Blueprints" log parsing | `src/utils/blueprint_log_scanner.py` | `extract_blueprint_names()`, `find_log_files()` |
 | Change in-app logging | `src/gui/log_tab.py` | `LogTab`, `_QtLogHandler` |
 | Change user.cfg behavior | `src/utils/user_cfg.py` | `ensure_user_cfg_language()` |
 | Fix an upstream DataForge data bug | `patches/<category>/.../<name>.patch.json`, `src/utils/dataforge_patcher.py` | `apply_patches()` |

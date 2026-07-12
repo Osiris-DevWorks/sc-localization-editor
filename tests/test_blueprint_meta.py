@@ -19,8 +19,10 @@ from src.utils.blueprint_meta import (  # noqa: E402
     build_blueprint_metadata,
     clean_mission_title,
     component_type_from_key,
+    expand_class_full_word,
     parse_component_tag,
     size_from_key,
+    strip_size_prefix,
 )
 
 pytestmark = [pytest.mark.unit, pytest.mark.regression]
@@ -61,6 +63,33 @@ def test_component_type_from_key():
     assert component_type_from_key("item_NameQRDV_typo") == "Quantum Drive"
     # Manufacturer-prefixed name (no recognized type code) -> no type.
     assert component_type_from_key("item_NameAEGS_Eclipse_BombRack_S03") is None
+
+
+def test_expand_class_full_word():
+    # Medium (default Tag Builder style) and Short both expand to the same
+    # full word; already-full and unrecognized tokens pass through.
+    assert expand_class_full_word("MIL") == "Military"
+    assert expand_class_full_word("mil") == "Military"
+    assert expand_class_full_word("M") == "Military"
+    assert expand_class_full_word("IND") == "Industrial"
+    assert expand_class_full_word("I") == "Industrial"
+    assert expand_class_full_word("CIV") == "Civilian"
+    assert expand_class_full_word("STH") == "Stealth"
+    assert expand_class_full_word("CMP") == "Competition"
+    assert expand_class_full_word("Military") == "Military"
+    assert expand_class_full_word("CustomLabel") == "CustomLabel"
+    assert expand_class_full_word(None) is None
+    assert expand_class_full_word("") == ""
+
+
+def test_strip_size_prefix():
+    assert strip_size_prefix("S3") == "3"
+    assert strip_size_prefix("s10") == "10"
+    assert strip_size_prefix("S0") == "0"
+    assert strip_size_prefix(None) is None
+    assert strip_size_prefix("") == ""
+    # Already bare — left alone.
+    assert strip_size_prefix("3") == "3"
 
 
 def test_blueprint_type_buckets():
@@ -110,7 +139,7 @@ def test_build_joins_component_attributes():
     meta = build_blueprint_metadata(_sample_entries())
     assert set(meta) == {"Balandin", "Abrade Scraper Module"}
     bal = meta["Balandin"]
-    assert (bal.type, bal.cls, bal.size, bal.grade) == ("Quantum Drive", "MIL", "S3", "B")
+    assert (bal.type, bal.cls, bal.size, bal.grade) == ("Quantum Drive", "Military", "3", "B")
     # Plain item with no matching name entry -> "Other" type, no class/size/grade.
     scraper = meta["Abrade Scraper Module"]
     assert (scraper.type, scraper.cls, scraper.size, scraper.grade) == ("Other", None, None, None)

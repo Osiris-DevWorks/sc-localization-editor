@@ -403,6 +403,36 @@ class P4kExtractWorker(QThread):
             self.finished.emit(False)
 
 
+class BlueprintLogScanWorker(QThread):
+    """Scan Star Citizen's Game.log / logbackups for "Received Blueprint"
+    reward notifications and return the normalized names found.
+
+    Log directories can hold hundreds of rotated session files, so this
+    runs off the main thread like the other file-I/O workers.
+    """
+
+    progress_pct = pyqtSignal(int, int, str)  # (completed, total, filename)
+    finished = pyqtSignal(set)  # normalized blueprint names found
+    error = pyqtSignal(str)
+
+    def __init__(self, log_paths: list):
+        super().__init__()
+        self._log_paths = log_paths
+
+    def run(self):
+        from src.utils.blueprint_log_scanner import scan_log_files
+        try:
+            found = scan_log_files(
+                self._log_paths,
+                progress_callback=lambda c, t, m: self.progress_pct.emit(c, t, m),
+            )
+            self.finished.emit(found)
+        except Exception as e:
+            logger.exception(f"Blueprint log scan failed: {e}")
+            self.error.emit(str(e))
+            self.finished.emit(set())
+
+
 class DataForgeExtractWorker(QThread):
     """Worker thread for extracting DataForge entity XMLs from Data.p4k."""
 

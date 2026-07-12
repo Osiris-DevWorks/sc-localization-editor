@@ -44,8 +44,8 @@
       "preferred_side": "above"
     },
     {
-      "id": "enh_blueprints",
-      "title": "7. Enhancements: Blueprints",
+      "id": "blueprint_tracker",
+      "title": "7. Blueprint Tracker",
       "description": "Mark the blueprints you own. Search the left list by name or mission, or narrow it by component Type, Class, Size, and Grade, then use the arrows to move items to your owned list. Owned blueprints get an [Owned] tag wherever they show up in a mission's potential rewards, so you can tell at a glance what's worth chasing.",
       "preferred_side": "above"
     },

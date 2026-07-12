@@ -19,6 +19,7 @@ from PyQt6.QtGui import QColor, QFont, QCursor, QPixmap, QIcon, QPalette
 from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QDesktopServices
 
+from src.gui.blueprint_tracker_tab import BlueprintTrackerTab
 from src.gui.coach_mark import CoachMarkStep, TutorialTour
 from src.gui.config_tab import ConfigTab
 from src.gui.error_dialog import ErrorDialogHandler, _ErrorDialogEmitter
@@ -38,6 +39,7 @@ from src.gui.theme import (
 )
 from src.gui.workers import (
     AnimatedProgressDialog,
+    BlueprintLogScanWorker,
     DataForgeExtractWorker,
     EnhancementsGeneratorWorker,
     FileLoaderWorker,
@@ -426,8 +428,16 @@ class MainWindow(QMainWindow):
         self.enhancements_tab.merge_requested.connect(self.perform_merge_and_reload)
         self.enhancements_tab.enhancements_pipeline_requested.connect(self._run_enhancements_pipeline)
         self.enhancements_tab.favorite_prefix_changed.connect(self._on_favorite_prefix_changed)
-        self.enhancements_tab.owned_items_changed.connect(self._recompute_owned)
         self._enhancements_tab_index = self.tabs.addTab(self.enhancements_tab, tr("tabs.enhancements"))
+
+        # Blueprint Tracker tab (#222: split out of the Enhancements tab)
+        self.blueprint_tracker_tab = BlueprintTrackerTab()
+        self.blueprint_tracker_tab.owned_items_changed.connect(self._recompute_owned)
+        self.blueprint_tracker_tab.scan_logs_requested.connect(self._run_blueprint_log_scan)
+        self._blueprint_tracker_tab_index = self.tabs.addTab(
+            self.blueprint_tracker_tab, tr("tabs.blueprint_tracker")
+        )
+        self._bp_log_scan_worker = None
 
         self.log_tab = LogTab()
         self._log_tab_index = self.tabs.addTab(self.log_tab, tr("tabs.log"))
@@ -2836,6 +2846,7 @@ class MainWindow(QMainWindow):
         strings_tab = getattr(self, "_strings_tab_index", 0)
         config_tab = getattr(self, "_config_tab_index", 1)
         enh_tab = getattr(self, "_enhancements_tab_index", 2)
+        bp_tab = getattr(self, "_blueprint_tracker_tab_index", 3)
 
         return {
             "welcome":               {"target": lambda: None,                                                  "pre_action": None},
@@ -2851,7 +2862,7 @@ class MainWindow(QMainWindow):
             "enh_favorites":         {"target": lambda: self.enhancements_tab._favorites_group,                "pre_action": _switch_to(enh_tab)},
             "enh_mission_labels":    {"target": lambda: self.enhancements_tab.mission_labels_group,            "pre_action": _switch_to(enh_tab)},
             "enh_tag_builder":       {"target": lambda: self.enhancements_tab._tag_builder_group,              "pre_action": _switch_to(enh_tab)},
-            "enh_blueprints":        {"target": lambda: self.enhancements_tab._blueprints_group,               "pre_action": _switch_to(enh_tab)},
+            "blueprint_tracker":     {"target": lambda: self.blueprint_tracker_tab._blueprints_available_list, "pre_action": _switch_to(bp_tab)},
             # Config tab section deep-dive
             "cfg_appearance":        {"target": lambda: self.config_tab._appearance_group,                     "pre_action": _switch_to(config_tab)},
             "cfg_sc_install":        {"target": lambda: self.config_tab._loc_group,                            "pre_action": _switch_to(config_tab)},
@@ -3297,6 +3308,7 @@ class MainWindow(QMainWindow):
         self.tabs.setTabText(self._strings_tab_index, tr("tabs.string_editor"))
         self.tabs.setTabText(self._config_tab_index, tr("tabs.config"))
         self.tabs.setTabText(self._enhancements_tab_index, tr("tabs.enhancements"))
+        self.tabs.setTabText(self._blueprint_tracker_tab_index, tr("tabs.blueprint_tracker"))
         self.tabs.setTabText(self._log_tab_index, tr("tabs.log"))
         self.tabs.setTabText(self._about_tab_index, tr("tabs.about"))
         self.tabs.setTabText(self._faq_tab_index, tr("tabs.faq"))
@@ -3372,6 +3384,7 @@ class MainWindow(QMainWindow):
         # Cascade to child tabs
         self.config_tab.retranslate_ui()
         self.enhancements_tab.retranslate_ui()
+        self.blueprint_tracker_tab.retranslate_ui()
 
         # Status-bar version indicator + Config-tab update status hold the
         # last update-check result; re-render them in the new language
@@ -4663,8 +4676,7 @@ class MainWindow(QMainWindow):
         """Handle cell clicks — COL_STAR toggles favorite (Ships).
 
         The Owned column (COL_OWNED) is a read-only indicator: ownership is now
-        managed by the Blueprints shuttle on the Enhancements tab, not by
-        clicking the star here.
+        managed by the Blueprint Tracker tab, not by clicking the star here.
         """
         col = proxy_index.column()
         if col == COL_STAR:
@@ -4717,10 +4729,81 @@ class MainWindow(QMainWindow):
             if new_val != e.original_value:
                 e.original_value = new_val
         self._model.set_owned_state(self._bp_item_names, owned)
-        # Feed the blueprint metadata to the Enhancements tab's Blueprints
-        # shuttle (it can't see the loaded strings the data is derived from).
-        if hasattr(self, "enhancements_tab"):
-            self.enhancements_tab.set_blueprint_items(self._blueprint_meta)
+        # Feed the blueprint metadata to the Blueprint Tracker tab (it can't
+        # see the loaded strings the data is derived from).
+        if hasattr(self, "blueprint_tracker_tab"):
+            self.blueprint_tracker_tab.set_blueprint_items(self._blueprint_meta)
+
+    def _run_blueprint_log_scan(self):
+        """Launch BlueprintLogScanWorker with a progress dialog; merge any
+        blueprints it finds into the owned set on success.
+
+        Reads Game.log + logbackups/*.log from the active channel's install
+        dir for "Received Blueprint" reward notifications — the game's own
+        record of every blueprint the player has actually earned, independent
+        of whether it's shown up in a loaded mission's reward text yet.
+        """
+        from src.utils.blueprint_log_scanner import find_log_files
+
+        channel_path = AppSettings.get_channel_install_path()
+        if not channel_path:
+            QMessageBox.warning(
+                self, "Scan Logs",
+                "Star Citizen install path isn't configured yet. "
+                "Set it on the Config tab first.",
+            )
+            return
+
+        log_paths = find_log_files(Path(channel_path))
+        if not log_paths:
+            QMessageBox.information(
+                self, "Scan Logs",
+                f"No log files found under:\n{Path(channel_path) / 'logbackups'}\n\n"
+                "Play a session first, or check your Star Citizen install path "
+                "on the Config tab.",
+            )
+            return
+
+        self._bp_log_scan_worker = BlueprintLogScanWorker(log_paths)
+        self._bp_log_scan_progress = AnimatedProgressDialog(
+            f"Scanning {len(log_paths)} log file(s) for owned blueprints...",
+            parent=self,
+            title="Scanning Logs",
+        )
+        self._bp_log_scan_worker.progress_pct.connect(self._bp_log_scan_progress.set_progress)
+        self._bp_log_scan_worker.error.connect(
+            lambda err: QMessageBox.warning(self, "Scan Logs", f"Log scan failed:\n{err}")
+        )
+        self._bp_log_scan_worker.finished.connect(self._on_blueprint_log_scan_finished)
+        self._bp_log_scan_worker.start()
+
+    def _on_blueprint_log_scan_finished(self, found: set):
+        """Merge newly-found blueprint names into the owned set and report
+        the result. `found` is empty (not None) on both a clean "nothing
+        found" run and a worker-side error, so the error dialog (connected
+        separately) is what distinguishes the two to the user."""
+        self._bp_log_scan_progress.close()
+        self._reap_worker(self._bp_log_scan_worker)
+        self._bp_log_scan_worker = None
+
+        owned = AppSettings.get_owned_items()
+        new_names = found - owned
+        if new_names:
+            AppSettings.set_owned_items(owned | found)
+            self._recompute_owned()
+            preview = "\n".join(f"• {n}" for n in sorted(new_names, key=str.lower)[:20])
+            more = f"\n… and {len(new_names) - 20} more" if len(new_names) > 20 else ""
+            QMessageBox.information(
+                self, "Scan Logs",
+                f"Added {len(new_names)} newly-owned blueprint(s) from your logs:\n\n"
+                f"{preview}{more}",
+            )
+        else:
+            QMessageBox.information(
+                self, "Scan Logs",
+                "No new owned blueprints found in your logs "
+                f"({len(found)} already tracked).",
+            )
 
     def toggle_favorite(self, proxy_row: int):
         """Add or remove the sort prefix from a ship's custom value."""
