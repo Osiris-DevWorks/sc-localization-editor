@@ -290,6 +290,15 @@ class MainWindow(QMainWindow):
         self._enhancements_worker: Optional[EnhancementsGeneratorWorker] = None
         self._enhancements_progress_dialog: Optional[AnimatedProgressDialog] = None
 
+        # Apply-to-game dirty tracking (same grey-until-changed pattern as
+        # Generate Enhancements / Save Tag Changes / Apply Owned Tags).
+        # Starts True (clickable) — we can't cheaply verify at launch whether
+        # the loaded state already matches what's live in the game's
+        # global.ini, and wrongly greying out the app's one write-to-disk
+        # action would be a much worse failure than an occasional redundant
+        # enabled state. See _mark_apply_dirty / _clear_apply_dirty.
+        self._apply_dirty = True
+
         # DataForge extraction worker
         self._forge_worker: Optional[DataForgeExtractWorker] = None
 
@@ -588,9 +597,9 @@ class MainWindow(QMainWindow):
         # Green — commit
         self.apply_btn = QPushButton(tr("toolbar.apply_btn"))
         self.apply_btn.setStyleSheet(f"background-color: {get_button_color('apply')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;")
-        self.apply_btn.setToolTip("Write the merged table contents to the game's global.ini. A timestamped backup of the current global.ini is created first.")
         self.apply_btn.clicked.connect(self.apply_to_game)
         button_layout.addWidget(self.apply_btn)
+        self._set_apply_btn_dirty(self._apply_dirty)
 
         # Editor: toggles the side-docked String Editor for editing long
         # values comfortably. Shares the 'open' info-action role so it pairs
@@ -1481,6 +1490,35 @@ class MainWindow(QMainWindow):
         else:
             logger.debug(f"Cache file not found: {cache_file}. Default values will be empty until sources are downloaded.")
 
+    # Same enabled/disabled tooltip pattern as the Enhancements tab's
+    # Generate Enhancements / Save Tag Changes buttons.
+    _APPLY_ENABLED_TOOLTIP = (
+        "Write the merged table contents to the game's global.ini. "
+        "A timestamped backup of the current global.ini is created first."
+    )
+    _APPLY_DISABLED_TOOLTIP = (
+        "Already applied — nothing has changed since the last Apply to Game."
+    )
+
+    def _set_apply_btn_dirty(self, dirty: bool) -> None:
+        """Single chokepoint for the button's enabled state + tooltip so the
+        two can never drift apart."""
+        self._apply_dirty = dirty
+        self.apply_btn.setEnabled(dirty)
+        self.apply_btn.setToolTip(
+            self._APPLY_ENABLED_TOOLTIP if dirty else self._APPLY_DISABLED_TOOLTIP
+        )
+
+    def _mark_apply_dirty(self, *_args):
+        """Something that Apply to Game would pick up changed — light the
+        button back up. Wired to: any table edit (via the model's
+        dataChanged chokepoint), every entries reload (covers Apply Category
+        Changes / Generate Enhancements / Save Tag Changes / language+channel
+        switches / import / restore, which all funnel through a reload), and
+        the Owned-tag re-weave (which doesn't reload but does change what
+        Apply would write)."""
+        self._set_apply_btn_dirty(True)
+
     @pyqtSlot()
     @timed
     def apply_to_game(self):
@@ -1749,6 +1787,7 @@ class MainWindow(QMainWindow):
                 f"  User edits: {user_count:,}\n\n"
                 f"{enhancement_block}"
             )
+            self._set_apply_btn_dirty(False)
         except Exception as e:
             QMessageBox.critical(self, tr("dialogs.error_title"), f"Failed to apply to game: {e}")
             logger.error(f"Error applying to game: {e}")
@@ -4490,6 +4529,8 @@ class MainWindow(QMainWindow):
         if not self.entries or not top_left.isValid():
             return
 
+        self._mark_apply_dirty()
+
         # Preview: refresh if the selected row falls inside the changed range.
         sel_model = self.table.selectionModel() if hasattr(self, "table") else None
         if sel_model is not None:
@@ -4743,6 +4784,10 @@ class MainWindow(QMainWindow):
         # see the loaded strings the data is derived from).
         if hasattr(self, "blueprint_tracker_tab"):
             self.blueprint_tracker_tab.set_blueprint_items(self._blueprint_meta)
+        # Called after every reload (category/tag/enhancements apply, channel
+        # and language switches, import, restore) and every Owned-set change
+        # — in every case Apply to Game's output could now differ.
+        self._mark_apply_dirty()
 
     def _run_blueprint_log_scan(self):
         """Launch BlueprintLogScanWorker with a progress dialog; merge any
