@@ -525,8 +525,9 @@ class ConfigTab(QWidget):
         self._refresh_p4k_status()
 
     def _browse_game_path(self):
+        start_dir = self.game_path_input.text().strip() or str(AppSettings.get_sc_install_root())
         path = QFileDialog.getExistingDirectory(
-            self, tr("config.select_sc_root")
+            self, tr("config.select_sc_root"), start_dir
         )
         if path:
             self.game_path_input.setText(path)
