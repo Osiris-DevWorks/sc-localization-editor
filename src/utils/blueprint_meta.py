@@ -268,18 +268,33 @@ def build_blueprint_metadata(entries) -> dict:
 
         if kl.startswith("item_name") or kl.startswith("vehicle_name"):
             nm = normalize_item_name(val)
-            if nm and nm not in name_to_key:
-                name_to_key[nm] = key
-                name_to_value[nm] = val.strip()
-            # Class/size/grade only for recognized component types (Shield,
-            # Quantum Drive, ...); ship weapons etc. carry a different tag shape
-            # (e.g. [E-S2], no grade) that would pollute the facets.
-            if cat == "Ship Items" and component_type_from_key(key):
-                cls, tag_size, grade = parse_component_tag(val)
-                cls = expand_class_full_word(cls)
-                size = strip_size_prefix(size_from_key(key) or tag_size)
-                if (cls or size or grade) and nm and nm not in attrs:
-                    attrs[nm] = (cls, size, grade)
+            if nm:
+                # Prefer the longest value when multiple distinct keys
+                # normalize to the same display name — e.g. two ship weapons
+                # with different manufacturer codes/sizes that happen to
+                # share an identical stock display name, one of them an
+                # untagged/unenhanced duplicate CIG ships alongside the real,
+                # tagged entity. A bare first-wins pick could lock in the
+                # untagged one, leaving the Blueprint Tracker showing no tag
+                # and no Class/Size/Grade facets for an item that IS tagged
+                # elsewhere. Recompute attrs alongside the winning value so
+                # the two never fall out of sync with each other.
+                existing_val = name_to_value.get(nm)
+                if existing_val is None or len(val.strip()) > len(existing_val):
+                    name_to_key[nm] = key
+                    name_to_value[nm] = val.strip()
+                    # Class/size/grade only for recognized component types
+                    # (Shield, Quantum Drive, ...); ship weapons etc. carry a
+                    # different tag shape (e.g. [E-S2], no grade) that would
+                    # pollute the facets.
+                    if cat == "Ship Items" and component_type_from_key(key):
+                        cls, tag_size, grade = parse_component_tag(val)
+                        cls = expand_class_full_word(cls)
+                        size = strip_size_prefix(size_from_key(key) or tag_size)
+                        if cls or size or grade:
+                            attrs[nm] = (cls, size, grade)
+                        elif nm in attrs:
+                            del attrs[nm]
 
         tm = _TITLE_KEY_RE.match(key)
         if tm:
