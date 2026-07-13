@@ -4275,7 +4275,7 @@ class MainWindow(QMainWindow):
         self._enhancements_worker.quit()
         self._enhancements_worker.wait()
         self._enhancements_worker = None
-        self.enhancements_tab.set_operation_idle()
+        self.enhancements_tab.set_operation_idle(success)
         self.enhancements_tab.refresh_enhancements_status()
 
         if success:
@@ -4360,7 +4360,7 @@ class MainWindow(QMainWindow):
             if getattr(self, "_forge_progress_dialog", None) is not None:
                 self._forge_progress_dialog.close()
                 self._forge_progress_dialog = None
-            self.enhancements_tab.set_operation_idle()
+            self.enhancements_tab.set_operation_idle(success=False)
             self.statusBar().showMessage("DataForge extraction failed — check the Log tab for details")
 
     def _run_p4k_extraction(self):

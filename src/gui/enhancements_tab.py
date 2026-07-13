@@ -110,6 +110,12 @@ class EnhancementsTab(QWidget):
     def __init__(self):
         super().__init__()
         self._loaded_prefix = AppSettings.get_favorite_prefix()
+        # Dirty flags gate the Generate Enhancements / Save Tag Changes
+        # buttons: disabled until something in their own section changes,
+        # so a grey button tells the user "already up to date" instead of
+        # inviting a redundant multi-minute regen (see _mark_*_dirty below).
+        self._enhancements_dirty = False
+        self._tag_dirty = False
         self.setup_ui()
 
     def setup_ui(self):
@@ -202,6 +208,7 @@ class EnhancementsTab(QWidget):
             cb.setChecked(AppSettings.get_enhancement_category_enabled(key))
             cb.setStyleSheet("font-size: 11px;")
             cb.toggled.connect(self._on_category_checkbox_changed)
+            cb.toggled.connect(self._mark_enhancements_dirty)
             row.addWidget(cb)
             self._enhancements_checkboxes[key] = cb
 
@@ -269,6 +276,7 @@ class EnhancementsTab(QWidget):
             cb.toggled.connect(
                 lambda checked, f=_field: self._on_mission_field_toggled(f, checked)
             )
+            cb.toggled.connect(self._mark_enhancements_dirty)
             mf_row.addWidget(cb)
             self._mission_field_checkboxes[_field] = cb
         mf_row.addStretch()
@@ -297,6 +305,7 @@ class EnhancementsTab(QWidget):
         self._stats_prepend_check.toggled.connect(
             lambda checked: AppSettings.set_stats_prepend(checked)
         )
+        self._stats_prepend_check.toggled.connect(self._mark_enhancements_dirty)
         gl.addWidget(self._stats_prepend_check)
 
         self._standardize_ship_names_check = QCheckBox("Standardize earnable ship names")
@@ -312,6 +321,7 @@ class EnhancementsTab(QWidget):
         self._standardize_ship_names_check.toggled.connect(
             lambda checked: AppSettings.set_standardize_earnable_ship_names(checked)
         )
+        self._standardize_ship_names_check.toggled.connect(self._mark_enhancements_dirty)
         gl.addWidget(self._standardize_ship_names_check)
 
         btn_row = QHBoxLayout()
@@ -327,11 +337,6 @@ class EnhancementsTab(QWidget):
 
         self._generate_enhancements_btn = QPushButton(tr("enhancements.generate_btn"))
         self._generate_enhancements_btn.setMaximumWidth(160)
-        self._generate_enhancements_btn.setToolTip(
-            "Generate enhanced localization files from your game's Data.p4k.\n"
-            "DataForge data will be extracted automatically if not already cached\n"
-            "(first run takes a few minutes; subsequent runs are fast)."
-        )
         self._generate_enhancements_btn.clicked.connect(self._on_generate_enhancements_clicked)
         btn_row.addWidget(self._generate_enhancements_btn)
 
@@ -344,7 +349,68 @@ class EnhancementsTab(QWidget):
         gl.addWidget(self._forge_status_label)
 
         self.refresh_enhancements_status()
+        # Start dirty (button clickable) when there's nothing generated yet
+        # or the DataForge cache is stale — otherwise start clean, since the
+        # loaded checkbox/field state matches what's already on disk.
+        self._set_generate_btn_dirty(self._compute_initial_enhancements_dirty())
         return group
+
+    # Tooltip shown when the button is clickable vs. greyed out — the
+    # disabled-state text is what a user hovering a gone-grey button most
+    # wants to know: "why can't I click this?"
+    _GENERATE_ENABLED_TOOLTIP = (
+        "Generate enhanced localization files from your game's Data.p4k.\n"
+        "DataForge data will be extracted automatically if not already cached\n"
+        "(first run takes a few minutes; subsequent runs are fast)."
+    )
+    _GENERATE_DISABLED_TOOLTIP = (
+        "Already up to date — nothing that affects the generated output "
+        "(categories, mission fields, stats/name options, Tag Builder) has "
+        "changed since the last run."
+    )
+
+    def _set_generate_btn_dirty(self, dirty: bool) -> None:
+        """Single chokepoint for the button's enabled state + tooltip so the
+        two can never drift apart."""
+        self._enhancements_dirty = dirty
+        self._generate_enhancements_btn.setEnabled(dirty)
+        self._generate_enhancements_btn.setToolTip(
+            self._GENERATE_ENABLED_TOOLTIP if dirty else self._GENERATE_DISABLED_TOOLTIP
+        )
+
+    def _compute_initial_enhancements_dirty(self) -> bool:
+        """True if Generate Enhancements has work to do right now: the
+        DataForge cache was never extracted or is stale vs. Data.p4k, or an
+        enabled category's output file doesn't exist yet."""
+        from src.utils.pak_extractor import P4K_MTIME_STAMP, dataforge_cache_is_fresh
+        forge_dir = AppSettings.get_dataforge_cache_dir()
+        p4k_path = AppSettings.get_p4k_path()
+        if not (forge_dir / P4K_MTIME_STAMP).exists():
+            return True
+        if p4k_path.exists() and not dataforge_cache_is_fresh(p4k_path, forge_dir):
+            return True
+        cache_dir = AppSettings.get_cache_dir()
+        for key, cb in self._enhancements_checkboxes.items():
+            if cb.isChecked() and any(
+                not (cache_dir / fn).exists() for fn in self._files_for_category(key)
+            ):
+                return True
+        return False
+
+    def _mark_enhancements_dirty(self, *_args):
+        """A setting that feeds Generate Enhancements changed since the last
+        run — light the button back up."""
+        self._set_generate_btn_dirty(True)
+
+    def mark_enhancements_dirty(self) -> None:
+        """Public entrypoint for external callers (MainWindow) to flag that
+        something outside this tab affects Generate Enhancements — e.g. a
+        fresh base.ini extraction. A pure loc-string change (CIG renaming or
+        adding flavor text to an item) doesn't touch the DataForge XML cache
+        the freshness check above looks at, so without this a stale cached
+        enhancement entry for that item could sit indefinitely with the
+        button never lighting up to prompt a re-run."""
+        self._mark_enhancements_dirty()
 
     def _on_category_checkbox_changed(self):
         """Enable Apply button if any checkbox differs from saved settings."""
@@ -574,9 +640,17 @@ class EnhancementsTab(QWidget):
 
     def set_operation_running(self, message: str):
         self._generate_enhancements_btn.setEnabled(False)
+        self._generate_enhancements_btn.setToolTip(message)
 
-    def set_operation_idle(self):
-        self._generate_enhancements_btn.setEnabled(True)
+    def set_operation_idle(self, success: bool = True):
+        """Re-enable after a background run. A successful run means the
+        button's own click already cleared the dirty flag, so leave it grey
+        unless something changed mid-run; a failed run re-enables
+        unconditionally so the user has a way to retry without first having
+        to touch an unrelated setting."""
+        if not success:
+            self._enhancements_dirty = True
+        self._set_generate_btn_dirty(self._enhancements_dirty)
 
     # ── Status refresh ────────────────────────────────────────────────────────
 
@@ -636,6 +710,7 @@ class EnhancementsTab(QWidget):
         for cat in CATEGORIES:
             cfg = AppSettings.get_tag_config(cat)
             page = _TagBuilderPage(cat, cfg)
+            page.config_changed.connect(self._mark_tag_dirty)
             self._tag_builder_pages[cat] = page
             self._tag_builder_tabs.addTab(page, _CATEGORY_LABELS[cat])
         gl.addWidget(self._tag_builder_tabs)
@@ -655,6 +730,7 @@ class EnhancementsTab(QWidget):
         self._annotate_mission_descs_cb.setChecked(
             AppSettings.get_tag_annotate_mission_descs()
         )
+        self._annotate_mission_descs_cb.toggled.connect(self._mark_tag_dirty)
         self._annotate_mission_descs_cb.setToolTip(
             "When checked, the configured [CLASS-Sx-grade] tag is added "
             "to component names inside the POTENTIAL BLUEPRINTS list of "
@@ -665,13 +741,9 @@ class EnhancementsTab(QWidget):
 
         btn_row = QHBoxLayout()
         self._apply_tag_btn = QPushButton(tr("enhancements.apply_tag_changes_btn"))
-        self._apply_tag_btn.setToolTip(
-            "Save the Components / Missiles / Ship Weapons tag configs and "
-            "re-run the enhancement generator. New tags appear in-game after "
-            "the next Apply Enhancements."
-        )
         self._apply_tag_btn.clicked.connect(self._apply_tag_builder)
         btn_row.addWidget(self._apply_tag_btn)
+        self._set_tag_btn_dirty(False)
 
         self._reset_tag_btn = QPushButton(tr("enhancements.reset_defaults_btn"))
         self._reset_tag_btn.setToolTip(
@@ -738,12 +810,37 @@ class EnhancementsTab(QWidget):
             AppSettings.set_tag_annotate_mission_descs(annotate_cb.isChecked())
         logger.info("Tag Builder: saved configs for %s", ", ".join(pages))
 
+    # Same enabled/disabled tooltip pattern as Generate Enhancements above.
+    _TAG_ENABLED_TOOLTIP = (
+        "Save the Components / Missiles / Ship Weapons tag configs and "
+        "re-run the enhancement generator. New tags appear in-game after "
+        "the next Apply Enhancements."
+    )
+    _TAG_DISABLED_TOOLTIP = (
+        "Already saved — no Tag Builder changes since the last save."
+    )
+
+    def _set_tag_btn_dirty(self, dirty: bool) -> None:
+        """Single chokepoint for the button's enabled state + tooltip so the
+        two can never drift apart."""
+        self._tag_dirty = dirty
+        self._apply_tag_btn.setEnabled(dirty)
+        self._apply_tag_btn.setToolTip(
+            self._TAG_ENABLED_TOOLTIP if dirty else self._TAG_DISABLED_TOOLTIP
+        )
+
+    def _mark_tag_dirty(self, *_args):
+        """A Tag Builder config changed since the last save — light the
+        Save Tag Changes button back up."""
+        self._set_tag_btn_dirty(True)
+
     def _apply_tag_builder(self):
         """Persist every page's TagConfig and kick off enhancement regen."""
         self._persist_tag_builder_state()
         # Re-run the generator so the new tags show up in the output INIs;
         # MainWindow handles the worker lifecycle + progress UI.
         self.enhancements_pipeline_requested.emit()
+        self._set_tag_btn_dirty(False)
 
     def _on_generate_enhancements_clicked(self):
         """Generate Enhancements entry point.
@@ -755,6 +852,11 @@ class EnhancementsTab(QWidget):
         """
         self._persist_tag_builder_state()
         self.enhancements_pipeline_requested.emit()
+        self._set_generate_btn_dirty(False)
+        # Generate also persists Tag Builder edits (see docstring above), so
+        # it satisfies Save Tag Changes too — otherwise that button would
+        # stay lit for a save that already happened.
+        self._set_tag_btn_dirty(False)
 
     def _reset_all_tag_builder_pages(self):
         """Reset every category's tag config back to its built-in default.
@@ -931,6 +1033,10 @@ class _TagBuilderPage(QWidget):
     """One category's Tag Builder page (element list + separator/enclosing
     dropdowns + live preview + Reset button)."""
 
+    # Fired on every user-driven config mutation (never during construction)
+    # so the tab can light up its Save Tag Changes button.
+    config_changed = pyqtSignal()
+
     def __init__(self, category: str, config: TagConfig, parent: QWidget | None = None):
         super().__init__(parent)
         self.category = category
@@ -1057,6 +1163,7 @@ class _TagBuilderPage(QWidget):
             row_widget = _ElementRow(spec, mapping=self.config.class_mapping)
             row_widget.setFixedHeight(self._ROW_H)
             row_widget.changed.connect(self._refresh_preview)
+            row_widget.changed.connect(self.config_changed.emit)
             row_widget.edit_mapping_requested.connect(
                 lambda _checked=False, k=spec.kind: self._open_mapping_dialog(k)
             )
@@ -1095,6 +1202,7 @@ class _TagBuilderPage(QWidget):
         elems[index], elems[target] = elems[target], elems[index]
         self._repopulate_list()
         self._refresh_preview()
+        self.config_changed.emit()
 
     # ── Separator/Enclosing change handlers ──────────────────────────────
 
@@ -1103,24 +1211,28 @@ class _TagBuilderPage(QWidget):
         if data is not None:
             self.config.separator = data
             self._refresh_preview()
+            self.config_changed.emit()
 
     def _on_enc_changed(self, _idx: int):
         data = self.enc_combo.currentData()
         if data is not None:
             self.config.enclosing = data
             self._refresh_preview()
+            self.config_changed.emit()
 
     def _on_placement_changed(self, _idx: int):
         data = self.placement_combo.currentData()
         if data is not None:
             self.config.placement = data
             self._refresh_preview()
+            self.config_changed.emit()
 
     def _on_usage_sep_changed(self, _idx: int):
         data = self.usage_sep_combo.currentData()
         if data is not None:
             self.config.usage_separator = data
             self._refresh_preview()
+            self.config_changed.emit()
 
     # ── Mapping editor ───────────────────────────────────────────────────
 
@@ -1158,6 +1270,7 @@ class _TagBuilderPage(QWidget):
             self.config.class_mapping.update(result)
             self._repopulate_list()
             self._refresh_preview()
+            self.config_changed.emit()
 
     # ── Mission Titles page (route controls) ─────────────────────────────
 
@@ -1370,10 +1483,12 @@ class _TagBuilderPage(QWidget):
                 e.enabled = checked
         self._set_mt_controls_enabled(checked)
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_standardize_toggle(self, checked: bool) -> None:
         self.config.standardize_hauling_names = checked
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_abbrev_toggle(self, key: str, checked: bool) -> None:
         phrases = set(getattr(self.config, "abbreviated_phrases", frozenset()))
@@ -1383,6 +1498,7 @@ class _TagBuilderPage(QWidget):
             phrases.discard(key)
         self.config.abbreviated_phrases = frozenset(phrases)
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_shorten_titles_toggle(self, checked: bool) -> None:
         phrases = set(getattr(self.config, "abbreviated_phrases", frozenset()))
@@ -1390,14 +1506,17 @@ class _TagBuilderPage(QWidget):
         phrases = (phrases | keys) if checked else (phrases - keys)
         self.config.abbreviated_phrases = frozenset(phrases)
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_shorten_sizes_toggle(self, checked: bool) -> None:
         self.config.shortened_sizes = frozenset(_ALL_SIZE_WORDS) if checked else frozenset()
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_rank_sep_changed(self, _idx: int) -> None:
         self.config.rank_separator = self._mt_rank_sep.currentData() or self.config.rank_separator
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_changed(self, _idx: int) -> None:
         self.config.placement = self._mt_placement.currentData() or self.config.placement
@@ -1405,6 +1524,7 @@ class _TagBuilderPage(QWidget):
         self.config.title_separator = self._mt_sep.currentData() or self.config.title_separator
         self.config.location_detail = self._mt_detail.currentData() or self.config.location_detail
         self._refresh_preview()
+        self.config_changed.emit()
 
     # In-game emphasis tag written to the real generated INI — must stay
     # exactly this for _EM3_DISPLAY_MARKUP below to find and swap it.
@@ -1483,6 +1603,7 @@ class _TagBuilderPage(QWidget):
             self._select_combo(self._mt_detail, fresh.location_detail)
             self._set_mt_controls_enabled(self._mt_enable.isChecked())
             self._refresh_preview()
+            self.config_changed.emit()
             return
         self._select_combo(self.sep_combo, fresh.separator)
         self._select_combo(self.enc_combo, fresh.enclosing)
@@ -1491,6 +1612,7 @@ class _TagBuilderPage(QWidget):
             self._select_combo(self.usage_sep_combo, fresh.usage_separator)
         self._repopulate_list()
         self._refresh_preview()
+        self.config_changed.emit()
 
     @staticmethod
     def _select_combo(combo: QComboBox, key: str) -> None:
