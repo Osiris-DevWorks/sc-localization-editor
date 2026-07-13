@@ -52,6 +52,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional
 
+from src.utils.win_paths import win_long_path
+
 logger = logging.getLogger(__name__)
 
 
@@ -164,7 +166,15 @@ def _apply_single_patch(
         return
 
     target_path = records_root / target_rel
-    if not target_path.exists():
+    # DataForge paths under a deep portable/tester install directory can
+    # exceed the 260-char MAX_PATH — lxml's ET.parse/tree.write open the
+    # file directly (unlike pathlib's own I/O, which Windows tolerates past
+    # the limit in more cases) and raise a raw WinError 3 that aborted the
+    # whole DataForge extraction. The \\?\ long-path prefix sidesteps it —
+    # see win_paths.win_long_path (originally added for pak_extractor.py's
+    # copy/cleanup step, #221; this module hits the same limit).
+    long_target = Path(win_long_path(target_path))
+    if not long_target.exists():
         msg = f"Patch target missing: {target_rel}"
         logger.warning(msg)
         report.errors.append(msg)
@@ -177,7 +187,7 @@ def _apply_single_patch(
     if progress_callback:
         progress_callback(f"Patching {Path(target_rel).name}")
 
-    tree = ET.parse(target_path)
+    tree = ET.parse(str(long_target))
     root = tree.getroot()
     file_changed = False
 
@@ -196,7 +206,7 @@ def _apply_single_patch(
     if file_changed:
         # Preserve the original XML declaration Python's ElementTree emits by
         # default (short_empty_elements=True matches how unforge writes files).
-        tree.write(target_path, encoding="utf-8", xml_declaration=True)
+        tree.write(str(long_target), encoding="utf-8", xml_declaration=True)
         report.files_rewritten += 1
 
 

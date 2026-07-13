@@ -14,6 +14,7 @@ from src.utils.perf import timed
 
 from src.utils.dataforge_diff import update_manifest
 from src.utils.i18n import tr
+from src.utils.win_paths import win_long_path as _win_long_path
 
 logger = logging.getLogger(__name__)
 
@@ -27,30 +28,6 @@ P4K_SIZE_STAMP = ".p4k_size"
 # frozen build runs on 3.11, so passing ``onexc=`` raises TypeError there.
 # Detect once at import.
 _RMTREE_CB_KWARG = "onexc" if sys.version_info >= (3, 12) else "onerror"
-
-
-def _win_long_path(path) -> str:
-    """Return *path* as a Windows extended-length path string when needed.
-
-    DataForge's ~28k-file entity tree uses long CIG-authored filenames
-    (e.g. ``softlock_terminal_standard_lowtech_commoditykiosk_console_
-    transfers_1_straight_a.xml``); once nested under a user's install
-    directory plus the per-channel cache layout, the destination path can
-    exceed the legacy 260-char ``MAX_PATH``, and ``shutil``/``os`` raise
-    ``WinError 3`` ("The system cannot find the path specified") even
-    though the path is otherwise valid (#221). The ``\\\\?\\`` prefix tells
-    the Win32 API to skip that check (paths up to ~32,767 chars). No-op on
-    non-Windows platforms and on paths that are already prefixed.
-    """
-    if sys.platform != "win32":
-        return str(path)
-    p = str(Path(path).resolve())
-    if p.startswith("\\\\?\\"):
-        return p
-    if p.startswith("\\\\"):
-        # UNC path: \\server\share\... -> \\?\UNC\server\share\...
-        return "\\\\?\\UNC\\" + p[2:]
-    return "\\\\?\\" + p
 
 
 def _robust_rmtree(path: Path, attempts: int = 6) -> None:
