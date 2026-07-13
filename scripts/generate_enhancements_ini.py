@@ -2043,7 +2043,12 @@ def enhancements_mining_laser(root: ET.Element) -> str:
         if dps not in (None, "0", "0.0"):
             parts.append(f"DPS: {_fmt(dps)}")
         if full_r not in (None, "0", "0.0") or zero_r not in (None, "0", "0.0"):
-            parts.append(f"Range: {_fmt(full_r, 'm')}→{_fmt(zero_r, 'm')}")
+            # En dash, not the arrow "→" this used to use — the in-game
+            # Vehicle Loadout Manager's item-description font has no glyph
+            # for it and renders a fallback box character instead (reported
+            # on GitHub). The en dash is already used for Energy just below
+            # and reads fine there, so it's a safe, tested-working choice.
+            parts.append(f"Range: {_fmt(full_r, 'm')}–{_fmt(zero_r, 'm')}")
         if e_max not in (None, "0", "0.0"):
             if e_min and e_min != e_max and e_min not in ("0", "0.0"):
                 parts.append(f"Energy: {_fmt(e_min)}–{_fmt(e_max)} PU/s")
@@ -2054,7 +2059,12 @@ def enhancements_mining_laser(root: ET.Element) -> str:
         if wear_s not in (None, "0", "0.0"):
             parts.append(f"Wear: {wear_s}/s")
         if parts:
-            lines.append(f"<EM4>{mode}:</EM4>  " + "  |  ".join(parts))
+            # Plain label, not <EM4>-wrapped — matches every other component
+            # extractor (enhancements_shield etc.) and avoids the Vehicle
+            # Loadout Manager's item-description widget showing the raw tag
+            # text literally (that widget doesn't interpret EM4 rich-text,
+            # unlike mission descriptions elsewhere; reported on GitHub).
+            lines.append(f"{mode}:  " + "  |  ".join(parts))
 
     # Mining-laser modifier overlay. CIG's description has these but the
     # user wants them re-emitted from XML so balance updates surface even
@@ -2082,16 +2092,16 @@ def enhancements_mining_laser(root: ET.Element) -> str:
                     sign = "+" if float(fval) > 0 else ""
                     mod_parts.append(f"Inert Filter: {sign}{fval}%")
             if mod_parts:
-                lines.append("<EM4>Modifiers:</EM4>  " + "  |  ".join(mod_parts))
+                lines.append("Modifiers:  " + "  |  ".join(mod_parts))
 
     # Structural stats — component HP + distortion + ship-component-style
     # signatures if they happen to be present on a ship-mountable laser.
     comp_hp = _attr(root, "SHealthComponentParams", "Health")
     if comp_hp is not None:
-        lines.append(f"<EM4>Component HP:</EM4> {_fmt(comp_hp)}")
+        lines.append(f"Component HP: {_fmt(comp_hp)}")
     distort = _attr(root, "SDistortionParams", "Maximum")
     if distort is not None and distort not in ("0", "0.0"):
-        lines.append(f"<EM4>Max Distortion:</EM4> {_fmt(distort)}")
+        lines.append(f"Max Distortion: {_fmt(distort)}")
     em_sig = _attr(root, "EMSignature", "nominalSignature")
     ir_sig = _attr(root, "IRSignature", "nominalSignature")
     if em_sig is not None or ir_sig is not None:
@@ -2101,7 +2111,7 @@ def enhancements_mining_laser(root: ET.Element) -> str:
         if ir_sig is not None and ir_sig not in ("0", "0.0"):
             sig_parts.append(f"IR: {_fmt(ir_sig)}")
         if sig_parts:
-            lines.append("<EM4>Signatures:</EM4>  " + "  |  ".join(sig_parts))
+            lines.append("Signatures:  " + "  |  ".join(sig_parts))
 
     return "\\n".join(lines) if lines else ""
 
@@ -2127,7 +2137,7 @@ def enhancements_salvage_tool(root: ET.Element) -> str:
     fire_actions = root.findall(".//SWeaponActionFireSalvageRepairParams")
     for fa in fire_actions:
         # Mode is encoded on the element itself via the `salvageRepairMode`
-        # attribute ("Repair" / "Salvage"). Use it as the EM4-tagged header.
+        # attribute ("Repair" / "Salvage"). Use it as the plain-text header.
         mode = fa.get("salvageRepairMode") or fa.get("name") or "Mode"
         eff      = fa.get("materialEfficiency")
         hp_rate  = fa.get("maxHealthRepairRate")
@@ -2152,7 +2162,11 @@ def enhancements_salvage_tool(root: ET.Element) -> str:
         if h2a not in (None, "0", "0.0"):
             parts.append(f"HP/Ammo: {_fmt(h2a, '', 2)}")
         if ramp_up not in (None, "0", "0.0") or ramp_dn not in (None, "0", "0.0"):
-            parts.append(f"Ramp: {_fmt(ramp_up, 's', 1)}↑ {_fmt(ramp_dn, 's', 1)}↓")
+            # Plain "up"/"down" words, not the "↑"/"↓" arrows this used to
+            # use — same missing-glyph issue as the mining-laser Range line
+            # (see the note there): the in-game item-description font has
+            # no glyph for them and shows a fallback box character instead.
+            parts.append(f"Ramp: {_fmt(ramp_up, 's', 1)} up, {_fmt(ramp_dn, 's', 1)} down")
         if e_max not in (None, "0", "0.0"):
             if e_min and e_min != e_max and e_min not in ("0", "0.0"):
                 parts.append(f"Energy: {_fmt(e_min)}–{_fmt(e_max)} PU/s")
@@ -2163,15 +2177,16 @@ def enhancements_salvage_tool(root: ET.Element) -> str:
         if wear_s not in (None, "0", "0.0"):
             parts.append(f"Wear: {wear_s}/s")
         if parts:
-            lines.append(f"<EM4>{mode}:</EM4>  " + "  |  ".join(parts))
+            # Plain label — see the matching note in enhancements_mining_laser.
+            lines.append(f"{mode}:  " + "  |  ".join(parts))
 
     # Structural stats (durability / wear) — same pattern as mining lasers.
     comp_hp = _attr(root, "SHealthComponentParams", "Health")
     if comp_hp is not None and comp_hp not in ("0", "0.0"):
-        lines.append(f"<EM4>Component HP:</EM4> {_fmt(comp_hp)}")
+        lines.append(f"Component HP: {_fmt(comp_hp)}")
     wear_max = _attr(root, "SWearAccumulatorParams", "MaxLifetimeHours")
     if wear_max is not None and wear_max not in ("0", "0.0"):
-        lines.append(f"<EM4>Max Lifetime:</EM4> {_fmt(wear_max, 'h', 1)}")
+        lines.append(f"Max Lifetime: {_fmt(wear_max, 'h', 1)}")
 
     return "\\n".join(lines) if lines else ""
 

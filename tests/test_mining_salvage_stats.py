@@ -116,6 +116,18 @@ class TestEnhancementsMiningLaser:
         assert "Component HP:" in result and "8,000" in result
         assert "Max Distortion:" in result and "500,000" in result
 
+    def test_no_em4_tags_or_arrow_glyphs(self, gen_module):
+        """Regression guard: the in-game Vehicle Loadout Manager's
+        item-description widget doesn't interpret <EM4> rich-text (shows
+        the raw tag characters) and has no glyph for the "→" arrow (shows
+        a fallback box character) — both reported on GitHub. Labels must
+        be plain text and the Range separator must be the en dash, which
+        is already proven to render fine via the Energy line."""
+        result = gen_module.enhancements_mining_laser(self._arbor_like_xml())
+        assert "<EM4>" not in result and "</EM4>" not in result
+        assert "→" not in result
+        assert "Range: 60m–180m" in result
+
     def test_modes_named_by_mannequin_tag(self, gen_module):
         """Fire actions are labelled by mannequinTag — `laser` → Fracture,
         `tractor` → Extraction. Unknown tags fall back to ``Beam {idx}``."""
@@ -229,6 +241,19 @@ class TestEnhancementsSalvageTool:
         # Component HP.
         assert "Component HP:" in result and "500" in result
 
+    def test_no_em4_tags_or_arrow_glyphs(self, gen_module):
+        """Regression guard, same rationale as the mining-laser test above:
+        the in-game item-description widget shows <EM4> tags literally and
+        has no glyph for "↑"/"↓" (renders a fallback box character)."""
+        xml = """<E><Components><SCItemWeaponComponentParams><fireActions>
+          <SWeaponActionFireSalvageRepairParams salvageRepairMode="Repair"
+              rampUpTime="0.5" rampDownTime="0.1"/>
+        </fireActions></SCItemWeaponComponentParams></Components></E>"""
+        result = gen_module.enhancements_salvage_tool(ET.fromstring(xml))
+        assert "<EM4>" not in result and "</EM4>" not in result
+        assert "↑" not in result and "↓" not in result
+        assert "Ramp: 0.5s up, 0.1s down" in result
+
     def test_skips_efficiency_when_unity(self, gen_module):
         """``materialEfficiency=1`` is the default no-op (Renovar's Repair
         mode runs at 1.0). Don't emit a line for it — clutter."""
@@ -287,17 +312,24 @@ class TestPolymorphicDispatch:
           <SEntityComponentMiningLaserParams/>
         </Components></E>"""
         result = gen_module._ship_weapon_dispatch(ET.fromstring(xml), vehicle_ammo={}, loc={})
-        # Mining laser extractor emits Component HP in its EM4-tagged shape.
-        assert "<EM4>Component HP:</EM4>" in result
+        # Mining laser extractor emits a plain (not EM4-tagged) Component HP
+        # line — the in-game Vehicle Loadout Manager doesn't interpret EM4
+        # rich-text and showed the raw tag characters (GitHub bug report).
+        assert "Component HP:" in result
+        assert "<EM4>" not in result
 
     def test_ship_dispatch_routes_combat_weapon_to_default(self, gen_module):
-        """No mining-laser marker → enhancements_weapon path. We don't
-        validate enhancements_weapon's output shape here — just confirm
-        the dispatch didn't accidentally route to the mining extractor
-        (which would emit the EM4-tagged Component HP line)."""
+        """No mining-laser marker → enhancements_weapon path. Both
+        extractors can legitimately emit a plain "Component HP:" line
+        for this bare XML now that EM4 wrapping is gone, so text
+        presence can't prove routing. Instead, compare the dispatch
+        result directly against calling enhancements_weapon with the
+        same args — equality proves dispatch took that path."""
         xml = "<E><Components><SHealthComponentParams Health=\"1000\"/></Components></E>"
-        result = gen_module._ship_weapon_dispatch(ET.fromstring(xml), vehicle_ammo={}, loc={})
-        assert "<EM4>Component HP:</EM4>" not in result
+        root = ET.fromstring(xml)
+        result = gen_module._ship_weapon_dispatch(root, vehicle_ammo={}, loc={})
+        expected = gen_module.enhancements_weapon(root, {}, {})
+        assert result == expected
 
     def test_fps_dispatch_routes_salvage_tool_to_specialised(self, gen_module):
         """SWeaponActionFireSalvageRepairParams present → salvage tool path."""
