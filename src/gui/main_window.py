@@ -595,9 +595,9 @@ class MainWindow(QMainWindow):
         # Button row
         button_layout = QHBoxLayout()
 
-        # Green — commit
+        # Green when up to date, red when a change needs applying — color
+        # itself is set by _set_apply_btn_dirty below.
         self.apply_btn = QPushButton(tr("toolbar.apply_btn"))
-        self.apply_btn.setStyleSheet(f"background-color: {get_button_color('apply')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;")
         self.apply_btn.clicked.connect(self.apply_to_game)
         button_layout.addWidget(self.apply_btn)
         self._set_apply_btn_dirty(self._apply_dirty)
@@ -1502,12 +1502,23 @@ class MainWindow(QMainWindow):
     )
 
     def _set_apply_btn_dirty(self, dirty: bool) -> None:
-        """Single chokepoint for the button's enabled state + tooltip so the
-        two can never drift apart."""
+        """Single chokepoint for the button's enabled state, tooltip, and
+        color so none of the three can drift apart. Red (needs_apply) means
+        a change is waiting to be applied; green (apply) means the game
+        already matches what's loaded. The :disabled selector is set
+        explicitly so Qt's native greyed-out look doesn't wash out the
+        color — the color itself is the signal here, not the enabled state."""
         self._apply_dirty = dirty
         self.apply_btn.setEnabled(dirty)
         self.apply_btn.setToolTip(
             self._APPLY_ENABLED_TOOLTIP if dirty else self._APPLY_DISABLED_TOOLTIP
+        )
+        color = get_button_color("needs_apply" if dirty else "apply")
+        text = get_button_text_color()
+        self.apply_btn.setStyleSheet(
+            f"QPushButton {{ background-color: {color}; color: {text}; "
+            f"font-weight: bold; padding: 6px; }}"
+            f"QPushButton:disabled {{ background-color: {color}; color: {text}; }}"
         )
 
     def _mark_apply_dirty(self, *_args):
@@ -2142,7 +2153,7 @@ class MainWindow(QMainWindow):
         self._apply_branding_styles()
         base = "font-weight: bold; padding: 6px;"
         text = get_button_text_color()
-        self.apply_btn.setStyleSheet(f"background-color: {get_button_color('apply')}; color: {text}; {base}")
+        self._set_apply_btn_dirty(self._apply_dirty)  # re-picks green/red for the new theme
         self.more_btn.setStyleSheet(f"background-color: {get_button_color('clear')}; color: {text}; {base}")
         self.editor_btn.setStyleSheet(f"background-color: {get_button_color('open')}; color: {text}; {base}")
         self.help_btn.setStyleSheet(f"background-color: {get_button_color('open')}; color: {text}; {base}")

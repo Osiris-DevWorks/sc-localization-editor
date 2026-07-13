@@ -20,6 +20,7 @@ from PyQt6.QtWidgets import (
 )
 
 from src.gui.enhancements_tab import _NoScrollComboBox
+from src.gui.theme import get_button_color
 from src.utils.i18n import tr
 from src.utils.settings import AppSettings
 
@@ -453,13 +454,16 @@ class BlueprintTrackerTab(QWidget):
     # tab's own move methods).
 
     def _set_owned_btn_dirty(self, dirty: bool) -> None:
-        """Single chokepoint for the button's enabled state + tooltip so the
-        two can never drift apart."""
+        """Single chokepoint for the button's enabled state, tooltip, and
+        text color so none of the three can drift apart."""
         self._owned_dirty = dirty
         self._apply_owned_btn.setEnabled(dirty)
         self._apply_owned_btn.setToolTip(
             tr("blueprint_tracker.apply_owned_tag_tooltip") if dirty
             else tr("blueprint_tracker.apply_owned_tag_tooltip_disabled")
+        )
+        self._apply_owned_btn.setStyleSheet(
+            f"color: {get_button_color('needs_apply')};" if dirty else ""
         )
 
     def mark_owned_dirty(self) -> None:

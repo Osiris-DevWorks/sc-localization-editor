@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 )
 
 from src.gui.tag_mapping_dialog import TagMappingDialog
+from src.gui.theme import get_button_color
 from src.utils.i18n import tr
 from src.utils.settings import AppSettings
 from src.utils.tag_builder import (
@@ -116,6 +117,7 @@ class EnhancementsTab(QWidget):
         # inviting a redundant multi-minute regen (see _mark_*_dirty below).
         self._enhancements_dirty = False
         self._tag_dirty = False
+        self._prefix_dirty = False
         self.setup_ui()
 
     def setup_ui(self):
@@ -370,12 +372,17 @@ class EnhancementsTab(QWidget):
     )
 
     def _set_generate_btn_dirty(self, dirty: bool) -> None:
-        """Single chokepoint for the button's enabled state + tooltip so the
-        two can never drift apart."""
+        """Single chokepoint for the button's enabled state, tooltip, and
+        text color so none of the three can drift apart. Red text signals
+        "click me — something changed"; clean/disabled reverts to Qt's
+        default look."""
         self._enhancements_dirty = dirty
         self._generate_enhancements_btn.setEnabled(dirty)
         self._generate_enhancements_btn.setToolTip(
             self._GENERATE_ENABLED_TOOLTIP if dirty else self._GENERATE_DISABLED_TOOLTIP
+        )
+        self._generate_enhancements_btn.setStyleSheet(
+            f"color: {get_button_color('needs_apply')};" if dirty else ""
         )
 
     def _compute_initial_enhancements_dirty(self) -> bool:
@@ -500,6 +507,7 @@ class EnhancementsTab(QWidget):
             if self.favorite_prefix_combo.itemData(i) == self._loaded_prefix:
                 self.favorite_prefix_combo.setCurrentIndex(i)
                 break
+        self.favorite_prefix_combo.currentIndexChanged.connect(self._mark_prefix_dirty)
 
         self.favorite_prefix_combo.view().setMinimumWidth(
             self.favorite_prefix_combo.sizeHint().width() + 20
@@ -507,11 +515,9 @@ class EnhancementsTab(QWidget):
         prefix_row.addWidget(self.favorite_prefix_combo)
 
         self._apply_prefix_btn = QPushButton(tr("enhancements.apply_btn"))
-        self._apply_prefix_btn.setToolTip(
-            "Save the selected prefix and update all existing favorites to use it"
-        )
         self._apply_prefix_btn.clicked.connect(self._apply_favorite_prefix)
         prefix_row.addWidget(self._apply_prefix_btn)
+        self._set_prefix_btn_dirty(False)
 
         prefix_row.addStretch()
         gl.addLayout(prefix_row)
@@ -602,6 +608,32 @@ class EnhancementsTab(QWidget):
             AppSettings.set_mission_header_em_tag(tag)
             self._mark_enhancements_dirty()
 
+    # Same enabled/disabled tooltip + red-text pattern as the other
+    # dirty-tracked buttons on this tab.
+    _PREFIX_ENABLED_TOOLTIP = (
+        "Save the selected prefix and update all existing favorites to use it"
+    )
+    _PREFIX_DISABLED_TOOLTIP = (
+        "Already applied — the selected prefix matches your current favorites."
+    )
+
+    def _set_prefix_btn_dirty(self, dirty: bool) -> None:
+        """Single chokepoint for the button's enabled state, tooltip, and
+        text color so none of the three can drift apart."""
+        self._prefix_dirty = dirty
+        self._apply_prefix_btn.setEnabled(dirty)
+        self._apply_prefix_btn.setToolTip(
+            self._PREFIX_ENABLED_TOOLTIP if dirty else self._PREFIX_DISABLED_TOOLTIP
+        )
+        self._apply_prefix_btn.setStyleSheet(
+            f"color: {get_button_color('needs_apply')};" if dirty else ""
+        )
+
+    def _mark_prefix_dirty(self, *_args) -> None:
+        """Recompute dirty state whenever the prefix combo selection
+        changes — dirty only when it actually differs from what's saved."""
+        self._set_prefix_btn_dirty(self.favorite_prefix_combo.currentData() != self._loaded_prefix)
+
     def _apply_favorite_prefix(self):
         new_prefix = self.favorite_prefix_combo.currentData()
         if not new_prefix:
@@ -634,6 +666,7 @@ class EnhancementsTab(QWidget):
 
         AppSettings.set_favorite_prefix(new_prefix)
         self._loaded_prefix = new_prefix
+        self._set_prefix_btn_dirty(False)
         # Hand the old/new prefix to MainWindow so it can re-prefix in-memory
         # favourites before the reload (see signal doc). Emitting merge_requested
         # alone would let the pending-edit snapshot restore the old prefix.
@@ -824,12 +857,15 @@ class EnhancementsTab(QWidget):
     )
 
     def _set_tag_btn_dirty(self, dirty: bool) -> None:
-        """Single chokepoint for the button's enabled state + tooltip so the
-        two can never drift apart."""
+        """Single chokepoint for the button's enabled state, tooltip, and
+        text color so none of the three can drift apart."""
         self._tag_dirty = dirty
         self._apply_tag_btn.setEnabled(dirty)
         self._apply_tag_btn.setToolTip(
             self._TAG_ENABLED_TOOLTIP if dirty else self._TAG_DISABLED_TOOLTIP
+        )
+        self._apply_tag_btn.setStyleSheet(
+            f"color: {get_button_color('needs_apply')};" if dirty else ""
         )
 
     def _mark_tag_dirty(self, *_args):

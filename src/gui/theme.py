@@ -68,40 +68,49 @@ _SECONDARY_TEXT_COLORS = {
 
 # Toolbar action button colors per theme. Light uses Material 500 shades;
 # dark uses Material 300 so buttons read softer against the dark background.
+# "needs_apply" is the attention-red used by the dirty-tracking system
+# (Apply Enhancements' background when a change is pending; the text color
+# on Generate Enhancements / Save Tag Changes / Apply Owned Tags when they
+# light up) — kept in this per-theme palette rather than a hardcoded hex so
+# it stays visually consistent with each theme's own saturation/warmth.
 _BUTTON_COLORS = {
     THEME_LIGHT: {
-        "load":    "#2196F3",
-        "restore": "#FF5722",
-        "apply":   "#4CAF50",
-        "clear":   "#9E9E9E",
-        "open":    "#2196F3",
+        "load":        "#2196F3",
+        "restore":     "#FF5722",
+        "apply":       "#4CAF50",
+        "clear":       "#9E9E9E",
+        "open":        "#2196F3",
+        "needs_apply": "#F44336",
     },
     THEME_DARK: {
-        "load":    "#64B5F6",
-        "restore": "#FF8A65",
-        "apply":   "#81C784",
-        "clear":   "#BDBDBD",
-        "open":    "#64B5F6",
+        "load":        "#64B5F6",
+        "restore":     "#FF8A65",
+        "apply":       "#81C784",
+        "clear":       "#BDBDBD",
+        "open":        "#64B5F6",
+        "needs_apply": "#E57373",
     },
     THEME_SCLE: {
-        "load":    "#4FD7E8",   # cube-glow cyan
-        "restore": "#FF8A42",   # pencil-tip orange
-        "apply":   "#4ADE80",   # bright green that pops against navy
-        "clear":   "#5F7A95",   # muted cyan-gray
-        "open":    "#4FD7E8",
+        "load":        "#4FD7E8",   # cube-glow cyan
+        "restore":     "#FF8A42",   # pencil-tip orange
+        "apply":       "#4ADE80",   # bright green that pops against navy
+        "clear":       "#5F7A95",   # muted cyan-gray
+        "open":        "#4FD7E8",
+        "needs_apply": "#FF5C5C",   # hot red that still reads against navy
     },
     THEME_ODW: {
-        "load":    "#D4B876",   # brighter gold (navigate)
-        "restore": "#C77A4D",   # copper (rollback)
-        "apply":   "#A5B989",   # sage green (commit)
-        "clear":   "#7A7D87",   # slate gray (cleanup)
-        "open":    "#D4B876",
+        "load":        "#D4B876",   # brighter gold (navigate)
+        "restore":     "#C77A4D",   # copper (rollback)
+        "apply":       "#A5B989",   # sage green (commit)
+        "clear":       "#7A7D87",   # slate gray (cleanup)
+        "open":        "#D4B876",
+        "needs_apply": "#C0392B",   # brick red, warm enough to sit with the gold/copper palette
     },
 }
 
 
 def get_button_color(role: str) -> str:
-    """Return the button color for the given role (load/restore/apply/clear/open)."""
+    """Return the button color for the given role (load/restore/apply/clear/open/needs_apply)."""
     from src.utils.settings import AppSettings
     theme = AppSettings.get_theme()
     palette = _BUTTON_COLORS.get(theme, _BUTTON_COLORS[DEFAULT_THEME])
