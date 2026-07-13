@@ -2053,7 +2053,8 @@ class AppSettings:
           1. QSettings value for :data:`SC_INSTALL_ROOT`
           2. Derived from legacy ``GAME_INSTALL_PATH`` (strip trailing
              ``\LIVE`` if present)
-          3. Auto-detected from the common RSI install locations
+          3. The old installer's registry key (``sc_directory``)
+          4. Auto-detected from the common RSI install locations
 
         Returns an empty string when nothing resolves — the Config tab shows
         a placeholder in that case.
@@ -2089,6 +2090,30 @@ class AppSettings:
                 return str(legacy_path.parent)
             if _is_valid_sc_root(legacy):
                 return legacy
+
+        # Installer-written registry key (older flow) — same source
+        # get_game_install_path() falls back to. Without this, a fresh
+        # profile whose only trace of the install is this key sees
+        # get_game_install_path() (and thus extraction) resolve correctly
+        # while the Config tab, which reads only this method, stayed blank
+        # until some other code path happened to call get_game_install_path()
+        # first and persist GAME_INSTALL_PATH as a side effect.
+        try:
+            reg_path = r'Software\Osiris DevWorks\SC Localization Editor'
+            registry_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_path)
+            sc_directory, _ = winreg.QueryValueEx(registry_key, 'sc_directory')
+            winreg.CloseKey(registry_key)
+            if sc_directory:
+                root = None
+                if _path_ends_in_channel(sc_directory):
+                    root = str(Path(sc_directory).parent)
+                elif _is_valid_sc_root(sc_directory):
+                    root = sc_directory
+                if root:
+                    AppSettings.settings().setValue(AppSettings.SC_INSTALL_ROOT, root)
+                    return root
+        except (WindowsError, OSError):
+            pass
 
         for candidate in [
             r"C:\Program Files\Roberts Space Industries\StarCitizen",
