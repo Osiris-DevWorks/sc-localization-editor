@@ -15,8 +15,8 @@ The available universe is fed in by MainWindow via ``set_blueprint_items``
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QAbstractItemView, QCheckBox, QFrame, QHBoxLayout, QLabel, QLineEdit,
-    QListWidget, QListWidgetItem, QPushButton, QScrollArea, QVBoxLayout,
-    QWidget,
+    QListWidget, QListWidgetItem, QPushButton, QScrollArea, QSizePolicy,
+    QVBoxLayout, QWidget,
 )
 
 from src.gui.enhancements_tab import _NoScrollComboBox
@@ -52,12 +52,21 @@ class BlueprintTrackerTab(QWidget):
     # AppSettings.set_owned_items() + _recompute_owned() on completion,
     # which re-renders this tab the same way any other Owned change does.
     scan_logs_requested = pyqtSignal()
+    # The user clicked "Apply Owned Tags". MainWindow re-weaves the [Owned]
+    # tag into the loaded strings' blueprint-list bullets so the current
+    # Owned set is reflected on demand, without needing to move an item
+    # between the two lists first.
+    apply_owned_requested = pyqtSignal()
 
     def __init__(self):
         super().__init__()
         # name -> BlueprintItem (or None for a bare name), set by MainWindow.
         # Owned state itself lives in AppSettings (single source of truth).
         self._blueprint_meta: dict = {}
+        # Gates the Apply Owned Tags button, same pattern as the
+        # Enhancements tab's Generate Enhancements / Save Tag Changes:
+        # disabled until the Owned set changes since the last apply.
+        self._owned_dirty = False
         self.setup_ui()
 
     def setup_ui(self):
@@ -79,10 +88,20 @@ class BlueprintTrackerTab(QWidget):
         # Always visible regardless of the empty-state gate below — scanning
         # logs doesn't need mission data loaded, it reads the player's own
         # earned-blueprint history straight from Star Citizen's log files.
+        top_btn_row = QHBoxLayout()
         self._scan_logs_btn = QPushButton(tr("blueprint_tracker.scan_logs_btn"))
         self._scan_logs_btn.setToolTip(tr("blueprint_tracker.scan_logs_tooltip"))
         self._scan_logs_btn.clicked.connect(self.scan_logs_requested.emit)
-        layout.addWidget(self._scan_logs_btn)
+        self._scan_logs_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        top_btn_row.addWidget(self._scan_logs_btn, 1)
+
+        self._apply_owned_btn = QPushButton(tr("blueprint_tracker.apply_owned_tag_btn"))
+        self._apply_owned_btn.clicked.connect(self._on_apply_owned_clicked)
+        self._apply_owned_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        top_btn_row.addWidget(self._apply_owned_btn, 1)
+        self._set_owned_btn_dirty(False)
+
+        layout.addLayout(top_btn_row)
 
         # Shown instead of the lists when no blueprint items exist yet (mission
         # enhancements not generated) — the same precondition the stars had.
@@ -218,6 +237,8 @@ class BlueprintTrackerTab(QWidget):
         self._blueprints_desc_label.setText(tr("enhancements.blueprints_desc"))
         self._scan_logs_btn.setText(tr("blueprint_tracker.scan_logs_btn"))
         self._scan_logs_btn.setToolTip(tr("blueprint_tracker.scan_logs_tooltip"))
+        self._apply_owned_btn.setText(tr("blueprint_tracker.apply_owned_tag_btn"))
+        self._set_owned_btn_dirty(self._owned_dirty)  # re-applies the right tooltip
         self._blueprints_empty_note.setText(tr("enhancements.blueprints_empty_note"))
         self._blueprints_search.setPlaceholderText(tr("enhancements.blueprints_search_placeholder"))
         self._blueprints_show_tags.setText(tr("enhancements.blueprints_show_tags_checkbox"))
@@ -409,6 +430,7 @@ class BlueprintTrackerTab(QWidget):
         AppSettings.set_owned_items(owned)
         self._render_blueprint_lists()
         self.owned_items_changed.emit()
+        self.mark_owned_dirty()
 
     def _unown_selected_blueprints(self) -> None:
         """Move every selected owned item back to available (one write)."""
@@ -420,3 +442,32 @@ class BlueprintTrackerTab(QWidget):
         AppSettings.set_owned_items(owned)
         self._render_blueprint_lists()
         self.owned_items_changed.emit()
+        self.mark_owned_dirty()
+
+    # ── Apply Owned Tags dirty-tracking ──────────────────────────────────────
+    # Mirrors the Enhancements tab's Generate Enhancements / Save Tag Changes
+    # pattern: the button greys out once its own click clears the dirty flag,
+    # and lights back up the moment the Owned set changes again — from the
+    # arrow buttons above, or a log scan (MainWindow calls mark_owned_dirty()
+    # after merging newly-found blueprints, since that path bypasses this
+    # tab's own move methods).
+
+    def _set_owned_btn_dirty(self, dirty: bool) -> None:
+        """Single chokepoint for the button's enabled state + tooltip so the
+        two can never drift apart."""
+        self._owned_dirty = dirty
+        self._apply_owned_btn.setEnabled(dirty)
+        self._apply_owned_btn.setToolTip(
+            tr("blueprint_tracker.apply_owned_tag_tooltip") if dirty
+            else tr("blueprint_tracker.apply_owned_tag_tooltip_disabled")
+        )
+
+    def mark_owned_dirty(self) -> None:
+        """Public: light the Apply Owned Tags button back up. Called from
+        this tab's own arrow-button moves, and by MainWindow after a log
+        scan merges newly-found blueprints into the owned set."""
+        self._set_owned_btn_dirty(True)
+
+    def _on_apply_owned_clicked(self) -> None:
+        self.apply_owned_requested.emit()
+        self._set_owned_btn_dirty(False)

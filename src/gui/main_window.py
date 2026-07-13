@@ -443,6 +443,7 @@ class MainWindow(QMainWindow):
         self.blueprint_tracker_tab = BlueprintTrackerTab()
         self.blueprint_tracker_tab.owned_items_changed.connect(self._recompute_owned)
         self.blueprint_tracker_tab.scan_logs_requested.connect(self._run_blueprint_log_scan)
+        self.blueprint_tracker_tab.apply_owned_requested.connect(self._on_apply_owned_tags_clicked)
         self._blueprint_tracker_tab_index = self.tabs.addTab(
             self.blueprint_tracker_tab, tr("tabs.blueprint_tracker")
         )
@@ -4789,6 +4790,13 @@ class MainWindow(QMainWindow):
         # — in every case Apply to Game's output could now differ.
         self._mark_apply_dirty()
 
+    def _on_apply_owned_tags_clicked(self):
+        """Manual "Apply Owned Tags" button: force a re-weave on demand
+        instead of relying on it happening as a side effect of moving an
+        item between the Available/Owned lists or a log scan."""
+        self._recompute_owned()
+        self.statusBar().showMessage("[Owned] tags refreshed to match your current Owned list.")
+
     def _run_blueprint_log_scan(self):
         """Launch BlueprintLogScanWorker with a progress dialog; merge any
         blueprints it finds into the owned set on success.
@@ -4846,6 +4854,7 @@ class MainWindow(QMainWindow):
         if new_names:
             AppSettings.set_owned_items(owned | found)
             self._recompute_owned()
+            self.blueprint_tracker_tab.mark_owned_dirty()
             preview = "\n".join(f"• {n}" for n in sorted(new_names, key=str.lower)[:20])
             more = f"\n… and {len(new_names) - 20} more" if len(new_names) > 20 else ""
             QMessageBox.information(

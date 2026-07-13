@@ -653,6 +653,18 @@
     "scan_logs_tooltip": {
       "ht": "Scan your Star Citizen log files (Game.log and logbackups) for \"Received Blueprint\" reward notifications and automatically mark them as owned.",
       "at": ""
+    },
+    "apply_owned_tag_btn": {
+      "ht": "Apply Owned Tags",
+      "at": ""
+    },
+    "apply_owned_tag_tooltip": {
+      "ht": "Refresh the [Owned] tag on blueprint names in the strings table to match your current Owned list.",
+      "at": ""
+    },
+    "apply_owned_tag_tooltip_disabled": {
+      "ht": "Already up to date — your Owned list hasn't changed since the last apply.",
+      "at": ""
     }
   },
   "log": {
