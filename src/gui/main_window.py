@@ -3758,6 +3758,16 @@ class MainWindow(QMainWindow):
         if p4k_extraction_started:
             return
 
+        # User declined the extraction prompt (or it didn't fire, e.g. unp4k
+        # missing) and there's still no cached base.ini. Loading sources now
+        # would just fail with "file not found" — skip it instead of
+        # surfacing error popups for a state the user just chose to leave.
+        if not base_ini.exists():
+            self.statusBar().showMessage(
+                "No strings loaded — extract from Data.p4k on the Config tab first"
+            )
+            return
+
         # Base.ini is fine. Separately check the DataForge XML cache, which
         # has its own freshness stamp (`.p4k_mtime`) and can be stale even
         # when base.ini is current — e.g. the last DataForge extract was
