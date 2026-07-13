@@ -147,8 +147,17 @@ def update_manifest(
     """
     cache_dir = Path(cache_dir)
     snapshot = _build_snapshot(cache_dir, progress_callback=progress_callback)
+    # The hash sweep above reports 100% the instant it finishes, but writing
+    # ~28k entries out is itself not instantaneous — without this the bar
+    # sat pinned at "100%"/full width while the JSON write was still going,
+    # reading as frozen. Drop back to indeterminate with a distinct label so
+    # it's visibly still doing something until the write actually completes.
+    if progress_callback:
+        progress_callback(0, 0, "Writing diff manifest…")
     with open(_manifest_path(cache_dir), "w", encoding="utf-8") as f:
-        json.dump(snapshot, f, indent=2)
+        # Compact (no indent) — this file is machine-read only, and skipping
+        # pretty-printing cuts the write time for ~28k entries noticeably.
+        json.dump(snapshot, f)
 
 
 def dirty_categories(cache_dir: Path) -> Optional[set[str]]:
