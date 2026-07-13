@@ -679,7 +679,12 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(button_layout)
 
-        # Filter row
+        return layout
+
+    def create_string_filter_row(self) -> QHBoxLayout:
+        """Create the String Editor's filter row (category/status/search
+        toggles). Lives on the strings tab itself (not the shared toolbar)
+        so it's only visible while that tab is active."""
         filter_layout = QHBoxLayout()
 
         self._category_label = QLabel(tr("filters.category_label"))
@@ -756,9 +761,7 @@ class MainWindow(QMainWindow):
         filter_layout.addWidget(self.copy_filtered_btn)
 
         filter_layout.addStretch()
-        layout.addLayout(filter_layout)
-
-        return layout
+        return filter_layout
 
     def create_footer(self) -> QHBoxLayout:
         """Create footer with Osiris DevWorks branding and donation buttons."""
@@ -1190,6 +1193,10 @@ class MainWindow(QMainWindow):
         """Create strings table tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
+
+        # Filter row: category/status/search toggles. Lives here (not the
+        # shared toolbar) so it's only visible while this tab is active.
+        layout.addLayout(self.create_string_filter_row())
 
         # Model
         self._model = StringTableModel(self)
