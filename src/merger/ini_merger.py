@@ -154,22 +154,30 @@ def sync_key_variants(merged_dict: Dict[str, str]) -> None:
     # For each canonical form with multiple variants, sync their values
     for canonical, variants in canonical_keys.items():
         if len(variants) > 1:
-            # Use the value from the first variant (they should all have the same after merge)
-            # Or prioritize: prefer the one without _SCItem suffix
-            synced_value = None
-            preferred_key = None
-
-            # Prefer non-_SCItem variants
-            for var in variants:
-                if not var.lower().endswith('_scitem'):
-                    preferred_key = var
-                    synced_value = merged_dict[var]
-                    break
-
-            # If all have _SCItem (unlikely), just use the first
-            if synced_value is None:
-                preferred_key = variants[0]
-                synced_value = merged_dict[preferred_key]
+            # Prefer the longest value among ALL variants — no _SCItem
+            # pre-filter. Stripping every underscore (and lowercasing) to
+            # build the canonical form means two genuinely DIFFERENT CIG loc
+            # keys can collapse onto the same canonical string even though
+            # they hold different text — e.g. item_Name_SHLD_BEHR_S01_7SA
+            # (fully tagged/enhanced) and item_NameSHLD_BEHR_S01_7sa (a
+            # distinct, never-enhanced sibling CIG ships with just the bare
+            # stock name) both canonicalize to "itemnameshldbehrs017sa".
+            # Picking an arbitrary "first" variant let the short, unenhanced
+            # sibling silently overwrite the correctly tagged one.
+            #
+            # An earlier version of this fix pre-filtered to non-_SCItem
+            # variants before picking the longest, on the theory that
+            # _SCItem-suffixed keys are always the "internal" duplicate. That
+            # broke the Taiga cooler case: item_NameCOOL_WCPR_S02_Taiga_SCItem
+            # held the correctly tagged value while its non-_SCItem sibling
+            # item_Name_COOL_WCPR_S02_Taiga was the never-enhanced bare one —
+            # so pre-filtering to "non-_SCItem only" picked the bare one every
+            # time. Comparing length across *all* variants with no pre-filter
+            # is a no-op for the genuine same-entity variant case this
+            # function targets (the generator's own sibling mirroring already
+            # gives those matching values, so length ties and either wins).
+            preferred_key = max(variants, key=lambda v: len(merged_dict[v]))
+            synced_value = merged_dict[preferred_key]
 
             # Apply this value to all variants
             for var in variants:
