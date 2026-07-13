@@ -586,6 +586,7 @@ class EnhancementsTab(QWidget):
             label = AppSettings.DEFAULT_REP_XP_LABEL
             self._rep_xp_label_input.setText(label)
         AppSettings.set_rep_xp_label(label)
+        self._mark_enhancements_dirty()
 
     def _save_mission_header(self, key: str):
         inp = self._header_inputs.get(key)
@@ -593,11 +594,13 @@ class EnhancementsTab(QWidget):
             val = inp.text().strip()
             if val:
                 AppSettings.set_mission_header(key, val)
+                self._mark_enhancements_dirty()
 
     def _save_header_em_tag(self):
         tag = self._header_em_combo.currentData()
         if tag:
             AppSettings.set_mission_header_em_tag(tag)
+            self._mark_enhancements_dirty()
 
     def _apply_favorite_prefix(self):
         new_prefix = self.favorite_prefix_combo.currentData()
