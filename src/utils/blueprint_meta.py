@@ -104,11 +104,14 @@ _TYPE_LABELS = {
     "BOMB": "Bomb",
 }
 
-# The leading bracketed tag on a component name, e.g. "[MIL-S3-B]" or the
-# user-reconfigured "[CMP.S1.B.PW]". Parsed by tokenizing the contents rather
-# than a fixed pattern, because the tag's separator, element order, and which
-# elements appear are all Tag-Builder-configurable (see parse_component_tag).
+# The bracketed component tag, e.g. "[MIL-S3-B]" or the user-reconfigured
+# "[CMP.S1.B.PW]". Parsed by tokenizing the contents rather than a fixed
+# pattern, because the tag's separator, element order, and which elements
+# appear are all Tag-Builder-configurable (see parse_component_tag). Matched
+# leading OR trailing since the category's placement setting can put it on
+# either side (mirrors normalize_item_name's leading/trailing handling).
 _TAG_BRACKET_RE = re.compile(r"^\s*\[([^\]]+)\]")
+_TRAILING_TAG_BRACKET_RE = re.compile(r"\[([^\]]+)\]\s*$")
 _SIZE_TOKEN_RE = re.compile(r"^S?(\d+)$", re.IGNORECASE)
 # Size straight from the loc key (stable regardless of tag config):
 # item_NamePOWR_ACOM_S01_StarHeart -> S1.
@@ -145,21 +148,26 @@ class BlueprintItem:
 
 
 def parse_component_tag(value: str):
-    """Best-effort ``(class, size, grade)`` from a leading component tag.
+    """Best-effort ``(class, size, grade)`` from a component tag.
 
     Robust to the Tag Builder's configurable separator / element order / which
     elements are shown, so it handles the default ``[MIL-S3-B]`` and a
-    reconfigured ``[CMP.S1.B.PW]`` alike. The tokens inside the leading ``[...]``
-    are split on any non-alphanumeric separator and classified: an ``S?<digits>``
-    token is the size, a lone A-F letter is the grade, and the first multi-letter
-    token is the class (type codes like ``PW`` come after the class in the tag,
-    so they don't win). Missing pieces are ``None``.
+    reconfigured ``[CMP.S1.B.PW]`` alike. Also robust to the category's
+    placement setting: the tag is matched leading (``[MIL-S3-B] Norfield``,
+    prepend) or trailing (``Norfield [MIL-S3-B]``, append) — a category
+    configured to append lost Class/Grade extraction entirely until this
+    matched normalize_item_name's leading/trailing symmetry. The tokens
+    inside the ``[...]`` are split on any non-alphanumeric separator and
+    classified: an ``S?<digits>`` token is the size, a lone A-F letter is the
+    grade, and the first multi-letter token is the class (type codes like
+    ``PW`` come after the class in the tag, so they don't win). Missing
+    pieces are ``None``.
 
     Limitation: a single-letter (Short-style) class code can't be told apart from
     a grade letter, so class may be missed under a Short class style — size still
     comes from the loc key and grade still resolves.
     """
-    m = _TAG_BRACKET_RE.match(value or "")
+    m = _TAG_BRACKET_RE.match(value or "") or _TRAILING_TAG_BRACKET_RE.search(value or "")
     if not m:
         return (None, None, None)
     cls = size = grade = None
