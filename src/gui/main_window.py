@@ -4438,6 +4438,13 @@ class MainWindow(QMainWindow):
             # Refresh the config tab P4K status
             self.config_tab._refresh_p4k_status()
 
+            # A fresh base.ini can change item names/descriptions (e.g. CIG
+            # adding flavor text in a patch) without touching the DataForge
+            # XML cache our dirty-check keys off — so a stale cached
+            # enhancement entry for a changed item would otherwise never
+            # prompt a re-run even after re-extracting global.ini.
+            self.enhancements_tab.mark_enhancements_dirty()
+
             # Defer enhancements check until after file loading completes (avoid I/O contention)
             self._check_enhancements_after_loading = True
 
