@@ -47,6 +47,15 @@ class AnimatedProgressDialog(QProgressDialog):
         self.setWindowTitle(title)
         self.setModal(True)
         self.setMinimumWidth(400)
+        # QProgressDialog defaults to autoClose=True/autoReset=True, which
+        # hides the dialog the instant setValue() hits maximum() — e.g. the
+        # DataForge cache-snapshot phase ends with completed == total, so
+        # the dialog vanished right there while later phases (patching,
+        # enhancement generation) kept running and updating the status bar.
+        # Callers own the dialog lifecycle explicitly via .close(), so
+        # reaching 100% on one phase must not close it out from under them.
+        self.setAutoClose(False)
+        self.setAutoReset(False)
         self._bar = self.findChild(QProgressBar)
         if self._bar is not None:
             # Start indeterminate — bar text hidden until set_progress flips
