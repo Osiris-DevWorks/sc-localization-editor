@@ -1641,6 +1641,17 @@ class _TagBuilderPage(QWidget):
             self._select_combo(self._mt_arrow, fresh.route_arrow)
             self._select_combo(self._mt_sep, fresh.title_separator)
             self._select_combo(self._mt_detail, fresh.location_detail)
+            # General Tags (Rep/BP/ACE) aren't part of TagConfig — they're
+            # their own settings domain (AppSettings.set_mission_title_tag),
+            # persisted immediately on toggle rather than staged until Apply
+            # Tag Changes like the rest of this page. Reset explicitly persists
+            # their default (all on) to match that immediate-save behavior,
+            # rather than relying solely on setChecked's toggled signal (a
+            # checkbox already True wouldn't fire it, leaving a stale saved
+            # value if one had somehow drifted out of sync).
+            for field, box in self._title_tag_checkboxes.items():
+                box.setChecked(True)
+                AppSettings.set_mission_title_tag(field, True)
             self._set_mt_controls_enabled(self._mt_enable.isChecked())
             self._refresh_preview()
             self.config_changed.emit()
