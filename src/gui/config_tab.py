@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import pyqtSignal, QTimer
 
-from src.gui.theme import AVAILABLE_THEMES, THEME_LIGHT, THEME_DARK, THEME_SCLE, THEME_ODW
+from src.gui.theme import AVAILABLE_THEMES, THEME_LIGHT, THEME_DARK, THEME_SCLE, THEME_ODW, get_button_color
 from src.utils.i18n import tr
 from src.utils.settings import AppSettings
 from src.utils.user_ini_manager import migrate_user_data_dir
@@ -918,6 +918,7 @@ class ConfigTab(QWidget):
     def _refresh_p4k_status(self):
         p4k_path = AppSettings.get_p4k_path()
         base_ini = AppSettings.get_cache_dir() / 'base.ini'
+        needs_update = False
 
         if p4k_path.exists():
             self._p4k_status_dot.setStyleSheet("color: #4caf50; font-size: 14px;")
@@ -931,14 +932,28 @@ class ConfigTab(QWidget):
                 self._p4k_status_label.setText(
                     tr("config.p4k_status_found_with_base", date=last_str)
                 )
+                needs_update = p4k_path.stat().st_mtime > base_ini.stat().st_mtime
             else:
                 self._p4k_status_label.setText(tr("config.p4k_status_found_no_base"))
+                needs_update = True
         else:
             self._p4k_status_dot.setStyleSheet("color: #f44336; font-size: 14px;")
             if AppSettings.get_game_install_path():
                 self._p4k_status_label.setText(tr("config.p4k_status_not_found", path=p4k_path))
             else:
                 self._p4k_status_label.setText(tr("config.p4k_status_no_path"))
+
+        self._set_extract_btn_needs_update(needs_update)
+
+    def _set_extract_btn_needs_update(self, needs_update: bool) -> None:
+        """Red button text when base.ini has never been extracted or Data.p4k
+        is newer than the cached copy — a nudge, not a gate. Unlike Generate
+        Enhancements/Apply Enhancements, this button is never disabled: users
+        may legitimately want to re-extract even when nothing looks stale
+        (e.g. after manually clearing part of the cache)."""
+        self._extract_btn.setStyleSheet(
+            f"color: {get_button_color('needs_apply')};" if needs_update else ""
+        )
 
     # ── Updates ──────────────────────────────────────────────────────────────
 
