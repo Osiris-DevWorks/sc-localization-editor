@@ -4511,13 +4511,17 @@ class MainWindow(QMainWindow):
                 event.ignore()
                 return
             if clicked is apply_btn:
+                # Apply, then stay open — Apply to Game only updates
+                # _apply_dirty in memory for this run; closing immediately
+                # after would still start the *next* launch red regardless
+                # (that boot-time default can't cheaply verify the game file
+                # already matches — see _apply_dirty's comment), which read
+                # as "my apply didn't work." Leaving the window open lets the
+                # user see the button turn green and close normally whenever
+                # they're ready.
                 self.apply_to_game()
-                if self._session_has_unapplied_edit:
-                    # Apply failed or was aborted partway (e.g. the user
-                    # declined a missing-sources warning) — don't close on
-                    # top of an issue they haven't resolved or seen through.
-                    event.ignore()
-                    return
+                event.ignore()
+                return
             # exit_btn: fall through to the normal close sequence below,
             # exiting without applying.
 
