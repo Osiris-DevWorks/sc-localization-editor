@@ -299,6 +299,15 @@ class MainWindow(QMainWindow):
         # enabled state. See _mark_apply_dirty / _clear_apply_dirty.
         self._apply_dirty = True
 
+        # Tracks whether *this session* has produced a genuine unapplied
+        # change, as opposed to _apply_dirty's conservative "we can't verify
+        # at boot" default above. Used only to decide whether closeEvent
+        # should warn about unapplied changes — _initial_load_done gates it
+        # so the very first (startup) load doesn't itself count as a
+        # user-made change; see _mark_apply_dirty and _on_loading_finished.
+        self._initial_load_done = False
+        self._session_has_unapplied_edit = False
+
         # DataForge extraction worker
         self._forge_worker: Optional[DataForgeExtractWorker] = None
 
@@ -1534,6 +1543,8 @@ class MainWindow(QMainWindow):
         the Owned-tag re-weave (which doesn't reload but does change what
         Apply would write)."""
         self._set_apply_btn_dirty(True)
+        if self._initial_load_done:
+            self._session_has_unapplied_edit = True
 
     @pyqtSlot()
     @timed
@@ -1804,6 +1815,7 @@ class MainWindow(QMainWindow):
                 f"{enhancement_block}"
             )
             self._set_apply_btn_dirty(False)
+            self._session_has_unapplied_edit = False
         except Exception as e:
             QMessageBox.critical(self, tr("dialogs.error_title"), f"Failed to apply to game: {e}")
             logger.error(f"Error applying to game: {e}")
@@ -4158,6 +4170,10 @@ class MainWindow(QMainWindow):
             self._check_enhancements_after_loading = False
             self._check_enhancements_freshness()
 
+        # From here on, dirty-marking reflects a real in-session change —
+        # see _mark_apply_dirty / _session_has_unapplied_edit.
+        self._initial_load_done = True
+
     @pyqtSlot(str)
     def _on_loading_error(self, error_msg: str):
         """Handle file loading error."""
@@ -4468,6 +4484,43 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         """Save state and overrides before closing."""
+        # Warn if something changed this session that Apply Enhancements
+        # hasn't picked up yet (the button is still showing red) — e.g. the
+        # user clicked Apply Tag Changes but never followed up with Apply
+        # Enhancements. Gated on _session_has_unapplied_edit rather than
+        # _apply_dirty directly since the latter also starts True at launch
+        # (see its comment) — that boot-time uncertainty shouldn't nag a user
+        # who hasn't touched anything this session.
+        if self._session_has_unapplied_edit:
+            box = QMessageBox(self)
+            box.setIcon(QMessageBox.Icon.Warning)
+            box.setWindowTitle("Unapplied Changes")
+            box.setText(
+                "You have changes that haven't been applied to the game yet "
+                "(the Apply Enhancements button is still showing red).\n\n"
+                "Apply them now, or exit without applying?"
+            )
+            apply_btn = box.addButton("Apply Now", QMessageBox.ButtonRole.AcceptRole)
+            exit_btn = box.addButton("Exit Without Applying", QMessageBox.ButtonRole.DestructiveRole)
+            cancel_btn = box.addButton(QMessageBox.StandardButton.Cancel)
+            box.setDefaultButton(apply_btn)
+            box.exec()
+            clicked = box.clickedButton()
+
+            if clicked is cancel_btn:
+                event.ignore()
+                return
+            if clicked is apply_btn:
+                self.apply_to_game()
+                if self._session_has_unapplied_edit:
+                    # Apply failed or was aborted partway (e.g. the user
+                    # declined a missing-sources warning) — don't close on
+                    # top of an issue they haven't resolved or seen through.
+                    event.ignore()
+                    return
+            # exit_btn: fall through to the normal close sequence below,
+            # exiting without applying.
+
         # Auto-save overrides if there are unsaved edits
         if self.entries and not (self._loader_worker and self._loader_worker.isRunning()):
             try:
