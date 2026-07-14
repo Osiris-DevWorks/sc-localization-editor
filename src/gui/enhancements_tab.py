@@ -1459,8 +1459,7 @@ class _TagBuilderPage(QWidget):
         tags_col.setContentsMargins(10, 10, 10, 10)
         tags_col.setSpacing(6)
         tags_hint = QLabel(
-            "Show or hide these tags on the mission title only — separate "
-            "from the Mission Detail Fields body toggles."
+            "Show or hide these tags on the mission title only"
         )
         tags_hint.setProperty("role", "secondary")
         tags_hint.setStyleSheet("font-size: 11px;")
@@ -1471,7 +1470,7 @@ class _TagBuilderPage(QWidget):
             ("rep",       'Rep Tag (adds "[500 REP]")'),
             ("blueprint", 'BP Tag (adds "[BP]" / "[BP?]")'),
             ("ace",       'ACE Tag (adds "[ACE]" / "[ACE?]")'),
-            ("rep_track", 'Rep Track Tag (adds "(Security)" / "(Contractor)" to the Rep tag — off by default; always shown in the mission body)'),
+            ("rep_track", 'Rep Track Tag (adds "(Security)" / "(Contractor)" to the Rep tag)'),
         ]
         self._title_tag_checkboxes: dict = {}
         _tt_saved = AppSettings.get_mission_title_tags()
@@ -1498,9 +1497,9 @@ class _TagBuilderPage(QWidget):
         scanning_col.setContentsMargins(10, 10, 10, 10)
         scanning_col.setSpacing(6)
         scanning_hint = QLabel(
-            "Recco Battaglia's Scan/Mining contracts (4.9+) target specific "
-            "mineable ores — show each ore's Resource Signature value on "
-            "the mission title so you know what to expect before accepting."
+            "Recco Battaglia's Scanning/Mining missions target specific "
+            "mineable ores, show each ore's Resource Signature value on "
+            "the mission title."
         )
         scanning_hint.setProperty("role", "secondary")
         scanning_hint.setStyleSheet("font-size: 11px;")
