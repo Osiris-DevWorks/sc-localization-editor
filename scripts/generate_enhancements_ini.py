@@ -2463,38 +2463,49 @@ def _add_spawn(breakdown: SpawnBreakdown, bucket: str, label: str, count: int) -
 
 
 def _within_excluded_subtree(node: ET.Element, scope: ET.Element,
-                             exclude_tag: str | None) -> bool:
-    """True if ``node`` has an ancestor tagged ``exclude_tag`` at or below
-    ``scope`` (exclusive of ``scope`` itself). Walks up via ``getparent()``.
+                             exclude_tags: str | tuple[str, ...] | None) -> bool:
+    """True if ``node`` has an ancestor tagged one of ``exclude_tags`` at or
+    below ``scope`` (exclusive of ``scope`` itself). Walks up via
+    ``getparent()``. Accepts a single tag name or a tuple of names.
 
     Used to keep handler-scope spawn extraction from reaching down into the
-    handler's child ``CareerContract`` nodes — see ``_extract_spawn_counts``'s
+    handler's child mission variants — see ``_extract_spawn_counts``'s
     ``exclude_within`` and issue #186.
     """
-    if not exclude_tag:
+    if not exclude_tags:
         return False
+    tags = (exclude_tags,) if isinstance(exclude_tags, str) else exclude_tags
     parent = node.getparent()
     while parent is not None and parent is not scope:
-        if parent.tag == exclude_tag:
+        if parent.tag in tags:
             return True
         parent = parent.getparent()
     return False
 
 
 def _extract_spawn_counts(element: ET.Element,
-                          exclude_within: str | None = None) -> SpawnBreakdown:
+                          exclude_within: str | tuple[str, ...] | None = None) -> SpawnBreakdown:
     """Extract a per-bucket per-label breakdown of spawn descriptions.
 
     Parses ``SpawnDescription_ShipGroup`` and ``SpawnDescription_NPC_Group``
     elements within the given XML element scope, classifies each by name via
     :func:`classify_spawn_group`, and aggregates counts per (bucket, label).
 
-    ``exclude_within`` skips any spawn group nested inside a descendant with
-    that tag. The handler-level fallback passes ``"CareerContract"`` so a
-    contract with no spawns of its own inherits only spawns defined directly at
-    handler scope (the genuine shared default), NOT the union of every sibling
-    contract's roster — which leaked e.g. ground "Kopions"/"Soldiers" onto an
-    easy 9-probe satellite mission (#186).
+    ``exclude_within`` skips any spawn group nested inside a descendant tagged
+    with one of the given names. The handler-level fallback passes
+    ``("CareerContract", "Contract")`` so a contract with no spawns of its own
+    inherits only spawns defined directly at handler scope (the genuine shared
+    default), NOT the union of every sibling contract's roster — which leaked
+    e.g. ground "Kopions"/"Soldiers" onto an easy 9-probe satellite mission
+    (#186). ``Contract`` (not just ``CareerContract``) must be excluded too:
+    a handler's ``introContracts`` wraps its one-time intro mission in a
+    ``<Contract>`` tag (the same tag List-type handlers use for their regular
+    children), and without excluding it, the intro mission's own roster
+    (e.g. Foxwell Enforcement's "Attackers"/"Defenders" FPS NPCs, scoped to
+    just its one-time "Mercenary Intro" contract) leaked into every sibling
+    CareerContract with no spawns of its own — including the unrelated
+    "Destroy Data Skimmers"/"Handle Security Threat" satellite-probe missions,
+    which have no combat roster and shouldn't show any Hostiles at all.
 
     Pre-1.4.1 this returned ``(num_waves, num_enemies, num_not_enemies)`` and
     bucketed everything unrecognized as hostile — see the keyword-table
@@ -3272,11 +3283,13 @@ def scan_contract_generators(
                     # Extract handler-level spawn breakdown (shared across
                     # contracts; per-contract overrides win when non-empty).
                     # Exclude spawns nested inside the handler's CareerContract
-                    # children so the fallback inherits only genuine
-                    # handler-scope defaults, not a union of every sibling
-                    # contract's roster (#186).
+                    # children AND its introContracts' Contract wrapper so the
+                    # fallback inherits only genuine handler-scope defaults,
+                    # not a union of every sibling contract's roster (#186) —
+                    # including the one-time intro mission's own roster, which
+                    # uses the plain <Contract> tag, not <CareerContract>.
                     handler_spawns = _extract_spawn_counts(
-                        handler, exclude_within="CareerContract"
+                        handler, exclude_within=("CareerContract", "Contract")
                     )
 
                     contracts = handler.findall(contract_xpath)

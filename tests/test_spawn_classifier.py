@@ -604,6 +604,56 @@ class TestHandlerScopeExclusion:
         )
         assert breakdown[gen_module.SPAWN_HOSTILE] == {}
 
+    def test_intro_contract_spawns_excluded_too(self, gen_module):
+        """A handler's one-time intro mission wraps in a plain ``<Contract>``
+        tag under ``introContracts``, not ``<CareerContract>``. Excluding
+        only ``CareerContract`` let its roster (e.g. Foxwell Enforcement's
+        "Attackers"/"Defenders" FPS NPCs, scoped to just the "Mercenary
+        Intro" one-off contract) leak into the handler-level fallback and
+        appear on every unrelated sibling CareerContract with no roster of
+        its own — including the "Destroy Data Skimmers" / "Handle Security
+        Threat" satellite-probe missions, which have no combat roster at
+        all and should show no Hostiles line.
+        """
+        root = _make_root(
+            '<ContractGeneratorHandler_Career>'
+            '<introContracts><Contract debugName="Intro">'
+            '<SpawnDescription_ShipGroup Name="Attackers">'
+            '<ships><SpawnDescription_Ship concurrentAmount="10"/></ships>'
+            '</SpawnDescription_ShipGroup>'
+            '</Contract></introContracts>'
+            '<contracts><CareerContract debugName="DestroySatellite">'
+            '</CareerContract></contracts>'
+            '</ContractGeneratorHandler_Career>'
+        )
+        handler = root.find(".//ContractGeneratorHandler_Career")
+        breakdown = gen_module._extract_spawn_counts(
+            handler, exclude_within=("CareerContract", "Contract")
+        )
+        assert breakdown[gen_module.SPAWN_HOSTILE] == {}
+
+    def test_genuine_handler_scope_spawns_still_survive_tuple_exclusion(self, gen_module):
+        """A tuple ``exclude_within`` must still let a true handler-scope
+        default through — it should exclude intro/contract rosters without
+        accidentally excluding everything."""
+        root = _make_root(
+            '<ContractGeneratorHandler_Career>'
+            '<SpawnDescription_ShipGroup Name="Defenders">'
+            '<ships><SpawnDescription_Ship concurrentAmount="4"/></ships>'
+            '</SpawnDescription_ShipGroup>'
+            '<introContracts><Contract debugName="Intro">'
+            '<SpawnDescription_ShipGroup Name="Attackers">'
+            '<ships><SpawnDescription_Ship concurrentAmount="10"/></ships>'
+            '</SpawnDescription_ShipGroup>'
+            '</Contract></introContracts>'
+            '</ContractGeneratorHandler_Career>'
+        )
+        handler = root.find(".//ContractGeneratorHandler_Career")
+        breakdown = gen_module._extract_spawn_counts(
+            handler, exclude_within=("CareerContract", "Contract")
+        )
+        assert breakdown[gen_module.SPAWN_HOSTILE] == {"Defenders": 4}
+
 
 class TestMergeSpawnBreakdownsMax:
     """The contract aggregator merges per-variant breakdowns by taking the
