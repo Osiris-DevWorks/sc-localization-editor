@@ -586,20 +586,20 @@ class MainWindow(QMainWindow):
         self.editor_btn = QPushButton(tr("toolbar.editor_btn"))
         self.editor_btn.setStyleSheet(f"background-color: {get_button_color('open')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;")
         self.editor_btn.setCheckable(True)
-        self.editor_btn.setToolTip("Toggle the side-docked String Editor, a larger canvas for editing the selected row's custom value")
+        self.editor_btn.setToolTip(tr("toolbar.editor_tooltip"))
         self.editor_btn.clicked.connect(self.show_editor_dock)
         button_layout.addWidget(self.editor_btn)
 
         self.help_btn = QPushButton(tr("toolbar.help_btn"))
         self.help_btn.setStyleSheet(f"background-color: {get_button_color('open')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;")
         self.help_btn.setCheckable(True)
-        self.help_btn.setToolTip("Toggle the Help side-panel")
+        self.help_btn.setToolTip(tr("toolbar.help_tooltip"))
         self.help_btn.clicked.connect(self.show_help)
         button_layout.addWidget(self.help_btn)
 
         self.tutorial_btn = QPushButton(tr("toolbar.tutorial_btn"))
         self.tutorial_btn.setStyleSheet(f"background-color: {get_button_color('open')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;")
-        self.tutorial_btn.setToolTip("Start the guided tour of Smart Citizen's workflow. Runs automatically on first launch; click here anytime to replay.")
+        self.tutorial_btn.setToolTip(tr("toolbar.tutorial_tooltip"))
         self.tutorial_btn.clicked.connect(self._start_tutorial)
         button_layout.addWidget(self.tutorial_btn)
 
@@ -611,10 +611,7 @@ class MainWindow(QMainWindow):
         self._action_restore_backup = more_menu.addAction(
             tr("toolbar.restore_backup_btn"), self.restore_backup
         )
-        self._action_restore_backup.setToolTip(
-            "Restore a previous global.ini from the backups folder. Up to 5 "
-            "timestamped backups are kept; the oldest is pruned when a new one is created."
-        )
+        self._action_restore_backup.setToolTip(tr("toolbar.restore_backup_tooltip"))
         more_menu.addSeparator()
         self._action_clear_loc = more_menu.addAction(tr("toolbar.menu_clear_localization"), self.clear_localization)
         self._action_clear_cache = more_menu.addAction(tr("toolbar.menu_clear_cache"), self.clear_cache)
@@ -629,10 +626,7 @@ class MainWindow(QMainWindow):
         self._action_test_plan = more_menu.addAction(
             tr("toolbar.menu_test_plan"), self.show_test_plan
         )
-        self._action_test_plan.setToolTip(
-            "Open the tester Test Plan: a checklist of what changed in this "
-            "release, with progress tracking and a report you can submit."
-        )
+        self._action_test_plan.setToolTip(tr("toolbar.test_plan_tooltip"))
         more_menu.addSeparator()
         # #180: jump to the simplified one-button view. Lives in the toolbar
         # (Advanced-only); the way back is the Simple page's own button.
@@ -640,16 +634,11 @@ class MainWindow(QMainWindow):
             tr("toolbar.menu_switch_to_simple"),
             lambda: self._apply_ui_mode(AppSettings.UI_MODE_SIMPLE),
         )
-        self._action_switch_to_simple.setToolTip(
-            "Switch to the simplified one-button view."
-        )
+        self._action_switch_to_simple.setToolTip(tr("toolbar.switch_to_simple_tooltip"))
 
         self.more_btn = QPushButton(tr("toolbar.more_btn"))
         self.more_btn.setStyleSheet(f"background-color: {get_button_color('clear')}; color: {get_button_text_color()}; font-weight: bold; padding: 6px;")
-        self.more_btn.setToolTip(
-            "More actions: restore a backup, clear localization or cache, "
-            "import or export, open the localization folder"
-        )
+        self.more_btn.setToolTip(tr("toolbar.more_tooltip"))
         self.more_btn.setMenu(more_menu)
         button_layout.addWidget(self.more_btn)
 
@@ -669,7 +658,7 @@ class MainWindow(QMainWindow):
         filter_layout.addWidget(self._category_label)
         self.category_combo = QComboBox()
         self.category_combo.setMinimumWidth(200)
-        self.category_combo.setToolTip("Filter rows by domain (Ships, Ship Items, Missions, Gear, Commodities, Journal, Other). Categories are derived from the loc-key prefix.")
+        self.category_combo.setToolTip(tr("filters.category_tooltip"))
         self.category_combo.currentTextChanged.connect(self.apply_filters)
         filter_layout.addWidget(self.category_combo)
 
@@ -687,23 +676,17 @@ class MainWindow(QMainWindow):
         ]:
             self.status_combo.addItem(tr(_key), userData=_internal)
         self.status_combo.setMaximumWidth(120)
-        self.status_combo.setToolTip(
-            "Filter by status. "
-            "Modified = you've set a Custom Value; "
-            "Enhanced = produced by Smart Citizen's enhancements pipeline (ship stats, mission rewards, etc.); "
-            "Unmodified = default text only; "
-            "New = key exists only in enhancements/user.ini, not in the base file."
-        )
+        self.status_combo.setToolTip(tr("filters.status_tooltip"))
         self.status_combo.currentTextChanged.connect(self.apply_filters)
         filter_layout.addWidget(self.status_combo)
 
         self.hide_unmodified_check = QCheckBox(tr("filters.hide_unmodified"))
-        self.hide_unmodified_check.setToolTip("Show only rows where you've set a Custom Value. Same as the Status filter's Modified option but togglable on its own.")
+        self.hide_unmodified_check.setToolTip(tr("filters.hide_unmodified_tooltip"))
         self.hide_unmodified_check.stateChanged.connect(self.apply_filters)
         filter_layout.addWidget(self.hide_unmodified_check)
 
         self.favorites_only_check = QCheckBox(tr("filters.favorites_only"))
-        self.favorites_only_check.setToolTip("Show only rows you've starred as favorites. Favorites get a configurable prefix prepended to their name so they sort to the top of the in-game list.")
+        self.favorites_only_check.setToolTip(tr("filters.favorites_only_tooltip"))
         self.favorites_only_check.stateChanged.connect(self.apply_filters)
         filter_layout.addWidget(self.favorites_only_check)
 
@@ -711,30 +694,30 @@ class MainWindow(QMainWindow):
         # [BP]/[BP?]; BP Descriptions keeps bodies with a POTENTIAL BLUEPRINTS
         # section. Checking both shows either.
         self.bp_titles_check = QCheckBox(tr("filters.bp_titles_only"))
-        self.bp_titles_check.setToolTip("Show only mission titles carrying the [BP] / [BP?] blueprint tag.")
+        self.bp_titles_check.setToolTip(tr("filters.bp_titles_only_tooltip"))
         self.bp_titles_check.stateChanged.connect(self.apply_filters)
         filter_layout.addWidget(self.bp_titles_check)
 
         self.bp_descs_check = QCheckBox(tr("filters.bp_descs_only"))
-        self.bp_descs_check.setToolTip("Show only mission descriptions containing a POTENTIAL BLUEPRINTS section.")
+        self.bp_descs_check.setToolTip(tr("filters.bp_descs_only_tooltip"))
         self.bp_descs_check.stateChanged.connect(self.apply_filters)
         filter_layout.addWidget(self.bp_descs_check)
 
         self.grouped_sort_btn = QPushButton(tr("filters.group_sort_btn"))
-        self.grouped_sort_btn.setToolTip("Sort titles and descriptions together for the same entity")
+        self.grouped_sort_btn.setToolTip(tr("filters.group_sort_tooltip"))
         self.grouped_sort_btn.setMaximumWidth(100)
         self.grouped_sort_btn.clicked.connect(self._on_grouped_sort)
         filter_layout.addWidget(self.grouped_sort_btn)
 
         self.clear_filters_btn = QPushButton(tr("filters.clear_filters_btn"))
         self.clear_filters_btn.setMaximumWidth(100)
-        self.clear_filters_btn.setToolTip("Reset every filter (category, status, search, per-column boxes, checkboxes) so the full table is shown.")
+        self.clear_filters_btn.setToolTip(tr("filters.clear_filters_tooltip"))
         self.clear_filters_btn.clicked.connect(self.clear_filters)
         filter_layout.addWidget(self.clear_filters_btn)
 
         self.copy_filtered_btn = QPushButton(tr("filters.copy_filtered_btn"))
         self.copy_filtered_btn.setMaximumWidth(100)
-        self.copy_filtered_btn.setToolTip("Copy all visible filtered rows to clipboard (tab-separated)")
+        self.copy_filtered_btn.setToolTip(tr("filters.copy_filtered_tooltip"))
         self.copy_filtered_btn.clicked.connect(self.copy_filtered_to_clipboard)
         filter_layout.addWidget(self.copy_filtered_btn)
 
@@ -803,7 +786,7 @@ class MainWindow(QMainWindow):
             self.osiris_button.setFixedSize(base_pixmap.size())
 
             self.osiris_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-            self.osiris_button.setToolTip("Open the Osiris DevWorks GitHub organization")
+            self.osiris_button.setToolTip(tr("toolbar.osiris_github_tooltip"))
             self.osiris_button.mousePressEvent = self.open_osiris_github
             footer_layout.addWidget(self.osiris_button)
 
@@ -834,7 +817,7 @@ class MainWindow(QMainWindow):
             self._eye_glow = None
             self._eye_fadeout = None
             self.osiris_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-            self.osiris_button.setToolTip("Open the Osiris DevWorks GitHub organization")
+            self.osiris_button.setToolTip(tr("toolbar.osiris_github_tooltip"))
             self.osiris_button.mousePressEvent = self.open_osiris_github
             footer_layout.addWidget(self.osiris_button)
 
@@ -853,10 +836,7 @@ class MainWindow(QMainWindow):
         else:
             self.feedback_label.setText("Feedback, Bugs, & Feature Voting")
             self.feedback_label.setStyleSheet("font-size: 12px;")
-        self.feedback_label.setToolTip(
-            "Open the Smart Citizen Discord channel for feedback, bug reports, and voting on "
-            "upcoming features (requires joining the Osiris DevWorks Discord)."
-        )
+        self.feedback_label.setToolTip(tr("toolbar.feedback_tooltip"))
         self.feedback_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.feedback_label.mousePressEvent = self.open_feedback_link
         footer_layout.addWidget(self.feedback_label)
@@ -992,7 +972,7 @@ class MainWindow(QMainWindow):
             "font-size: 11px; padding: 0 8px; color: #c9a961; font-weight: bold;"
         )
         self._app_version_indicator.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self._app_version_indicator.setToolTip(f"Open release page for v{latest}")
+        self._app_version_indicator.setToolTip(tr("status_bar.open_release_page_tooltip", version=latest))
         self._refresh_update_indicator_texts()
 
         # Auto-update needs an installer asset on the release and a registry
@@ -1504,27 +1484,21 @@ class MainWindow(QMainWindow):
         else:
             logger.debug(f"Cache file not found: {cache_file}. Default values will be empty until sources are downloaded.")
 
-    # Same enabled/disabled tooltip pattern as the Enhancements tab's
-    # Generate Enhancements / Save Tag Changes buttons.
-    _APPLY_ENABLED_TOOLTIP = (
-        "Write the merged table contents to the game's global.ini. "
-        "A timestamped backup of the current global.ini is created first."
-    )
-    _APPLY_DISABLED_TOOLTIP = (
-        "Already applied — nothing has changed since the last Apply to Game."
-    )
-
     def _set_apply_btn_dirty(self, dirty: bool) -> None:
         """Single chokepoint for the button's enabled state, tooltip, and
         color so none of the three can drift apart. Red (needs_apply) means
         a change is waiting to be applied; green (apply) means the game
         already matches what's loaded. The :disabled selector is set
         explicitly so Qt's native greyed-out look doesn't wash out the
-        color — the color itself is the signal here, not the enabled state."""
+        color — the color itself is the signal here, not the enabled state.
+        Same enabled/disabled tooltip pattern as the Enhancements tab's
+        Generate Enhancements / Save Tag Changes buttons; resolved via tr()
+        here (not cached class constants) so it always reflects the active
+        language."""
         self._apply_dirty = dirty
         self.apply_btn.setEnabled(dirty)
         self.apply_btn.setToolTip(
-            self._APPLY_ENABLED_TOOLTIP if dirty else self._APPLY_DISABLED_TOOLTIP
+            tr("toolbar.apply_enabled_tooltip") if dirty else tr("toolbar.apply_disabled_tooltip")
         )
         color = get_button_color("needs_apply" if dirty else "apply")
         text = get_button_text_color()
@@ -2496,7 +2470,7 @@ class MainWindow(QMainWindow):
         input_row.addWidget(line_edit)
 
         browse_btn = QPushButton("Browse...")
-        browse_btn.setToolTip("Pick a local .ini file to import.")
+        browse_btn.setToolTip(tr("dialogs.browse_ini_tooltip"))
         def browse():
             path, _ = QFileDialog.getOpenFileName(
                 dialog, "Select INI File", "", "INI Files (*.ini);;All Files (*)")
@@ -2713,11 +2687,11 @@ class MainWindow(QMainWindow):
         btn_row = QHBoxLayout()
         btn_row.setSpacing(4)
         em3_btn = QPushButton("Underline")
-        em3_btn.setToolTip("Underline the selected text (wraps it in <EM3>...</EM3>)")
+        em3_btn.setToolTip(tr("strings_tab.editor_underline_tooltip"))
         em3_btn.clicked.connect(lambda: self._editor_dock_wrap("EM3"))
         btn_row.addWidget(em3_btn)
         em4_btn = QPushButton("Highlight")
-        em4_btn.setToolTip("Highlight the selected text with color emphasis (wraps it in <EM4>...</EM4>)")
+        em4_btn.setToolTip(tr("strings_tab.editor_highlight_tooltip"))
         em4_btn.clicked.connect(lambda: self._editor_dock_wrap("EM4"))
         btn_row.addWidget(em4_btn)
         btn_row.addStretch()
@@ -3268,6 +3242,7 @@ class MainWindow(QMainWindow):
         state, version = getattr(self, "_update_check_state", (None, None))
         if state == "available":
             label.setText(tr("status_bar.update_indicator_available", current=current))
+            label.setToolTip(tr("status_bar.open_release_page_tooltip", version=version))
             self.config_tab.set_update_status(tr("status_bar.update_available", version=version))
         elif state == "up_to_date":
             label.setText(tr("status_bar.update_indicator_up_to_date", current=current))
@@ -3383,34 +3358,55 @@ class MainWindow(QMainWindow):
 
         # Toolbar buttons
         self.apply_btn.setText(tr("toolbar.apply_btn"))
+        self._set_apply_btn_dirty(self._apply_dirty)
         self.editor_btn.setText(tr("toolbar.editor_btn"))
+        self.editor_btn.setToolTip(tr("toolbar.editor_tooltip"))
         self.help_btn.setText(tr("toolbar.help_btn"))
+        self.help_btn.setToolTip(tr("toolbar.help_tooltip"))
         self.tutorial_btn.setText(tr("toolbar.tutorial_btn"))
+        self.tutorial_btn.setToolTip(tr("toolbar.tutorial_tooltip"))
         self.more_btn.setText(tr("toolbar.more_btn"))
+        self.more_btn.setToolTip(tr("toolbar.more_tooltip"))
 
         # More-menu actions
         self._action_restore_backup.setText(tr("toolbar.restore_backup_btn"))
+        self._action_restore_backup.setToolTip(tr("toolbar.restore_backup_tooltip"))
         self._action_clear_loc.setText(tr("toolbar.menu_clear_localization"))
         self._action_clear_cache.setText(tr("toolbar.menu_clear_cache"))
         self._action_import_ini.setText(tr("toolbar.menu_import_ini"))
         self._action_export_ini.setText(tr("toolbar.menu_export_ini"))
         self._action_open_loc_dir.setText(tr("toolbar.open_loc_dir_btn"))
         self._action_test_plan.setText(tr("toolbar.menu_test_plan"))
+        self._action_test_plan.setToolTip(tr("toolbar.test_plan_tooltip"))
         self._action_switch_to_simple.setText(tr("toolbar.menu_switch_to_simple"))
+        self._action_switch_to_simple.setToolTip(tr("toolbar.switch_to_simple_tooltip"))
+
+        # Footer
+        self.osiris_button.setToolTip(tr("toolbar.osiris_github_tooltip"))
+        self.feedback_label.setToolTip(tr("toolbar.feedback_tooltip"))
 
         # Simple-mode page (#180)
         self.simple_page.retranslate_ui()
 
         # Filter row
         self._category_label.setText(tr("filters.category_label"))
+        self.category_combo.setToolTip(tr("filters.category_tooltip"))
         self._status_label.setText(tr("filters.status_label"))
+        self.status_combo.setToolTip(tr("filters.status_tooltip"))
         self.hide_unmodified_check.setText(tr("filters.hide_unmodified"))
+        self.hide_unmodified_check.setToolTip(tr("filters.hide_unmodified_tooltip"))
         self.favorites_only_check.setText(tr("filters.favorites_only"))
+        self.favorites_only_check.setToolTip(tr("filters.favorites_only_tooltip"))
         self.bp_titles_check.setText(tr("filters.bp_titles_only"))
+        self.bp_titles_check.setToolTip(tr("filters.bp_titles_only_tooltip"))
         self.bp_descs_check.setText(tr("filters.bp_descs_only"))
+        self.bp_descs_check.setToolTip(tr("filters.bp_descs_only_tooltip"))
         self.grouped_sort_btn.setText(tr("filters.group_sort_btn"))
+        self.grouped_sort_btn.setToolTip(tr("filters.group_sort_tooltip"))
         self.clear_filters_btn.setText(tr("filters.clear_filters_btn"))
+        self.clear_filters_btn.setToolTip(tr("filters.clear_filters_tooltip"))
         self.copy_filtered_btn.setText(tr("filters.copy_filtered_btn"))
+        self.copy_filtered_btn.setToolTip(tr("filters.copy_filtered_tooltip"))
 
         # Status combo display text (userData internal values are preserved)
         self.status_combo.blockSignals(True)
@@ -4045,9 +4041,9 @@ class MainWindow(QMainWindow):
         button_row = QHBoxLayout()
         generate_btn = QPushButton("Generate")
         generate_btn.setDefault(True)
-        generate_btn.setToolTip("Run the DataForge extraction + enhancements pipeline now. Takes a few minutes the first time.")
+        generate_btn.setToolTip(tr("dialogs.generate_now_tooltip"))
         skip_btn = QPushButton("Skip")
-        skip_btn.setToolTip("Continue without generating enhancements. You can run it later from the Enhancements tab.")
+        skip_btn.setToolTip(tr("dialogs.skip_generate_tooltip"))
 
         generate_btn.clicked.connect(dialog.accept)
         skip_btn.clicked.connect(dialog.reject)
@@ -4283,7 +4279,7 @@ class MainWindow(QMainWindow):
             standardize_earnable_ship_names=AppSettings.get_standardize_earnable_ship_names(),
             language=language,
         )
-        self.enhancements_tab.set_operation_running("Generating enhancements…")
+        self.enhancements_tab.set_operation_running(tr("enhancements.generating_enhancements_tooltip"))
         self.statusBar().showMessage("Generating enhancements in background…")
 
         enhancements_label = (
@@ -4376,7 +4372,7 @@ class MainWindow(QMainWindow):
         forge_dir   = AppSettings.get_dataforge_cache_dir()
 
         self._forge_worker = DataForgeExtractWorker(p4k_path, unp4k_exe, unforge_exe, forge_dir)
-        self.enhancements_tab.set_operation_running("Extracting DataForge from Data.p4k…")
+        self.enhancements_tab.set_operation_running(tr("enhancements.extracting_dataforge_tooltip"))
         self.statusBar().showMessage("Extracting DataForge in background — this takes several minutes…")
 
         self._forge_progress_dialog = AnimatedProgressDialog(

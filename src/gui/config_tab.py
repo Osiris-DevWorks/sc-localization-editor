@@ -90,10 +90,7 @@ class ConfigTab(QWidget):
         tools_layout.addWidget(self._tools_desc_label)
 
         self.include_new_cb = QCheckBox("Include discovered items")
-        self.include_new_cb.setToolTip(
-            "When checked, items discovered from DataForge XML (status 'New') "
-            "that have non-empty text will be included in the applied global.ini."
-        )
+        self.include_new_cb.setToolTip(tr("config.include_new_tooltip"))
         self.include_new_cb.setChecked(AppSettings.get_include_new_lines())
         self.include_new_cb.toggled.connect(self._on_include_new_toggled)
         tools_layout.addWidget(self.include_new_cb)
@@ -102,49 +99,31 @@ class ConfigTab(QWidget):
 
         self._import_btn = QPushButton(tr("config.import_ini_btn"))
         self._import_btn.setMaximumWidth(150)
-        self._import_btn.setToolTip(
-            "Fold an external .ini into your overrides. A conflict-resolution "
-            "dialog lets you decide per key: keep current, use imported, append, "
-            "prepend, or provide a custom value."
-        )
+        self._import_btn.setToolTip(tr("config.import_ini_tooltip"))
         self._import_btn.clicked.connect(self.import_ini_requested.emit)
         button_layout.addWidget(self._import_btn)
 
         self._reset_user_ini_btn = QPushButton(tr("config.reset_user_ini_btn"))
         self._reset_user_ini_btn.setMaximumWidth(150)
-        self._reset_user_ini_btn.setToolTip(
-            "Delete every custom string override for the active channel. "
-            "A timestamped backup is saved next to the original so you can restore it."
-        )
+        self._reset_user_ini_btn.setToolTip(tr("config.reset_user_ini_tooltip"))
         self._reset_user_ini_btn.clicked.connect(self.reset_user_ini_requested.emit)
         button_layout.addWidget(self._reset_user_ini_btn)
 
         self._restore_user_ini_btn = QPushButton(tr("config.restore_user_ini_btn"))
         self._restore_user_ini_btn.setMaximumWidth(150)
-        self._restore_user_ini_btn.setToolTip(
-            "Restore your custom string overrides from an automatic snapshot. "
-            "Smart Citizen keeps the last few states of user.ini, so you can roll "
-            "back a bad edit or recover after the file was emptied."
-        )
+        self._restore_user_ini_btn.setToolTip(tr("config.restore_user_ini_tooltip"))
         self._restore_user_ini_btn.clicked.connect(self.restore_user_ini_requested.emit)
         button_layout.addWidget(self._restore_user_ini_btn)
 
         self._preview_btn = QPushButton(tr("config.preview_apply_btn"))
         self._preview_btn.setMaximumWidth(150)
-        self._preview_btn.setToolTip(
-            "Dry-run summary of what Apply Enhancements would write — per-source key "
-            "counts (with Enhancements broken down by category) and a "
-            "Modified / Enhanced / Unmodified / New status tally. Nothing is "
-            "written to the game until you click Apply Enhancements."
-        )
+        self._preview_btn.setToolTip(tr("config.preview_apply_tooltip"))
         self._preview_btn.clicked.connect(self.preview_merge)
         button_layout.addWidget(self._preview_btn)
 
         self._check_updates_btn = QPushButton(tr("config.check_updates_btn"))
         self._check_updates_btn.setMaximumWidth(170)
-        self._check_updates_btn.setToolTip(
-            "Check GitHub for a newer Smart Citizen release."
-        )
+        self._check_updates_btn.setToolTip(tr("config.check_updates_tooltip"))
         self._check_updates_btn.clicked.connect(self.check_updates_requested.emit)
         button_layout.addWidget(self._check_updates_btn)
 
@@ -167,7 +146,7 @@ class ConfigTab(QWidget):
         appearance_layout.addWidget(self._theme_label)
 
         self.theme_combo = QComboBox()
-        self.theme_combo.setToolTip("Switch the app theme. Takes effect immediately across the main window, toolbar, tabs, and Help panel.")
+        self.theme_combo.setToolTip(tr("config.theme_tooltip"))
         self.theme_combo.addItem(tr("config.theme_default"), THEME_SCLE)
         self.theme_combo.addItem(tr("config.theme_light"), THEME_LIGHT)
         self.theme_combo.addItem(tr("config.theme_dark"), THEME_DARK)
@@ -182,10 +161,7 @@ class ConfigTab(QWidget):
 
         appearance_layout.addSpacing(20)
         self.disable_tutorial_cb = QCheckBox("Disable Tutorial")
-        self.disable_tutorial_cb.setToolTip(
-            "When checked, the guided tour will not auto-launch on a new "
-            "version. The Tutorial button in the toolbar still works."
-        )
+        self.disable_tutorial_cb.setToolTip(tr("config.disable_tutorial_tooltip"))
         self.disable_tutorial_cb.setChecked(AppSettings.get_tutorial_disabled())
         self.disable_tutorial_cb.toggled.connect(AppSettings.set_tutorial_disabled)
         appearance_layout.addWidget(self.disable_tutorial_cb)
@@ -217,18 +193,13 @@ class ConfigTab(QWidget):
         self.game_path_input.setPlaceholderText(
             r"C:\Program Files\Roberts Space Industries\StarCitizen"
         )
-        self.game_path_input.setToolTip(
-            "Star Citizen install root — the directory that contains LIVE/, "
-            "PTU/, EPTU/, HOTFIX/, and/or TECH-PREVIEW/. Auto-detected at "
-            "install time; edit if your game lives elsewhere. The 'Channel' "
-            "dropdown below picks which one the app reads and writes."
-        )
+        self.game_path_input.setToolTip(tr("config.game_path_tooltip"))
         self.game_path_input.editingFinished.connect(self._save_game_path)
         game_input_layout.addWidget(self.game_path_input)
 
         self._game_browse_btn = QPushButton(tr("config.browse_btn"))
         self._game_browse_btn.setMaximumWidth(100)
-        self._game_browse_btn.setToolTip("Pick the Star Citizen install root in a folder browser.")
+        self._game_browse_btn.setToolTip(tr("config.browse_game_tooltip"))
         self._game_browse_btn.clicked.connect(self._browse_game_path)
         game_input_layout.addWidget(self._game_browse_btn)
         game_layout.addLayout(game_input_layout)
@@ -241,11 +212,7 @@ class ConfigTab(QWidget):
 
         self.channel_combo = QComboBox()
         self.channel_combo.setMaximumWidth(180)
-        self.channel_combo.setToolTip(
-            "Star Citizen channel to read Data.p4k from and write global.ini to. "
-            "Channels with no Data.p4k under the install root are disabled. "
-            "Switching channels immediately reloads strings against the new channel's data."
-        )
+        self.channel_combo.setToolTip(tr("config.channel_tooltip"))
         channel_row.addWidget(self.channel_combo)
 
         self._channel_hint_label = QLabel()
@@ -268,19 +235,12 @@ class ConfigTab(QWidget):
 
         self.language_combo = QComboBox()
         self.language_combo.setMaximumWidth(180)
-        self.language_combo.setToolTip(
-            "Language to apply to the game. Keys missing from the translation "
-            "fall back to English automatically."
-        )
+        self.language_combo.setToolTip(tr("config.language_tooltip"))
         language_row.addWidget(self.language_combo)
 
         self._map_lang_btn = QPushButton(tr("config.map_language_btn"))
         self._map_lang_btn.setMaximumWidth(160)
-        self._map_lang_btn.setToolTip(
-            "Set a URL to each language's global.ini. When you switch to that "
-            "language, Smart Citizen downloads it and uses it as the base "
-            "strings instead of the English Data.p4k extraction."
-        )
+        self._map_lang_btn.setToolTip(tr("config.map_language_tooltip"))
         self._map_lang_btn.clicked.connect(self._open_language_source_dialog)
         language_row.addWidget(self._map_lang_btn)
 
@@ -316,22 +276,19 @@ class ConfigTab(QWidget):
         data_input_layout = QHBoxLayout()
         self.data_dir_input = QLineEdit()
         self.data_dir_input.setText(os.path.normpath(str(AppSettings.get_user_data_dir())))
-        self.data_dir_input.setToolTip(
-            "Smart Citizen's app data root. Each channel gets its own subfolder "
-            "inside this directory. Leave blank or click Reset to use Documents\\Smart Citizen."
-        )
+        self.data_dir_input.setToolTip(tr("config.data_dir_tooltip"))
         self.data_dir_input.editingFinished.connect(self._save_data_dir)
         data_input_layout.addWidget(self.data_dir_input)
 
         self._data_browse_btn = QPushButton(tr("config.browse_btn"))
         self._data_browse_btn.setMaximumWidth(100)
-        self._data_browse_btn.setToolTip("Pick the Smart Citizen data folder in a folder browser.")
+        self._data_browse_btn.setToolTip(tr("config.browse_data_tooltip"))
         self._data_browse_btn.clicked.connect(self._browse_data_dir)
         data_input_layout.addWidget(self._data_browse_btn)
 
         self._data_reset_btn = QPushButton(tr("config.reset_btn"))
         self._data_reset_btn.setMaximumWidth(80)
-        self._data_reset_btn.setToolTip("Clear the custom data folder and use Documents\\Smart Citizen.")
+        self._data_reset_btn.setToolTip(tr("config.reset_data_tooltip"))
         self._data_reset_btn.clicked.connect(self._reset_data_dir)
         data_input_layout.addWidget(self._data_reset_btn)
 
@@ -352,24 +309,19 @@ class ConfigTab(QWidget):
         self.cache_dir_input.setText(
             os.path.normpath(str(AppSettings.get_dataforge_cache_base()))
         )
-        self.cache_dir_input.setToolTip(
-            "Base folder for the extracted DataForge XML tree (~1.4 GB). Each "
-            "channel nests under this as {base}\\{channel}\\cache\\dataforge\\. "
-            "Defaults to %LOCALAPPDATA%\\Smart Citizen so it stays out of "
-            "OneDrive. Changing the path triggers a re-extraction."
-        )
+        self.cache_dir_input.setToolTip(tr("config.cache_dir_tooltip"))
         self.cache_dir_input.editingFinished.connect(self._save_cache_dir)
         cache_input_layout.addWidget(self.cache_dir_input)
 
         self._cache_browse_btn = QPushButton(tr("config.browse_btn"))
         self._cache_browse_btn.setMaximumWidth(100)
-        self._cache_browse_btn.setToolTip("Pick the DataForge cache base folder in a folder browser.")
+        self._cache_browse_btn.setToolTip(tr("config.browse_cache_tooltip"))
         self._cache_browse_btn.clicked.connect(self._browse_cache_dir)
         cache_input_layout.addWidget(self._cache_browse_btn)
 
         self._cache_reset_btn = QPushButton(tr("config.reset_btn"))
         self._cache_reset_btn.setMaximumWidth(80)
-        self._cache_reset_btn.setToolTip("Clear the custom cache folder and use the platform default.")
+        self._cache_reset_btn.setToolTip(tr("config.reset_cache_tooltip"))
         self._cache_reset_btn.clicked.connect(self._reset_cache_dir)
         cache_input_layout.addWidget(self._cache_reset_btn)
 
@@ -399,11 +351,7 @@ class ConfigTab(QWidget):
 
         self._extract_btn = QPushButton(tr("config.extract_btn"))
         self._extract_btn.setMaximumWidth(180)
-        self._extract_btn.setToolTip(
-            "Unpack stock localization (base.ini) plus the DataForge entity XMLs "
-            "from your installed Data.p4k. Run after every Star Citizen patch — "
-            "the strings reload into the table automatically when extraction finishes."
-        )
+        self._extract_btn.setToolTip(tr("config.extract_tooltip"))
         self._extract_btn.clicked.connect(self.p4k_extract_requested.emit)
         p4k_status_row.addWidget(self._extract_btn)
 
@@ -442,13 +390,20 @@ class ConfigTab(QWidget):
         self._instructions_label.setText(tr("config.instructions"))
         self._tools_group.setTitle(tr("config.tools_group"))
         self._tools_desc_label.setText(tr("config.tools_desc"))
+        self.include_new_cb.setToolTip(tr("config.include_new_tooltip"))
         self._import_btn.setText(tr("config.import_ini_btn"))
+        self._import_btn.setToolTip(tr("config.import_ini_tooltip"))
         self._reset_user_ini_btn.setText(tr("config.reset_user_ini_btn"))
+        self._reset_user_ini_btn.setToolTip(tr("config.reset_user_ini_tooltip"))
         self._restore_user_ini_btn.setText(tr("config.restore_user_ini_btn"))
+        self._restore_user_ini_btn.setToolTip(tr("config.restore_user_ini_tooltip"))
         self._preview_btn.setText(tr("config.preview_apply_btn"))
+        self._preview_btn.setToolTip(tr("config.preview_apply_tooltip"))
         self._check_updates_btn.setText(tr("config.check_updates_btn"))
+        self._check_updates_btn.setToolTip(tr("config.check_updates_tooltip"))
         self._appearance_group.setTitle(tr("config.appearance_group"))
         self._theme_label.setText(tr("config.theme_label"))
+        self.theme_combo.setToolTip(tr("config.theme_tooltip"))
         self.theme_combo.blockSignals(True)
         try:
             self.theme_combo.setItemText(0, tr("config.theme_default"))
@@ -457,22 +412,35 @@ class ConfigTab(QWidget):
             self.theme_combo.setItemText(3, tr("config.theme_odw"))
         finally:
             self.theme_combo.blockSignals(False)
+        self.disable_tutorial_cb.setToolTip(tr("config.disable_tutorial_tooltip"))
         self._loc_group.setTitle(tr("config.star_citizen_group"))
         self._install_label.setText(tr("config.installation_label"))
         self._game_desc_label.setText(tr("config.installation_desc"))
+        self.game_path_input.setToolTip(tr("config.game_path_tooltip"))
         self._game_browse_btn.setText(tr("config.browse_btn"))
+        self._game_browse_btn.setToolTip(tr("config.browse_game_tooltip"))
         self._channel_label.setText(tr("config.channel_label"))
+        self.channel_combo.setToolTip(tr("config.channel_tooltip"))
         self._language_label.setText(tr("config.language_label"))
+        self.language_combo.setToolTip(tr("config.language_tooltip"))
         self._map_lang_btn.setText(tr("config.map_language_btn"))
+        self._map_lang_btn.setToolTip(tr("config.map_language_tooltip"))
         self._extract_btn.setText(tr("config.extract_btn"))
+        self._extract_btn.setToolTip(tr("config.extract_tooltip"))
         self._data_group.setTitle(tr("config.data_group"))
         self._data_desc_label.setText(tr("config.data_desc"))
         self._app_data_label.setText(tr("config.app_data_label"))
+        self.data_dir_input.setToolTip(tr("config.data_dir_tooltip"))
         self._data_browse_btn.setText(tr("config.browse_btn"))
+        self._data_browse_btn.setToolTip(tr("config.browse_data_tooltip"))
         self._data_reset_btn.setText(tr("config.reset_btn"))
+        self._data_reset_btn.setToolTip(tr("config.reset_data_tooltip"))
         self._cache_label.setText(tr("config.dataforge_cache_label"))
+        self.cache_dir_input.setToolTip(tr("config.cache_dir_tooltip"))
         self._cache_browse_btn.setText(tr("config.browse_btn"))
+        self._cache_browse_btn.setToolTip(tr("config.browse_cache_tooltip"))
         self._cache_reset_btn.setText(tr("config.reset_btn"))
+        self._cache_reset_btn.setToolTip(tr("config.reset_cache_tooltip"))
         self._p4k_group.setTitle(tr("config.p4k_group"))
         self._p4k_desc_label.setText(tr("config.p4k_desc"))
 
@@ -827,10 +795,10 @@ class ConfigTab(QWidget):
                 if item is not None and not is_available and root:
                     from PyQt6.QtCore import Qt
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
-                    item.setToolTip(
-                        f"{channel} isn't installed — no Data.p4k at "
-                        f"{Path(root) / channel / 'Data.p4k'}"
-                    )
+                    item.setToolTip(tr(
+                        "config.channel_not_installed_tooltip",
+                        channel=channel, path=str(Path(root) / channel / "Data.p4k"),
+                    ))
                 if channel == active:
                     active_index = i
             self.channel_combo.setCurrentIndex(active_index)

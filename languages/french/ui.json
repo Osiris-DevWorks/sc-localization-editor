@@ -123,6 +123,50 @@
     "menu_switch_to_simple": {
       "ht": "",
       "at": "Passer en mode simple"
+    },
+    "editor_tooltip": {
+      "ht": "",
+      "at": "Afficher/masquer l'éditeur de chaînes ancré sur le côté, une plus grande zone pour modifier la valeur personnalisée de la ligne sélectionnée"
+    },
+    "help_tooltip": {
+      "ht": "",
+      "at": "Afficher/masquer le panneau d'aide"
+    },
+    "tutorial_tooltip": {
+      "ht": "",
+      "at": "Démarrer la visite guidée du fonctionnement de Smart Citizen. Elle se lance automatiquement au premier démarrage ; cliquez ici à tout moment pour la revoir."
+    },
+    "restore_backup_tooltip": {
+      "ht": "",
+      "at": "Restaurer un global.ini précédent depuis le dossier des sauvegardes. Jusqu'à 5 sauvegardes horodatées sont conservées ; la plus ancienne est supprimée à la création d'une nouvelle."
+    },
+    "test_plan_tooltip": {
+      "ht": "",
+      "at": "Ouvrir le plan de test du testeur : une liste de contrôle des changements de cette version, avec suivi de la progression et un rapport à soumettre."
+    },
+    "switch_to_simple_tooltip": {
+      "ht": "",
+      "at": "Passer à la vue simplifiée à un seul bouton."
+    },
+    "more_tooltip": {
+      "ht": "",
+      "at": "Autres actions : restaurer une sauvegarde, effacer la localisation ou le cache, importer ou exporter, ouvrir le dossier de localisation"
+    },
+    "osiris_github_tooltip": {
+      "ht": "",
+      "at": "Ouvrir l'organisation GitHub d'Osiris DevWorks"
+    },
+    "feedback_tooltip": {
+      "ht": "",
+      "at": "Ouvrir le salon Discord de Smart Citizen pour les retours, rapports de bugs et votes sur les futures fonctionnalités (nécessite de rejoindre le Discord d'Osiris DevWorks)."
+    },
+    "apply_enabled_tooltip": {
+      "ht": "",
+      "at": "Écrire le contenu fusionné de la table dans le global.ini du jeu. Une sauvegarde horodatée du global.ini actuel est créée au préalable."
+    },
+    "apply_disabled_tooltip": {
+      "ht": "",
+      "at": "Déjà appliqué — rien n'a changé depuis la dernière application au jeu."
     }
   },
   "filters": {
@@ -173,6 +217,42 @@
     "copy_filtered_btn": {
       "ht": "Copier les résultats filtrés",
       "at": "Copier les résultats filtrés"
+    },
+    "category_tooltip": {
+      "ht": "",
+      "at": "Filtrer les lignes par domaine (Vaisseaux, Objets de vaisseau, Missions, Équipement, Marchandises, Journal, Autre). Les catégories sont dérivées du préfixe de la clé de localisation."
+    },
+    "status_tooltip": {
+      "ht": "",
+      "at": "Filtrer par statut. Modifié = vous avez défini une valeur personnalisée ; Amélioré = généré par le pipeline d'enrichissements de Smart Citizen (statistiques de vaisseau, récompenses de mission, etc.) ; Inchangé = texte par défaut uniquement ; Nouveau = la clé n'existe que dans enhancements/user.ini, pas dans le fichier de base."
+    },
+    "hide_unmodified_tooltip": {
+      "ht": "",
+      "at": "Afficher uniquement les lignes où vous avez défini une valeur personnalisée. Identique à l'option « Modifié » du filtre de statut, mais activable indépendamment."
+    },
+    "favorites_only_tooltip": {
+      "ht": "",
+      "at": "Afficher uniquement les lignes marquées comme favorites. Les favoris reçoivent un préfixe configurable ajouté devant leur nom afin qu'ils apparaissent en tête de la liste en jeu."
+    },
+    "bp_titles_only_tooltip": {
+      "ht": "",
+      "at": "Afficher uniquement les titres de mission portant l'étiquette de plan [BP] / [BP?]."
+    },
+    "bp_descs_only_tooltip": {
+      "ht": "",
+      "at": "Afficher uniquement les descriptions de mission contenant une section POTENTIAL BLUEPRINTS."
+    },
+    "group_sort_tooltip": {
+      "ht": "",
+      "at": "Trier les titres et descriptions ensemble pour une même entité"
+    },
+    "clear_filters_tooltip": {
+      "ht": "",
+      "at": "Réinitialiser tous les filtres (catégorie, statut, recherche, champs par colonne, cases à cocher) afin d'afficher la table complète."
+    },
+    "copy_filtered_tooltip": {
+      "ht": "",
+      "at": "Copier toutes les lignes filtrées visibles dans le presse-papiers (séparées par des tabulations)"
     }
   },
   "strings_tab": {
@@ -223,6 +303,18 @@
     "context_highlight": {
       "ht": "",
       "at": "Surligner"
+    },
+    "editor_underline_tooltip": {
+      "ht": "",
+      "at": "Souligner le texte sélectionné (l'entoure de <EM3>...</EM3>)"
+    },
+    "editor_highlight_tooltip": {
+      "ht": "",
+      "at": "Mettre en évidence le texte sélectionné avec une couleur d'emphase (l'entoure de <EM4>...</EM4>)"
+    },
+    "column_filter_tooltip": {
+      "ht": "",
+      "at": "Filtrer la colonne {column}. Les filtres de plusieurs colonnes se combinent avec un ET."
     }
   },
   "config": {
@@ -461,6 +553,90 @@
     "no_sources_warning": {
       "ht": "Aucune source disponible pour la fusion.",
       "at": "Aucune source disponible pour la fusion."
+    },
+    "include_new_tooltip": {
+      "ht": "",
+      "at": "Si coché, les éléments découverts dans le XML DataForge (statut « Nouveau ») dont le texte n'est pas vide seront inclus dans le global.ini appliqué."
+    },
+    "import_ini_tooltip": {
+      "ht": "",
+      "at": "Intégrer un fichier .ini externe dans vos remplacements. Une boîte de dialogue de résolution des conflits vous permet de décider clé par clé : conserver l'actuelle, utiliser l'importée, ajouter à la suite, ajouter au début, ou fournir une valeur personnalisée."
+    },
+    "reset_user_ini_tooltip": {
+      "ht": "",
+      "at": "Supprimer tous les remplacements de chaînes personnalisés du canal actif. Une sauvegarde horodatée est enregistrée à côté de l'original afin de pouvoir la restaurer."
+    },
+    "restore_user_ini_tooltip": {
+      "ht": "",
+      "at": "Restaurer vos remplacements de chaînes personnalisés à partir d'un instantané automatique. Smart Citizen conserve les derniers états de user.ini, ce qui permet d'annuler une mauvaise modification ou de récupérer le fichier après qu'il a été vidé."
+    },
+    "preview_apply_tooltip": {
+      "ht": "",
+      "at": "Résumé à blanc de ce que « Appliquer les enrichissements » écrirait — nombre de clés par source (avec le détail des enrichissements par catégorie) et un décompte des statuts Modifié / Amélioré / Inchangé / Nouveau. Rien n'est écrit dans le jeu tant que vous n'avez pas cliqué sur « Appliquer les enrichissements »."
+    },
+    "check_updates_tooltip": {
+      "ht": "",
+      "at": "Vérifier sur GitHub si une nouvelle version de Smart Citizen est disponible."
+    },
+    "theme_tooltip": {
+      "ht": "",
+      "at": "Changer le thème de l'application. Le changement s'applique immédiatement à la fenêtre principale, la barre d'outils, les onglets et le panneau d'aide."
+    },
+    "disable_tutorial_tooltip": {
+      "ht": "",
+      "at": "Si coché, la visite guidée ne se lancera pas automatiquement lors d'une nouvelle version. Le bouton Tutoriel de la barre d'outils reste fonctionnel."
+    },
+    "game_path_tooltip": {
+      "ht": "",
+      "at": "Racine d'installation de Star Citizen — le dossier contenant LIVE/, PTU/, EPTU/, HOTFIX/ et/ou TECH-PREVIEW/. Détectée automatiquement à l'installation ; modifiez-la si votre jeu se trouve ailleurs. Le menu déroulant « Canal » ci-dessous détermine celui que l'application lit et écrit."
+    },
+    "browse_game_tooltip": {
+      "ht": "",
+      "at": "Choisir la racine d'installation de Star Citizen dans un navigateur de dossiers."
+    },
+    "channel_tooltip": {
+      "ht": "",
+      "at": "Canal Star Citizen depuis lequel lire Data.p4k et dans lequel écrire global.ini. Les canaux sans Data.p4k sous la racine d'installation sont désactivés. Changer de canal recharge immédiatement les chaînes avec les données du nouveau canal."
+    },
+    "channel_not_installed_tooltip": {
+      "ht": "",
+      "at": "{channel} n'est pas installé — aucun Data.p4k à {path}"
+    },
+    "language_tooltip": {
+      "ht": "",
+      "at": "Langue à appliquer au jeu. Les clés absentes de la traduction reviennent automatiquement à l'anglais."
+    },
+    "map_language_tooltip": {
+      "ht": "",
+      "at": "Définir une URL pour le global.ini de chaque langue. Lorsque vous basculez vers cette langue, Smart Citizen le télécharge et l'utilise comme chaînes de base au lieu de l'extraction anglaise de Data.p4k."
+    },
+    "data_dir_tooltip": {
+      "ht": "",
+      "at": "Racine des données de l'application Smart Citizen. Chaque canal reçoit son propre sous-dossier dans ce répertoire. Laissez vide ou cliquez sur Réinitialiser pour utiliser Documents\\Smart Citizen."
+    },
+    "browse_data_tooltip": {
+      "ht": "",
+      "at": "Choisir le dossier de données de Smart Citizen dans un navigateur de dossiers."
+    },
+    "reset_data_tooltip": {
+      "ht": "",
+      "at": "Effacer le dossier de données personnalisé et utiliser Documents\\Smart Citizen."
+    },
+    "cache_dir_tooltip": {
+      "ht": "",
+      "at": "Dossier de base pour l'arborescence XML DataForge extraite (~1,4 Go). Chaque canal se place sous celui-ci en tant que {base}\\{channel}\\cache\\dataforge\\. Par défaut %LOCALAPPDATA%\\Smart Citizen afin de rester hors de OneDrive. Modifier ce chemin déclenche une nouvelle extraction."
+    },
+    "browse_cache_tooltip": {
+      "ht": "",
+      "at": "Choisir le dossier de base du cache DataForge dans un navigateur de dossiers."
+    },
+    "reset_cache_tooltip": {
+      "ht": "",
+      "at": "Effacer le dossier de cache personnalisé et utiliser celui par défaut de la plateforme."
+    },
+    "extract_tooltip": {
+      "ht": "",
+      "at": "Extraire la localisation d'origine (base.ini) ainsi que les XML d'entités DataForge depuis votre Data.p4k installé. À exécuter après chaque mise à jour de Star Citizen — les chaînes se rechargent automatiquement dans la table une fois l'extraction terminée."
     }
   },
   "enhancements": {
@@ -551,6 +727,78 @@
     "edit_mapping_btn": {
       "ht": "Modifier le mapping...",
       "at": "Modifier le mapping..."
+    },
+    "mission_field_ace_tooltip": {
+      "ht": "",
+      "at": "Afficher une ligne « Ace Pilot: Yes » dans le corps des détails de mission lorsque la mission fait apparaître un pilote as. L'étiquette de titre [ACE] est une option distincte sous Étiquettes générales. Prend effet à la prochaine génération des enrichissements."
+    },
+    "mission_field_default_tooltip": {
+      "ht": "",
+      "at": "Afficher la ligne {label} dans les corps de mission générés. Prend effet à la prochaine génération des enrichissements."
+    },
+    "stats_prepend_tooltip": {
+      "ht": "",
+      "at": "Placer le bloc de statistiques généré au-dessus de la description du fabricant/RP plutôt qu'en dessous (vaisseaux, composants, armes). Prend effet à la prochaine génération des enrichissements."
+    },
+    "standardize_ship_names_tooltip": {
+      "ht": "",
+      "at": "Renommer les variantes de vaisseau exec-hangar (PYX) et Wikelo (WIK) pour inclure un suffixe les distinguant de la version standard du magasin de pledge (ex. « Anvil F8C Lightning PYX »). Prend effet à la prochaine génération des enrichissements."
+    },
+    "apply_categories_tooltip": {
+      "ht": "",
+      "at": "Enregistrer la sélection des catégories. Les catégories décochées seront désactivées."
+    },
+    "generate_enabled_tooltip": {
+      "ht": "",
+      "at": "Générer les fichiers de localisation enrichis à partir du Data.p4k de votre jeu.\nLes données DataForge seront extraites automatiquement si elles ne sont pas déjà en cache\n(la première exécution prend quelques minutes ; les suivantes sont rapides)."
+    },
+    "generate_disabled_tooltip": {
+      "ht": "",
+      "at": "Déjà à jour — rien de ce qui affecte le résultat généré (catégories, champs de mission, options de statistiques/noms, Générateur d'étiquettes) n'a changé depuis la dernière exécution."
+    },
+    "favorite_prefix_tooltip": {
+      "ht": "",
+      "at": "Caractère ajouté devant les noms des vaisseaux favoris afin qu'ils apparaissent en tête de la liste des vaisseaux en jeu. Cliquez sur « Appliquer le préfixe » après modification pour mettre à jour tous les favoris existants."
+    },
+    "rep_xp_label_tooltip": {
+      "ht": "",
+      "at": "Libellé pour les missions sans nom de rang (ex. « Rep : +100 XP »)"
+    },
+    "header_em_tooltip": {
+      "ht": "",
+      "at": "Style des en-têtes de section : Souligné (EM3) ou Texte bleu (EM4)"
+    },
+    "prefix_enabled_tooltip": {
+      "ht": "",
+      "at": "Enregistrer le préfixe sélectionné et mettre à jour tous les favoris existants pour l'utiliser"
+    },
+    "prefix_disabled_tooltip": {
+      "ht": "",
+      "at": "Déjà appliqué — le préfixe sélectionné correspond à vos favoris actuels."
+    },
+    "annotate_mission_descs_tooltip": {
+      "ht": "",
+      "at": "Si coché, l'étiquette [CLASS-Sx-grade] configurée est ajoutée aux noms de composants dans la liste POTENTIAL BLUEPRINTS des descriptions de mission. Décochez pour un corps de mission plus épuré, tout en conservant l'étiquette sur les noms de composants ailleurs."
+    },
+    "reset_tag_tooltip": {
+      "ht": "",
+      "at": "Restaurer le modèle, le mappage et l'ordre par défaut pour chaque catégorie (Composants / Missiles / Armes de vaisseau). N'enregistre ni ne régénère tant que vous n'avez pas cliqué sur « Enregistrer les modifications d'étiquettes » ou « Générer les enrichissements »."
+    },
+    "tag_enabled_tooltip": {
+      "ht": "",
+      "at": "Enregistrer les configurations d'étiquettes Composants / Missiles / Armes de vaisseau et relancer le générateur d'enrichissements. Les nouvelles étiquettes apparaissent en jeu après la prochaine application des enrichissements."
+    },
+    "tag_disabled_tooltip": {
+      "ht": "",
+      "at": "Déjà enregistré — aucune modification du Générateur d'étiquettes depuis le dernier enregistrement."
+    },
+    "generating_enhancements_tooltip": {
+      "ht": "",
+      "at": "Génération des enrichissements en cours…"
+    },
+    "extracting_dataforge_tooltip": {
+      "ht": "",
+      "at": "Extraction de DataForge depuis Data.p4k…"
     }
   },
   "log": {
@@ -581,6 +829,22 @@
     "lines_label": {
       "ht": "{count} lignes",
       "at": "{count} lignes"
+    },
+    "min_level_tooltip": {
+      "ht": "",
+      "at": "Niveau de gravité minimum à afficher. Les entrées inférieures au niveau sélectionné sont masquées (DEBUG < INFO < WARNING < ERROR)."
+    },
+    "auto_scroll_tooltip": {
+      "ht": "",
+      "at": "Défiler automatiquement vers la dernière entrée du journal à son arrivée. Désactivez pour figer la vue lors de l'inspection des lignes plus anciennes."
+    },
+    "clear_tooltip": {
+      "ht": "",
+      "at": "Effacer le tampon du journal affiché à l'écran. Le fichier journal de la session sur le disque n'est pas affecté."
+    },
+    "export_tooltip": {
+      "ht": "",
+      "at": "Enregistrer le tampon de journal actuel dans un fichier .log — utile pour signaler un bug."
     }
   },
   "import_dialog": {
@@ -651,6 +915,14 @@
     "excluded_summary": {
       "ht": "{count} clés exclues (absentes du fichier base.ini).",
       "at": "{count} clés exclues (absentes du fichier base.ini)."
+    },
+    "keep_all_tooltip": {
+      "ht": "",
+      "at": "Résoudre tous les conflits en conservant votre valeur existante et en ignorant celle importée."
+    },
+    "import_all_tooltip": {
+      "ht": "",
+      "at": "Résoudre tous les conflits en acceptant la valeur importée et en écrasant celle existante."
     }
   },
   "coach": {
@@ -699,6 +971,10 @@
     "col_long": {
       "ht": "Longue",
       "at": "Longue"
+    },
+    "reset_tooltip": {
+      "ht": "",
+      "at": "Restaurer toutes les cellules de cette table de correspondance aux valeurs par défaut intégrées de Smart Citizen."
     }
   },
   "dialogs": {
@@ -977,6 +1253,18 @@
     "copy_error_body": {
       "ht": "",
       "at": "Échec de la copie vers le presse-papiers : {error}"
+    },
+    "browse_ini_tooltip": {
+      "ht": "",
+      "at": "Choisir un fichier .ini local à importer."
+    },
+    "generate_now_tooltip": {
+      "ht": "",
+      "at": "Lancer maintenant l'extraction DataForge et le pipeline d'enrichissements. Prend quelques minutes la première fois."
+    },
+    "skip_generate_tooltip": {
+      "ht": "",
+      "at": "Continuer sans générer les enrichissements. Vous pourrez le faire plus tard depuis l'onglet Enrichissements."
     }
   },
   "progress": {
@@ -1073,6 +1361,10 @@
     "update_indicator_failed": {
       "ht": "v{current} · vérification échouée",
       "at": "v{current} · vérification échouée"
+    },
+    "open_release_page_tooltip": {
+      "ht": "",
+      "at": "Ouvrir la page de version pour la v{version}"
     }
   },
   "tutorial": {

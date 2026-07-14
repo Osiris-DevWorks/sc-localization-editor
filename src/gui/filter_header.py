@@ -4,6 +4,8 @@ from PyQt6.QtCore import Qt, QTimer, QEvent, pyqtSignal, QSize, QRect, QPoint
 from PyQt6.QtGui import QColor, QIcon, QPainter, QPalette, QPen, QPixmap
 from PyQt6.QtWidgets import QHeaderView, QLineEdit, QStyleOptionHeader, QStyle
 
+from src.utils.i18n import tr
+
 
 # Resting-border alpha used to approximate a 1.5px-feeling stroke without
 # leaving the 2px integer grid that QSS borders require. ~60% opacity reads
@@ -85,9 +87,7 @@ class FilterHeaderView(QHeaderView):
             editor = QLineEdit(self)
             editor.setObjectName("columnFilter")
             editor.setPlaceholderText(f"Filter {name.lower()}…")
-            editor.setToolTip(
-                f"Filter the {name} column. Filters across columns combine with AND."
-            )
+            editor.setToolTip(tr("strings_tab.column_filter_tooltip", column=name))
             editor.setClearButtonEnabled(True)
             editor.addAction(self._search_icon, QLineEdit.ActionPosition.LeadingPosition)
             editor.textChanged.connect(self._on_text_changed)
@@ -111,6 +111,7 @@ class FilterHeaderView(QHeaderView):
                 continue
             name = names[i] if i < len(names) else ""
             editor.setPlaceholderText(f"Filter {name.lower()}…")
+            editor.setToolTip(tr("strings_tab.column_filter_tooltip", column=name))
 
     def clear_all(self):
         """Clear every filter input without triggering per-keystroke signals."""

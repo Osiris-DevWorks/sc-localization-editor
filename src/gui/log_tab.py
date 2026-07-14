@@ -86,7 +86,7 @@ class LogTab(QWidget):
         self._min_level_label = QLabel(tr("log.min_level_label"))
         toolbar.addWidget(self._min_level_label)
         self._level_combo = QComboBox()
-        self._level_combo.setToolTip("Minimum severity to display. Entries below the selected level are hidden (DEBUG < INFO < WARNING < ERROR).")
+        self._level_combo.setToolTip(tr("log.min_level_tooltip"))
         for level, name in [
             (logging.DEBUG,   "DEBUG"),
             (logging.INFO,    "INFO"),
@@ -101,7 +101,7 @@ class LogTab(QWidget):
         toolbar.addSpacing(16)
 
         self._autoscroll_cb = QCheckBox(tr("log.auto_scroll_check"))
-        self._autoscroll_cb.setToolTip("Automatically scroll to the newest log entry as it arrives. Turn off to pin the view while inspecting older lines.")
+        self._autoscroll_cb.setToolTip(tr("log.auto_scroll_tooltip"))
         self._autoscroll_cb.setChecked(True)
         toolbar.addWidget(self._autoscroll_cb)
 
@@ -109,13 +109,13 @@ class LogTab(QWidget):
 
         self._clear_btn = QPushButton(tr("log.clear_btn"))
         self._clear_btn.setMaximumWidth(70)
-        self._clear_btn.setToolTip("Clear the on-screen log buffer. The session log file on disk is unaffected.")
+        self._clear_btn.setToolTip(tr("log.clear_tooltip"))
         self._clear_btn.clicked.connect(self._clear)
         toolbar.addWidget(self._clear_btn)
 
         self._export_btn = QPushButton(tr("log.export_btn"))
         self._export_btn.setMaximumWidth(130)
-        self._export_btn.setToolTip("Save the current log buffer to a .log file — useful when filing a bug report.")
+        self._export_btn.setToolTip(tr("log.export_tooltip"))
         self._export_btn.clicked.connect(self._export)
         toolbar.addWidget(self._export_btn)
 
@@ -144,9 +144,13 @@ class LogTab(QWidget):
     def retranslate_ui(self) -> None:
         """Re-apply tr() to every text-bearing widget after a language switch."""
         self._min_level_label.setText(tr("log.min_level_label"))
+        self._level_combo.setToolTip(tr("log.min_level_tooltip"))
         self._autoscroll_cb.setText(tr("log.auto_scroll_check"))
+        self._autoscroll_cb.setToolTip(tr("log.auto_scroll_tooltip"))
         self._clear_btn.setText(tr("log.clear_btn"))
+        self._clear_btn.setToolTip(tr("log.clear_tooltip"))
         self._export_btn.setText(tr("log.export_btn"))
+        self._export_btn.setToolTip(tr("log.export_tooltip"))
 
     # ── Handler lifecycle ─────────────────────────────────────────────────────
 

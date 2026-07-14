@@ -241,7 +241,10 @@ class EnhancementsTab(QWidget):
         mf_heading.setStyleSheet("font-size: 11px; font-weight: bold;")
         gl.addWidget(mf_heading)
 
-        _MISSION_FIELD_LABELS = [
+        # Stored on self (not a local) so retranslate_ui can rebuild each
+        # checkbox's tooltip after a language switch without duplicating
+        # this list.
+        self._mission_field_labels = [
             ("mission_type",  "Mission Type"),
             ("difficulty",    "Difficulty"),
             ("spawns",        "Hostiles"),
@@ -253,29 +256,15 @@ class EnhancementsTab(QWidget):
         # "General Tags" section (independent of this body-fields group) —
         # see AppSettings.get_mission_title_tags(). "ace" here now controls
         # ONLY the "Ace Pilot: Yes" body line.
-        _MISSION_FIELD_TOOLTIPS = {
-            "ace": (
-                "Show an \"Ace Pilot: Yes\" line in the mission details body "
-                "when the mission spawns an ace pilot. The [ACE] title tag is "
-                "a separate toggle under General Tags. "
-                "Takes effect on the next Generate Enhancements."
-            ),
-        }
         self._mission_field_checkboxes: dict = {}
         _mf_saved = AppSettings.get_mission_detail_fields()
         mf_row = QHBoxLayout()
         mf_row.setContentsMargins(0, 0, 0, 0)
-        for _field, _label in _MISSION_FIELD_LABELS:
+        for _field, _label in self._mission_field_labels:
             cb = QCheckBox(_label)
             cb.setChecked(_mf_saved.get(_field, True))
             cb.setStyleSheet("font-size: 11px;")
-            cb.setToolTip(
-                _MISSION_FIELD_TOOLTIPS.get(
-                    _field,
-                    f"Show the {_label} line in generated mission bodies. "
-                    "Takes effect on the next Generate Enhancements.",
-                )
-            )
+            cb.setToolTip(self._mission_field_tooltip(_field, _label))
             cb.toggled.connect(
                 lambda checked, f=_field: self._on_mission_field_toggled(f, checked)
             )
@@ -300,11 +289,7 @@ class EnhancementsTab(QWidget):
         self._stats_prepend_check = QCheckBox("Show stats above description")
         self._stats_prepend_check.setChecked(AppSettings.get_stats_prepend())
         self._stats_prepend_check.setStyleSheet("font-size: 11px;")
-        self._stats_prepend_check.setToolTip(
-            "Put the generated stats block above the manufacturer/PR description "
-            "instead of below it (ships, components, weapons). Takes effect on "
-            "the next Generate Enhancements."
-        )
+        self._stats_prepend_check.setToolTip(tr("enhancements.stats_prepend_tooltip"))
         self._stats_prepend_check.toggled.connect(
             lambda checked: AppSettings.set_stats_prepend(checked)
         )
@@ -316,11 +301,7 @@ class EnhancementsTab(QWidget):
             AppSettings.get_standardize_earnable_ship_names()
         )
         self._standardize_ship_names_check.setStyleSheet("font-size: 11px;")
-        self._standardize_ship_names_check.setToolTip(
-            "Rename exec-hangar (PYX) and Wikelo (WIK) ship variants to include "
-            "a suffix that distinguishes them from the standard pledge-store version "
-            "(e.g. \"Anvil F8C Lightning PYX\"). Takes effect on the next Generate Enhancements."
-        )
+        self._standardize_ship_names_check.setToolTip(tr("enhancements.standardize_ship_names_tooltip"))
         self._standardize_ship_names_check.toggled.connect(
             lambda checked: AppSettings.set_standardize_earnable_ship_names(checked)
         )
@@ -332,9 +313,7 @@ class EnhancementsTab(QWidget):
         self._apply_categories_btn = QPushButton(tr("enhancements.apply_btn"))
         self._apply_categories_btn.setMaximumWidth(100)
         self._apply_categories_btn.setEnabled(False)
-        self._apply_categories_btn.setToolTip(
-            "Save category selection. Unchecked categories will be disabled."
-        )
+        self._apply_categories_btn.setToolTip(tr("enhancements.apply_categories_tooltip"))
         self._apply_categories_btn.clicked.connect(self._apply_category_changes)
         btn_row.addWidget(self._apply_categories_btn)
 
@@ -358,29 +337,30 @@ class EnhancementsTab(QWidget):
         self._set_generate_btn_dirty(self._compute_initial_enhancements_dirty())
         return group
 
-    # Tooltip shown when the button is clickable vs. greyed out — the
-    # disabled-state text is what a user hovering a gone-grey button most
-    # wants to know: "why can't I click this?"
-    _GENERATE_ENABLED_TOOLTIP = (
-        "Generate enhanced localization files from your game's Data.p4k.\n"
-        "DataForge data will be extracted automatically if not already cached\n"
-        "(first run takes a few minutes; subsequent runs are fast)."
-    )
-    _GENERATE_DISABLED_TOOLTIP = (
-        "Already up to date — nothing that affects the generated output "
-        "(categories, mission fields, stats/name options, Tag Builder) has "
-        "changed since the last run."
-    )
+    @staticmethod
+    def _mission_field_tooltip(field: str, label: str) -> str:
+        """Tooltip for one mission-detail-field checkbox. "ace" gets a
+        dedicated string (it shares its settings key with the unrelated
+        [ACE] title tag under General Tags, so the distinction needs
+        spelling out); every other field gets the generic template. Shared
+        by setup_ui() and retranslate_ui() so the two can't drift apart."""
+        if field == "ace":
+            return tr("enhancements.mission_field_ace_tooltip")
+        return tr("enhancements.mission_field_default_tooltip", label=label)
 
     def _set_generate_btn_dirty(self, dirty: bool) -> None:
         """Single chokepoint for the button's enabled state, tooltip, and
         text color so none of the three can drift apart. Red text signals
         "click me — something changed"; clean/disabled reverts to Qt's
-        default look."""
+        default look. The two tooltip variants are resolved via tr() here
+        (not cached class constants) so they always reflect the active
+        language — the disabled-state text is what a user hovering a
+        gone-grey button most wants to know: "why can't I click this?" """
         self._enhancements_dirty = dirty
         self._generate_enhancements_btn.setEnabled(dirty)
         self._generate_enhancements_btn.setToolTip(
-            self._GENERATE_ENABLED_TOOLTIP if dirty else self._GENERATE_DISABLED_TOOLTIP
+            tr("enhancements.generate_enabled_tooltip") if dirty
+            else tr("enhancements.generate_disabled_tooltip")
         )
         self._generate_enhancements_btn.setStyleSheet(
             f"color: {get_button_color('needs_apply')};" if dirty else ""
@@ -496,7 +476,7 @@ class EnhancementsTab(QWidget):
         prefix_row.addWidget(self._sort_prefix_label)
 
         self.favorite_prefix_combo = _NoScrollComboBox()
-        self.favorite_prefix_combo.setToolTip("Character prepended to favorited ship names so they sort to the top of the in-game ship list. Click Apply Prefix after changing to update all existing favorites.")
+        self.favorite_prefix_combo.setToolTip(tr("enhancements.favorite_prefix_tooltip"))
         self.favorite_prefix_combo.setSizeAdjustPolicy(
             QComboBox.SizeAdjustPolicy.AdjustToContents
         )
@@ -563,7 +543,7 @@ class EnhancementsTab(QWidget):
         self._rep_xp_label_input = QLineEdit()
         self._rep_xp_label_input.setText(AppSettings.get_rep_xp_label())
         self._rep_xp_label_input.setMaximumWidth(100)
-        self._rep_xp_label_input.setToolTip("Label for missions without a rank name (e.g. 'Rep: +100 XP')")
+        self._rep_xp_label_input.setToolTip(tr("enhancements.rep_xp_label_tooltip"))
         self._rep_xp_label_input.editingFinished.connect(self._save_rep_xp_label)
         grid.addWidget(self._rep_xp_label_input, 0, 5)
 
@@ -580,7 +560,7 @@ class EnhancementsTab(QWidget):
             if self._header_em_combo.itemData(i) == current_em:
                 self._header_em_combo.setCurrentIndex(i)
                 break
-        self._header_em_combo.setToolTip("Style for section headers: Underline (EM3) or Blue text (EM4)")
+        self._header_em_combo.setToolTip(tr("enhancements.header_em_tooltip"))
         self._header_em_combo.currentIndexChanged.connect(self._save_header_em_tag)
         grid.addWidget(self._header_em_combo, 1, 5)
 
@@ -609,22 +589,17 @@ class EnhancementsTab(QWidget):
             AppSettings.set_mission_header_em_tag(tag)
             self._mark_enhancements_dirty()
 
-    # Same enabled/disabled tooltip + red-text pattern as the other
-    # dirty-tracked buttons on this tab.
-    _PREFIX_ENABLED_TOOLTIP = (
-        "Save the selected prefix and update all existing favorites to use it"
-    )
-    _PREFIX_DISABLED_TOOLTIP = (
-        "Already applied — the selected prefix matches your current favorites."
-    )
-
     def _set_prefix_btn_dirty(self, dirty: bool) -> None:
         """Single chokepoint for the button's enabled state, tooltip, and
-        text color so none of the three can drift apart."""
+        text color so none of the three can drift apart. Same enabled/
+        disabled tooltip + red-text pattern as the other dirty-tracked
+        buttons on this tab; resolved via tr() here (not cached class
+        constants) so they always reflect the active language."""
         self._prefix_dirty = dirty
         self._apply_prefix_btn.setEnabled(dirty)
         self._apply_prefix_btn.setToolTip(
-            self._PREFIX_ENABLED_TOOLTIP if dirty else self._PREFIX_DISABLED_TOOLTIP
+            tr("enhancements.prefix_enabled_tooltip") if dirty
+            else tr("enhancements.prefix_disabled_tooltip")
         )
         self._apply_prefix_btn.setStyleSheet(
             f"color: {get_button_color('needs_apply')};" if dirty else ""
@@ -768,12 +743,7 @@ class EnhancementsTab(QWidget):
             AppSettings.get_tag_annotate_mission_descs()
         )
         self._annotate_mission_descs_cb.toggled.connect(self._mark_tag_dirty)
-        self._annotate_mission_descs_cb.setToolTip(
-            "When checked, the configured [CLASS-Sx-grade] tag is added "
-            "to component names inside the POTENTIAL BLUEPRINTS list of "
-            "mission descriptions. Uncheck for a cleaner mission body "
-            "while keeping the tag on the actual component names elsewhere."
-        )
+        self._annotate_mission_descs_cb.setToolTip(tr("enhancements.annotate_mission_descs_tooltip"))
         gl.addWidget(self._annotate_mission_descs_cb)
 
         btn_row = QHBoxLayout()
@@ -783,12 +753,7 @@ class EnhancementsTab(QWidget):
         self._set_tag_btn_dirty(False)
 
         self._reset_tag_btn = QPushButton(tr("enhancements.reset_defaults_btn"))
-        self._reset_tag_btn.setToolTip(
-            "Restore the default pattern, mapping, and ordering for every "
-            "category (Components / Missiles / Ship Weapons). Does not save "
-            "or regenerate until you click Save Tag Changes or Generate "
-            "Enhancements."
-        )
+        self._reset_tag_btn.setToolTip(tr("enhancements.reset_tag_tooltip"))
         self._reset_tag_btn.clicked.connect(self._reset_all_tag_builder_pages)
         btn_row.addWidget(self._reset_tag_btn)
 
@@ -805,7 +770,9 @@ class EnhancementsTab(QWidget):
         self._enhancements_group_box.setTitle(tr("enhancements.enhancements_group"))
         self._enhancements_desc_label.setText(tr("enhancements.enhancements_desc"))
         self._apply_categories_btn.setText(tr("enhancements.apply_btn"))
+        self._apply_categories_btn.setToolTip(tr("enhancements.apply_categories_tooltip"))
         self._generate_enhancements_btn.setText(tr("enhancements.generate_btn"))
+        self._set_generate_btn_dirty(self._enhancements_dirty)
         _CAT_KEYS = {
             "ships":       "enhancements.cat_desc_ships",
             "ship_items":  "enhancements.cat_desc_ship_items",
@@ -818,15 +785,27 @@ class EnhancementsTab(QWidget):
         for key, lbl in self._cat_desc_labels.items():
             if key in _CAT_KEYS:
                 lbl.setText(tr(_CAT_KEYS[key]))
+        for field, cb in self._mission_field_checkboxes.items():
+            label = dict(self._mission_field_labels).get(field, field)
+            cb.setToolTip(self._mission_field_tooltip(field, label))
+        self._stats_prepend_check.setToolTip(tr("enhancements.stats_prepend_tooltip"))
+        self._standardize_ship_names_check.setToolTip(tr("enhancements.standardize_ship_names_tooltip"))
         self._favorites_group_box.setTitle(tr("enhancements.favorites_group"))
         self._favorites_desc_label.setText(tr("enhancements.favorites_desc"))
         self._sort_prefix_label.setText(tr("enhancements.sort_prefix_label"))
+        self.favorite_prefix_combo.setToolTip(tr("enhancements.favorite_prefix_tooltip"))
         self._apply_prefix_btn.setText(tr("enhancements.apply_btn"))
+        self._set_prefix_btn_dirty(self._prefix_dirty)
+        self._rep_xp_label_input.setToolTip(tr("enhancements.rep_xp_label_tooltip"))
+        self._header_em_combo.setToolTip(tr("enhancements.header_em_tooltip"))
         self._tag_builder_group_box.setTitle(tr("enhancements.tag_builder_group"))
         self._tag_builder_desc_label.setText(tr("enhancements.tag_builder_desc"))
         self._annotate_mission_descs_cb.setText(tr("enhancements.annotate_mission_descs_cb"))
+        self._annotate_mission_descs_cb.setToolTip(tr("enhancements.annotate_mission_descs_tooltip"))
         self._apply_tag_btn.setText(tr("enhancements.apply_tag_changes_btn"))
+        self._set_tag_btn_dirty(self._tag_dirty)
         self._reset_tag_btn.setText(tr("enhancements.reset_defaults_btn"))
+        self._reset_tag_btn.setToolTip(tr("enhancements.reset_tag_tooltip"))
 
     def _persist_tag_builder_state(self) -> None:
         """Save every Tag Builder page's TagConfig plus the annotate-descs
@@ -848,23 +827,17 @@ class EnhancementsTab(QWidget):
             AppSettings.set_tag_annotate_mission_descs(annotate_cb.isChecked())
         logger.info("Tag Builder: saved configs for %s", ", ".join(pages))
 
-    # Same enabled/disabled tooltip pattern as Generate Enhancements above.
-    _TAG_ENABLED_TOOLTIP = (
-        "Save the Components / Missiles / Ship Weapons tag configs and "
-        "re-run the enhancement generator. New tags appear in-game after "
-        "the next Apply Enhancements."
-    )
-    _TAG_DISABLED_TOOLTIP = (
-        "Already saved — no Tag Builder changes since the last save."
-    )
-
     def _set_tag_btn_dirty(self, dirty: bool) -> None:
         """Single chokepoint for the button's enabled state, tooltip, and
-        text color so none of the three can drift apart."""
+        text color so none of the three can drift apart. Same enabled/
+        disabled tooltip pattern as Generate Enhancements; resolved via
+        tr() here (not cached class constants) so they always reflect
+        the active language."""
         self._tag_dirty = dirty
         self._apply_tag_btn.setEnabled(dirty)
         self._apply_tag_btn.setToolTip(
-            self._TAG_ENABLED_TOOLTIP if dirty else self._TAG_DISABLED_TOOLTIP
+            tr("enhancements.tag_enabled_tooltip") if dirty
+            else tr("enhancements.tag_disabled_tooltip")
         )
         self._apply_tag_btn.setStyleSheet(
             f"color: {get_button_color('needs_apply')};" if dirty else ""

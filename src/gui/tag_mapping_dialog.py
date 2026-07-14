@@ -74,7 +74,7 @@ class TagMappingDialog(QDialog):
 
         button_row = QHBoxLayout()
         reset_btn = QPushButton(tr("tag_mapping_dialog.reset_btn"))
-        reset_btn.setToolTip("Restore every cell in this mapping table to the built-in Smart Citizen defaults.")
+        reset_btn.setToolTip(tr("tag_mapping_dialog.reset_tooltip"))
         reset_btn.clicked.connect(self._reset_to_defaults)
         button_row.addWidget(reset_btn)
         button_row.addStretch()

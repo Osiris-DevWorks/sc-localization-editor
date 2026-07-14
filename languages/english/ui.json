@@ -131,6 +131,50 @@
     "menu_switch_to_simple": {
       "ht": "Switch to Simple Mode",
       "at": ""
+    },
+    "editor_tooltip": {
+      "ht": "Toggle the side-docked String Editor, a larger canvas for editing the selected row's custom value",
+      "at": ""
+    },
+    "help_tooltip": {
+      "ht": "Toggle the Help side-panel",
+      "at": ""
+    },
+    "tutorial_tooltip": {
+      "ht": "Start the guided tour of Smart Citizen's workflow. Runs automatically on first launch; click here anytime to replay.",
+      "at": ""
+    },
+    "restore_backup_tooltip": {
+      "ht": "Restore a previous global.ini from the backups folder. Up to 5 timestamped backups are kept; the oldest is pruned when a new one is created.",
+      "at": ""
+    },
+    "test_plan_tooltip": {
+      "ht": "Open the tester Test Plan: a checklist of what changed in this release, with progress tracking and a report you can submit.",
+      "at": ""
+    },
+    "switch_to_simple_tooltip": {
+      "ht": "Switch to the simplified one-button view.",
+      "at": ""
+    },
+    "more_tooltip": {
+      "ht": "More actions: restore a backup, clear localization or cache, import or export, open the localization folder",
+      "at": ""
+    },
+    "osiris_github_tooltip": {
+      "ht": "Open the Osiris DevWorks GitHub organization",
+      "at": ""
+    },
+    "feedback_tooltip": {
+      "ht": "Open the Smart Citizen Discord channel for feedback, bug reports, and voting on upcoming features (requires joining the Osiris DevWorks Discord).",
+      "at": ""
+    },
+    "apply_enabled_tooltip": {
+      "ht": "Write the merged table contents to the game's global.ini. A timestamped backup of the current global.ini is created first.",
+      "at": ""
+    },
+    "apply_disabled_tooltip": {
+      "ht": "Already applied — nothing has changed since the last Apply to Game.",
+      "at": ""
     }
   },
   "filters": {
@@ -189,6 +233,42 @@
     "copy_filtered_btn": {
       "ht": "Copy Filtered",
       "at": ""
+    },
+    "category_tooltip": {
+      "ht": "Filter rows by domain (Ships, Ship Items, Missions, Gear, Commodities, Journal, Other). Categories are derived from the loc-key prefix.",
+      "at": ""
+    },
+    "status_tooltip": {
+      "ht": "Filter by status. Modified = you've set a Custom Value; Enhanced = produced by Smart Citizen's enhancements pipeline (ship stats, mission rewards, etc.); Unmodified = default text only; New = key exists only in enhancements/user.ini, not in the base file.",
+      "at": ""
+    },
+    "hide_unmodified_tooltip": {
+      "ht": "Show only rows where you've set a Custom Value. Same as the Status filter's Modified option but togglable on its own.",
+      "at": ""
+    },
+    "favorites_only_tooltip": {
+      "ht": "Show only rows you've starred as favorites. Favorites get a configurable prefix prepended to their name so they sort to the top of the in-game list.",
+      "at": ""
+    },
+    "bp_titles_only_tooltip": {
+      "ht": "Show only mission titles carrying the [BP] / [BP?] blueprint tag.",
+      "at": ""
+    },
+    "bp_descs_only_tooltip": {
+      "ht": "Show only mission descriptions containing a POTENTIAL BLUEPRINTS section.",
+      "at": ""
+    },
+    "group_sort_tooltip": {
+      "ht": "Sort titles and descriptions together for the same entity",
+      "at": ""
+    },
+    "clear_filters_tooltip": {
+      "ht": "Reset every filter (category, status, search, per-column boxes, checkboxes) so the full table is shown.",
+      "at": ""
+    },
+    "copy_filtered_tooltip": {
+      "ht": "Copy all visible filtered rows to clipboard (tab-separated)",
+      "at": ""
     }
   },
   "strings_tab": {
@@ -242,6 +322,18 @@
     },
     "context_highlight": {
       "ht": "Highlight",
+      "at": ""
+    },
+    "editor_underline_tooltip": {
+      "ht": "Underline the selected text (wraps it in <EM3>...</EM3>)",
+      "at": ""
+    },
+    "editor_highlight_tooltip": {
+      "ht": "Highlight the selected text with color emphasis (wraps it in <EM4>...</EM4>)",
+      "at": ""
+    },
+    "column_filter_tooltip": {
+      "ht": "Filter the {column} column. Filters across columns combine with AND.",
       "at": ""
     }
   },
@@ -481,6 +573,90 @@
     "no_sources_warning": {
       "ht": "No sources available to merge.",
       "at": ""
+    },
+    "include_new_tooltip": {
+      "ht": "When checked, items discovered from DataForge XML (status 'New') that have non-empty text will be included in the applied global.ini.",
+      "at": ""
+    },
+    "import_ini_tooltip": {
+      "ht": "Fold an external .ini into your overrides. A conflict-resolution dialog lets you decide per key: keep current, use imported, append, prepend, or provide a custom value.",
+      "at": ""
+    },
+    "reset_user_ini_tooltip": {
+      "ht": "Delete every custom string override for the active channel. A timestamped backup is saved next to the original so you can restore it.",
+      "at": ""
+    },
+    "restore_user_ini_tooltip": {
+      "ht": "Restore your custom string overrides from an automatic snapshot. Smart Citizen keeps the last few states of user.ini, so you can roll back a bad edit or recover after the file was emptied.",
+      "at": ""
+    },
+    "preview_apply_tooltip": {
+      "ht": "Dry-run summary of what Apply Enhancements would write — per-source key counts (with Enhancements broken down by category) and a Modified / Enhanced / Unmodified / New status tally. Nothing is written to the game until you click Apply Enhancements.",
+      "at": ""
+    },
+    "check_updates_tooltip": {
+      "ht": "Check GitHub for a newer Smart Citizen release.",
+      "at": ""
+    },
+    "theme_tooltip": {
+      "ht": "Switch the app theme. Takes effect immediately across the main window, toolbar, tabs, and Help panel.",
+      "at": ""
+    },
+    "disable_tutorial_tooltip": {
+      "ht": "When checked, the guided tour will not auto-launch on a new version. The Tutorial button in the toolbar still works.",
+      "at": ""
+    },
+    "game_path_tooltip": {
+      "ht": "Star Citizen install root — the directory that contains LIVE/, PTU/, EPTU/, HOTFIX/, and/or TECH-PREVIEW/. Auto-detected at install time; edit if your game lives elsewhere. The 'Channel' dropdown below picks which one the app reads and writes.",
+      "at": ""
+    },
+    "browse_game_tooltip": {
+      "ht": "Pick the Star Citizen install root in a folder browser.",
+      "at": ""
+    },
+    "channel_tooltip": {
+      "ht": "Star Citizen channel to read Data.p4k from and write global.ini to. Channels with no Data.p4k under the install root are disabled. Switching channels immediately reloads strings against the new channel's data.",
+      "at": ""
+    },
+    "channel_not_installed_tooltip": {
+      "ht": "{channel} isn't installed — no Data.p4k at {path}",
+      "at": ""
+    },
+    "language_tooltip": {
+      "ht": "Language to apply to the game. Keys missing from the translation fall back to English automatically.",
+      "at": ""
+    },
+    "map_language_tooltip": {
+      "ht": "Set a URL to each language's global.ini. When you switch to that language, Smart Citizen downloads it and uses it as the base strings instead of the English Data.p4k extraction.",
+      "at": ""
+    },
+    "data_dir_tooltip": {
+      "ht": "Smart Citizen's app data root. Each channel gets its own subfolder inside this directory. Leave blank or click Reset to use Documents\\Smart Citizen.",
+      "at": ""
+    },
+    "browse_data_tooltip": {
+      "ht": "Pick the Smart Citizen data folder in a folder browser.",
+      "at": ""
+    },
+    "reset_data_tooltip": {
+      "ht": "Clear the custom data folder and use Documents\\Smart Citizen.",
+      "at": ""
+    },
+    "cache_dir_tooltip": {
+      "ht": "Base folder for the extracted DataForge XML tree (~1.4 GB). Each channel nests under this as {base}\\{channel}\\cache\\dataforge\\. Defaults to %LOCALAPPDATA%\\Smart Citizen so it stays out of OneDrive. Changing the path triggers a re-extraction.",
+      "at": ""
+    },
+    "browse_cache_tooltip": {
+      "ht": "Pick the DataForge cache base folder in a folder browser.",
+      "at": ""
+    },
+    "reset_cache_tooltip": {
+      "ht": "Clear the custom cache folder and use the platform default.",
+      "at": ""
+    },
+    "extract_tooltip": {
+      "ht": "Unpack stock localization (base.ini) plus the DataForge entity XMLs from your installed Data.p4k. Run after every Star Citizen patch — the strings reload into the table automatically when extraction finishes.",
+      "at": ""
     }
   },
   "enhancements": {
@@ -643,6 +819,78 @@
     "blueprints_remove_tooltip": {
       "ht": "Remove selected blueprints from owned",
       "at": ""
+    },
+    "mission_field_ace_tooltip": {
+      "ht": "Show an \"Ace Pilot: Yes\" line in the mission details body when the mission spawns an ace pilot. The [ACE] title tag is a separate toggle under General Tags. Takes effect on the next Generate Enhancements.",
+      "at": ""
+    },
+    "mission_field_default_tooltip": {
+      "ht": "Show the {label} line in generated mission bodies. Takes effect on the next Generate Enhancements.",
+      "at": ""
+    },
+    "stats_prepend_tooltip": {
+      "ht": "Put the generated stats block above the manufacturer/PR description instead of below it (ships, components, weapons). Takes effect on the next Generate Enhancements.",
+      "at": ""
+    },
+    "standardize_ship_names_tooltip": {
+      "ht": "Rename exec-hangar (PYX) and Wikelo (WIK) ship variants to include a suffix that distinguishes them from the standard pledge-store version (e.g. \"Anvil F8C Lightning PYX\"). Takes effect on the next Generate Enhancements.",
+      "at": ""
+    },
+    "apply_categories_tooltip": {
+      "ht": "Save category selection. Unchecked categories will be disabled.",
+      "at": ""
+    },
+    "generate_enabled_tooltip": {
+      "ht": "Generate enhanced localization files from your game's Data.p4k.\nDataForge data will be extracted automatically if not already cached\n(first run takes a few minutes; subsequent runs are fast).",
+      "at": ""
+    },
+    "generate_disabled_tooltip": {
+      "ht": "Already up to date — nothing that affects the generated output (categories, mission fields, stats/name options, Tag Builder) has changed since the last run.",
+      "at": ""
+    },
+    "favorite_prefix_tooltip": {
+      "ht": "Character prepended to favorited ship names so they sort to the top of the in-game ship list. Click Apply Prefix after changing to update all existing favorites.",
+      "at": ""
+    },
+    "rep_xp_label_tooltip": {
+      "ht": "Label for missions without a rank name (e.g. 'Rep: +100 XP')",
+      "at": ""
+    },
+    "header_em_tooltip": {
+      "ht": "Style for section headers: Underline (EM3) or Blue text (EM4)",
+      "at": ""
+    },
+    "prefix_enabled_tooltip": {
+      "ht": "Save the selected prefix and update all existing favorites to use it",
+      "at": ""
+    },
+    "prefix_disabled_tooltip": {
+      "ht": "Already applied — the selected prefix matches your current favorites.",
+      "at": ""
+    },
+    "annotate_mission_descs_tooltip": {
+      "ht": "When checked, the configured [CLASS-Sx-grade] tag is added to component names inside the POTENTIAL BLUEPRINTS list of mission descriptions. Uncheck for a cleaner mission body while keeping the tag on the actual component names elsewhere.",
+      "at": ""
+    },
+    "reset_tag_tooltip": {
+      "ht": "Restore the default pattern, mapping, and ordering for every category (Components / Missiles / Ship Weapons). Does not save or regenerate until you click Save Tag Changes or Generate Enhancements.",
+      "at": ""
+    },
+    "tag_enabled_tooltip": {
+      "ht": "Save the Components / Missiles / Ship Weapons tag configs and re-run the enhancement generator. New tags appear in-game after the next Apply Enhancements.",
+      "at": ""
+    },
+    "tag_disabled_tooltip": {
+      "ht": "Already saved — no Tag Builder changes since the last save.",
+      "at": ""
+    },
+    "generating_enhancements_tooltip": {
+      "ht": "Generating enhancements…",
+      "at": ""
+    },
+    "extracting_dataforge_tooltip": {
+      "ht": "Extracting DataForge from Data.p4k…",
+      "at": ""
     }
   },
   "blueprint_tracker": {
@@ -698,6 +946,22 @@
     },
     "lines_label": {
       "ht": "{count} lines",
+      "at": ""
+    },
+    "min_level_tooltip": {
+      "ht": "Minimum severity to display. Entries below the selected level are hidden (DEBUG < INFO < WARNING < ERROR).",
+      "at": ""
+    },
+    "auto_scroll_tooltip": {
+      "ht": "Automatically scroll to the newest log entry as it arrives. Turn off to pin the view while inspecting older lines.",
+      "at": ""
+    },
+    "clear_tooltip": {
+      "ht": "Clear the on-screen log buffer. The session log file on disk is unaffected.",
+      "at": ""
+    },
+    "export_tooltip": {
+      "ht": "Save the current log buffer to a .log file — useful when filing a bug report.",
       "at": ""
     }
   },
@@ -769,6 +1033,14 @@
     "excluded_summary": {
       "ht": "{count} keys excluded (not in base.ini).",
       "at": ""
+    },
+    "keep_all_tooltip": {
+      "ht": "Resolve every conflict by keeping your existing value and discarding the imported one.",
+      "at": ""
+    },
+    "import_all_tooltip": {
+      "ht": "Resolve every conflict by accepting the imported value and overwriting your existing one.",
+      "at": ""
     }
   },
   "coach": {
@@ -816,6 +1088,10 @@
     },
     "col_long": {
       "ht": "Long",
+      "at": ""
+    },
+    "reset_tooltip": {
+      "ht": "Restore every cell in this mapping table to the built-in Smart Citizen defaults.",
       "at": ""
     }
   },
@@ -1095,6 +1371,18 @@
     "copy_error_body": {
       "ht": "Failed to copy to clipboard: {error}",
       "at": ""
+    },
+    "browse_ini_tooltip": {
+      "ht": "Pick a local .ini file to import.",
+      "at": ""
+    },
+    "generate_now_tooltip": {
+      "ht": "Run the DataForge extraction + enhancements pipeline now. Takes a few minutes the first time.",
+      "at": ""
+    },
+    "skip_generate_tooltip": {
+      "ht": "Continue without generating enhancements. You can run it later from the Enhancements tab.",
+      "at": ""
     }
   },
   "progress": {
@@ -1190,6 +1478,10 @@
     },
     "update_indicator_failed": {
       "ht": "v{current} · check failed",
+      "at": ""
+    },
+    "open_release_page_tooltip": {
+      "ht": "Open release page for v{version}",
       "at": ""
     }
   }
