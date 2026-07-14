@@ -1505,6 +1505,7 @@ class _TagBuilderPage(QWidget):
             cb.toggled.connect(
                 lambda checked, f=_field: AppSettings.set_mission_title_tag(f, checked)
             )
+            cb.toggled.connect(self.config_changed.emit)
             tags_col.addWidget(cb)
             self._title_tag_checkboxes[_field] = cb
         tags_col.addStretch()
