@@ -357,6 +357,9 @@ def _index_rglob(xml_path_index: dict, entity_dir: Path, records_dir: Path) -> l
 
 
 ENHANCEMENT_SEPARATOR = "\\n\\n--- STATS ---\\n"
+# Medical consumables (CureLife pens) have no numeric stats — just a plain
+# effect summary — so they get their own header instead of "--- STATS ---".
+EFFECT_SEPARATOR = "\\n\\n--- EFFECT ---\\n"
 MISSION_SEPARATOR = "\\n\\n<EM3>MISSION DETAILS</EM3>\\n"
 # #153: when the user opts to show stats ABOVE the prose description, the stats
 # block leads and a plain divider separates it from the (less-important) PR
@@ -5346,7 +5349,9 @@ def enhancements_medical_consumables(ctx: dict) -> dict[str, str]:
     user's stats-prepend preference and plays nicely with re-runs. Plain
     text, no <EM4> — the in-game inventory tooltip doesn't render it any
     better than the Vehicle Loadout Manager did (see the mining-laser/
-    salvage-tool EM4 fix).
+    salvage-tool EM4 fix). Uses the "--- EFFECT ---" header (not the shared
+    "--- STATS ---" one) since there's no numeric stat here, just the effect
+    line itself — no redundant "Effect:" prefix needed under that header.
     """
     loc = ctx["loc"]
     prepend = ctx.get("stats_prepend", False)
@@ -5354,7 +5359,7 @@ def enhancements_medical_consumables(ctx: dict) -> dict[str, str]:
     for key, effect in MEDICAL_CONSUMABLE_EFFECTS.items():
         if key not in loc:
             continue
-        out[key] = append_enhancements(loc[key], f"Effect: {effect}", prepend=prepend)
+        out[key] = append_enhancements(loc[key], effect, separator=EFFECT_SEPARATOR, prepend=prepend)
     logger.info(f"Finished medical consumables ({len(out)} entries)")
     return out
 

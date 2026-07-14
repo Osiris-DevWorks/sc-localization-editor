@@ -32,8 +32,10 @@ def gen_module():
 
 class TestEnhancementsMedicalConsumables:
     def test_appends_effect_to_every_known_pen(self, gen_module):
-        """All 7 known CureLife pens get an appended Effect: line, and the
-        original lore text is preserved (appended-to, not replaced)."""
+        """All 7 known CureLife pens get an appended effect line under its
+        own "--- EFFECT ---" header (not the shared "--- STATS ---" one,
+        and no redundant "Effect:" prefix on the line itself), with the
+        original lore text preserved (appended-to, not replaced)."""
         loc = {
             key: f"Manufacturer: CureLife\\nItem Type: Medical Consumable\\n\\nStock lore for {key}."
             for key in gen_module.MEDICAL_CONSUMABLE_EFFECTS
@@ -43,7 +45,10 @@ class TestEnhancementsMedicalConsumables:
 
         assert set(out) == set(gen_module.MEDICAL_CONSUMABLE_EFFECTS)
         for key, effect in gen_module.MEDICAL_CONSUMABLE_EFFECTS.items():
-            assert f"Effect: {effect}" in out[key]
+            assert "--- EFFECT ---" in out[key]
+            assert "--- STATS ---" not in out[key]
+            assert effect in out[key]
+            assert f"Effect: {effect}" not in out[key]
             assert f"Stock lore for {key}." in out[key]
 
     def test_skips_keys_missing_from_loc(self, gen_module):
@@ -69,7 +74,8 @@ class TestEnhancementsMedicalConsumables:
         ctx = {"loc": loc, "stats_prepend": True}
         out = gen_module.enhancements_medical_consumables(ctx)
         result = out["item_Desccrlf_consumable_oxygen_01"]
-        assert result.index("Effect:") < result.index("Stock OxyPen lore.")
+        effect = gen_module.MEDICAL_CONSUMABLE_EFFECTS["item_Desccrlf_consumable_oxygen_01"]
+        assert result.index(effect) < result.index("Stock OxyPen lore.")
 
     def test_no_em4_tags(self, gen_module):
         """Plain text only — the in-game inventory tooltip doesn't render
