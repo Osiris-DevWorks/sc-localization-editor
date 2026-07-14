@@ -524,6 +524,10 @@
       "ht": "Mining Compendium with crafting data per mineral",
       "at": ""
     },
+    "cat_desc_medical_consumables": {
+      "ht": "Plain-language effect summaries for CureLife medical pens",
+      "at": ""
+    },
     "apply_btn": {
       "ht": "Apply",
       "at": ""

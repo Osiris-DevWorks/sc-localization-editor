@@ -181,6 +181,7 @@ class EnhancementsTab(QWidget):
             "missions":    tr("enhancements.cat_desc_missions"),
             "commodities": tr("enhancements.cat_desc_commodities"),
             "journal":     tr("enhancements.cat_desc_journal"),
+            "medical_consumables": tr("enhancements.cat_desc_medical_consumables"),
         }
 
         self._enhancements_status_labels: dict = {}
@@ -812,6 +813,7 @@ class EnhancementsTab(QWidget):
             "missions":    "enhancements.cat_desc_missions",
             "commodities": "enhancements.cat_desc_commodities",
             "journal":     "enhancements.cat_desc_journal",
+            "medical_consumables": "enhancements.cat_desc_medical_consumables",
         }
         for key, lbl in self._cat_desc_labels.items():
             if key in _CAT_KEYS:

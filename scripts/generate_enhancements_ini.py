@@ -8,10 +8,14 @@ All enhancements are sourced directly from the game's DataForge entity XML files
 (extracted from Data.p4k via unp4k + unforge).  No external JSON sources.
 
 Output files (written to OUTPUT_DIR / cache):
-  ships_desc_enhancements.ini        – vehicle_Desc* entries with flight/specs data
-  components_desc_enhancements.ini   – item_Desc* COOL/SHLD/POWR/QDRV with numerical data
-  ship_weapons_desc_enhancements.ini – item_Desc* ship weapon data
-  fps_weapons_desc_enhancements.ini  – item_Desc* FPS weapon data
+  ships_desc_enhancements.ini             – vehicle_Desc* entries with flight/specs data
+  components_desc_enhancements.ini        – item_Desc* COOL/SHLD/POWR/QDRV with numerical data
+  ship_weapons_desc_enhancements.ini      – item_Desc* ship weapon data
+  fps_weapons_desc_enhancements.ini       – item_Desc* FPS weapon data
+  medical_consumables_enhancements.ini    – item_Desc* CureLife pens; static curated
+                                             effect text, not DataForge-derived (the
+                                             stock descriptions are lore-only and never
+                                             state what the item actually does)
 
 Usage:
   python scripts/generate_enhancements_ini.py [base_ini_path [dataforge_cache_dir]]
@@ -5316,6 +5320,45 @@ def _mirror_scitem_siblings(out: dict[str, str], loc: dict[str, str]) -> tuple[i
     return sibling_count, inv_sibling_count
 
 
+# ── Medical consumables (CureLife pens) ──────────────────────────────────────
+# The only enhancement category with no DataForge dependency: the stock
+# item_Desc for every pen is pure lore ("From the Empire's most trusted
+# medical company...") and never states what the item actually does in
+# gameplay terms. There's no XML stat to extract — this is fixed, curated
+# copy keyed directly off the loc keys already present in base.ini.
+MEDICAL_CONSUMABLE_EFFECTS: dict[str, str] = {
+    "item_Desccrlf_consumable_adrenaline_01":     "Reduces concussion symptoms, normalizes weapon handling and movement speed.",
+    "item_Desccrlf_consumable_steroids_01":       "Reduces vision and hearing symptoms, normalizes stamina.",
+    "item_Desccrlf_consumable_radiation_01":      "Reduces injuries from radiation.",
+    "item_Desccrlf_consumable_overdoseRevival_01": "Revives an overdosed person (if not incapacitated), doubles decay rate of Blood Drug Level.",
+    "item_Desccrlf_consumable_healing_01":        "Restores health and stops bleeding. When used on another person recovers from incapacitated state.",
+    "item_Desccrlf_consumable_painkiller_01":     "Reduces pain symptoms, normalizes movement ability.",
+    "item_Desccrlf_consumable_oxygen_01":         "Recharges Oxygen reserves of a suit.",
+}
+
+
+def enhancements_medical_consumables(ctx: dict) -> dict[str, str]:
+    """Append a plain-text effect summary to each known CureLife pen.
+
+    No entity XML scan (see MEDICAL_CONSUMABLE_EFFECTS above) — just looks
+    each key up directly in the parsed base.ini and appends via the same
+    append_enhancements() every other category uses, so it respects the
+    user's stats-prepend preference and plays nicely with re-runs. Plain
+    text, no <EM4> — the in-game inventory tooltip doesn't render it any
+    better than the Vehicle Loadout Manager did (see the mining-laser/
+    salvage-tool EM4 fix).
+    """
+    loc = ctx["loc"]
+    prepend = ctx.get("stats_prepend", False)
+    out: dict[str, str] = {}
+    for key, effect in MEDICAL_CONSUMABLE_EFFECTS.items():
+        if key not in loc:
+            continue
+        out[key] = append_enhancements(loc[key], f"Effect: {effect}", prepend=prepend)
+    logger.info(f"Finished medical consumables ({len(out)} entries)")
+    return out
+
+
 def _run_gen_components(ctx: dict) -> dict[str, str]:
     loc             = ctx["loc"]
     ships_scitem    = ctx["ships_scitem"]
@@ -6248,6 +6291,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
         + (2 if _want("ship_descs") else 0)  # controller+armor lookup, scan
         + (4 if _want("mission_rewards") else 0)  # rep lookup, scan, bp pools, contractgen+XP
         + (1 if _want("commodity_crafting") or _want("journal") else 0)
+        + (1 if _want("medical_consumables") else 0)
         + 1  # write files
     )
     if _sink is not None:
@@ -6433,6 +6477,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
     if _want("mission_rewards"):      gen_jobs["missions"]          = _run_gen_missions
     if _want("commodity_crafting") or _want("journal"):
                                       gen_jobs["commodity_journal"] = _run_gen_commodity_journal
+    if _want("medical_consumables"): gen_jobs["medical_consumables"] = enhancements_medical_consumables
 
     out_components:  dict[str, str] = {}
     out_missiles:    dict[str, str] = {}
@@ -6442,6 +6487,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
     out_missions:    dict[str, str] = {}
     out_commodities: dict[str, str] = {}
     out_journal:     dict[str, str] = {}
+    out_medical_consumables: dict[str, str] = {}
 
     if gen_jobs:
         n_workers = min(max_workers, len(gen_jobs))
@@ -6460,6 +6506,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
                 elif name == "ships":             out_ships        = result
                 elif name == "missions":          out_missions     = result
                 elif name == "commodity_journal": out_commodities, out_journal = result
+                elif name == "medical_consumables": out_medical_consumables = result
 
     # ── Apply loc-string workarounds for CIG data bugs ────────────────────────
     # XML patches we ran before this script realigned the enhancement
@@ -6479,7 +6526,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
                 total_applied = 0
                 for out_dict in (out_missions, out_components, out_ship_weapons,
                                  out_fps_weapons, out_ships, out_missiles,
-                                 out_commodities, out_journal):
+                                 out_commodities, out_journal, out_medical_consumables):
                     total_applied += apply_locstring_workarounds(out_dict, workarounds)
                 logger.info(
                     f"Loc-string workarounds: {total_applied}/{len(workarounds)} applied"
@@ -6511,10 +6558,12 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
         write_ini(output_dir / "journal_enhancements.ini", out_journal)
     if _want("missile_enhancements"):
         write_ini(output_dir / "missile_enhancements.ini", out_missiles)
+    if _want("medical_consumables"):
+        write_ini(output_dir / "medical_consumables_enhancements.ini", out_medical_consumables)
 
     total = (len(out_ships) + len(out_components) + len(out_ship_weapons) +
              len(out_fps_weapons) + len(out_missions) + len(out_commodities) +
-             len(out_journal) + len(out_missiles))
+             len(out_journal) + len(out_missiles) + len(out_medical_consumables))
     logger.info(f"Done — {total:,} total stat entries written to {output_dir}")
     _tick("Wrote all output files")
     if _sink is not None:
