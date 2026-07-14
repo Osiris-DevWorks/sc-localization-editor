@@ -191,7 +191,7 @@ class EnhancementsTab(QWidget):
         # stack down the left column and the next three down the right —
         # reads top-to-bottom-then-right rather than left-to-right.
         categories_layout = QGridLayout()
-        categories_layout.setHorizontalSpacing(24)
+        categories_layout.setHorizontalSpacing(12)
         categories_layout.setVerticalSpacing(4)
         column_height = 2
         for idx, (key, label) in enumerate(AppSettings.ENHANCEMENT_LABELS.items()):
@@ -229,8 +229,16 @@ class EnhancementsTab(QWidget):
         categories_layout.setColumnStretch(0, 0)
         categories_layout.setColumnStretch(1, 0)
         categories_layout.setColumnStretch(2, 0)
-        categories_layout.setColumnStretch(3, 1)
-        gl.addLayout(categories_layout)
+        categories_layout.setColumnStretch(3, 0)
+        # Pack the grid to its natural (left-hugging) width and let a
+        # trailing stretch absorb the rest of the row — previously column 3
+        # itself carried the stretch, which spread the categories out across
+        # the full tab width and forced horizontal scrolling.
+        categories_row = QHBoxLayout()
+        categories_row.setContentsMargins(0, 0, 0, 0)
+        categories_row.addLayout(categories_layout)
+        categories_row.addStretch()
+        gl.addLayout(categories_row)
 
         # ── Mission detail fields (#121) ───────────────────────────────────
         # Granular show/hide for each line the generator adds to a mission
