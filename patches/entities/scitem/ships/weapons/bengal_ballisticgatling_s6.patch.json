@@ -1,0 +1,18 @@
+{
+  "target": "entities/scitem/ships/weapons/bengal_ballisticgatling_s6.xml",
+  "description": "Fix Bengal-mounted BEHR ballistic Gatling turret's Name/Description pointing at the unrelated APAR (Apocalypse Arms) Revenant S4's loc keys instead of its own. The entity's own Tags attribute reads 'BEHR BallisticGatling...' (Behring, not Apocalypse Arms), confirming this is a copy-paste leftover, not an intentional shared identity. Left uncorrected, our generator's scan_entity_dir sees two entities claiming item_DescAPAR_BallisticGatling_S4/item_NameAPAR_BallisticGatling_S4 and whichever is processed last wins, so the real Revenant S4's stats/name-tag get randomly clobbered by this Bengal-specific turret's much larger Health/Ammo values. Since this Bengal turret is a fixed ship-embedded weapon (not a purchasable/equippable inventory item — its own ShortName already points at LOC_EMPTY) it has no genuine player-facing name/desc of its own, so both attributes are redirected to LOC_EMPTY (the existing sentinel CIG itself uses for its ShortName here) rather than inventing new text — this drops the entity out of the scan entirely instead of guessing at unknown intended copy.",
+  "edits": [
+    {
+      "xpath": ".//SAttachableComponentParams/AttachDef[@Tags='BEHR BallisticGatling flightReady weaponMountUsable']/Localization",
+      "attribute": "Name",
+      "expected": "@item_NameAPAR_BallisticGatling_S4",
+      "set": "@LOC_EMPTY"
+    },
+    {
+      "xpath": ".//SAttachableComponentParams/AttachDef[@Tags='BEHR BallisticGatling flightReady weaponMountUsable']/Localization",
+      "attribute": "Description",
+      "expected": "@item_DescAPAR_BallisticGatling_S4",
+      "set": "@LOC_EMPTY"
+    }
+  ]
+}
