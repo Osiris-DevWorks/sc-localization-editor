@@ -1179,12 +1179,13 @@ class MainWindow(QMainWindow):
         # QTextBrowser's default Expanding vertical sizePolicy let the pane
         # grow to its old 200px ceiling). The Preferred sizePolicy prevents
         # the greedy expansion; the cap is a belt-and-braces upper bound and
-        # answers "how many lines of preview do I want at most." 120
-        # comfortably fits ~5–6 lines of rendered HTML — long mission
-        # journals overflow into the built-in scrollbar.
+        # answers "how many lines of preview do I want at most." 60 fits
+        # ~2–3 lines of rendered HTML; anything longer (mission journals,
+        # multi-line descriptions) overflows into the built-in scrollbar
+        # rather than growing the pane.
         from PyQt6.QtWidgets import QSizePolicy
         self.preview_pane.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        self.preview_pane.setMaximumHeight(120)
+        self.preview_pane.setMaximumHeight(60)
 
         # Filter row: category/status/search toggles. Lives here (not the
         # shared toolbar) so it's only visible while this tab is active.
