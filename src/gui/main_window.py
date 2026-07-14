@@ -376,43 +376,12 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.tagline_label)
         self._apply_branding_styles()
 
-        # Toolbar on the left; rendered-preview pane on the right. The
-        # preview renders the currently-selected row's effective value
-        # (custom override if present, else the merged baseline) with the
-        # game's EM3/EM4/~mission(...) tokens translated into styled HTML
-        # so mission and journal blocks read like in-game text instead of
-        # wall-of-tag. Stays wired across all tabs — it just reflects the
-        # last row you selected in the String Editor.
         toolbar_layout = self.create_toolbar()
 
-        self.preview_pane = QTextBrowser()
-        self.preview_pane.setReadOnly(True)
-        self.preview_pane.setOpenExternalLinks(False)
-        self.preview_pane.setPlaceholderText(tr("strings_tab.preview_placeholder"))
-        self.preview_pane.setMinimumWidth(420)
-        # Capped to keep the toolbar QHBoxLayout from inflating when the
-        # active tab has slack vertical space to redistribute (the
-        # post-1.3.0 Config / Enhancements gap bug — QTextBrowser's
-        # default Expanding vertical sizePolicy let the pane grow to
-        # its old 200px ceiling, dragging the buttons down ~40px below
-        # the tagline). The Preferred sizePolicy prevents the greedy
-        # expansion; the cap is a belt-and-braces upper bound and
-        # answers "how many lines of preview do I want at most." 120
-        # comfortably fits ~5–6 lines of rendered HTML — long mission
-        # journals overflow into the built-in scrollbar.
-        from PyQt6.QtWidgets import QSizePolicy
-        self.preview_pane.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        self.preview_pane.setMaximumHeight(120)
-
-        toolbar_row = QHBoxLayout()
-        toolbar_row.setSpacing(12)
-        toolbar_row.setContentsMargins(0, 0, 12, 0)
-        toolbar_row.addLayout(toolbar_layout, stretch=2)
-        toolbar_row.addWidget(self.preview_pane, stretch=1)
         # Wrapped in a container so Simple mode (#180) can hide the whole
-        # advanced toolbar + preview as a unit (a layout can't be hidden).
+        # advanced toolbar as a unit (a layout can't be hidden).
         self.toolbar_container = QWidget()
-        self.toolbar_container.setLayout(toolbar_row)
+        self.toolbar_container.setLayout(toolbar_layout)
         main_layout.addWidget(self.toolbar_container)
 
         self.tabs = QTabWidget()
@@ -1194,9 +1163,36 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         layout = QVBoxLayout(widget)
 
+        # Rendered-preview pane: shows the currently-selected row's effective
+        # value (custom override if present, else the merged baseline) with
+        # the game's EM3/EM4/~mission(...) tokens translated into styled HTML
+        # so mission and journal blocks read like in-game text instead of
+        # wall-of-tag. Lives here (not the shared toolbar) so it's only
+        # visible while the String Editor tab is active.
+        self.preview_pane = QTextBrowser()
+        self.preview_pane.setReadOnly(True)
+        self.preview_pane.setOpenExternalLinks(False)
+        self.preview_pane.setPlaceholderText(tr("strings_tab.preview_placeholder"))
+        self.preview_pane.setMinimumWidth(420)
+        # Capped so the row doesn't inflate when there's slack vertical space
+        # to redistribute (the post-1.3.0 Config / Enhancements gap bug —
+        # QTextBrowser's default Expanding vertical sizePolicy let the pane
+        # grow to its old 200px ceiling). The Preferred sizePolicy prevents
+        # the greedy expansion; the cap is a belt-and-braces upper bound and
+        # answers "how many lines of preview do I want at most." 120
+        # comfortably fits ~5–6 lines of rendered HTML — long mission
+        # journals overflow into the built-in scrollbar.
+        from PyQt6.QtWidgets import QSizePolicy
+        self.preview_pane.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        self.preview_pane.setMaximumHeight(120)
+
         # Filter row: category/status/search toggles. Lives here (not the
         # shared toolbar) so it's only visible while this tab is active.
-        layout.addLayout(self.create_string_filter_row())
+        filter_and_preview_row = QHBoxLayout()
+        filter_and_preview_row.setSpacing(12)
+        filter_and_preview_row.addLayout(self.create_string_filter_row(), 2)
+        filter_and_preview_row.addWidget(self.preview_pane, 1)
+        layout.addLayout(filter_and_preview_row)
 
         # Model
         self._model = StringTableModel(self)
