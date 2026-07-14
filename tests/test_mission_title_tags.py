@@ -7,7 +7,10 @@ body-field contract.
 Two layers are covered:
 
 * The AppSettings contract: every field defaults to on (matching the prior,
-  unsplit behaviour), set/get round-trips, unknown keys ignored.
+  unsplit behaviour) except "rep_track" (issue #161's "(Security)"/
+  "(Contractor)" title suffix, off by default — see
+  _MISSION_TITLE_TAG_DEFAULTS / get_mission_title_tag_default), set/get
+  round-trips, unknown keys ignored.
 * The generator's show/hide gating. ``_run_gen_missions`` isn't callable
   without a large synthetic ctx, so (as with test_mission_detail_fields.py)
   these tests drive a replica of the exact
@@ -45,7 +48,17 @@ def isolated_settings(tmp_path, monkeypatch):
 def test_defaults_all_on(isolated_settings):
     tags = AppSettings.get_mission_title_tags()
     assert set(tags) == set(AppSettings.MISSION_TITLE_TAG_KEYS)
-    assert all(tags.values()), "every mission-title tag must default to on"
+    for field, enabled in tags.items():
+        assert enabled == AppSettings.get_mission_title_tag_default(field), field
+
+
+def test_rep_track_defaults_off(isolated_settings):
+    """#161: unlike every other title tag, the "(Security)"/"(Contractor)"
+    Rep Track suffix is opt-in — a title's Rep tag stays plain until the
+    user turns it on."""
+    tags = AppSettings.get_mission_title_tags()
+    assert tags["rep_track"] is False
+    assert AppSettings.get_mission_title_tag_default("rep_track") is False
 
 
 def test_set_get_roundtrip(isolated_settings):
@@ -62,14 +75,15 @@ def test_unknown_key_ignored(isolated_settings):
     AppSettings.set_mission_title_tag("not_a_field", False)
     tags = AppSettings.get_mission_title_tags()
     assert "not_a_field" not in tags
-    assert all(tags.values())
+    for field, enabled in tags.items():
+        assert enabled == AppSettings.get_mission_title_tag_default(field), field
 
 
 # ── Generator gating (replica of the _run_gen_missions title-tag block) ─────
 
 def _render_title_tags(tags: dict, *, has_bp=True, bp_partial=False,
                         all_ace=False, any_ace=False,
-                        xps=(500,)) -> str:
+                        xps=(500,), track="") -> str:
     """Replica of the generator's title-tag gating. `tags` maps
     field -> bool; missing defaults to on, exactly like ``_show_title_tag``
     in _run_gen_missions. Returns just the appended tag suffix."""
@@ -88,10 +102,11 @@ def _render_title_tags(tags: dict, *, has_bp=True, bp_partial=False,
         elif any_ace:
             out += " [ACE?]"
     nonzero_xp = [x for x in xps if x > 0] if _show_title_tag("rep") else []
+    rep_tag_suffix = f" ({track})" if track and _show_title_tag("rep_track") else ""
     if len(nonzero_xp) == 1:
-        out += f" [{nonzero_xp[0]} REP]"
+        out += f" [{nonzero_xp[0]} REP{rep_tag_suffix}]"
     elif len(nonzero_xp) > 1:
-        out += f" [{min(nonzero_xp)}-{max(nonzero_xp)} REP]"
+        out += f" [{min(nonzero_xp)}-{max(nonzero_xp)} REP{rep_tag_suffix}]"
     return out
 
 
@@ -143,6 +158,30 @@ def test_all_off_strips_everything():
     assert tag == ""
 
 
+def test_rep_track_shown_when_field_missing_from_ctx():
+    """Mirrors the real generator's ``_show_title_tag`` fallback (always
+    True for a key absent from ctx) — distinct from AppSettings' own
+    off-by-default seed, which only applies when the GUI populates ctx."""
+    tag = _render_title_tags({}, track="Security")
+    assert "(Security)" in tag
+
+
+def test_rep_track_off_hides_suffix():
+    tag = _render_title_tags({"rep_track": False}, track="Security")
+    assert "(Security)" not in tag
+    assert "[500 REP]" in tag
+
+
+def test_rep_track_on_shows_suffix():
+    tag = _render_title_tags({"rep_track": True}, track="Security")
+    assert "[500 REP (Security)]" in tag
+
+
+def test_no_track_no_suffix_even_when_enabled():
+    tag = _render_title_tags({"rep_track": True}, track="")
+    assert "(" not in tag
+
+
 # ── Migration from the old shared blueprint_tag/ace toggle (2.2.0) ──────────
 
 def test_migration_carries_prior_off_state(isolated_settings):
@@ -160,7 +199,8 @@ def test_migration_carries_prior_off_state(isolated_settings):
 def test_migration_no_prior_settings_defaults_on(isolated_settings):
     AppSettings.migrate_title_tag_settings()
     tags = AppSettings.get_mission_title_tags()
-    assert all(tags.values())
+    for field, enabled in tags.items():
+        assert enabled == AppSettings.get_mission_title_tag_default(field), field
 
 
 def test_migration_runs_once(isolated_settings):

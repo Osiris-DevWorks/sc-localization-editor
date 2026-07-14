@@ -1471,6 +1471,7 @@ class _TagBuilderPage(QWidget):
             ("rep",       'Rep Tag (adds "[500 REP]")'),
             ("blueprint", 'BP Tag (adds "[BP]" / "[BP?]")'),
             ("ace",       'ACE Tag (adds "[ACE]" / "[ACE?]")'),
+            ("rep_track", 'Rep Track Tag (adds "(Security)" / "(Contractor)" to the Rep tag — off by default; always shown in the mission body)'),
         ]
         self._title_tag_checkboxes: dict = {}
         _tt_saved = AppSettings.get_mission_title_tags()
@@ -1485,6 +1486,37 @@ class _TagBuilderPage(QWidget):
             self._title_tag_checkboxes[_field] = cb
         tags_col.addStretch()
         page.addWidget(tags_group)
+
+        # "Scanning/Mining Missions" (4.9+): its own box next to General Tags
+        # rather than folded into it, since it's specific to one mission
+        # family (Recco Battaglia's Scan/Mining contracts) rather than a
+        # tag shown across every mission type. Same immediate-persist
+        # pattern as the General Tags checkboxes above (shares
+        # self._title_tag_checkboxes so Reset-to-defaults picks it up too).
+        scanning_group = QGroupBox("Scanning/Mining Missions")
+        scanning_col = QVBoxLayout(scanning_group)
+        scanning_col.setContentsMargins(10, 10, 10, 10)
+        scanning_col.setSpacing(6)
+        scanning_hint = QLabel(
+            "Recco Battaglia's Scan/Mining contracts (4.9+) target specific "
+            "mineable ores — show each ore's Resource Signature value on "
+            "the mission title so you know what to expect before accepting."
+        )
+        scanning_hint.setProperty("role", "secondary")
+        scanning_hint.setStyleSheet("font-size: 11px;")
+        scanning_hint.setWordWrap(True)
+        scanning_col.addWidget(scanning_hint)
+
+        _rs_cb = QCheckBox("Show Resource Signature (RS) Tags")
+        _rs_cb.setChecked(_tt_saved.get("rs", True))
+        _rs_cb.toggled.connect(
+            lambda checked: AppSettings.set_mission_title_tag("rs", checked)
+        )
+        _rs_cb.toggled.connect(self.config_changed.emit)
+        scanning_col.addWidget(_rs_cb)
+        self._title_tag_checkboxes["rs"] = _rs_cb
+        scanning_col.addStretch()
+        page.addWidget(scanning_group)
 
         page.addStretch()
 
@@ -1616,17 +1648,21 @@ class _TagBuilderPage(QWidget):
             self._select_combo(self._mt_arrow, fresh.route_arrow)
             self._select_combo(self._mt_sep, fresh.title_separator)
             self._select_combo(self._mt_detail, fresh.location_detail)
-            # General Tags (Rep/BP/ACE) aren't part of TagConfig — they're
-            # their own settings domain (AppSettings.set_mission_title_tag),
-            # persisted immediately on toggle rather than staged until Apply
-            # Tag Changes like the rest of this page. Reset explicitly persists
-            # their default (all on) to match that immediate-save behavior,
-            # rather than relying solely on setChecked's toggled signal (a
-            # checkbox already True wouldn't fire it, leaving a stale saved
-            # value if one had somehow drifted out of sync).
+            # General Tags (Rep/BP/ACE/RS/Rep Track) aren't part of TagConfig
+            # — they're their own settings domain
+            # (AppSettings.set_mission_title_tag), persisted immediately on
+            # toggle rather than staged until Apply Tag Changes like the rest
+            # of this page. Reset explicitly persists each field's own
+            # default (get_mission_title_tag_default — all on except Rep
+            # Track, which defaults off) to match that immediate-save
+            # behavior, rather than relying solely on setChecked's toggled
+            # signal (a checkbox already at its default wouldn't fire it,
+            # leaving a stale saved value if one had somehow drifted out of
+            # sync).
             for field, box in self._title_tag_checkboxes.items():
-                box.setChecked(True)
-                AppSettings.set_mission_title_tag(field, True)
+                default = AppSettings.get_mission_title_tag_default(field)
+                box.setChecked(default)
+                AppSettings.set_mission_title_tag(field, default)
             self._set_mt_controls_enabled(self._mt_enable.isChecked())
             self._refresh_preview()
             self.config_changed.emit()

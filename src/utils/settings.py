@@ -146,11 +146,27 @@ class AppSettings:
     # ace title tag and the rep/xp title tag were both unconditionally shown
     # before this split). migrate_title_tag_settings() carries a user's prior
     # blueprint_tag / ace choice forward once.
-    MISSION_TITLE_TAG_KEYS = ("rep", "blueprint", "ace")
+    MISSION_TITLE_TAG_KEYS = ("rep", "blueprint", "ace", "rs", "rep_track")
     _MISSION_TITLE_TAG_SETTING = {
         "rep":       "mission_title_tag/rep",
         "blueprint": "mission_title_tag/blueprint",
         "ace":       "mission_title_tag/ace",
+        # RS ("resonance signature") tag for Recco Battaglia's Scan/Mining
+        # contracts (4.9+) — see MINEABLE_RS_VALUES in generate_enhancements_ini.py.
+        "rs":        "mission_title_tag/rs",
+        # Reputation TRACK suffix (e.g. "(Security)"/"(Contractor)") on the
+        # title's Rep tag — see issue #161. Off by default (see
+        # _MISSION_TITLE_TAG_DEFAULTS below): unlike the other title tags,
+        # this one is new to a lot of titles at once and can make an already
+        # busy title noisier, so it's opt-in. The equivalent body-line
+        # suffix (MISSION DETAILS' Reputation field) is unconditional and
+        # always on, independent of this toggle.
+        "rep_track": "mission_title_tag/rep_track",
+    }
+    # Per-field default for get_mission_title_tags() — every title tag
+    # defaults on except where overridden here.
+    _MISSION_TITLE_TAG_DEFAULTS = {
+        "rep_track": False,
     }
     MISSION_HEADER_DEFAULTS = {
         "details": "MISSION DETAILS",
@@ -729,12 +745,16 @@ class AppSettings:
     @staticmethod
     def get_mission_title_tags() -> dict:
         """Return {field: enabled} for the mission TITLE tags (2.2.0, "General
-        Tags"): rep/xp, blueprint, ace. Independent of
+        Tags"): rep/xp, blueprint, ace, rs, rep_track. Independent of
         get_mission_detail_fields() — see MISSION_TITLE_TAG_KEYS. Every field
-        defaults to True, matching prior (unsplit) behaviour."""
+        defaults to True (matching prior, unsplit behaviour) except where
+        overridden in _MISSION_TITLE_TAG_DEFAULTS (currently just
+        "rep_track", off by default — see issue #161)."""
         s = AppSettings.settings()
         return {
-            field: bool(s.value(reg_key, True, type=bool))
+            field: bool(s.value(
+                reg_key, AppSettings._MISSION_TITLE_TAG_DEFAULTS.get(field, True), type=bool
+            ))
             for field, reg_key in AppSettings._MISSION_TITLE_TAG_SETTING.items()
         }
 
@@ -744,6 +764,14 @@ class AppSettings:
         reg_key = AppSettings._MISSION_TITLE_TAG_SETTING.get(field)
         if reg_key:
             AppSettings.settings().setValue(reg_key, enabled)
+
+    @staticmethod
+    def get_mission_title_tag_default(field: str) -> bool:
+        """The out-of-the-box value for one mission-title-tag field — True
+        unless overridden in _MISSION_TITLE_TAG_DEFAULTS. Lets callers (e.g.
+        the Enhancements tab's "Reset to defaults") restore the correct
+        per-field default instead of assuming every tag defaults on."""
+        return AppSettings._MISSION_TITLE_TAG_DEFAULTS.get(field, True)
 
     @staticmethod
     def migrate_title_tag_settings() -> None:

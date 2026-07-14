@@ -307,6 +307,11 @@ def extract_dataforge(
     if not p4k_path.exists():
         raise FileNotFoundError(f"Data.p4k not found at: {p4k_path}")
 
+    # Wrap once here so every use below (mkdir, exists checks, and whatever
+    # this function hands to _copy_filtered_records/update_manifest) inherits
+    # long-path safety — see win_paths.win_long_path (#221).
+    dataforge_cache_dir = Path(_win_long_path(dataforge_cache_dir))
+
     TOTAL_PHASES = 3
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp = Path(tmp_dir)
@@ -471,6 +476,7 @@ def dataforge_cache_is_fresh(p4k_path: Path, dataforge_cache_dir: Path) -> bool:
     existed (upgrades) fall back to the legacy mtime comparison until the next
     extraction writes the size stamp.
     """
+    dataforge_cache_dir = Path(_win_long_path(dataforge_cache_dir))
     stamp = dataforge_cache_dir / P4K_MTIME_STAMP
     size_stamp = dataforge_cache_dir / P4K_SIZE_STAMP
     libs_dir = dataforge_cache_dir / "raw" / "libs"

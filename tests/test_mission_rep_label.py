@@ -72,3 +72,43 @@ def test_custom_label_no_rank_no_unit(gen):
     line = gen._rep_reward_line("", "+500", "Reputation")
     assert line == "<EM4>Reputation:</EM4> +500"
     assert "XP" not in line
+
+
+class TestReputationTrackSuffix:
+    """#161: some factions have multiple reputation tracks (e.g. Foxwell
+    Enforcement shows separate "Security" and "Standing" columns in-game).
+    ``_rep_reward_line``'s optional ``track`` param appends which track a
+    rank belongs to, in parentheses after the unit."""
+
+    def test_track_appended_after_unit(self, gen):
+        assert gen._rep_reward_line("Applicant", "+500", "Rep", "Security") == (
+            "<EM4>Applicant:</EM4> +500 Rep (Security)"
+        )
+
+    def test_no_track_unchanged(self, gen):
+        assert gen._rep_reward_line("Applicant", "+500", "Rep", "") == (
+            "<EM4>Applicant:</EM4> +500 Rep"
+        )
+
+    def test_track_default_omitted_when_not_passed(self, gen):
+        """Backward compatible: existing 3-arg callers are unaffected."""
+        assert gen._rep_reward_line("Applicant", "+500", "Rep") == (
+            "<EM4>Applicant:</EM4> +500 Rep"
+        )
+
+    def test_track_suppressed_when_same_as_field_name(self, gen):
+        """A rank literally named the same as its own track (e.g. Contractor
+        rank 2 of the Contractor track) doesn't repeat itself."""
+        assert gen._rep_reward_line("Contractor", "+200", "Rep", "Contractor") == (
+            "<EM4>Contractor:</EM4> +200 Rep"
+        )
+
+    def test_track_with_no_rank_field(self, gen):
+        assert gen._rep_reward_line("", "+500", "Rep", "Security") == (
+            "<EM4>Rep:</EM4> +500 (Security)"
+        )
+
+    def test_track_with_failure_penalty_field(self, gen):
+        assert gen._rep_reward_line("Failure Penalty", "-100", "Rep", "Security") == (
+            "<EM4>Failure Penalty:</EM4> -100 Rep (Security)"
+        )

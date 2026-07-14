@@ -28,6 +28,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable, Optional
 
+from src.utils.win_paths import win_long_path
+
 MANIFEST_FILE = ".diff_manifest.json"
 
 # Default parallel workers for the per-file hash sweep. ~28k tiny XMLs on
@@ -145,7 +147,13 @@ def update_manifest(
     SHA-256 of ~28k files — so wiring this in is the difference between
     a frozen progress bar and a moving one.
     """
-    cache_dir = Path(cache_dir)
+    # DataForge paths under a deep portable/tester install directory can
+    # exceed the 260-char MAX_PATH; os.walk/stat here raise a raw WinError 3
+    # ("cannot find the path specified") even though the file exists. The
+    # \\?\ long-path prefix sidesteps it — see win_paths.win_long_path
+    # (originally added for pak_extractor.py's copy/cleanup step, #221;
+    # this module hits the same limit during the post-extraction snapshot).
+    cache_dir = Path(win_long_path(cache_dir))
     snapshot = _build_snapshot(cache_dir, progress_callback=progress_callback)
     # The hash sweep above reports 100% the instant it finishes, but writing
     # ~28k entries out is itself not instantaneous — without this the bar
@@ -170,7 +178,7 @@ def dirty_categories(cache_dir: Path) -> Optional[set[str]]:
         set()       — nothing changed; all generators can be skipped
         {"ships", …} — only these categories need to re-run
     """
-    cache_dir = Path(cache_dir)
+    cache_dir = Path(win_long_path(cache_dir))
     manifest_file = _manifest_path(cache_dir)
 
     if not manifest_file.exists():

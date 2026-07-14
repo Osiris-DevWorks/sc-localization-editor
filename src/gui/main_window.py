@@ -3665,8 +3665,12 @@ class MainWindow(QMainWindow):
             logger.info(f"Queued cache cleanup target already absent: {old_path}")
             return
         try:
-            import shutil
-            shutil.rmtree(old_path, ignore_errors=False)
+            # _robust_rmtree (not a raw shutil.rmtree) so this survives both
+            # transient Windows locks and a deep old cache path past the
+            # 260-char MAX_PATH (long-path-wraps internally — see
+            # win_paths.win_long_path).
+            from src.utils.pak_extractor import _robust_rmtree
+            _robust_rmtree(old_path)
             logger.info(f"Removed old DataForge cache at {old_path}")
         except Exception as e:
             logger.warning(
