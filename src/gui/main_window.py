@@ -2613,7 +2613,7 @@ class MainWindow(QMainWindow):
 
         from src.gui.test_plan_panel import TestPlanPanel
 
-        dock = QDockWidget("Test Plan", self)
+        dock = QDockWidget(tr("toolbar.menu_test_plan"), self)
         dock.setObjectName("testPlanDock")
         dock.setAllowedAreas(
             Qt.DockWidgetArea.RightDockWidgetArea
@@ -2624,7 +2624,8 @@ class MainWindow(QMainWindow):
             | QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        dock.setWidget(TestPlanPanel(dock))
+        self.test_plan_panel = TestPlanPanel(dock)
+        dock.setWidget(self.test_plan_panel)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock)
         self.test_plan_dock = dock
         return dock
@@ -2686,14 +2687,14 @@ class MainWindow(QMainWindow):
 
         btn_row = QHBoxLayout()
         btn_row.setSpacing(4)
-        em3_btn = QPushButton(tr("strings_tab.editor_underline_btn"))
-        em3_btn.setToolTip(tr("strings_tab.editor_underline_tooltip"))
-        em3_btn.clicked.connect(lambda: self._editor_dock_wrap("EM3"))
-        btn_row.addWidget(em3_btn)
-        em4_btn = QPushButton(tr("strings_tab.editor_highlight_btn"))
-        em4_btn.setToolTip(tr("strings_tab.editor_highlight_tooltip"))
-        em4_btn.clicked.connect(lambda: self._editor_dock_wrap("EM4"))
-        btn_row.addWidget(em4_btn)
+        self._editor_underline_btn = QPushButton(tr("strings_tab.editor_underline_btn"))
+        self._editor_underline_btn.setToolTip(tr("strings_tab.editor_underline_tooltip"))
+        self._editor_underline_btn.clicked.connect(lambda: self._editor_dock_wrap("EM3"))
+        btn_row.addWidget(self._editor_underline_btn)
+        self._editor_highlight_btn = QPushButton(tr("strings_tab.editor_highlight_btn"))
+        self._editor_highlight_btn.setToolTip(tr("strings_tab.editor_highlight_tooltip"))
+        self._editor_highlight_btn.clicked.connect(lambda: self._editor_dock_wrap("EM4"))
+        btn_row.addWidget(self._editor_highlight_btn)
         btn_row.addStretch()
         vlayout.addLayout(btn_row)
 
@@ -3434,6 +3435,34 @@ class MainWindow(QMainWindow):
         if not self.entries:
             self.table_status_label.setText(tr("strings_tab.no_data"))
 
+        # Side-docked String Editor (built lazily on first use — skip if never opened)
+        if getattr(self, "editor_dock", None) is not None:
+            self.editor_dock.setWindowTitle(tr("strings_tab.editor_dock_title"))
+            self._editor_underline_btn.setText(tr("strings_tab.editor_underline_btn"))
+            self._editor_underline_btn.setToolTip(tr("strings_tab.editor_underline_tooltip"))
+            self._editor_highlight_btn.setText(tr("strings_tab.editor_highlight_btn"))
+            self._editor_highlight_btn.setToolTip(tr("strings_tab.editor_highlight_tooltip"))
+            self.editor_dock_text.setPlaceholderText(tr("strings_tab.editor_placeholder"))
+            # Only reset the key label if it's still showing the empty-state
+            # text — a real row's key is the current content otherwise, and
+            # that shouldn't be clobbered by a language switch.
+            if self._editor_dock_entry_idx is None:
+                self.editor_dock_key_label.setText(tr("strings_tab.no_row_selected"))
+
+        # Side-docked Test Plan (built lazily on first use — skip if never opened)
+        if getattr(self, "test_plan_dock", None) is not None:
+            self.test_plan_dock.setWindowTitle(tr("toolbar.menu_test_plan"))
+            self.test_plan_panel.retranslate_ui()
+
+        # Footer donation fallback text (only set when the image asset failed
+        # to load — leave pixmap-backed buttons alone).
+        if self.feedback_label.pixmap() is None or self.feedback_label.pixmap().isNull():
+            self.feedback_label.setText(tr("toolbar.feedback_fallback_text"))
+        if self.paypal_button.pixmap() is None or self.paypal_button.pixmap().isNull():
+            self.paypal_button.setText(tr("toolbar.paypal_fallback_text"))
+        if self.venmo_button.pixmap() is None or self.venmo_button.pixmap().isNull():
+            self.venmo_button.setText(tr("toolbar.venmo_fallback_text"))
+
         # Cascade to child tabs
         self.config_tab.retranslate_ui()
         self.enhancements_tab.retranslate_ui()
@@ -3443,6 +3472,7 @@ class MainWindow(QMainWindow):
         # last update-check result; re-render them in the new language
         # (after the cascade so this write wins).
         self._refresh_update_indicator_texts()
+        self._refresh_channel_indicator()
         self.log_tab.retranslate_ui()
 
     @pyqtSlot(str)

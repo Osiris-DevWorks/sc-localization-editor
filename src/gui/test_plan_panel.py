@@ -26,6 +26,7 @@ from PyQt6.QtWidgets import (
 )
 
 from src.utils import test_plan
+from src.utils.i18n import tr
 from src.utils.settings import AppSettings
 from src.utils.version import get_version
 
@@ -66,19 +67,16 @@ class TestPlanPanel(QWidget):
     def _build_ui(self) -> None:
         layout = QVBoxLayout(self)
 
-        intro = QLabel(
-            "Work through each item on this build and check it off as you "
-            "verify it. Your progress is saved automatically. When you're "
-            "done, Copy Report or Submit to share what you found."
-        )
-        intro.setWordWrap(True)
-        layout.addWidget(intro)
+        self._intro_label = QLabel(tr("test_plan.intro"))
+        self._intro_label.setWordWrap(True)
+        layout.addWidget(self._intro_label)
 
         # Tester name (persisted; used to label the submitted report).
         name_row = QHBoxLayout()
-        name_row.addWidget(QLabel("Tester:"))
+        self._tester_label = QLabel(tr("test_plan.tester_label"))
+        name_row.addWidget(self._tester_label)
         self.tester_edit = QLineEdit(AppSettings.get_tester_name())
-        self.tester_edit.setPlaceholderText("Your name or handle")
+        self.tester_edit.setPlaceholderText(tr("test_plan.tester_placeholder"))
         self.tester_edit.editingFinished.connect(
             lambda: AppSettings.set_tester_name(self.tester_edit.text())
         )
@@ -115,33 +113,29 @@ class TestPlanPanel(QWidget):
 
         # Actions.
         btn_row = QHBoxLayout()
-        self.submit_btn = QPushButton("Submit to Discord")
+        self.submit_btn = QPushButton(tr("test_plan.submit_btn"))
         self.submit_btn.clicked.connect(self._submit)
         webhook = AppSettings.get_test_webhook_url()
         if not webhook:
             self.submit_btn.setEnabled(False)
             self.submit_btn.setToolTip(
-                "No Discord webhook configured. Set the "
-                f"{AppSettings.TEST_WEBHOOK_ENV} environment variable (or the "
-                "test_plan/webhook_url setting) to enable submitting. Use Copy "
-                "Report in the meantime."
+                tr("test_plan.no_webhook_tooltip", env_var=AppSettings.TEST_WEBHOOK_ENV)
             )
         btn_row.addWidget(self.submit_btn)
 
-        self.copy_btn = QPushButton("Copy Report")
+        self.copy_btn = QPushButton(tr("test_plan.copy_report_btn"))
         self.copy_btn.clicked.connect(self._copy_report)
         btn_row.addWidget(self.copy_btn)
 
-        self.reset_btn = QPushButton("Reset")
+        self.reset_btn = QPushButton(tr("test_plan.reset_btn"))
         self.reset_btn.clicked.connect(self._reset)
         btn_row.addWidget(self.reset_btn)
 
         # Free-text feedback, included in the report (clipboard and Discord).
-        layout.addWidget(QLabel("Additional feedback (optional):"))
+        self._notes_label = QLabel(tr("test_plan.notes_label"))
+        layout.addWidget(self._notes_label)
         self.notes_edit = QPlainTextEdit()
-        self.notes_edit.setPlaceholderText(
-            "Describe any bugs, surprises, or suggestions..."
-        )
+        self.notes_edit.setPlaceholderText(tr("test_plan.notes_placeholder"))
         self.notes_edit.setMaximumHeight(110)
         layout.addWidget(self.notes_edit)
 
@@ -150,6 +144,25 @@ class TestPlanPanel(QWidget):
         self.status_label = QLabel("")
         self.status_label.setWordWrap(True)
         layout.addWidget(self.status_label)
+
+    def retranslate_ui(self) -> None:
+        """Re-apply tr() to every static widget after a language switch.
+
+        Checklist item text and section titles come from src.utils.test_plan's
+        TEST_SECTIONS table, a separate data layer that doesn't route through
+        tr() (out of scope here — a bigger, distinct conversion)."""
+        self._intro_label.setText(tr("test_plan.intro"))
+        self._tester_label.setText(tr("test_plan.tester_label"))
+        self.tester_edit.setPlaceholderText(tr("test_plan.tester_placeholder"))
+        self.submit_btn.setText(tr("test_plan.submit_btn"))
+        if not AppSettings.get_test_webhook_url():
+            self.submit_btn.setToolTip(
+                tr("test_plan.no_webhook_tooltip", env_var=AppSettings.TEST_WEBHOOK_ENV)
+            )
+        self.copy_btn.setText(tr("test_plan.copy_report_btn"))
+        self.reset_btn.setText(tr("test_plan.reset_btn"))
+        self._notes_label.setText(tr("test_plan.notes_label"))
+        self.notes_edit.setPlaceholderText(tr("test_plan.notes_placeholder"))
 
     def _make_check_row(self, key: str, text: str) -> QWidget:
         """A checklist row: a text-less checkbox plus a word-wrapping label.
@@ -200,10 +213,10 @@ class TestPlanPanel(QWidget):
             import pyperclip
 
             pyperclip.copy(report)
-            self.status_label.setText("Report copied to clipboard.")
+            self.status_label.setText(tr("test_plan.copied_status"))
         except Exception as e:
             logger.error("Could not copy test-plan report: %s", e)
-            self.status_label.setText("Could not copy report to clipboard.")
+            self.status_label.setText(tr("test_plan.copy_failed_status"))
 
     def _reset(self) -> None:
         self._checked = set()
@@ -213,18 +226,18 @@ class TestPlanPanel(QWidget):
             cb.setChecked(False)
             cb.blockSignals(False)
         self._refresh_progress()
-        self.status_label.setText("Checklist reset.")
+        self.status_label.setText(tr("test_plan.reset_status"))
 
     def _submit(self) -> None:
         webhook = AppSettings.get_test_webhook_url()
         if not webhook:
-            self.status_label.setText("No Discord webhook configured.")
+            self.status_label.setText(tr("test_plan.no_webhook_status"))
             return
         from src.gui.workers import TestPlanSubmitWorker
 
         chunks = test_plan.discord_chunks(self._build_report())
         self.submit_btn.setEnabled(False)
-        self.status_label.setText("Sending report to Discord...")
+        self.status_label.setText(tr("test_plan.sending_status"))
         self._submit_worker = TestPlanSubmitWorker(webhook, chunks, self)
         self._submit_worker.finished.connect(self._on_submit_finished)
         self._submit_worker.start()

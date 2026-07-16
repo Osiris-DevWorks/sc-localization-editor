@@ -761,6 +761,46 @@
     "extract_tooltip": {
       "ht": "Unpack stock localization (base.ini) plus the DataForge entity XMLs from your installed Data.p4k. Run after every Star Citizen patch — the strings reload into the table automatically when extraction finishes.",
       "at": ""
+    },
+    "include_new_cb": {
+      "ht": "Include discovered items",
+      "at": ""
+    },
+    "disable_tutorial_cb": {
+      "ht": "Disable Tutorial",
+      "at": ""
+    },
+    "invalid_data_folder_body": {
+      "ht": "The selected data folder is a file, not a directory:\n{path}",
+      "at": ""
+    },
+    "onedrive_folder_title": {
+      "ht": "Data Folder Inside OneDrive",
+      "at": ""
+    },
+    "onedrive_folder_body": {
+      "ht": "This folder is inside OneDrive:\n\n{path}\n\nOneDrive can sync and even empty these files, which has caused lost edits. A local folder outside OneDrive is strongly recommended.\n\nUse this OneDrive folder anyway?",
+      "at": ""
+    },
+    "dataforge_cache_old_new": {
+      "ht": "Old: {old}\nNew: {new}",
+      "at": ""
+    },
+    "channel_not_installed_hint": {
+      "ht": "⚠ {channel} isn't installed under this root — pick another channel",
+      "at": ""
+    },
+    "preview_merge_failed": {
+      "ht": "Failed to preview merge: {error}",
+      "at": ""
+    },
+    "game_path_placeholder": {
+      "ht": "C:\\Program Files\\Roberts Space Industries\\StarCitizen",
+      "at": ""
+    },
+    "language_source_placeholder": {
+      "ht": "https://…/global.ini",
+      "at": ""
     }
   },
   "enhancements": {
@@ -2312,6 +2352,64 @@
     },
     "failed_body": {
       "ht": "Failed to apply to game: {error}",
+      "at": ""
+    }
+  },
+  "test_plan": {
+    "intro": {
+      "ht": "Work through each item on this build and check it off as you verify it. Your progress is saved automatically. When you're done, Copy Report or Submit to share what you found.",
+      "at": ""
+    },
+    "tester_label": {
+      "ht": "Tester:",
+      "at": ""
+    },
+    "tester_placeholder": {
+      "ht": "Your name or handle",
+      "at": ""
+    },
+    "submit_btn": {
+      "ht": "Submit to Discord",
+      "at": ""
+    },
+    "no_webhook_tooltip": {
+      "ht": "No Discord webhook configured. Set the {env_var} environment variable (or the test_plan/webhook_url setting) to enable submitting. Use Copy Report in the meantime.",
+      "at": ""
+    },
+    "copy_report_btn": {
+      "ht": "Copy Report",
+      "at": ""
+    },
+    "reset_btn": {
+      "ht": "Reset",
+      "at": ""
+    },
+    "notes_label": {
+      "ht": "Additional feedback (optional):",
+      "at": ""
+    },
+    "notes_placeholder": {
+      "ht": "Describe any bugs, surprises, or suggestions...",
+      "at": ""
+    },
+    "copied_status": {
+      "ht": "Report copied to clipboard.",
+      "at": ""
+    },
+    "copy_failed_status": {
+      "ht": "Could not copy report to clipboard.",
+      "at": ""
+    },
+    "reset_status": {
+      "ht": "Checklist reset.",
+      "at": ""
+    },
+    "no_webhook_status": {
+      "ht": "No Discord webhook configured.",
+      "at": ""
+    },
+    "sending_status": {
+      "ht": "Sending report to Discord...",
       "at": ""
     }
   }
