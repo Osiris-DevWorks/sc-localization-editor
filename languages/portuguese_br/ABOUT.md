@@ -23,11 +23,13 @@ Todas as ferramentas da Osiris DevWorks serão **totalmente gratuitas** ou terã
 
 Obrigado a quem contribuiu com código para o Smart Citizen:
 
+- **Stealrull**
 - **Ishikudeska**
 - **jonigirl**
 - **Coerwyn**
 - **denis-coach** (h0use)
 - **scubamount**
+- **hkstrongside**
 
 ## Tradutores
 
@@ -35,6 +37,7 @@ Obrigado a quem traduziu a interface do Smart Citizen:
 
 - **Akwa** (Francês)
 - **Nxzzin** (Português brasileiro)
+- **Thord82** (Espanhol)
 
 ## Agradecimentos
 
@@ -48,6 +51,8 @@ Obrigado aos testadores que ajudaram a moldar o Smart Citizen com seu feedback:
 - **Apolleon Phoibos**
 - **Epiq**
 - **Narull**
+- **XaileiShiv**
+- **Mindbulletz**
 
 ### Apoiadores
 
@@ -68,7 +73,7 @@ As strings do jogo em idiomas diferentes do inglês são traduções da comunida
 ### 🎯 Recursos Centrais
 - **Carregar e Editar**: carregue o `global.ini` da sua instalação do Star Citizen e personalize strings em uma tabela intuitiva
 - **Suporte Multicanal**: LIVE / PTU / EPTU / HOTFIX / TECH-PREVIEW têm cada um seu próprio `user.ini`, cache, backups e extração do DataForge isolados; troque de canal na aba Config sem reiniciar
-- **Suporte a Vários Idiomas**: alterne o app e as strings do jogo entre inglês, francês e português do Brasil na aba Config. Idiomas diferentes do inglês sobrepõem um `global.ini` traduzido pela comunidade à base em inglês, com fallback para o inglês no que não estiver traduzido. Mais idiomas serão expostos conforme as traduções da comunidade chegarem (veja `languages/TRANSLATIONS.md`)
+- **Suporte a Vários Idiomas**: alterne o app e as strings do jogo entre inglês, francês, espanhol e português do Brasil na aba Config. Idiomas diferentes do inglês sobrepõem um `global.ini` traduzido pela comunidade à base em inglês, com fallback para o inglês no que não estiver traduzido. Mais idiomas serão expostos conforme as traduções da comunidade chegarem (veja `languages/TRANSLATIONS.md`)
 - **Contratos de Missão**: edite textos de contratos e briefings na categoria Missions dedicada
 - **Filtragem Inteligente**: busque strings, filtre por categoria (Ships, Ship Items, Missions, Gear, Commodities, Journal, Other) ou por status de modificação
 - **Filtros por Coluna**: digite direto nas caixas de filtro sob cada cabeçalho de coluna para buscas refinadas
@@ -78,6 +83,8 @@ As strings do jogo em idiomas diferentes do inglês são traduções da comunida
 - **Restauração de Backups**: mantenha até 5 versões de backup por canal; reverta mudanças a qualquer momento com um clique
 - **Limpar Localização**: faça o jogo voltar ao texto original sem perder suas alterações salvas
 - **Importar INI**: importe um arquivo INI existente e resolva conflitos chave por chave com a caixa de diálogo integrada
+- **Modo Simples e Modo Avançado**: abra em uma tela Simples de dois botões (um aplica os aprimoramentos com suas configurações salvas, o outro muda para o Avançado), ou use a interface Avançada completa (tabela, filtros, Aprimoramentos, Config) sempre que quiser editar à mão. Escolha o padrão na instalação e alterne dentro do app
+- **Aba FAQ**: as perguntas que mais recebemos, respondidas direto no app — quais arquivos são tocados, risco de banimento, o aviso de app não reconhecido do Windows, e como desfazer as alterações
 - **Tutorial Guiado**: um tour com balões orienta novos usuários pelo fluxo de trabalho no primeiro uso de cada versão, repetível a qualquer momento pelo botão Tutorial
 
 ### 🔄 Origem dos Dados e Persistência
@@ -90,10 +97,14 @@ As strings do jogo em idiomas diferentes do inglês são traduções da comunida
 - **Estatísticas de Naves**: velocidade SCM, combustível de hidrogênio/quântico, capacidade de carga, armamento completo e multiplicadores de armadura (físico / energia / distorção / térmico) anexados às descrições das naves
 - **Estatísticas de Componentes**: HP de escudo, consumo de energia, taxa de refrigeração, regeneração e afins para escudos, refrigeradores, usinas, motores quânticos e radares, com tags de nome no estilo `[MIL-S2-A]` por padrão (totalmente personalizáveis no Criador de Tags)
 - **Estatísticas de Armas**: DPS, cadência, alcance e dano de canhões e torretas de nave, de S1 a capital. Armas de nave recebem uma tag dano+tamanho no estilo `[E-S2]`, mísseis `[IR-S1] Arrester III` e bombas `[S5] 500SCB Cluster`
-- **Anotações de Missão**: tags de recompensa de blueprint `[BP]` / `[BP?]` nos títulos, além de blocos estruturados *MISSION DETAILS*, *POTENTIAL BLUEPRINTS* e *ITEM REWARDS* nas descrições. Linhas de nível de reputação mostram nomes reais de ranks (Rookie, Jr. Contractor etc.) em vez de numeração genérica
-- **Referências Cruzadas no Diário**: entradas do Compêndio de Mineração ganham referências de fabricação; commodities usadas em fabricação ganham uma tag de nome `[CF]` personalizável e a lista de todos os blueprints que as exigem
+- **Anotações de Missão**: tags de recompensa de blueprint `[BP]` / `[BP?]` nos títulos, além de blocos estruturados *MISSION DETAILS*, *POTENTIAL BLUEPRINTS* e *ITEM REWARDS* nas descrições. Linhas de nível de reputação mostram nomes reais de ranks (Rookie, Jr. Contractor etc.) em vez de numeração genérica. O XP de missão indica a trilha de reputação que alimenta, e títulos de scan/mineração da Battaglia levam tags de assinatura de recurso `[RS ####]`
+- **Referências Cruzadas no Diário**: entradas do Compêndio de Mineração ganham referências de fabricação e a assinatura de recurso base de cada minério; commodities usadas em fabricação ganham uma tag de nome `[CF]` personalizável e a lista de todos os blueprints que as exigem
+- **Efeitos de Consumíveis Médicos**: as canetas CureLife básicas (MedPen, OxyPen, AdrenaPen e companhia) ganham uma linha de efeito em linguagem clara, para a descrição dizer o que a caneta faz em vez de só contar a história dela
 - **Naves Favoritas**: marque uma nave com estrela para prefixar o nome com um caractere configurável (padrão `*`) e fazê-la subir ao topo do terminal ASOP no jogo
-- **Criador de Tags**: personalize as tags entre colchetes de componentes, mísseis, armas de nave e commodities; reordene elementos, mude o tamanho da abreviação (M / MIL / Military), escolha separadores e colchetes, ou coloque a tag depois do nome. Componentes têm um elemento Type opcional (Escudo, Refrigerador etc.)
+- **Criador de Tags**: personalize as tags entre colchetes de componentes, mísseis, armas de nave e commodities; reordene elementos, mude o tamanho da abreviação (M / MIL / Military), escolha separadores e colchetes, ou coloque a tag depois do nome. Componentes têm um elemento Type opcional (Escudo, Refrigerador etc.); commodities têm um elemento Usage que mostra para onde vão seus materiais de fabricação
+- **Títulos de Missão**: comece títulos de transporte pela rota (ex.: `Area18 > Lorville`) — posicionamento, seta, separador e nível de detalhe do local configuráveis, além do encurtamento opcional dos títulos originais, com pré-visualização ao vivo
+- **Estatísticas Acima ou Abaixo**: escolha se o bloco de estatísticas fica no topo ou no final da descrição
+- **Rastreador de Blueprints**: uma aba dedicada para marcar os blueprints de fabricação que você já possui. Mova itens entre Disponíveis e Adquiridos, filtre por Missão / Tipo / Classe / Tamanho / Grau, e itens adquiridos ganham uma tag azul `[Owned]` nas listas de blueprints das missões. **Escanear Logs por Blueprints Adquiridos** preenche a coleção automaticamente a partir dos seus arquivos de log do Star Citizen, importando só o que é novo desde o último escaneamento
 - **Rótulos de Missão**: renomeie os cabeçalhos de seção (MISSION DETAILS, POTENTIAL BLUEPRINTS etc.), o rótulo de XP e a tag de ênfase dos cabeçalhos
 - **Patches Declarativos para Bugs de Dados da CIG**: um sistema de patches aplica correções a bugs conhecidos do DataForge no momento da extração, para o texto no jogo sair certo sem esperar a CIG
 - **Categorias Seletivas**: ative ou desative cada categoria de aprimoramento de forma independente na aba Aprimoramentos
@@ -108,14 +119,14 @@ As strings do jogo em idiomas diferentes do inglês são traduções da comunida
 - **Persistência no Registro**: todos os caminhos e preferências salvos com segurança no Registro do Windows
 - **Armazenamento Configurável**: suas edições ficam em `<pasta de dados>\<canal>\` (padrão `Documents\Smart Citizen`, uma subárvore isolada por canal do Star Citizen) para persistência segura entre sessões
 - **Visualizador de Log Integrado**: log da aplicação em tempo real com filtro de nível, rolagem automática e botão Exportar para relatórios de bug
-- **Notificação de Atualização**: o Smart Citizen consulta os releases do GitHub periodicamente e mostra uma notificação não intrusiva quando um instalador mais novo está disponível
+- **Atualizador Automático**: o Smart Citizen consulta os releases do GitHub ao iniciar e mostra as notas da versão no app; um clique (mais uma permissão do Windows) baixa a atualização, instala e reabre o app
 
 ## Início Rápido
 
 1. **Primeiro Uso**: o app detecta automaticamente sua instalação do Star Citizen (editável na aba **Config**)
 2. **Extrair**: clique em **Extrair do Data.p4k** na aba Config para descompactar a localização original e os dados de entidades do DataForge do jogo instalado; as strings carregam na tabela automaticamente quando a extração termina
 3. **Editar Strings**: use a busca e os filtros, depois dê um duplo clique em qualquer célula de Valor Personalizado para personalizar o texto
-4. **Aplicar**: clique em **Aplicar ao Jogo**; suas mudanças são salvas e aplicadas com backup automático
+4. **Aplicar**: clique em **Aplicar Aprimoramentos**; suas mudanças são salvas e aplicadas com backup automático
 5. **Aprimoramentos (Opcional)**: abra a aba Aprimoramentos para ativar sobreposições de estatísticas de naves, componentes, armas e recompensas de missão
 6. **Após Atualizações do Jogo**: execute novamente Extrair do Data.p4k; suas edições se reaplicam automaticamente
 

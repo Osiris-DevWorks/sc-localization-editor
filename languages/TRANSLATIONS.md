@@ -50,6 +50,21 @@ them against the new source.
 
 ## Backfill log
 
+- **2.3.0 cycle (2026-07-17, Claude Sonnet 5):** AI backfill of the in-app docs
+  (#248). french and portuguese_br `HELP.md`/`ABOUT.md` gained the 2.2.0
+  sections they were missing (Simple & Advanced mode, dirty-state button
+  colors + Unapplied Changes prompt, App Updates, Blueprint Tracker tab,
+  Mission Titles, FAQ tab, medical consumables, RS tags/rep-track XP, Restore
+  user.ini, credits updates); their `LEGAL.md` was already current. spanish
+  gained its first `HELP.md`/`ABOUT.md`/`LEGAL.md`, translated in full from
+  the English originals using Thord82's ui.json terminology (Mejoras,
+  Rastreador de blueprints, Aplicar mejoras, …). All of it is AI text styled
+  on the existing human ui.json strings — flagged for review by the language
+  leads (Akwa/Ishikudeska for french, Nxzzin for portuguese_br, Thord82 for
+  spanish) per the policy below; button names in the docs follow what the
+  translated UI actually shows today, including french's stale
+  `apply_tag_changes_btn` (see *Needs human re-review*).
+
 - **2.2.0 pre-release (2026-07-15, Claude Fable 5):** AI backfill of the keys
   this cycle added in English only. french and portuguese_br each gained 43
   `at`-only keys (Blueprint Tracker tab, blueprint shuttle/facets, log-scan
@@ -75,7 +90,9 @@ them against the new source.
   strings landed in `ht`; `at` left empty). A handful of newer keys added after
   his contribution are still untranslated (grep `"ht": ""` — the simple-mode
   page, FAQ tab, a few toolbar/filter/column labels); they fall back to English
-  until the pre-release AI backfill. The base `global.ini` for Spanish is sourced
+  until the pre-release AI backfill. The `HELP.md` / `ABOUT.md` / `LEGAL.md`
+  documents in this folder are AI translations (2.3.0 cycle) pending Thord82's
+  review. The base `global.ini` for Spanish is sourced
   from Thord82's repo (`Thord82/Star_citizen_ES`, branch `propuestas_thord`),
   which tracks the current game build far more completely than the prior Dymerz
   source (99.9% vs 78.4% key coverage). Spanish writes to the game's

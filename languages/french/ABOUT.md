@@ -23,11 +23,13 @@ Tous les outils Osiris DevWorks seront soit **entièrement gratuits**, soit dot�
 
 Merci à celles et ceux qui ont contribué au code de Smart Citizen :
 
+- **Stealrull**
 - **Ishikudeska**
 - **jonigirl**
 - **Coerwyn**
 - **denis-coach** (h0use)
 - **scubamount**
+- **hkstrongside**
 
 ## Traducteurs
 
@@ -35,6 +37,7 @@ Merci à celles et ceux qui ont traduit l'interface de Smart Citizen :
 
 - **Akwa** (Français)
 - **Nxzzin** (Português brasileiro)
+- **Thord82** (Español)
 
 ## Remerciements
 
@@ -48,6 +51,8 @@ Merci aux testeurs qui ont façonné Smart Citizen par leurs retours :
 - **Apolleon Phoibos**
 - **Epiq**
 - **Narull**
+- **XaileiShiv**
+- **Mindbulletz**
 
 ### Soutiens
 
@@ -68,7 +73,7 @@ Les textes du jeu en langues autres que l'anglais sont des traductions communaut
 ### 🎯 Fonctionnalités principales
 - **Charger et modifier** : chargez le `global.ini` de votre installation Star Citizen et personnalisez les textes dans une vue en tableau intuitive
 - **Multi-canaux** : LIVE / PTU / EPTU / HOTFIX / TECH-PREVIEW ont chacun leur `user.ini`, cache, sauvegardes et extraction DataForge isolés ; changez de canal depuis l'onglet Paramètres sans redémarrer
-- **Multilingue** : basculez l'application et les textes du jeu entre anglais, français et portugais du Brésil depuis l'onglet Paramètres. Les langues autres que l'anglais superposent un `global.ini` traduit par la communauté à la base anglaise, avec repli sur l'anglais pour tout texte non traduit. D'autres langues seront proposées à mesure que les traductions communautaires arrivent (voir `languages/TRANSLATIONS.md`)
+- **Multilingue** : basculez l'application et les textes du jeu entre anglais, français, espagnol et portugais du Brésil depuis l'onglet Paramètres. Les langues autres que l'anglais superposent un `global.ini` traduit par la communauté à la base anglaise, avec repli sur l'anglais pour tout texte non traduit. D'autres langues seront proposées à mesure que les traductions communautaires arrivent (voir `languages/TRANSLATIONS.md`)
 - **Contrats de mission** : modifiez les textes de contrats et de briefings depuis la catégorie Missions dédiée
 - **Filtrage intelligent** : recherchez des textes, filtrez par catégorie (Ships, Ship Items, Missions, Gear, Commodities, Journal, Other) ou par statut de modification
 - **Filtres par colonne** : tapez directement dans les champs de filtre sous chaque en-tête de colonne pour une recherche fine
@@ -78,6 +83,8 @@ Les textes du jeu en langues autres que l'anglais sont des traductions communaut
 - **Restauration de sauvegardes** : conservez jusqu'à 5 versions de sauvegarde par canal ; revenez en arrière à tout moment en un clic
 - **Effacer la localisation** : ramenez votre jeu au texte d'origine sans perdre vos modifications enregistrées
 - **Importer un INI** : importez un fichier INI existant et résolvez les conflits clé par clé avec la boîte de dialogue intégrée
+- **Mode Simple et mode Avancé** : ouvrez sur un écran Simple à deux boutons (l'un applique les enrichissements avec vos réglages enregistrés, l'autre bascule en mode Avancé), ou utilisez l'interface Avancée complète (tableau, filtres, Enrichissements, Paramètres) dès que vous voulez retoucher à la main. Choisissez votre mode par défaut à l'installation et basculez dans l'application
+- **Onglet FAQ** : les questions qu'on nous pose le plus, répondues directement dans l'application — quels fichiers sont touchés, le risque de bannissement, l'avertissement Windows « application non reconnue », et comment annuler ses modifications
 - **Tutoriel guidé** : une visite à info-bulles accompagne les nouveaux utilisateurs au premier lancement de chaque version, rejouable à tout moment depuis le bouton Tutoriel
 
 ### 🔄 Données et persistance
@@ -90,10 +97,14 @@ Les textes du jeu en langues autres que l'anglais sont des traductions communaut
 - **Stats de vaisseaux** : vitesse SCM, carburant hydrogène/quantique, capacité de soute, armement complet et multiplicateurs d'armure (physique / énergie / distorsion / thermique) ajoutés aux descriptions de vaisseaux
 - **Stats de composants** : PV de bouclier, consommation, refroidissement, régénération et autres stats pour boucliers, refroidisseurs, générateurs, moteurs quantiques et radars, avec balises de nom de type `[MIL-S2-A]` par défaut (entièrement personnalisables dans le Générateur d'étiquettes)
 - **Stats d'armes** : DPS, cadence, portée et dégâts des canons et tourelles de vaisseau, de S1 au capital. Les armes de vaisseau reçoivent une balise dégâts+taille de type `[E-S2]`, les missiles `[IR-S1] Arrester III`, et les bombes `[S5] 500SCB Cluster`
-- **Annotations de mission** : balises de récompense de plans `[BP]` / `[BP?]` sur les titres, plus des blocs structurés *MISSION DETAILS*, *POTENTIAL BLUEPRINTS* et *ITEM REWARDS* dans les descriptions. Les lignes de palier de réputation affichent les vrais noms de rangs (Rookie, Jr. Contractor, etc.) au lieu d'une numérotation générique
-- **Renvois de journal** : les entrées du Compendium minier reçoivent des renvois de fabrication ; les marchandises utilisées en fabrication reçoivent une balise de nom `[CF]` personnalisable et la liste de tous les plans qui les demandent
+- **Annotations de mission** : balises de récompense de plans `[BP]` / `[BP?]` sur les titres, plus des blocs structurés *MISSION DETAILS*, *POTENTIAL BLUEPRINTS* et *ITEM REWARDS* dans les descriptions. Les lignes de palier de réputation affichent les vrais noms de rangs (Rookie, Jr. Contractor, etc.) au lieu d'une numérotation générique. L'XP de mission nomme la voie de réputation qu'elle alimente, et les titres de scan/minage de Battaglia portent des balises de signature de ressource `[RS ####]`
+- **Renvois de journal** : les entrées du Compendium minier reçoivent des renvois de fabrication et la signature de ressource de base de chaque minerai ; les marchandises utilisées en fabrication reçoivent une balise de nom `[CF]` personnalisable et la liste de tous les plans qui les demandent
+- **Effets des consommables médicaux** : les injecteurs CureLife de base (MedPen, OxyPen, AdrenaPen et compagnie) reçoivent une ligne d'effet en langage clair, pour que la description dise ce que fait l'injecteur au lieu de se limiter à son texte d'ambiance
 - **Vaisseaux favoris** : étoilez un vaisseau pour préfixer son nom d'un caractère configurable (par défaut `*`) et le faire remonter en tête du terminal ASOP en jeu
-- **Générateur d'étiquettes** : personnalisez les balises entre crochets des composants, missiles, armes de vaisseau et marchandises ; réordonnez les éléments, changez la longueur des abréviations (M / MIL / Military), choisissez séparateurs et crochets, ou placez la balise après le nom. Les composants disposent d'un élément Type optionnel (Bouclier, Refroidisseur, etc.)
+- **Générateur d'étiquettes** : personnalisez les balises entre crochets des composants, missiles, armes de vaisseau et marchandises ; réordonnez les éléments, changez la longueur des abréviations (M / MIL / Military), choisissez séparateurs et crochets, ou placez la balise après le nom. Les composants disposent d'un élément Type optionnel (Bouclier, Refroidisseur, etc.) ; les marchandises ont un élément Usage qui montre à quoi servent leurs matériaux de fabrication
+- **Titres de mission** : faites précéder les titres de transport par leur itinéraire (par ex. `Area18 > Lorville`) — placement, flèche, séparateur et niveau de détail du lieu configurables, plus un raccourcissement optionnel des titres d'origine, avec aperçu en direct
+- **Stats en haut ou en bas** : choisissez si le bloc de stats se place en tête ou en pied de description
+- **Suivi des plans** : un onglet dédié pour marquer les plans de fabrication que vous possédez déjà. Déplacez les éléments entre Disponibles et Possédés, filtrez par Mission / Type / Classe / Taille / Grade, et les objets possédés reçoivent une balise bleue `[Owned]` dans les listes de plans des missions. **Rechercher les plans possédés dans les journaux** remplit la collection automatiquement depuis vos fichiers journaux Star Citizen, en n'important que les nouveautés depuis la dernière recherche
 - **Étiquettes de mission** : renommez les en-têtes de section (MISSION DETAILS, POTENTIAL BLUEPRINTS, etc.), le libellé d'XP et la balise d'emphase des en-têtes
 - **Correctifs déclaratifs des bugs de données CIG** : un système de correctifs applique à l'extraction des corrections aux bugs DataForge connus, pour que le texte en jeu soit correct sans attendre CIG
 - **Catégories sélectives** : activez ou désactivez chaque catégorie d'enrichissements indépendamment depuis l'onglet Enrichissements
@@ -108,14 +119,14 @@ Les textes du jeu en langues autres que l'anglais sont des traductions communaut
 - **Persistance via le registre** : tous les chemins et préférences sont enregistrés dans le registre Windows
 - **Stockage configurable** : vos modifications sont stockées sous `<dossier de données>\<canal>\` (par défaut `Documents\Smart Citizen`, un sous-arbre isolé par canal Star Citizen) pour une persistance sûre entre les sessions
 - **Journal intégré** : journal d'application en temps réel avec filtre de niveau, défilement automatique et bouton d'export pour les rapports de bug
-- **Notification de mise à jour** : Smart Citizen consulte périodiquement les versions GitHub et affiche une notification discrète quand un installateur plus récent est disponible
+- **Mise à jour automatique** : Smart Citizen consulte les versions GitHub au lancement et affiche les notes de version dans l'application ; un clic (plus une demande d'autorisation Windows) télécharge la mise à jour, l'installe et rouvre l'application
 
 ## Démarrage rapide
 
 1. **Premier lancement** : l'application détecte automatiquement votre installation Star Citizen (modifiable dans l'onglet **Paramètres**)
 2. **Extraire** : cliquez sur **Extraire depuis Data.p4k** dans l'onglet Paramètres pour décompresser la localisation d'origine et les données d'entités DataForge depuis votre jeu installé ; les textes se chargent automatiquement dans le tableau à la fin de l'extraction
 3. **Modifier les textes** : utilisez la recherche et les filtres, puis double-cliquez sur une cellule Valeur personnalisée pour personnaliser le texte
-4. **Appliquer** : cliquez sur **Appliquer au jeu** ; vos changements sont enregistrés et appliqués avec une sauvegarde automatique
+4. **Appliquer** : cliquez sur **Appliquer les enrichissements** ; vos changements sont enregistrés et appliqués avec une sauvegarde automatique
 5. **Enrichissements (optionnel)** : ouvrez l'onglet Enrichissements pour activer les surcouches de stats des vaisseaux, composants, armes et récompenses de mission
 6. **Après les mises à jour du jeu** : relancez Extraire depuis Data.p4k ; vos modifications se réappliquent automatiquement
 

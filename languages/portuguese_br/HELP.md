@@ -6,6 +6,15 @@
 
 Ao iniciar, o Smart Citizen recarrega as personalizações da sessão anterior e procura sua instalação do Star Citizen: o instalador preenche esse caminho automaticamente, mas você pode alterá-lo na aba **Config**. Toda a localização original e os dados do DataForge vêm **diretamente do seu `Data.p4k` instalado** (sem downloads, sem espelhos da comunidade), então extrair uma vez é um primeiro passo obrigatório após a instalação ou após qualquer patch do jogo.
 
+## Modo Simples e Modo Avançado
+
+O Smart Citizen abre em um de dois modos, e você pode alternar a qualquer momento.
+
+- O **Modo Simples** é uma tela de dois botões: um deles, **Aplicar Aprimoramentos**, executa toda a cadeia com suas configurações atuais (extração, geração e aplicação, com backup prévio do arquivo do jogo); o outro muda para o **Modo Avançado**. É o caminho rápido quando você só quer os aprimoramentos aplicados, sem editar strings à mão.
+- O **Modo Avançado** é o app completo: a tabela de strings, os filtros, a aba Aprimoramentos, a aba Config e todo o resto deste guia.
+
+Escolha seu modo padrão na instalação, ou alterne entre eles dentro do app. O Modo Simples usa as últimas configurações salvas no Avançado.
+
 ## 1. Extrair a Localização Base do Data.p4k
 
 Abra a aba **Config** e clique em **Extrair do Data.p4k**. Isso descompacta o `global.ini` original e os XMLs de entidades do DataForge usados pelo gerador de aprimoramentos: naves, componentes, armas, missões, blueprints etc.
@@ -63,7 +72,9 @@ Use o filtro de **Categoria** para focar em um domínio:
 
 ## 7. Aplicar as Alterações ao Jogo
 
-Clique em **Aplicar ao Jogo** para gravar suas edições na instalação do jogo. Um backup com data e hora do `global.ini` atual é criado em `<pasta de dados>\<canal>\backups\` antes de qualquer sobrescrita.
+Clique em **Aplicar Aprimoramentos** para gravar suas edições na instalação do jogo. Um backup com data e hora do `global.ini` atual é criado em `<pasta de dados>\<canal>\backups\` antes de qualquer sobrescrita.
+
+A cor do botão mostra a situação: **vermelho** significa que algo mudou desde a última aplicação (uma edição, uma regeneração, uma troca de idioma ou canal) e o jogo ainda não recebeu; **verde** significa que o jogo já corresponde ao que está carregado, e o botão fica desativado porque não há nada a refazer. A mesma convenção vermelho/verde vale para **Gerar Aprimoramentos** e **Aplicar alterações nas tags** na aba Aprimoramentos. Se você fechar o app com o botão Aplicar ainda vermelho, o Smart Citizen pergunta se deve aplicar agora ou sair sem aplicar, para que trabalho não aplicado nunca se perca em silêncio.
 
 O Smart Citizen também carimba uma pequena marca d'água na string de versão do launcher (`Frontend_PU_Version`), acrescentando `| Localizations Enhanced with Smart Citizen v{VERSION}`. É assim que você confirma no jogo que seu loc-pack está ativo: olhe o rótulo de versão no menu principal do Star Citizen. A marca é reescrita a cada aplicação, então nunca se acumula entre versões.
 
@@ -105,15 +116,38 @@ Ao aplicar, o app grava na pasta de idioma correspondente da instalação do jog
 
 Quer ajudar a traduzir? O status das traduções por idioma fica em `languages/TRANSLATIONS.md` no repositório, e preferimos muito mais as suas palavras do que as de uma máquina. Fale com a gente no Discord.
 
+## 15. Atualizações do App
+
+O Smart Citizen verifica se há uma versão nova a cada inicialização. Quando há, as notas da versão aparecem em uma janela rolável com duas opções:
+
+- **Atualizar Agora** baixa o novo instalador, o Windows pede permissão, e o Smart Citizen fecha, atualiza e reabre na versão nova. Suas edições, backups e configurações ficam intactos.
+- **Depois** mantém você na versão atual; a pergunta volta na próxima inicialização.
+
+Você também pode verificar manualmente a qualquer momento com **Verificar por atualizações** na aba Config. Builds portáteis mostram um botão **Abrir Página da Versão** no lugar, já que não há instalador para executar: baixe o zip novo e descompacte por cima da pasta antiga.
+
 ## Aba Aprimoramentos
 
-- Ative sobreposições de estatísticas que acrescentam dados numéricos às descrições: velocidade SCM, HP de escudo, DPS, capacidade de carga, estatísticas de feixe de lasers de mineração (Fratura / Extração), rendimento de ferramentas de salvamento portáteis, listas de blueprints, XP de missão e mais.
+- Ative sobreposições de estatísticas que acrescentam dados numéricos às descrições: velocidade SCM, HP de escudo, DPS, capacidade de carga, estatísticas de feixe de lasers de mineração (Fratura / Extração), rendimento de ferramentas de salvamento portáteis, listas de blueprints, XP de missão e mais. O XP de missão também indica qual trilha de reputação ele alimenta (ex.: `750 XP (Hauling)`), os contratos de scan/mineração da Battaglia levam uma tag `[RS ####]` com a assinatura de recurso base do minério alvo, e o diário Mining Compendium lista a RS base de cada minério ao lado dos locais de mineração.
+- **Consumíveis Médicos**: adiciona uma linha de efeito em linguagem clara às canetas CureLife básicas (MedPen, OxyPen, AdrenaPen e companhia), para que a descrição diga o que a caneta realmente faz em vez de só contar a história dela.
+- **Mostrar estatísticas acima da descrição**: coloque o bloco de estatísticas no topo da descrição em vez do final, para que os números sejam a primeira coisa lida no jogo.
 - Ative ou desative cada categoria de aprimoramento de forma independente.
 - Configure o caractere de prefixo das naves favoritas.
-- **Criador de Tags**: personalize as tags entre colchetes colocadas nos nomes de componentes, mísseis, armas de nave e commodities. Reordene elementos com ▲/▼, desative elementos individuais, mude o tamanho da abreviação (`M` / `MIL` / `Military`), escolha o separador (nenhum, hífen, espaço etc.) e os colchetes (quadrados, redondos, nenhum etc.), e escolha se a tag aparece antes ou depois do nome. Componentes também têm um elemento **Type** opcional (Escudo, Refrigerador, Usina etc.), desativado por padrão. Clique em **Aplicar alterações nas tags** para salvar e regenerar.
+- **O controle de blueprints adquiridos** mudou para a própria aba **Rastreador de Blueprints**; veja a próxima seção.
+- **Criador de Tags**: personalize as tags entre colchetes colocadas nos nomes de componentes, mísseis, armas de nave e commodities. Reordene elementos com ▲/▼, desative elementos individuais, mude o tamanho da abreviação (`M` / `MIL` / `Military`), escolha o separador (nenhum, hífen, espaço etc.) e os colchetes (quadrados, redondos, nenhum etc.), e escolha se a tag aparece antes ou depois do nome. Componentes também têm um elemento **Type** opcional (Escudo, Refrigerador, Usina etc.), desativado por padrão. Commodities têm um elemento **Usage** que mostra para onde vão seus materiais de fabricação. Clique em **Aplicar alterações nas tags** para salvar e regenerar. (**Gerar Aprimoramentos** também salva antes qualquer edição de tag pendente, para que um ajuste não salvo nunca escape de uma regeneração.)
+- **Títulos de Missão** (aba Criador de Tags): comece os títulos das missões de transporte pela rota. Escolha o posicionamento (antes, depois, ou substituindo o título), a seta da rota (`>`, `->`, `to`, ou as formas `->-`/`->=`/`=>-`/`=>=` que distinguem um ponto único de vários em cada lado), o separador de título e o nível de detalhe do local (endereço completo por padrão; o nome curto pode não aparecer em missões raras), com pré-visualização ao vivo. Uma entrega passa a se ler `Area18 > Lorville - <título original>`, para ver o trajeto de relance na lista de contratos, e transportes com várias paradas listam os destinos (`Area18 > Lorville, New Babbage`). Duas opções independentes encurtam o título original: **Encurtar títulos originais** aplica abreviações de frases selecionadas (ex.: "Local Shipment Route" → "Route", além do tratamento de prefixos de rank e da família Ling), e **Encurtar tamanhos de carga** abrevia os tamanhos ("Extra Small" → "XS"). Caixas individuais dão controle fino — remover "Cargo" ou "Haul", tirar "Rank", ou sublinhar transportes "Direct" para dar ênfase — para que a rota e as tags caibam mesmo em títulos longos.
 - **Rótulos de Missão**: personalize os cabeçalhos de seção dos blocos de aprimoramento de missão (MISSION DETAILS, POTENTIAL BLUEPRINTS, ITEM REWARDS, BLUEPRINT DATA), o rótulo de XP exibido em missões sem rank de reputação específico (padrão "Rep") e a tag de ênfase (EM3 = sublinhado, EM4 = cor) usada nos cabeçalhos.
 - **Campos dos Detalhes de Missão**: mostre ou oculte individualmente cada linha do bloco MISSION DETAILS (tipo de missão, dificuldade, spawns, reputação, blueprints e a tag de título `[BP]`), para que suas descrições de missão carreguem só os dados que importam para você.
 - Clique em **Gerar Aprimoramentos** para extrair os dados do DataForge do `Data.p4k` e reconstruir os arquivos INI de aprimoramento. Os patches declarativos em `patches/` são reaplicados de forma idempotente a cada regeneração, para que os bugs de dados conhecidos da CIG continuem corrigidos sem esperar um patch do jogo.
+
+## Aba Rastreador de Blueprints
+
+Acompanhe quais blueprints de fabricação você já possui, e veja isso refletido no jogo: itens adquiridos recebem uma tag azul `[Owned]` nas listas POTENTIAL BLUEPRINTS das missões, para um contrato mostrar de relance o que ainda falta caçar.
+
+- **Duas listas, um transporte.** Blueprints disponíveis à esquerda, sua coleção à direita. Selecione itens e mova-os com os botões de seta. A coleção persiste entre sessões.
+- **Encontre rápido.** Uma caixa de busca filtra as duas listas, e os filtros **Missão / Tipo / Classe / Tamanho / Grau** reduzem a lista de disponíveis pela missão de origem do blueprint e pelo tipo de item (armadura, arma FPS, item de nave etc.).
+- **Escanear Logs por Blueprints Adquiridos** preenche a coleção automaticamente: a função lê os arquivos de log do Star Citizen atrás dos blueprints recebidos no jogo e os marca como adquiridos. Só os blueprints recebidos desde o último escaneamento são importados, então repetir a operação a qualquer momento é barato. O escaneamento precisa do caminho de instalação do Star Citizen definido na aba Config.
+- **Aplicar Tags [Owned]** retece as tags `[Owned]` nas suas strings carregadas depois de mudar a coleção. Como os outros botões de ação, ele fica **vermelho** quando a coleção tem mudanças que a tabela ainda não incorporou e **verde** quando tudo está sincronizado.
+- A coluna **Adquirido** da tabela de strings ainda mostra uma estrela e ordena os adquiridos primeiro, mas agora é somente leitura; a coleção é gerenciada nesta aba.
 
 ## Aba Config
 
@@ -123,6 +157,7 @@ Quer ajudar a traduzir? O status das traduções por idioma fica em `languages/T
 - **Localização Base (Extração do P4K)**: clique em **Extrair do Data.p4k** para descompactar a localização original e os dados de entidades do DataForge diretamente do jogo instalado. Esta é a única fonte das strings base e dos dados de aprimoramento.
 - **Importar INI**: incorpore um arquivo INI existente às suas alterações pela caixa de resolução de conflitos.
 - **Resetar user.ini**: apague todas as suas edições pessoais do canal ativo. Pede confirmação e faz backup automático do `user.ini` atual antes de limpar.
+- **Restaurar user.ini**: volte suas edições pessoais para um snapshot anterior. O Smart Citizen mantém backups rotativos do `user.ini` (até 5, tirados automaticamente antes de cada mudança): se uma importação ou edição der errado, escolha uma versão anterior e recupere suas strings. A restauração é reversível: o arquivo atual é salvo primeiro.
 
 ## Aba Log
 
@@ -145,6 +180,10 @@ Mostra a contagem de entradas carregadas / modificadas e o estado de qualquer ta
 
 Clique no botão **Tutorial** da barra de ferramentas a qualquer momento para repetir o tour guiado: um passo a passo do fluxo principal com balões apontando cada controle. O tour também roda automaticamente na primeira vez que você inicia uma nova versão, para que uma instalação nova nunca comece no escuro. Clique em **Pular** a qualquer momento para fechá-lo.
 
+## Aba FAQ
+
+A aba **FAQ** responde às perguntas que mais recebemos, direto no app: quais arquivos o Smart Citizen toca, se dá para ser banido por usá-lo, por que o Windows sinaliza o instalador, e como desfazer as alterações. Confira lá primeiro; se a sua pergunta não estiver coberta, o Discord está a um clique.
+
 ## Atalhos de Teclado
 
 - **Ctrl+Shift+C**: copiar as linhas filtradas para a área de transferência (formato chave=valor).
@@ -153,7 +192,7 @@ Clique no botão **Tutorial** da barra de ferramentas a qualquer momento para re
 
 - **Nada na tabela**: confira se **Extrair do Data.p4k** terminou e se o recarregamento pós-extração concluiu, depois verifique a aba **Log** em busca de erros de leitura.
 - **Aprimoramentos vazios ou com itens faltando**: execute **Gerar Aprimoramentos** na aba Aprimoramentos; é preciso ter um cache do DataForge (clique antes em **Extrair do Data.p4k** se ainda não fez).
-- **Falha ao Aplicar ao Jogo**: confirme o caminho de instalação do Star Citizen na aba **Config** e que o jogo não está em execução.
+- **Falha ao Aplicar Aprimoramentos**: confirme o caminho de instalação do Star Citizen na aba **Config** e que o jogo não está em execução.
 - **Dados desatualizados após um patch do jogo**: execute novamente **Extrair do Data.p4k** e depois regenere os aprimoramentos.
 
 ## Problemas Conhecidos
