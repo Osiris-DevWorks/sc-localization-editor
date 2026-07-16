@@ -35,6 +35,22 @@
     "defaults_hint": {
       "ht": "Uses your current settings (the same ones the Advanced view shows).\nThe first run can take a few minutes while DataForge is extracted.",
       "at": ""
+    },
+    "set_game_folder_title": {
+      "ht": "Set Your Game Folder",
+      "at": ""
+    },
+    "set_game_folder_body": {
+      "ht": "Smart Citizen needs to know where Star Citizen is installed before it can apply changes.\n\nSwitching to Advanced mode so you can set the game folder on the Config tab.",
+      "at": ""
+    },
+    "apply_enhancements_confirm_title": {
+      "ht": "Apply Enhancements",
+      "at": ""
+    },
+    "apply_enhancements_confirm_body": {
+      "ht": "This will generate the latest enhancements with your current settings and apply them to your game's global.ini. A timestamped backup is made first.\n\nThe first run can take a few minutes while DataForge is extracted. Continue?",
+      "at": ""
     }
   },
   "tabs": {
@@ -68,6 +84,18 @@
     },
     "legal": {
       "ht": "Legal",
+      "at": ""
+    },
+    "about_load_failed": {
+      "ht": "Unable to load about information.",
+      "at": ""
+    },
+    "faq_load_failed": {
+      "ht": "Unable to load the FAQ.",
+      "at": ""
+    },
+    "legal_load_failed": {
+      "ht": "Unable to load legal information.",
       "at": ""
     }
   },
@@ -174,6 +202,18 @@
     },
     "apply_disabled_tooltip": {
       "ht": "Already applied: nothing has changed since the last Apply to Game.",
+      "at": ""
+    },
+    "feedback_fallback_text": {
+      "ht": "Feedback, Bugs, & Feature Voting",
+      "at": ""
+    },
+    "paypal_fallback_text": {
+      "ht": "Donate via PayPal",
+      "at": ""
+    },
+    "venmo_fallback_text": {
+      "ht": "Venmo",
       "at": ""
     }
   },
@@ -338,6 +378,66 @@
     },
     "column_filter_placeholder": {
       "ht": "Filter {column}…",
+      "at": ""
+    },
+    "editor_dock_title": {
+      "ht": "String Editor",
+      "at": ""
+    },
+    "no_row_selected": {
+      "ht": "(no row selected)",
+      "at": ""
+    },
+    "editor_underline_btn": {
+      "ht": "Underline",
+      "at": ""
+    },
+    "editor_highlight_btn": {
+      "ht": "Highlight",
+      "at": ""
+    },
+    "editor_placeholder": {
+      "ht": "Select a row in the String Editor table to edit its custom value here.",
+      "at": ""
+    },
+    "context_copy_cell": {
+      "ht": "Copy Cell",
+      "at": ""
+    },
+    "context_copy_key": {
+      "ht": "Copy Key",
+      "at": ""
+    },
+    "context_edit": {
+      "ht": "Edit",
+      "at": ""
+    },
+    "context_reset_to_original": {
+      "ht": "Reset to Original",
+      "at": ""
+    },
+    "context_copy_all_filtered": {
+      "ht": "Copy All Filtered",
+      "at": ""
+    },
+    "context_remove_favorite": {
+      "ht": "★ Remove from Favorites",
+      "at": ""
+    },
+    "context_add_favorite": {
+      "ht": "★ Add to Favorites",
+      "at": ""
+    },
+    "showing_count": {
+      "ht": "Showing {shown} of {total} strings",
+      "at": ""
+    },
+    "copied_key": {
+      "ht": "Copied: {key}",
+      "at": ""
+    },
+    "pyperclip_missing": {
+      "ht": "pyperclip not installed",
       "at": ""
     }
   },
@@ -949,6 +1049,10 @@
     "apply_owned_tag_tooltip_disabled": {
       "ht": "Already up to date — your Owned list hasn't changed since the last apply.",
       "at": ""
+    },
+    "owned_tags_refreshed": {
+      "ht": "[Owned] tags refreshed to match your current Owned list.",
+      "at": ""
     }
   },
   "log": {
@@ -1431,6 +1535,38 @@
     "skip_generate_tooltip": {
       "ht": "Continue without generating enhancements. You can run it later from the Enhancements tab.",
       "at": ""
+    },
+    "crash_error_title": {
+      "ht": "Smart Citizen — Error",
+      "at": ""
+    },
+    "show_log_btn": {
+      "ht": "Show Log",
+      "at": ""
+    },
+    "dismiss_btn": {
+      "ht": "Dismiss",
+      "at": ""
+    },
+    "suppressed_errors_suffix": {
+      "ht": "\n\n(+{count} additional error{plural} suppressed — see Log tab for details)",
+      "at": ""
+    },
+    "failed_to_delete_global_ini": {
+      "ht": "Failed to delete global.ini: {error}",
+      "at": ""
+    },
+    "failed_to_merge_sources": {
+      "ht": "Failed to merge sources: {error}",
+      "at": ""
+    },
+    "failed_to_load_sources": {
+      "ht": "Failed to load sources: {error}",
+      "at": ""
+    },
+    "app_title": {
+      "ht": "Smart Citizen",
+      "at": ""
     }
   },
   "progress": {
@@ -1497,6 +1633,30 @@
     "snapshot_diff": {
       "ht": "Snapshotting cache for diff…",
       "at": ""
+    },
+    "syncing_sources": {
+      "ht": "Syncing sources...",
+      "at": ""
+    },
+    "starting_up_title": {
+      "ht": "Starting Up",
+      "at": ""
+    },
+    "enhancements_label": {
+      "ht": "Generating enhanced localizations from DataForge…\n\nThis may take a few minutes on the first run.",
+      "at": ""
+    },
+    "generating_enhancements_title": {
+      "ht": "Generating Enhancements",
+      "at": ""
+    },
+    "reloading_with_enhancements": {
+      "ht": "Reloading strings with updated enhancements…",
+      "at": ""
+    },
+    "reloading_after_user_ini_restore": {
+      "ht": "Reloading {channel} after user.ini restore...",
+      "at": ""
     }
   },
   "status_bar": {
@@ -1534,6 +1694,384 @@
     },
     "open_release_page_tooltip": {
       "ht": "Open release page for v{version}",
+      "at": ""
+    },
+    "downloading_ini": {
+      "ht": "Downloading INI file...",
+      "at": ""
+    },
+    "starting_up": {
+      "ht": "Starting up — syncing sources...",
+      "at": ""
+    },
+    "generating_enhancements_background": {
+      "ht": "Generating enhancements in background…",
+      "at": ""
+    },
+    "enhancements_generated_applying": {
+      "ht": "Enhancements generated — applying to game…",
+      "at": ""
+    },
+    "enhancements_generated_reloading": {
+      "ht": "Enhancements generated — reloading entries…",
+      "at": ""
+    },
+    "enhancement_generation_failed": {
+      "ht": "Enhancement generation failed — check the Log tab for details",
+      "at": ""
+    },
+    "user_ini_reset": {
+      "ht": "user.ini reset for {channel} (backup created)",
+      "at": ""
+    },
+    "user_ini_restored": {
+      "ht": "Restored user.ini for {channel}",
+      "at": ""
+    },
+    "channel_indicator": {
+      "ht": "Channel: {channel}",
+      "at": ""
+    },
+    "channel_switched_extracting": {
+      "ht": "Switched to {channel} — extracting Data.p4k…",
+      "at": ""
+    },
+    "channel_switched_reloading": {
+      "ht": "Switched to {channel} — reloading sources…",
+      "at": ""
+    },
+    "data_folder_changed_extracting": {
+      "ht": "Data folder changed to {data_dir} — extracting Data.p4k…",
+      "at": ""
+    },
+    "data_folder_changed_reloading": {
+      "ht": "Data folder changed to {data_dir} — reloading sources…",
+      "at": ""
+    },
+    "cache_folder_changed": {
+      "ht": "DataForge cache folder changed — re-extracting from Data.p4k…",
+      "at": ""
+    },
+    "syncing_source": {
+      "ht": "Syncing {source_name}...",
+      "at": ""
+    },
+    "source_updated": {
+      "ht": "updated ↑",
+      "at": ""
+    },
+    "source_offline": {
+      "ht": "(offline?)",
+      "at": ""
+    },
+    "entry_count": {
+      "ht": "{count} entries",
+      "at": ""
+    },
+    "override_count_suffix": {
+      "ht": " | {count} overrides",
+      "at": ""
+    },
+    "manifest_missing": {
+      "ht": "SC {channel} (manifest missing)",
+      "at": ""
+    }
+  },
+  "import_flow": {
+    "source_dialog_title": {
+      "ht": "Import INI File",
+      "at": ""
+    },
+    "source_dialog_label": {
+      "ht": "Enter a local file path or URL:",
+      "at": ""
+    },
+    "source_dialog_placeholder": {
+      "ht": "C:\\path\\to\\file.ini or https://example.com/file.ini",
+      "at": ""
+    },
+    "browse_btn": {
+      "ht": "Browse...",
+      "at": ""
+    },
+    "select_ini_file_title": {
+      "ht": "Select INI File",
+      "at": ""
+    },
+    "ini_file_filter": {
+      "ht": "INI Files (*.ini);;All Files (*)",
+      "at": ""
+    },
+    "download_error_title": {
+      "ht": "Download Error",
+      "at": ""
+    },
+    "download_error_body": {
+      "ht": "Failed to download:\n{source}\n\n{error}",
+      "at": ""
+    },
+    "no_base_data_title": {
+      "ht": "No Base Data",
+      "at": ""
+    },
+    "no_base_data_body": {
+      "ht": "Base INI not loaded yet. Extract from Data.p4k first.",
+      "at": ""
+    },
+    "no_valid_keys_title": {
+      "ht": "No Valid Keys",
+      "at": ""
+    },
+    "no_valid_keys_body": {
+      "ht": "None of the {count} imported keys exist in base.ini.\nAll keys were excluded.",
+      "at": ""
+    },
+    "nothing_to_import_title": {
+      "ht": "Nothing to Import",
+      "at": ""
+    },
+    "nothing_to_import_body": {
+      "ht": "All imported keys already exist in user.ini with the same values.",
+      "at": ""
+    },
+    "confirm_title": {
+      "ht": "Import INI",
+      "at": ""
+    },
+    "confirm_body": {
+      "ht": "{new_count} new keys will be added to user.ini.\n{excluded_count} keys excluded (not in base.ini).\n\nProceed?",
+      "at": ""
+    },
+    "reload_status": {
+      "ht": "Reloading with imported data...",
+      "at": ""
+    },
+    "complete_title": {
+      "ht": "Import Complete",
+      "at": ""
+    },
+    "complete_body": {
+      "ht": "Import successful.\n\n  Added: {added} keys\n  Conflicts resolved: {resolved} keys\n  Excluded: {excluded} keys",
+      "at": ""
+    },
+    "error_title": {
+      "ht": "Import Error",
+      "at": ""
+    },
+    "error_body": {
+      "ht": "Failed to import INI file:\n{error}",
+      "at": ""
+    }
+  },
+  "restore_backup": {
+    "select_file_title": {
+      "ht": "Select Backup File to Restore",
+      "at": ""
+    },
+    "file_filter": {
+      "ht": "Backup Files (*.bak_*);;INI Files (*.ini);;All Files (*)",
+      "at": ""
+    },
+    "success_body": {
+      "ht": "Backup restored from:\n{name}",
+      "at": ""
+    },
+    "error_body": {
+      "ht": "Failed to restore backup: {error}",
+      "at": ""
+    }
+  },
+  "onedrive": {
+    "warning_title": {
+      "ht": "Your Smart Citizen Data Is in OneDrive",
+      "at": ""
+    },
+    "warning_body": {
+      "ht": "Smart Citizen stores your edits (user.ini), source cache, and backups in:\n\n{data_dir}\n\nThat folder is inside OneDrive. OneDrive can sync and even empty these files, which has caused lost edits. Moving your data to a local folder outside OneDrive avoids this.\n\nMove it to:\n{local} ?",
+      "at": ""
+    },
+    "move_btn": {
+      "ht": "Move to a Local Folder",
+      "at": ""
+    },
+    "keep_here_btn": {
+      "ht": "Keep Here",
+      "at": ""
+    },
+    "dont_warn_again": {
+      "ht": "Don't warn me again",
+      "at": ""
+    }
+  },
+  "user_ini_reset": {
+    "backup_note": {
+      "ht": "\n\nBackup saved to:\n{path}",
+      "at": ""
+    },
+    "complete_title": {
+      "ht": "user.ini Reset",
+      "at": ""
+    },
+    "complete_body": {
+      "ht": "All custom overrides for the {channel} channel have been cleared.{backup_note}",
+      "at": ""
+    }
+  },
+  "restore_user_ini": {
+    "no_snapshots_title": {
+      "ht": "No Snapshots Yet",
+      "at": ""
+    },
+    "no_snapshots_body": {
+      "ht": "Smart Citizen has no automatic user.ini snapshots for the {channel} channel yet. A snapshot is saved each time your overrides change, so restore points appear once you've made and saved edits.",
+      "at": ""
+    },
+    "snapshot_label": {
+      "ht": "{when}  —  {lines} overrides, {size_kb} KB",
+      "at": ""
+    },
+    "picker_title": {
+      "ht": "Restore user.ini",
+      "at": ""
+    },
+    "picker_label": {
+      "ht": "Pick a snapshot to restore for the {channel} channel.\nYour current user.ini is snapshotted first, so this is reversible.",
+      "at": ""
+    },
+    "restore_failed_title": {
+      "ht": "Restore Failed",
+      "at": ""
+    },
+    "restore_failed_body": {
+      "ht": "Smart Citizen could not restore the snapshot:\n\n{error_type}: {error}",
+      "at": ""
+    },
+    "restored_title": {
+      "ht": "user.ini Restored",
+      "at": ""
+    },
+    "restored_body": {
+      "ht": "Restored your overrides for the {channel} channel from:\n{name}\n\nRun Apply Enhancements to push the restored overrides in-game.",
+      "at": ""
+    }
+  },
+  "extract": {
+    "path_required_title": {
+      "ht": "Star Citizen Path Required",
+      "at": ""
+    },
+    "path_required_body": {
+      "ht": "No Star Citizen install path is configured and no cached localization data was found.\n\nPlease set your Star Citizen install path on the Config tab, then click Extract to load your game's localization strings.",
+      "at": ""
+    },
+    "p4k_prompt_title": {
+      "ht": "Extract from Data.p4k",
+      "at": ""
+    },
+    "p4k_prompt_base_missing": {
+      "ht": "No base localization file found in cache.\n\nExtract global.ini from Data.p4k now?\n(Required to load and display localization strings.)",
+      "at": ""
+    },
+    "p4k_prompt_p4k_newer": {
+      "ht": "Data.p4k is newer than your cached base.ini.\n\nExtract global.ini from Data.p4k now?\n(This gives you stock strings matching your exact installed game version.)",
+      "at": ""
+    },
+    "dataforge_outdated_title": {
+      "ht": "DataForge Cache Outdated",
+      "at": ""
+    },
+    "dataforge_outdated_body": {
+      "ht": "Your DataForge entity cache is older than the current Data.p4k.\n\nRe-extract DataForge and regenerate enhancements now?\n\nThis takes a few minutes and runs in the background — you can keep editing strings while it works. Skip for now if you'd rather not wait; you can always trigger this from the Enhancements tab.",
+      "at": ""
+    },
+    "generate_dialog_title": {
+      "ht": "Generate Enhancements",
+      "at": ""
+    },
+    "category_singular": {
+      "ht": "category is",
+      "at": ""
+    },
+    "category_plural": {
+      "ht": "categories are",
+      "at": ""
+    },
+    "missing_categories_body": {
+      "ht": "{count} enhancement {noun} missing.\nSelect which to generate.\nYou can change this later in the Enhancements tab.",
+      "at": ""
+    },
+    "missing_category_label": {
+      "ht": "{label}  (missing)",
+      "at": ""
+    },
+    "dataforge_auto_extract_note": {
+      "ht": "DataForge data will be extracted automatically if not already cached.\nFirst run takes a few minutes.",
+      "at": ""
+    },
+    "generate_btn": {
+      "ht": "Generate",
+      "at": ""
+    },
+    "skip_btn": {
+      "ht": "Skip",
+      "at": ""
+    },
+    "dataforge_extracting_background": {
+      "ht": "Extracting DataForge in background — this takes several minutes…",
+      "at": ""
+    },
+    "dataforge_extracting_label": {
+      "ht": "Extracting DataForge from Data.p4k — this takes several minutes…",
+      "at": ""
+    },
+    "dataforge_extraction_title": {
+      "ht": "DataForge Extraction",
+      "at": ""
+    },
+    "dataforge_extraction_error_title": {
+      "ht": "DataForge Extraction Error",
+      "at": ""
+    },
+    "dataforge_extraction_error_body": {
+      "ht": "DataForge extraction failed:\n\n{message}\n\nCheck the Log tab for details.",
+      "at": ""
+    },
+    "dataforge_extracted_generating": {
+      "ht": "DataForge extracted — generating enhancements…",
+      "at": ""
+    },
+    "dataforge_extraction_failed": {
+      "ht": "DataForge extraction failed — check the Log tab for details",
+      "at": ""
+    },
+    "p4k_extracting_label": {
+      "ht": "Extracting global.ini from Data.p4k...",
+      "at": ""
+    },
+    "p4k_extraction_title": {
+      "ht": "P4K Extraction",
+      "at": ""
+    },
+    "extraction_error_title": {
+      "ht": "Extraction Error",
+      "at": ""
+    }
+  },
+  "apply": {
+    "cannot_save_edits_title": {
+      "ht": "Cannot Save Your Edits",
+      "at": ""
+    },
+    "cannot_save_edits_body": {
+      "ht": "Smart Citizen could not write your edits to:\n\n  {path}\n\n{error_type}: {error}\n\nThe game file was NOT modified. Common causes:\n  • Antivirus / Windows Controlled Folder Access blocking writes under the game folder\n  • The user.ini file is open in another program\n  • The drive is read-only or out of space\n\nResolve the underlying issue and Apply again.",
+      "at": ""
+    },
+    "applied_body": {
+      "ht": "Applied to {target_path}\n\n  User edits: {user_count}\n\n{enhancement_block}",
+      "at": ""
+    },
+    "failed_body": {
+      "ht": "Failed to apply to game: {error}",
       "at": ""
     }
   }
