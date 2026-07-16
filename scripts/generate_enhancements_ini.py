@@ -149,19 +149,45 @@ OUTPUT_DIR = APP_CACHE_DIR
 
 # ── INI helpers ───────────────────────────────────────────────────────────────
 
+def _read_ini_text(path: Path) -> str:
+    """Read an INI file's text, tolerating non-UTF-8 content (#251).
+
+    base.ini is normally UTF-8 (with BOM) straight out of Data.p4k, but the
+    cached copy can stop being valid UTF-8 on a user's machine — re-saved by
+    an external editor in ANSI (legacy Notepad's default), mangled by a
+    sync/AV tool, or a community-translated base saved as ANSI. CIG's text
+    is full of characters that cp1252 encodes as single high bytes (é / ™ /
+    ° / em dash / non-breaking space — the reported crash was byte 0xA0, an
+    NBSP, on a stock English install), and any one of them is an invalid
+    UTF-8 start byte, so a strict decode crashed the whole enhancements
+    run. Fall back to cp1252 (errors="replace" guards its five undefined
+    bytes) rather than dying on the first non-UTF-8 byte.
+    """
+    raw = path.read_bytes()
+    try:
+        return raw.decode("utf-8-sig")
+    except UnicodeDecodeError as e:
+        logger.warning(f"{path} is not valid UTF-8 ({e}); decoding as Windows-1252")
+        if raw.startswith(b"\xef\xbb\xbf"):
+            raw = raw[3:]
+        return raw.decode("cp1252", errors="replace")
+
+
 def parse_ini(path: Path) -> dict[str, str]:
     result = {}
-    with open(path, encoding="utf-8-sig") as f:
-        for line in f:
-            line = line.rstrip("\r\n")
-            if not line.strip() or line.strip().startswith(";"):
-                continue
-            if "=" not in line:
-                continue
-            k, _, v = line.partition("=")
-            lookup_key = k.strip().split(",")[0].strip()
-            if lookup_key:
-                result[lookup_key] = v.strip()
+    # split('\n') + rstrip('\r'), NOT str.splitlines(): splitlines also
+    # breaks on U+2028/U+0085 etc., which a loc value could legitimately
+    # contain — file iteration never split on those and neither do we.
+    for line in _read_ini_text(path).split("\n"):
+        line = line.rstrip("\r")
+        if not line.strip() or line.strip().startswith(";"):
+            continue
+        if "=" not in line:
+            continue
+        k, _, v = line.partition("=")
+        lookup_key = k.strip().split(",")[0].strip()
+        if lookup_key:
+            result[lookup_key] = v.strip()
     return result
 
 
