@@ -1023,6 +1023,246 @@
     "extracting_dataforge_tooltip": {
       "ht": "Extracting DataForge from Data.p4k…",
       "at": ""
+    },
+    "tag_move_up_tooltip": {
+      "ht": "Move this element up",
+      "at": ""
+    },
+    "tag_move_down_tooltip": {
+      "ht": "Move this element down",
+      "at": ""
+    },
+    "tag_untick_exclude_tooltip": {
+      "ht": "Untick to exclude this element from the tag",
+      "at": ""
+    },
+    "tag_edit_mapping_row_btn": {
+      "ht": "Edit mapping…",
+      "at": ""
+    },
+    "tag_mapping_tooltip_ordinance": {
+      "ht": "Edit the Short / Medium / Long text used for each tracking type (e.g. Infrared → I / IR / Infrared).",
+      "at": ""
+    },
+    "tag_mapping_tooltip_damage": {
+      "ht": "Edit the Short / Medium / Long text used for each damage type (e.g. Energy → E / EN / Energy).",
+      "at": ""
+    },
+    "tag_mapping_tooltip_type": {
+      "ht": "Edit the Short / Medium / Long text used for each component type (e.g. Shield Generator → SH / SHLD / Shield).",
+      "at": ""
+    },
+    "tag_mapping_tooltip_label": {
+      "ht": "Edit the Short / Medium / Long text for the crafting label (e.g. Crafting → CF / Craft / Crafting).",
+      "at": ""
+    },
+    "tag_mapping_tooltip_collection": {
+      "ht": "Edit the Short / Medium / Long text for the collection label (e.g. Collection → Col / Collect / Collection).",
+      "at": ""
+    },
+    "tag_mapping_tooltip_default": {
+      "ht": "Edit the Short / Medium / Long text used for each class (e.g. Military → M / MIL / Military).",
+      "at": ""
+    },
+    "mission_detail_fields_heading": {
+      "ht": "Mission detail fields:",
+      "at": ""
+    },
+    "mission_field_mission_type": {
+      "ht": "Mission Type",
+      "at": ""
+    },
+    "mission_field_difficulty": {
+      "ht": "Difficulty",
+      "at": ""
+    },
+    "mission_field_hostiles": {
+      "ht": "Hostiles",
+      "at": ""
+    },
+    "mission_field_reputation": {
+      "ht": "Reputation",
+      "at": ""
+    },
+    "mission_field_blueprints": {
+      "ht": "Blueprints",
+      "at": ""
+    },
+    "mission_field_ace_pilot": {
+      "ht": "Ace Pilot",
+      "at": ""
+    },
+    "mission_detail_fields_note": {
+      "ht": "Unchecked fields are left out of mission descriptions. Applies on the next Generate Enhancements.",
+      "at": ""
+    },
+    "stats_prepend_cb": {
+      "ht": "Show stats above description",
+      "at": ""
+    },
+    "standardize_ship_names_cb": {
+      "ht": "Standardize earnable ship names",
+      "at": ""
+    },
+    "mission_labels_group": {
+      "ht": "Mission Labels",
+      "at": ""
+    },
+    "mission_label_details": {
+      "ht": "Details:",
+      "at": ""
+    },
+    "mission_label_blueprints": {
+      "ht": "Blueprints:",
+      "at": ""
+    },
+    "mission_label_item_rewards": {
+      "ht": "Item rewards:",
+      "at": ""
+    },
+    "mission_label_blueprint_data": {
+      "ht": "Blueprint data:",
+      "at": ""
+    },
+    "mission_label_xp": {
+      "ht": "XP label:",
+      "at": ""
+    },
+    "mission_label_header_style": {
+      "ht": "Header style:",
+      "at": ""
+    },
+    "em_label_underline": {
+      "ht": "Underline",
+      "at": ""
+    },
+    "em_label_blue_text": {
+      "ht": "Blue text",
+      "at": ""
+    },
+    "forge_status_not_extracted": {
+      "ht": "DataForge: not yet extracted — click 'Generate Enhancements' to begin",
+      "at": ""
+    },
+    "forge_status_outdated": {
+      "ht": "DataForge: cache outdated — click 'Generate Enhancements' to re-extract and update",
+      "at": ""
+    },
+    "forge_status_up_to_date": {
+      "ht": "DataForge: cache up to date ✓",
+      "at": ""
+    },
+    "tag_separator_label": {
+      "ht": "Separator:",
+      "at": ""
+    },
+    "tag_enclosing_label": {
+      "ht": "Enclosing:",
+      "at": ""
+    },
+    "tag_placement_label": {
+      "ht": "Placement:",
+      "at": ""
+    },
+    "tag_craft_usage_separator_label": {
+      "ht": "Craft-usage separator:",
+      "at": ""
+    },
+    "mt_hauling_group": {
+      "ht": "Hauling Missions",
+      "at": ""
+    },
+    "mt_enable_route_cb": {
+      "ht": "Add route to hauling mission titles",
+      "at": ""
+    },
+    "mt_standardize_cb": {
+      "ht": "Standardize hauling mission names (e.g. \"Medium Cargo Haul\" for every company, instead of \"Large Shipment\" / \"Haul - Small Scale\")",
+      "at": ""
+    },
+    "mt_route_hint": {
+      "ht": "The game fills in the real pickup and drop-off locations when the mission is accepted.",
+      "at": ""
+    },
+    "mt_route_arrow_label": {
+      "ht": "Route arrow:",
+      "at": ""
+    },
+    "mt_title_separator_label": {
+      "ht": "Title separator:",
+      "at": ""
+    },
+    "mt_rank_separator_label": {
+      "ht": "Rank separator:",
+      "at": ""
+    },
+    "mt_location_detail_label": {
+      "ht": "Location detail:",
+      "at": ""
+    },
+    "mt_shorten_titles_cb": {
+      "ht": "Shorten original titles (Shortens stock phrases, e.g. \"Local Shipment Route\" → \"Route\")",
+      "at": ""
+    },
+    "mt_shorten_sizes_cb": {
+      "ht": "Shorten cargo sizes (Abbreviates cargo sizes, e.g. \"Extra Small\" → \"XS\")",
+      "at": ""
+    },
+    "mt_underline_direct_cb": {
+      "ht": "Underline \"Direct\" (Adds emphasis to \"Direct\" hauls in-game)",
+      "at": ""
+    },
+    "mt_general_tags_group": {
+      "ht": "General Tags",
+      "at": ""
+    },
+    "mt_general_tags_hint": {
+      "ht": "Show or hide these tags on the mission title only",
+      "at": ""
+    },
+    "mt_tag_rep_cb": {
+      "ht": "Rep Tag (adds \"[500 REP]\")",
+      "at": ""
+    },
+    "mt_tag_blueprint_cb": {
+      "ht": "BP Tag (adds \"[BP]\" / \"[BP?]\")",
+      "at": ""
+    },
+    "mt_tag_ace_cb": {
+      "ht": "ACE Tag (adds \"[ACE]\" / \"[ACE?]\")",
+      "at": ""
+    },
+    "mt_tag_rep_track_cb": {
+      "ht": "Rep Track Tag (adds \"(Security)\" / \"(Contractor)\" to the Rep tag)",
+      "at": ""
+    },
+    "mt_scanning_group": {
+      "ht": "Scanning/Mining Missions",
+      "at": ""
+    },
+    "mt_scanning_hint": {
+      "ht": "Recco Battaglia's Scanning/Mining missions target specific mineable ores, show each ore's Resource Signature value on the mission title.",
+      "at": ""
+    },
+    "mt_tag_rs_cb": {
+      "ht": "Show Resource Signature (RS) Tags",
+      "at": ""
+    },
+    "mt_preview_route_off": {
+      "ht": "Preview:  {display} [50 REP]  (route off)",
+      "at": ""
+    },
+    "mt_preview_route_on": {
+      "ht": "Preview:  {display} [50 REP]",
+      "at": ""
+    },
+    "tag_preview": {
+      "ht": "Preview:  {content}",
+      "at": ""
+    },
+    "tag_preview_no_tag": {
+      "ht": "Preview:  {name}   (no tag — every element is empty or disabled)",
+      "at": ""
     }
   },
   "blueprint_tracker": {
