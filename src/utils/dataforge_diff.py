@@ -23,12 +23,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable, Optional
 
 from src.utils.win_paths import win_long_path
+
+logger = logging.getLogger(__name__)
 
 MANIFEST_FILE = ".diff_manifest.json"
 
@@ -181,8 +184,16 @@ def dirty_categories(cache_dir: Path) -> Optional[set[str]]:
     if not manifest_file.exists():
         return None  # first run — regenerate everything
 
-    with open(manifest_file, encoding="utf-8") as f:
-        old: dict[str, dict] = json.load(f)
+    try:
+        with open(manifest_file, encoding="utf-8") as f:
+            old: dict[str, dict] = json.load(f)
+    except (OSError, ValueError) as e:
+        # ValueError covers both JSONDecodeError and UnicodeDecodeError — a
+        # corrupt manifest (#251 bug class) previously crashed the whole
+        # enhancements run. Treat it like a missing manifest: regenerate
+        # everything, and update_manifest rewrites a clean one afterwards.
+        logger.warning(f"Unreadable diff manifest {manifest_file} ({e}); regenerating all")
+        return None
 
     new = _build_snapshot(cache_dir)
 

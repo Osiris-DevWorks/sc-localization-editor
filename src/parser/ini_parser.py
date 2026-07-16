@@ -5,36 +5,10 @@ from typing import Dict, List, Optional
 
 from src.models.string_model import StringEntry
 from src.merger.ini_merger import merge_sources_by_hierarchy
+from src.utils.ini_io import read_ini_text
 from src.utils.perf import timed
 
 logger = logging.getLogger(__name__)
-
-
-def _read_ini_text(path: Path) -> str:
-    """Read an INI file's text, tolerating non-UTF-8 content (#251).
-
-    base.ini is normally UTF-8 (with BOM) straight out of Data.p4k, but the
-    cached copy can stop being valid UTF-8 on a user's machine — re-saved by
-    an external editor in ANSI (legacy Notepad's default), mangled by a
-    sync/AV tool, or a community-translated base saved as ANSI. CIG's text
-    is full of characters that cp1252 encodes as single high bytes (é / ™ /
-    ° / em dash / non-breaking space — the reported crash was byte 0xA0, an
-    NBSP, on a stock English install), and any one of them is an invalid
-    UTF-8 start byte. A strict streaming decode used to raise mid-iteration,
-    and the broad except below then returned a silently TRUNCATED result:
-    every key after the first bad byte vanished with only a log warning.
-    Decode the whole file up front instead, falling back to cp1252
-    (errors="replace" guards its five undefined bytes) so no entry is ever
-    dropped.
-    """
-    raw = path.read_bytes()
-    try:
-        return raw.decode("utf-8-sig")
-    except UnicodeDecodeError as e:
-        logger.warning(f"{path} is not valid UTF-8 ({e}); decoding as Windows-1252")
-        if raw.startswith(b"\xef\xbb\xbf"):
-            raw = raw[3:]
-        return raw.decode("cp1252", errors="replace")
 
 
 @timed
@@ -67,7 +41,10 @@ def parse_ini_file(path: str | Path, *, strip_values: bool = True) -> Dict[str, 
         # split('\n') + rstrip('\r'), NOT str.splitlines(): splitlines also
         # breaks on U+2028/U+0085 etc., which a loc value could legitimately
         # contain — file iteration never split on those and neither do we.
-        for line in _read_ini_text(path).split('\n'):
+        # read_ini_text (#251) tolerates non-UTF-8 content; the previous
+        # strict streaming decode raised mid-iteration and the except below
+        # silently truncated the result at the first bad byte.
+        for line in read_ini_text(path).split('\n'):
             line = line.rstrip('\r')
 
             # Skip empty lines and comments

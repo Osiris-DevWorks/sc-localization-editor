@@ -149,28 +149,42 @@ OUTPUT_DIR = APP_CACHE_DIR
 
 # ── INI helpers ───────────────────────────────────────────────────────────────
 
+# Deletion table for counting high (non-ASCII) bytes at C speed: translating
+# with this removes every byte >= 0x80, so the length delta is the count.
+_HIGH_BYTES = bytes(range(0x80, 0x100))
+
+
 def _read_ini_text(path: Path) -> str:
     """Read an INI file's text, tolerating non-UTF-8 content (#251).
 
-    base.ini is normally UTF-8 (with BOM) straight out of Data.p4k, but the
-    cached copy can stop being valid UTF-8 on a user's machine — re-saved by
-    an external editor in ANSI (legacy Notepad's default), mangled by a
-    sync/AV tool, or a community-translated base saved as ANSI. CIG's text
-    is full of characters that cp1252 encodes as single high bytes (é / ™ /
-    ° / em dash / non-breaking space — the reported crash was byte 0xA0, an
-    NBSP, on a stock English install), and any one of them is an invalid
-    UTF-8 start byte, so a strict decode crashed the whole enhancements
-    run. Fall back to cp1252 (errors="replace" guards its five undefined
-    bytes) rather than dying on the first non-UTF-8 byte.
+    Mirror of src/parser/ini_parser._read_ini_text — duplicated so this
+    script stays stdlib+lxml-only for standalone runs (same shape as the
+    existing parse_ini/parse_ini_file parallelism); see that copy for the
+    full failure-shape rationale. In short: a strict decode crashed the
+    whole enhancements run on one corrupt byte (#251). A few corrupt bytes
+    in an otherwise-UTF-8 file get UTF-8 errors="replace" (a cp1252 decode
+    would mojibake every legitimate multi-byte character); a genuinely
+    ANSI/cp1252 file gets a cp1252 decode (a UTF-8 replace-decode would
+    destroy every high byte). Discriminated by whether the UTF-8
+    replacement count tracks the file's high-byte count.
     """
     raw = path.read_bytes()
     try:
         return raw.decode("utf-8-sig")
-    except UnicodeDecodeError as e:
-        logger.warning(f"{path} is not valid UTF-8 ({e}); decoding as Windows-1252")
-        if raw.startswith(b"\xef\xbb\xbf"):
-            raw = raw[3:]
-        return raw.decode("cp1252", errors="replace")
+    except UnicodeDecodeError:
+        pass
+    body = raw[3:] if raw.startswith(b"\xef\xbb\xbf") else raw
+    utf8_replaced = body.decode("utf-8", errors="replace")
+    bad = utf8_replaced.count("�")
+    high = len(body) - len(body.translate(None, _HIGH_BYTES))
+    if bad * 2 <= high:
+        logger.warning(
+            f"{path} is UTF-8 with {bad} corrupt byte(s) "
+            f"(of {high} non-ASCII); replaced with U+FFFD"
+        )
+        return utf8_replaced
+    logger.warning(f"{path} is not UTF-8 (looks ANSI); decoding as Windows-1252")
+    return body.decode("cp1252", errors="replace")
 
 
 def parse_ini(path: Path) -> dict[str, str]:
@@ -336,7 +350,9 @@ def _dataforge_cache_key(forge_dir: Path) -> str:
     if stamp.exists():
         try:
             return stamp.read_text(encoding="utf-8").strip()
-        except OSError:
+        except (OSError, ValueError):
+            # ValueError: a corrupt stamp raises UnicodeDecodeError (#251
+            # bug class) — fall through to the records-dir heuristic.
             pass
     records = forge_dir / "raw" / "libs" / "foundry" / "records"
     if records.exists():
