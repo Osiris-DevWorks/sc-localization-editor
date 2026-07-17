@@ -345,6 +345,40 @@ class TestBulletNameMismatches:
         assert meta["S0 Helix"].tagged_name == "[Mining Laser] S0 Helix"
         assert "Helix" not in meta
 
+    @pytest.mark.regression
+    def test_known_alias_resolves_hofstede_mismatch(self):
+        """Same "Mining Head" bare-name pattern as Helix, reported
+        separately in a live mission body -- confirms this isn't a
+        one-off, it's the whole item family."""
+        desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Hofstede"
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("item_NameMining_Head_S00_Hofstede_SCItem", "[Mining Laser] S00 Hofstede", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert "S00 Hofstede" in meta
+        assert meta["S00 Hofstede"].tagged_name == "[Mining Laser] S00 Hofstede"
+        assert "Hofstede" not in meta
+
+    def test_known_aliases_cover_the_whole_mining_head_family(self):
+        """Arbor and Klein share the same key convention as Helix/Hofstede
+        (item_NameMining_Head_S00_<Name>_SCItem) -- added preemptively
+        rather than waiting for each to be reported individually."""
+        desc = (
+            "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>"
+            "\\n- Arbor\\n- Klein"
+        )
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("item_NameMining_Head_S00_Arbor_SCItem", "[Mining Laser] S0 Arbor", "Ship Items"),
+            _Entry("item_NameMining_Head_S00_Klein_SCItem", "Lawson Mining Laser", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert meta["S0 Arbor"].tagged_name == "[Mining Laser] S0 Arbor"
+        assert meta["Lawson Mining Laser"].tagged_name == "Lawson Mining Laser"
+        assert "Arbor" not in meta
+        assert "Klein" not in meta
+
     def test_direct_match_is_not_overridden_by_alias_or_keyslug(self):
         """A bullet name that already matches a real item directly must
         win outright -- the alias/keyslug fallback only kicks in when the

@@ -175,12 +175,20 @@ def _key_slug(key: str) -> str:
 # Known one-off mismatches between a mission bullet's name and the item's
 # real localized display name that AREN'T explained by _key_slug's fallback
 # pattern -- just a mission author typing a short/informal name. Confirmed
-# via a live "Crew Hasn't Checked In" mining mission body listing "Helix" as
-# a blueprint reward; the real item is "S0 Helix"
-# (item_NameMining_Head_S00_Helix_SCItem). Extend this dict for any other
-# reported mismatch that isn't a key-slug case.
+# via a live "Crew Hasn't Checked In" mining mission body listing "Helix" and
+# "Hofstede" as blueprint rewards; the real items are "S0 Helix" and "S00
+# Hofstede" (item_NameMining_Head_S00_<Name>_SCItem). All four "Mining Head"
+# variants share this exact bullet-uses-bare-manufacturer-name pattern
+# (confirmed via tests/fixtures/kraken_global_latest.ini: item_NameMining_
+# Head_S00_Arbor_SCItem=S0 Arbor, ..._Klein_SCItem=Lawson Mining Laser),
+# added preemptively rather than waiting for each to be individually
+# reported. Extend this dict for any other reported mismatch that isn't a
+# key-slug case.
 _BULLET_NAME_ALIASES: dict[str, str] = {
+    "Arbor": "S0 Arbor",
     "Helix": "S0 Helix",
+    "Hofstede": "S00 Hofstede",
+    "Klein": "Lawson Mining Laser",
 }
 
 # The bracketed component tag, e.g. "[MIL-S3-B]" or the user-reconfigured
