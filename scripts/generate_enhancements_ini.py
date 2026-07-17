@@ -980,21 +980,26 @@ def _ship_weapon_name_tag_factory(ammo_lookup: dict, config: "TagConfig | None" 
     ship-weapon shape.
     """
     cfg = config or DEFAULT_TAG_CONFIGS.get("ship_weapons")
+    # Mining laser tagging is gated by the same Components > Type toggle as
+    # every other DEFAULT_COMPONENT_TYPE_MAPPING entry -- opt-in, not
+    # force-shown (#266). Size rides along too if the user also has the
+    # Components > Size element enabled (true by default).
     mining_cfg_src = mining_laser_config or DEFAULT_TAG_CONFIGS.get("components")
     mining_tag_cfg = None
     if mining_cfg_src is not None and ElementSpec is not None:
-        mining_tag_cfg = TagConfig(
-            elements=[
-                ElementSpec(kind="type", enabled=True,
-                            style=_element_style(mining_cfg_src, "type", "med")),
-                ElementSpec(kind="size", enabled=True,
-                            style=_element_style(mining_cfg_src, "size", "sn")),
-            ],
-            separator=mining_cfg_src.separator,
-            enclosing=mining_cfg_src.enclosing,
-            placement=mining_cfg_src.placement,
-            class_mapping=mining_cfg_src.class_mapping,
-        )
+        type_el = _component_element(mining_cfg_src, "type")
+        if type_el is not None and type_el.enabled:
+            elements = [ElementSpec(kind="type", enabled=True, style=type_el.style or "med")]
+            size_el = _component_element(mining_cfg_src, "size")
+            if size_el is not None and size_el.enabled:
+                elements.append(ElementSpec(kind="size", enabled=True, style=size_el.style or "sn"))
+            mining_tag_cfg = TagConfig(
+                elements=elements,
+                separator=mining_cfg_src.separator,
+                enclosing=mining_cfg_src.enclosing,
+                placement=mining_cfg_src.placement,
+                class_mapping=mining_cfg_src.class_mapping,
+            )
 
     def _tag(desc_value: str, root: ET.Element | None = None) -> str | None:
         if cfg is None or render_tag is None or root is None:
@@ -5720,9 +5725,11 @@ def enhancements_medical_consumables(ctx: dict) -> dict[str, str]:
 # ── Bare-type tags for size-less components (#266) ──────────────────────────
 # Some component-adjacent items (fuel nozzles so far; more may follow) carry
 # no Size:/Grade:/Class: of their own -- there's nothing to hang the usual
-# [MIL-S1-A] shape off of, and the optional "Type" element
-# (DEFAULT_COMPONENT_TYPE_MAPPING) is disabled by default, so without this
-# they'd never show any tag at all ("What is an R7?" -- issue #266).
+# [MIL-S1-A] shape off of, so a Type-only tag is their only option. Gated
+# by the same "Type" element toggle as every other DEFAULT_COMPONENT_TYPE_
+# MAPPING entry (Shield Generator, Cooler, ...) -- users opt in via the
+# Tag Builder's Components > Type checkbox like any other component, they
+# don't get force-shown just because they'd otherwise have no other tag.
 # Identified purely by loc-key prefix, no DataForge scan needed -- these
 # items already carry real stock item_Name/item_Desc entries in base.ini,
 # same "base.ini is the only input" shape as
@@ -5732,29 +5739,21 @@ _BARE_TYPE_KEY_PREFIXES: dict[str, str] = {
 }
 
 
-def _element_style(cfg: "TagConfig", kind: str, default: str) -> str:
-    """Read the style a user has picked for one element kind of a
-    TagConfig, even when that element is currently disabled.
-
-    Used to force-enable an element (Type for bare-type items, Type+Size
-    for mining lasers) while still honouring whatever abbreviation length
-    the user chose for it rather than silently resetting to a default.
-    """
+def _component_element(cfg: "TagConfig", kind: str) -> "ElementSpec | None":
+    """Look up one element kind (its enabled flag + style) on a TagConfig."""
     for el in cfg.elements:
         if el.kind == kind:
-            return el.style or default
-    return default
+            return el
+    return None
 
 
 def enhancements_bare_type_tags(ctx: dict) -> dict[str, str]:
     """Tag size-less component items with a Type-only bracket tag (#266).
 
-    Forces the Type element on for just this tag, regardless of whether the
-    user has the optional Type element enabled for regular (sized)
-    components -- these items have no other way to ever show a tag, so
-    respecting a default-off toggle here would leave them permanently blank.
-    Still respects the user's chosen bracket/separator style and whatever
-    abbreviation length they've picked for Type, if they've touched it.
+    Only fires when the user has the Components > Type element enabled --
+    same opt-in switch that gates Shield Generator/Cooler/Power Plant/etc.
+    Type tags. Respects whatever abbreviation length (short/medium/long)
+    they've chosen for it.
     """
     loc = ctx["loc"]
     tag_configs = ctx.get("tag_configs") or {}
@@ -5762,10 +5761,12 @@ def enhancements_bare_type_tags(ctx: dict) -> dict[str, str]:
     if comp_cfg is None or ElementSpec is None or render_tag is None:
         return {}
 
-    type_style = _element_style(comp_cfg, "type", "med")
+    type_el = _component_element(comp_cfg, "type")
+    if type_el is None or not type_el.enabled:
+        return {}
 
     tag_cfg = TagConfig(
-        elements=[ElementSpec(kind="type", enabled=True, style=type_style)],
+        elements=[ElementSpec(kind="type", enabled=True, style=type_el.style or "med")],
         separator=comp_cfg.separator,
         enclosing=comp_cfg.enclosing,
         placement=comp_cfg.placement,

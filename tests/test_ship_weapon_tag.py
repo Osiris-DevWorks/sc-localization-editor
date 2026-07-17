@@ -132,7 +132,9 @@ class TestShipWeaponTagMiningLaser:
     have no ammo/damage breakdown, so the damage-required guard above
     would otherwise skip them entirely. They ARE a real component type
     with a real Size though, so #266 tags them via the component
-    Type+Size shape (``[ML-S1]`` under default styles) instead."""
+    Type+Size shape (``[ML-S1]``) instead — gated by the same
+    Components > Type toggle as every other DEFAULT_COMPONENT_TYPE_MAPPING
+    entry (Shield Generator, Cooler, ...): opt-in, not force-shown."""
 
     def _mining_laser_xml(self, name_attr: str = "Greycat_MiningLaser_Arbor"):
         xml = (
@@ -144,37 +146,66 @@ class TestShipWeaponTagMiningLaser:
         )
         return ET.fromstring(xml)
 
-    def test_mining_laser_gets_component_type_size_tag(self, gen_module):
-        desc = "Manufacturer: Greycat Industrial\\nItem Type: Mining Laser \\nSize: 1\\n"
-        tagger = gen_module._ship_weapon_name_tag_factory(ammo_lookup={})
-        assert tagger(desc, self._mining_laser_xml()) == "[ML-S1]"
-
-    def test_respects_users_configured_components_style(self, gen_module):
-        """A user who's customised the "components" Type/Size styles (even
-        while leaving Type disabled for their sized components) gets those
-        same styles applied here, matching the fuel-nozzle bare-type tag
-        behaviour (#266)."""
+    def _components_cfg(self, type_enabled, type_style="short",
+                         size_enabled=True, size_style="sn"):
         comp_cfg = DEFAULT_TAG_CONFIGS["components"]
-        custom_cfg = TagConfig(
+        return TagConfig(
             elements=[
-                ElementSpec("type", False, "long"),
-                ElementSpec("size", True, "n"),
+                ElementSpec("type", type_enabled, type_style),
+                ElementSpec("size", size_enabled, size_style),
             ],
             separator=comp_cfg.separator,
             enclosing=comp_cfg.enclosing,
             placement=comp_cfg.placement,
             class_mapping=comp_cfg.class_mapping,
         )
+
+    def test_no_tag_when_type_disabled_by_default(self, gen_module):
+        """Type is disabled by default for "components" -- with no
+        explicit config, mining lasers get no tag at all."""
+        desc = "Manufacturer: Greycat Industrial\\nItem Type: Mining Laser \\nSize: 1\\n"
+        tagger = gen_module._ship_weapon_name_tag_factory(ammo_lookup={})
+        assert tagger(desc, self._mining_laser_xml()) is None
+
+    def test_mining_laser_gets_component_type_size_tag_when_enabled(self, gen_module):
+        desc = "Manufacturer: Greycat Industrial\\nItem Type: Mining Laser \\nSize: 1\\n"
+        cfg = self._components_cfg(type_enabled=True)
+        tagger = gen_module._ship_weapon_name_tag_factory(
+            ammo_lookup={}, mining_laser_config=cfg,
+        )
+        assert tagger(desc, self._mining_laser_xml()) == "[ML-S1]"
+
+    def test_respects_users_configured_components_style(self, gen_module):
+        """A user who's enabled Type/Size with custom styles gets those
+        same styles applied here, matching the fuel-nozzle bare-type tag
+        behaviour (#266)."""
+        cfg = self._components_cfg(type_enabled=True, type_style="long",
+                                    size_enabled=True, size_style="n")
         desc = "Item Type: Mining Laser \\nSize: 1\\n"
         tagger = gen_module._ship_weapon_name_tag_factory(
-            ammo_lookup={}, mining_laser_config=custom_cfg,
+            ammo_lookup={}, mining_laser_config=cfg,
         )
         assert tagger(desc, self._mining_laser_xml()) == "[Mining Laser-1]"
+
+    def test_size_omitted_when_size_element_disabled(self, gen_module):
+        """Type enabled but Size specifically disabled -- Type-only tag,
+        no bare [S1] leaking in from a component element the user turned
+        off."""
+        cfg = self._components_cfg(type_enabled=True, size_enabled=False)
+        desc = "Item Type: Mining Laser \\nSize: 1\\n"
+        tagger = gen_module._ship_weapon_name_tag_factory(
+            ammo_lookup={}, mining_laser_config=cfg,
+        )
+        assert tagger(desc, self._mining_laser_xml()) == "[ML]"
 
     def test_mining_laser_without_marker_falls_through_to_no_tag(self, gen_module):
         """Sanity guard: only entities carrying the mining-laser marker get
         this fallback — a plain no-damage item (tractor beam etc.) is
-        untouched, per the existing damage-required guard."""
+        untouched, per the existing damage-required guard, even with Type
+        enabled."""
         beam_xml = ET.fromstring('<EntityClassDefinition Name="ARGO_TowingBeam_S3"/>')
-        tagger = gen_module._ship_weapon_name_tag_factory(ammo_lookup={})
+        cfg = self._components_cfg(type_enabled=True)
+        tagger = gen_module._ship_weapon_name_tag_factory(
+            ammo_lookup={}, mining_laser_config=cfg,
+        )
         assert tagger("Item Type: Towing Beam\\nSize: 3\\n", beam_xml) is None
