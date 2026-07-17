@@ -26,8 +26,10 @@ def merge_sources_by_hierarchy(
     overwrite earlier ones. User overrides (if provided) always have highest priority
     and are applied last.
 
-    Syncs values across key variants (e.g., item_Name_QDRV_RSI_S02_Hemera and
-    item_nameQDRV_RSI_S02_Hemera_SCItem get the same value).
+    Syncs values across item_Name*/item_Desc* key variants (e.g.,
+    item_Name_QDRV_RSI_S02_Hemera and item_nameQDRV_RSI_S02_Hemera_SCItem get
+    the same value) — see sync_key_variants for why this is scoped to that
+    namespace and not the whole table (#257).
 
     Args:
         sources_dict: Dictionary mapping source name to its key-value pairs.
@@ -146,6 +148,22 @@ def sync_key_variants(
 
     This modifies merged_dict in-place.
 
+    Scoped to item_Name*/item_Desc* keys only (#257). Canonicalization
+    strips ALL underscores and lowercases, which is exactly right for the
+    ship-item naming quirks this function targets — but running it over
+    every key in the ~90k-key table let two completely unrelated CIG loc
+    keys collide by coincidence: ``Stanton2`` (the Crusader planet's name
+    key) and ``Stanton_2`` (a different key, the star, holding "Stanton
+    (Star)") both canonicalize to "stanton2". The longest-value tie-break
+    then overwrote the planet's name with the star's. An audit of a real
+    base.ini found 14 more live collisions of this shape (comm-array
+    button text, a mission title, ship-interior area names, Options-menu
+    turret labels, two different thruster names merged into one, …) —
+    this was silently corrupting shipped content anywhere in the table,
+    not just item names. The item_Name/item_Desc prefix is exactly the
+    boundary every existing test case here already lives inside; nothing
+    outside it was ever an intentional target of this sync.
+
     Args:
         merged_dict: Dictionary of keys to values from merged sources
         user_edited_keys: Keys the user explicitly edited (user.ini
@@ -160,10 +178,15 @@ def sync_key_variants(
             of *those* wins (same tie-break as the no-override case — we
             have no ordering signal between two deliberate edits).
     """
-    # Build a mapping of canonical → list of actual keys with that canonical form
+    # Build a mapping of canonical → list of actual keys with that canonical
+    # form, restricted to the item_Name*/item_Desc* namespace this sync is
+    # actually for (#257) — any other key (locations, missions, UI labels,
+    # options-menu strings, ...) is left completely untouched by this pass.
     canonical_keys: Dict[str, List[str]] = {}
 
     for key in list(merged_dict.keys()):
+        if not key.lower().startswith(("item_name", "item_desc")):
+            continue
         canonical = _get_canonical_key(key)
         if canonical not in canonical_keys:
             canonical_keys[canonical] = []
