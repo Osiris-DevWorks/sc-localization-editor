@@ -964,6 +964,65 @@ def _missile_name_tag(desc_value: str, root: ET.Element | None = None,
     return out or None
 
 
+def _build_mining_laser_tag_cfg(mining_cfg_src: "TagConfig | None") -> "TagConfig | None":
+    """Build the Type(+Size) TagConfig used to tag ship-mounted mining
+    lasers, gated by the same Components > Type toggle as every other
+    DEFAULT_COMPONENT_TYPE_MAPPING entry -- opt-in, not force-shown
+    (#266). Size rides along too only if the user's Components > Size
+    element is also enabled (true by default). None when Type is
+    disabled or no builder config is available.
+
+    Shared by _ship_weapon_name_tag_factory (tags the mining laser's own
+    item_Name) and build_scitem_lookups (tags its mission-blueprint
+    bullet), so the two Type+Size tagging paths can't drift out of sync.
+    """
+    if mining_cfg_src is None or ElementSpec is None:
+        return None
+    type_el = _component_element(mining_cfg_src, "type")
+    if type_el is None or not type_el.enabled:
+        return None
+    elements = [ElementSpec(kind="type", enabled=True, style=type_el.style or "med")]
+    size_el = _component_element(mining_cfg_src, "size")
+    if size_el is not None and size_el.enabled:
+        elements.append(ElementSpec(kind="size", enabled=True, style=size_el.style or "sn"))
+    return TagConfig(
+        elements=elements,
+        separator=mining_cfg_src.separator,
+        enclosing=mining_cfg_src.enclosing,
+        placement=mining_cfg_src.placement,
+        class_mapping=mining_cfg_src.class_mapping,
+    )
+
+
+def _mining_laser_component_tag(desc_value: str, root: "ET.Element | None",
+                                 mining_tag_cfg: "TagConfig | None") -> str | None:
+    """Render the component-style Type(+Size) tag for a ship-mounted
+    mining laser entity (e.g. ``[Mining Laser-S1]``), or None when the
+    entity isn't a mining laser, no tag config is available, or
+    render_tag can't be imported.
+
+    Size prefers the entity class name attribute (matches
+    _extract_item_size elsewhere), falling back to a Size: N line in the
+    description. Shared by _ship_weapon_name_tag_factory and
+    build_scitem_lookups -- see _build_mining_laser_tag_cfg.
+    """
+    if mining_tag_cfg is None or render_tag is None or root is None:
+        return None
+    if _find(root, "SEntityComponentMiningLaserParams") is None:
+        return None
+    size = None
+    name_attr = root.get("Name") or root.get("name") or ""
+    m = re.search(r"_S0*(\d+)_", name_attr)
+    if m:
+        size = str(int(m.group(1)))
+    if not size:
+        ds = re.search(r"Size:\s*(\d+)", desc_value)
+        if ds:
+            size = ds.group(1)
+    out = render_tag(mining_tag_cfg, {"type": "Mining Laser", "size": size or ""})
+    return out or None
+
+
 def _ship_weapon_name_tag_factory(ammo_lookup: dict, config: "TagConfig | None" = None,
                                    mining_laser_config: "TagConfig | None" = None):
     """Build a closure-tagger for ship weapons.
@@ -980,26 +1039,8 @@ def _ship_weapon_name_tag_factory(ammo_lookup: dict, config: "TagConfig | None" 
     ship-weapon shape.
     """
     cfg = config or DEFAULT_TAG_CONFIGS.get("ship_weapons")
-    # Mining laser tagging is gated by the same Components > Type toggle as
-    # every other DEFAULT_COMPONENT_TYPE_MAPPING entry -- opt-in, not
-    # force-shown (#266). Size rides along too if the user also has the
-    # Components > Size element enabled (true by default).
     mining_cfg_src = mining_laser_config or DEFAULT_TAG_CONFIGS.get("components")
-    mining_tag_cfg = None
-    if mining_cfg_src is not None and ElementSpec is not None:
-        type_el = _component_element(mining_cfg_src, "type")
-        if type_el is not None and type_el.enabled:
-            elements = [ElementSpec(kind="type", enabled=True, style=type_el.style or "med")]
-            size_el = _component_element(mining_cfg_src, "size")
-            if size_el is not None and size_el.enabled:
-                elements.append(ElementSpec(kind="size", enabled=True, style=size_el.style or "sn"))
-            mining_tag_cfg = TagConfig(
-                elements=elements,
-                separator=mining_cfg_src.separator,
-                enclosing=mining_cfg_src.enclosing,
-                placement=mining_cfg_src.placement,
-                class_mapping=mining_cfg_src.class_mapping,
-            )
+    mining_tag_cfg = _build_mining_laser_tag_cfg(mining_cfg_src)
 
     def _tag(desc_value: str, root: ET.Element | None = None) -> str | None:
         if cfg is None or render_tag is None or root is None:
@@ -1053,11 +1094,7 @@ def _ship_weapon_name_tag_factory(ammo_lookup: dict, config: "TagConfig | None" 
         # Size, so tag them via the component Type+Size shape instead of
         # skipping outright (#266).
         if not damage_label:
-            if mining_tag_cfg is not None and render_tag is not None and \
-                    _find(root, "SEntityComponentMiningLaserParams") is not None:
-                out = render_tag(mining_tag_cfg, {"type": "Mining Laser", "size": size or ""})
-                return out or None
-            return None
+            return _mining_laser_component_tag(desc_value, root, mining_tag_cfg)
         out = render_tag(cfg, {"damage": damage_label, "size": size or ""})
         return out or None
 
@@ -5305,14 +5342,21 @@ def build_scitem_lookups(
       filename in CIG's authored layout.
     * entity_name_tags: __ref UUID → ``[CLASS-Sx-grade]`` tag (e.g.
       ``[MIL-S1-A]``) when the entity is a ship component whose
-      description carries the Size:/Grade:/Class: header trio.
-      Only populated for components that ``_component_name_tag``
-      can classify — FPS gear, weapons, ships, missiles, ammo, etc.
-      get no entry. Used by blueprint pool resolution to apply the
-      same annotation to blueprint reward names that the components
-      pipeline applies to stock component titles, so a mission's
-      "POTENTIAL BLUEPRINTS" list reads e.g. "Norfield [MIL-S1-A]"
-      instead of bare "Norfield".
+      description carries the Size:/Grade:/Class: header trio, plus
+      three narrower exceptions (#266 follow-up): a Type-only tag for
+      size-less Fuel Nozzle/Scraper Module entities (matching
+      enhancements_bare_type_tags), and a Type+Size tag for ship-mounted
+      Mining Laser entities (matching _ship_weapon_name_tag_factory's own
+      mining-laser branch) despite living under the excluded "weapons"
+      subtree. Everything else under "weapons" (combat weapons, FPS
+      gear, missiles, ammo) still gets no entry. Used by blueprint pool
+      resolution to apply the same annotation to blueprint reward names
+      that the components/ship-weapon pipelines apply to stock item
+      titles, so a mission's "POTENTIAL BLUEPRINTS" list reads e.g.
+      "Norfield [MIL-S1-A]" or "Norfield [Fuel Nozzle]" instead of bare
+      "Norfield" -- without this, the tag only ever appeared on the
+      item's own name, never inside the mission text a player actually
+      reads.
 
     Walking the scitem tree once instead of twice (magazines + entity names
     used to iterate independently) cuts ~30s off the run since there are
@@ -5325,6 +5369,8 @@ def build_scitem_lookups(
     loc = loc or {}
     if not scitem_dir.exists():
         return mag_lookup, entity_names, entity_names_by_filename, entity_name_tags
+
+    mining_tag_cfg = _build_mining_laser_tag_cfg(tag_config)
 
     null_uuid = "00000000-0000-0000-0000-000000000000"
     xml_files = (
@@ -5398,18 +5444,38 @@ def build_scitem_lookups(
             # Weapons/missiles are meant to pass through bare (per request +
             # the docstring above) since they have their own tag mechanisms
             # (or none) that aren't wired into blueprint-pool weaving.
-            if desc_value and "weapons" not in _parts:
-                # Derive the component type from the entity's subdir so the
-                # blueprint-list tag carries the same Type element the
-                # standalone component path emits (#101). Non-component
-                # entities won't be under these subdirs (comp_type stays "")
-                # and _component_name_tag returns None for them regardless.
-                comp_type = next(
-                    (t for sd, t in _SUBDIR_TO_TYPE.items() if sd in _parts), ""
-                )
-                tag = _component_name_tag(
-                    desc_value, root, config=tag_config, component_type=comp_type
-                )
+            #
+            # Mining lasers are the one "weapons" exception (#266 follow-up):
+            # they're not combat weapons (no damage breakdown, so
+            # _component_name_tag would never fire for them anyway) but ARE
+            # a real component type with a real Size, tagged via the same
+            # Type+Size shape _ship_weapon_name_tag_factory already applies
+            # to their own item_Name.
+            is_mining_laser = "weapons" in _parts and _find(
+                root, "SEntityComponentMiningLaserParams"
+            ) is not None
+            if desc_value and ("weapons" not in _parts or is_mining_laser):
+                if is_mining_laser:
+                    tag = _mining_laser_component_tag(desc_value, root, mining_tag_cfg)
+                else:
+                    # Derive the component type from the entity's subdir so the
+                    # blueprint-list tag carries the same Type element the
+                    # standalone component path emits (#101). Non-component
+                    # entities won't be under these subdirs (comp_type stays "")
+                    # and _component_name_tag returns None for them regardless.
+                    comp_type = next(
+                        (t for sd, t in _SUBDIR_TO_TYPE.items() if sd in _parts), ""
+                    )
+                    tag = _component_name_tag(
+                        desc_value, root, config=tag_config, component_type=comp_type
+                    )
+                    # #266 follow-up: Fuel Nozzle and Scraper Module carry no
+                    # Size:/Grade:/Class: at all, so _component_name_tag above
+                    # always returns None for them -- fall back to the same
+                    # Type-only bare-type tag enhancements_bare_type_tags
+                    # applies to their own item_Name.
+                    if not tag:
+                        tag = _bare_type_tag_from_desc(desc_value, tag_config)
                 # #160: armour, magazines, salvage/mining heads and other FPS
                 # gear expose Size + Grade in their AttachDef but no ship
                 # component CLASS, so _component_name_tag falls back to a
@@ -5754,6 +5820,37 @@ def _component_element(cfg: "TagConfig", kind: str) -> "ElementSpec | None":
     return None
 
 
+def _bare_type_tag_from_desc(desc_value: str, comp_cfg: "TagConfig | None") -> str | None:
+    """Render a Type-only tag (e.g. ``[Fuel Nozzle]``) for a size-less
+    item (Fuel Nozzle, Scraper Module) from its raw description text, or
+    None when the description's Item Type isn't in the small bare-type
+    allow-list (_BARE_TYPE_NAMES) or the user hasn't enabled the
+    Components > Type element.
+
+    Shared by enhancements_bare_type_tags (per base.ini Name/Desc pair,
+    tags the item's own name) and build_scitem_lookups (per scanned
+    entity XML, tags its mission-blueprint bullet) so the two Type-only
+    tagging paths can't drift out of sync (#266 follow-up).
+    """
+    if comp_cfg is None or ElementSpec is None or render_tag is None:
+        return None
+    type_el = _component_element(comp_cfg, "type")
+    if type_el is None or not type_el.enabled:
+        return None
+    type_m = re.search(r"Item Type:\s*([^\\\n]+?)\s*(?:\\n|\n|$)", desc_value)
+    type_name = type_m.group(1).strip() if type_m else None
+    if type_name not in _BARE_TYPE_NAMES:
+        return None
+    tag_cfg = TagConfig(
+        elements=[ElementSpec(kind="type", enabled=True, style=type_el.style or "med")],
+        separator=comp_cfg.separator,
+        enclosing=comp_cfg.enclosing,
+        placement=comp_cfg.placement,
+        class_mapping=comp_cfg.class_mapping,
+    )
+    return render_tag(tag_cfg, {"type": type_name})
+
+
 def enhancements_bare_type_tags(ctx: dict) -> dict[str, str]:
     """Tag size-less component items with a Type-only bracket tag (#266).
 
@@ -5765,20 +5862,8 @@ def enhancements_bare_type_tags(ctx: dict) -> dict[str, str]:
     loc = ctx["loc"]
     tag_configs = ctx.get("tag_configs") or {}
     comp_cfg = tag_configs.get("components") or DEFAULT_TAG_CONFIGS.get("components")
-    if comp_cfg is None or ElementSpec is None or render_tag is None:
+    if comp_cfg is None:
         return {}
-
-    type_el = _component_element(comp_cfg, "type")
-    if type_el is None or not type_el.enabled:
-        return {}
-
-    tag_cfg = TagConfig(
-        elements=[ElementSpec(kind="type", enabled=True, style=type_el.style or "med")],
-        separator=comp_cfg.separator,
-        enclosing=comp_cfg.enclosing,
-        placement=comp_cfg.placement,
-        class_mapping=comp_cfg.class_mapping,
-    )
     placement = getattr(comp_cfg, "placement", "prepend")
 
     out: dict[str, str] = {}
@@ -5791,11 +5876,7 @@ def enhancements_bare_type_tags(ctx: dict) -> dict[str, str]:
         desc_value = loc.get(f"{key[:-len('_Name')]}_Desc", "")
         if not desc_value:
             continue
-        type_m = re.search(r"Item Type:\s*([^\\\n]+?)\s*(?:\\n|\n|$)", desc_value)
-        type_name = type_m.group(1).strip() if type_m else None
-        if type_name not in _BARE_TYPE_NAMES:
-            continue
-        tag = render_tag(tag_cfg, {"type": type_name})
+        tag = _bare_type_tag_from_desc(desc_value, comp_cfg)
         if not tag:
             continue
         if placement == "append":
