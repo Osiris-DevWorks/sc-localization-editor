@@ -3,10 +3,15 @@
 Covers a 1.4.0 regression: ``_ship_weapon_name_tag_factory`` was emitting a
 size-only tag like ``[S1]`` (or ``[1]`` under a user's "Number" size style)
 for items in ``ships/weapons/`` that lacked a resolvable damage breakdown.
-EMP devices, tractor / towing beams, and mining lasers (which have their
-own enhancements_mining_laser pipeline) were the visible victims — issue
-thread reported ``item_NameMXOX_EMP_Device=[1] TroMag Burst Generator``.
-The fix requires a non-empty damage_label before any tag is emitted.
+EMP devices, tractor / towing beams, and mining lasers were the visible
+victims — issue thread reported
+``item_NameMXOX_EMP_Device=[1] TroMag Burst Generator``. The fix requires
+a non-empty damage_label before the ship-weapon damage-keyed tag is
+emitted. Mining lasers later got their own component-style Type+Size
+fallback instead of staying permanently untagged (#266) — see
+``TestShipWeaponTagMiningLaser`` below; EMP devices and tractor/towing
+beams still get no tag at all, since they aren't a recognised component
+type either.
 """
 from __future__ import annotations
 
@@ -16,6 +21,15 @@ from pathlib import Path
 
 import pytest
 from lxml import etree as ET
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
+from src.utils.tag_builder import (  # noqa: E402
+    DEFAULT_TAG_CONFIGS,
+    ElementSpec,
+    TagConfig,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -111,3 +125,56 @@ class TestShipWeaponTagDamageRequirement:
         if tag is None:
             pytest.skip("ammo fixture too minimal for _ammo_damage_breakdown")
         assert tag.startswith("[") and tag.endswith("]")
+
+
+class TestShipWeaponTagMiningLaser:
+    """Mining lasers live in ships/weapons/ alongside combat weapons but
+    have no ammo/damage breakdown, so the damage-required guard above
+    would otherwise skip them entirely. They ARE a real component type
+    with a real Size though, so #266 tags them via the component
+    Type+Size shape (``[ML-S1]`` under default styles) instead."""
+
+    def _mining_laser_xml(self, name_attr: str = "Greycat_MiningLaser_Arbor"):
+        xml = (
+            f'<EntityClassDefinition Name="{name_attr}">'
+            '  <Components>'
+            '    <SEntityComponentMiningLaserParams/>'
+            '  </Components>'
+            '</EntityClassDefinition>'
+        )
+        return ET.fromstring(xml)
+
+    def test_mining_laser_gets_component_type_size_tag(self, gen_module):
+        desc = "Manufacturer: Greycat Industrial\\nItem Type: Mining Laser \\nSize: 1\\n"
+        tagger = gen_module._ship_weapon_name_tag_factory(ammo_lookup={})
+        assert tagger(desc, self._mining_laser_xml()) == "[ML-S1]"
+
+    def test_respects_users_configured_components_style(self, gen_module):
+        """A user who's customised the "components" Type/Size styles (even
+        while leaving Type disabled for their sized components) gets those
+        same styles applied here, matching the fuel-nozzle bare-type tag
+        behaviour (#266)."""
+        comp_cfg = DEFAULT_TAG_CONFIGS["components"]
+        custom_cfg = TagConfig(
+            elements=[
+                ElementSpec("type", False, "long"),
+                ElementSpec("size", True, "n"),
+            ],
+            separator=comp_cfg.separator,
+            enclosing=comp_cfg.enclosing,
+            placement=comp_cfg.placement,
+            class_mapping=comp_cfg.class_mapping,
+        )
+        desc = "Item Type: Mining Laser \\nSize: 1\\n"
+        tagger = gen_module._ship_weapon_name_tag_factory(
+            ammo_lookup={}, mining_laser_config=custom_cfg,
+        )
+        assert tagger(desc, self._mining_laser_xml()) == "[Mining Laser-1]"
+
+    def test_mining_laser_without_marker_falls_through_to_no_tag(self, gen_module):
+        """Sanity guard: only entities carrying the mining-laser marker get
+        this fallback — a plain no-damage item (tractor beam etc.) is
+        untouched, per the existing damage-required guard."""
+        beam_xml = ET.fromstring('<EntityClassDefinition Name="ARGO_TowingBeam_S3"/>')
+        tagger = gen_module._ship_weapon_name_tag_factory(ammo_lookup={})
+        assert tagger("Item Type: Towing Beam\\nSize: 3\\n", beam_xml) is None
