@@ -379,6 +379,34 @@ class TestBulletNameMismatches:
         assert "Arbor" not in meta
         assert "Klein" not in meta
 
+    @pytest.mark.regression
+    def test_known_aliases_cover_the_three_fuel_nozzles_key_slug_missed(self):
+        """Most fuel nozzle variants resolve generically via _key_slug, but
+        a live Blueprint Tracker screenshot showed these three still
+        untagged/ungarbled after that fix -- their real underlying key
+        apparently doesn't follow the Nozzle_FuelGiver_<MFR>_Nozzle
+        <Variant>_Name pattern the others do, so they need explicit
+        aliases like Helix/Hofstede."""
+        desc = (
+            "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>"
+            "\\n- Nozzle Fuelgiver Grin Nozzlefast"
+            "\\n- Nozzle Fuelgiver Grin Nozzleverysecure"
+            "\\n- Nozzle Fuelgiver Misc Nozzlestandard"
+        )
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("item_fuelnozzle_GRIN_Fast_Name", "[FN] Norfield", "Ship Items"),
+            _Entry("item_fuelnozzle_GRIN_Safe_Name", "[FN] Harkin", "Ship Items"),
+            _Entry("item_fuelnozzle_MISC_Standard_Name", "[FN] RN-7s", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert meta["Norfield"].tagged_name == "[FN] Norfield"
+        assert meta["Harkin"].tagged_name == "[FN] Harkin"
+        assert meta["RN-7s"].tagged_name == "[FN] RN-7s"
+        assert "Nozzle Fuelgiver Grin Nozzlefast" not in meta
+        assert "Nozzle Fuelgiver Grin Nozzleverysecure" not in meta
+        assert "Nozzle Fuelgiver Misc Nozzlestandard" not in meta
+
     def test_direct_match_is_not_overridden_by_alias_or_keyslug(self):
         """A bullet name that already matches a real item directly must
         win outright -- the alias/keyslug fallback only kicks in when the

@@ -189,6 +189,17 @@ _BULLET_NAME_ALIASES: dict[str, str] = {
     "Helix": "S0 Helix",
     "Hofstede": "S00 Hofstede",
     "Klein": "Lawson Mining Laser",
+    # Fuel nozzles (#266 follow-up): most manufacturer variants resolve
+    # generically via _key_slug (their real key genuinely follows
+    # Nozzle_FuelGiver_<MFR>_Nozzle<Variant>_Name), but these three still
+    # showed up ungarbled/untagged after that fix -- their real underlying
+    # key must not match that exact pattern. Confirmed via a live Blueprint
+    # Tracker screenshot listing all three as separate untagged entries
+    # while their siblings (Marlin, Lindstrom, Bendix, Torrez, Ezra) had
+    # already resolved correctly.
+    "Nozzle Fuelgiver Grin Nozzlefast": "Norfield",
+    "Nozzle Fuelgiver Grin Nozzleverysecure": "Harkin",
+    "Nozzle Fuelgiver Misc Nozzlestandard": "RN-7s",
 }
 
 # The bracketed component tag, e.g. "[MIL-S3-B]" or the user-reconfigured
