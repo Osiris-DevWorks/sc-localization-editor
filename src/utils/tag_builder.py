@@ -451,6 +451,16 @@ DEFAULT_COMPONENT_TYPE_MAPPING: dict[str, tuple[str, str, str]] = {
     "Power Plant":      ("PW",  "POWR", "Power"),
     "Quantum Drive":    ("QD",  "QDRV", "Quantum"),
     "Radar":            ("RD",  "RADR", "Radar"),
+    # #266: components with no Class:/Size:/Grade: of their own -- the
+    # generator always forces this element on for them (see
+    # enhancements_bare_type_tags in generate_enhancements_ini.py), since
+    # otherwise they'd never get a tag at all while Type stays off by default.
+    "Fuel Nozzle":      ("FN",  "FNoz", "Fuel Nozzle"),
+    # #266: mining lasers live in ships/weapons/ (routed through
+    # _ship_weapon_name_tag_factory) but aren't combat weapons -- no
+    # resolvable damage type, so they're tagged as a component Type+Size
+    # instead of the ship-weapon damage-keyed style.
+    "Mining Laser":     ("ML",  "MineL", "Mining Laser"),
 }
 
 DEFAULT_COMMODITY_LABEL_MAPPING: dict[str, tuple[str, str, str]] = {

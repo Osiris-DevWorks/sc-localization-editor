@@ -51,7 +51,8 @@ try:
     from src.utils.tag_builder import (
         CRAFT_USAGE_CATEGORIES, DAMAGE_LABEL_TO_MAPPING_KEY,
         DEFAULT_COMMODITY_USAGE_MAPPING, DEFAULT_COMPONENT_CLASS_MAPPING,
-        DEFAULT_TAG_CONFIGS, SIZE_ABBREV_BY_WORD, TagConfig, USAGE_INPUT_SEP,
+        DEFAULT_COMPONENT_TYPE_MAPPING, DEFAULT_TAG_CONFIGS, ElementSpec,
+        SIZE_ABBREV_BY_WORD, TagConfig, USAGE_INPUT_SEP,
         abbreviate_title, apply_mission_title, render_route, render_tag,
         route_enabled,
     )
@@ -60,7 +61,9 @@ except ImportError:  # pragma: no cover — only triggers if src/ is removed
     DAMAGE_LABEL_TO_MAPPING_KEY = {}  # type: ignore[assignment]
     DEFAULT_COMMODITY_USAGE_MAPPING = {}  # type: ignore[assignment]
     DEFAULT_COMPONENT_CLASS_MAPPING = {}  # type: ignore[assignment]
+    DEFAULT_COMPONENT_TYPE_MAPPING = {}  # type: ignore[assignment]
     DEFAULT_TAG_CONFIGS = {}  # type: ignore[assignment]
+    ElementSpec = None  # type: ignore[assignment]
     TagConfig = None  # type: ignore[assignment]
     USAGE_INPUT_SEP = "\x1f"  # type: ignore[assignment]
     render_tag = None  # type: ignore[assignment]
@@ -961,15 +964,37 @@ def _missile_name_tag(desc_value: str, root: ET.Element | None = None,
     return out or None
 
 
-def _ship_weapon_name_tag_factory(ammo_lookup: dict, config: "TagConfig | None" = None):
+def _ship_weapon_name_tag_factory(ammo_lookup: dict, config: "TagConfig | None" = None,
+                                   mining_laser_config: "TagConfig | None" = None):
     """Build a closure-tagger for ship weapons.
 
     Needs the ammo_lookup to resolve the dominant damage type, so it can't
     use the bare ``(desc, root)`` shape the other taggers use. Returns a
     function with the standard ``(desc_value, root)`` signature for
     ``scan_entity_dir``.
+
+    ``mining_laser_config`` is the user's "components" Tag Builder config
+    (not "ship_weapons") -- mining lasers live in ships/weapons/ alongside
+    combat weapons but aren't combat weapons themselves (#266), so they're
+    tagged with the component Type+Size shape instead of the damage-keyed
+    ship-weapon shape.
     """
     cfg = config or DEFAULT_TAG_CONFIGS.get("ship_weapons")
+    mining_cfg_src = mining_laser_config or DEFAULT_TAG_CONFIGS.get("components")
+    mining_tag_cfg = None
+    if mining_cfg_src is not None and ElementSpec is not None:
+        mining_tag_cfg = TagConfig(
+            elements=[
+                ElementSpec(kind="type", enabled=True,
+                            style=_element_style(mining_cfg_src, "type", "med")),
+                ElementSpec(kind="size", enabled=True,
+                            style=_element_style(mining_cfg_src, "size", "sn")),
+            ],
+            separator=mining_cfg_src.separator,
+            enclosing=mining_cfg_src.enclosing,
+            placement=mining_cfg_src.placement,
+            class_mapping=mining_cfg_src.class_mapping,
+        )
 
     def _tag(desc_value: str, root: ET.Element | None = None) -> str | None:
         if cfg is None or render_tag is None or root is None:
@@ -1015,11 +1040,18 @@ def _ship_weapon_name_tag_factory(ammo_lookup: dict, config: "TagConfig | None" 
                     )
 
         # Require a resolvable damage label. Items in ships/weapons/ that
-        # lack a damage breakdown — EMP devices, tractor / towing beams,
-        # mining lasers (which have their own enhancements_mining_laser
-        # pipeline) — would otherwise emit a size-only tag like ``[S1]``
-        # that's meaningless next to the entity's own name. Skip those.
+        # lack a damage breakdown — EMP devices, tractor / towing beams —
+        # would otherwise emit a size-only tag like ``[S1]`` that's
+        # meaningless next to the entity's own name. Skip those. Mining
+        # lasers are the one exception: they're not combat weapons (no
+        # damage breakdown) but ARE a real component type with a real
+        # Size, so tag them via the component Type+Size shape instead of
+        # skipping outright (#266).
         if not damage_label:
+            if mining_tag_cfg is not None and render_tag is not None and \
+                    _find(root, "SEntityComponentMiningLaserParams") is not None:
+                out = render_tag(mining_tag_cfg, {"type": "Mining Laser", "size": size or ""})
+                return out or None
             return None
         out = render_tag(cfg, {"damage": damage_label, "size": size or ""})
         return out or None
@@ -5685,6 +5717,91 @@ def enhancements_medical_consumables(ctx: dict) -> dict[str, str]:
     return out
 
 
+# ── Bare-type tags for size-less components (#266) ──────────────────────────
+# Some component-adjacent items (fuel nozzles so far; more may follow) carry
+# no Size:/Grade:/Class: of their own -- there's nothing to hang the usual
+# [MIL-S1-A] shape off of, and the optional "Type" element
+# (DEFAULT_COMPONENT_TYPE_MAPPING) is disabled by default, so without this
+# they'd never show any tag at all ("What is an R7?" -- issue #266).
+# Identified purely by loc-key prefix, no DataForge scan needed -- these
+# items already carry real stock item_Name/item_Desc entries in base.ini,
+# same "base.ini is the only input" shape as
+# enhancements_medical_consumables above.
+_BARE_TYPE_KEY_PREFIXES: dict[str, str] = {
+    "item_fuelnozzle_": "Fuel Nozzle",
+}
+
+
+def _element_style(cfg: "TagConfig", kind: str, default: str) -> str:
+    """Read the style a user has picked for one element kind of a
+    TagConfig, even when that element is currently disabled.
+
+    Used to force-enable an element (Type for bare-type items, Type+Size
+    for mining lasers) while still honouring whatever abbreviation length
+    the user chose for it rather than silently resetting to a default.
+    """
+    for el in cfg.elements:
+        if el.kind == kind:
+            return el.style or default
+    return default
+
+
+def enhancements_bare_type_tags(ctx: dict) -> dict[str, str]:
+    """Tag size-less component items with a Type-only bracket tag (#266).
+
+    Forces the Type element on for just this tag, regardless of whether the
+    user has the optional Type element enabled for regular (sized)
+    components -- these items have no other way to ever show a tag, so
+    respecting a default-off toggle here would leave them permanently blank.
+    Still respects the user's chosen bracket/separator style and whatever
+    abbreviation length they've picked for Type, if they've touched it.
+    """
+    loc = ctx["loc"]
+    tag_configs = ctx.get("tag_configs") or {}
+    comp_cfg = tag_configs.get("components") or DEFAULT_TAG_CONFIGS.get("components")
+    if comp_cfg is None or ElementSpec is None or render_tag is None:
+        return {}
+
+    type_style = _element_style(comp_cfg, "type", "med")
+
+    tag_cfg = TagConfig(
+        elements=[ElementSpec(kind="type", enabled=True, style=type_style)],
+        separator=comp_cfg.separator,
+        enclosing=comp_cfg.enclosing,
+        placement=comp_cfg.placement,
+        class_mapping=comp_cfg.class_mapping,
+    )
+    placement = getattr(comp_cfg, "placement", "prepend")
+
+    out: dict[str, str] = {}
+    for key, name_value in loc.items():
+        if not name_value:
+            continue
+        kl = key.lower()
+        if not kl.endswith("_name"):
+            continue
+        type_name = next(
+            (t for prefix, t in _BARE_TYPE_KEY_PREFIXES.items() if kl.startswith(prefix)),
+            None,
+        )
+        if type_name is None:
+            continue
+        tag = render_tag(tag_cfg, {"type": type_name})
+        if not tag:
+            continue
+        if placement == "append":
+            out[key] = f"{name_value} {tag}"
+        else:
+            out[key] = f"{tag} {name_value}"
+        short_key = f"{key}_short"
+        short_value = loc.get(short_key)
+        if short_value:
+            out[short_key] = f"{short_value} {tag}" if placement == "append" else f"{tag} {short_value}"
+
+    logger.info(f"Finished bare-type tags ({len(out)} entries)")
+    return out
+
+
 def _run_gen_components(ctx: dict) -> dict[str, str]:
     loc             = ctx["loc"]
     ships_scitem    = ctx["ships_scitem"]
@@ -5730,6 +5847,14 @@ def _run_gen_components(ctx: dict) -> dict[str, str]:
             f"Propagated enhancements to {sibling_count} _SCItem siblings "
             f"and {inv_sibling_count} legacy no-underscore siblings"
         )
+
+    # #266: size-less components (fuel nozzles, ...) -- base.ini-only, no
+    # DataForge scan, so run and merge separately from the entity-dir walk
+    # above rather than trying to force them through _mirror_scitem_siblings,
+    # which targets the SHLD_/POWR_-style variant-naming quirk these items
+    # don't share.
+    out.update(enhancements_bare_type_tags(ctx))
+
     return out
 
 
@@ -5801,9 +5926,12 @@ def _run_gen_ship_weapons(ctx: dict) -> dict[str, str]:
     ship_weapon_placement = (
         getattr(ship_weapon_cfg, "placement", "prepend") if ship_weapon_cfg else "prepend"
     )
+    mining_laser_cfg = tag_configs.get("components") or DEFAULT_TAG_CONFIGS.get("components")
     # Ship weapons gain name tags in 1.3.x (issue #31). The factory captures
     # ammo_lookup so the tagger can resolve the dominant damage type.
-    ship_weapon_tagger = _ship_weapon_name_tag_factory(vehicle_ammo, config=ship_weapon_cfg)
+    ship_weapon_tagger = _ship_weapon_name_tag_factory(
+        vehicle_ammo, config=ship_weapon_cfg, mining_laser_config=mining_laser_cfg,
+    )
 
     out: dict[str, str] = {}
     weapons_dir = ships_scitem / "weapons"
