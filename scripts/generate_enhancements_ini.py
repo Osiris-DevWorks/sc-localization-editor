@@ -5730,13 +5730,20 @@ def enhancements_medical_consumables(ctx: dict) -> dict[str, str]:
 # MAPPING entry (Shield Generator, Cooler, ...) -- users opt in via the
 # Tag Builder's Components > Type checkbox like any other component, they
 # don't get force-shown just because they'd otherwise have no other tag.
-# Identified purely by loc-key prefix, no DataForge scan needed -- these
-# items already carry real stock item_Name/item_Desc entries in base.ini,
-# same "base.ini is the only input" shape as
-# enhancements_medical_consumables above.
-_BARE_TYPE_KEY_PREFIXES: dict[str, str] = {
-    "item_fuelnozzle_": "Fuel Nozzle",
-}
+#
+# Identified by the description's own "Item Type: X" line, NOT by loc-key
+# naming -- fuel nozzles alone ship under at least two different key
+# conventions for different manufacturers (item_fuelnozzle_MISC_Standard_*
+# for MISC/RN-7s, but Nozzle_FuelGiver_GRIN_NozzleSecure_* for Greycat's
+# Marlin/Lindstrom and Nozzle_FuelGiver_SHIN_*  for Shubin's Bendix/Torrez/
+# Ezra -- confirmed via the String Editor and tests/fixtures/kraken_global_
+# latest.ini). Matching the stock "Item Type:" text is the only approach
+# that generalises across manufacturer-specific key names. Deliberately a
+# small explicit allow-list rather than "any DEFAULT_COMPONENT_TYPE_MAPPING
+# name" -- items like Shield Generator already get tagged via the strict
+# Class-based DataForge scan path (_component_name_tag), and blindly
+# matching their Item Type text here too would double-tag them.
+_BARE_TYPE_NAMES: frozenset[str] = frozenset({"Fuel Nozzle"})
 
 
 def _component_element(cfg: "TagConfig", kind: str) -> "ElementSpec | None":
@@ -5781,11 +5788,12 @@ def enhancements_bare_type_tags(ctx: dict) -> dict[str, str]:
         kl = key.lower()
         if not kl.endswith("_name"):
             continue
-        type_name = next(
-            (t for prefix, t in _BARE_TYPE_KEY_PREFIXES.items() if kl.startswith(prefix)),
-            None,
-        )
-        if type_name is None:
+        desc_value = loc.get(f"{key[:-len('_Name')]}_Desc", "")
+        if not desc_value:
+            continue
+        type_m = re.search(r"Item Type:\s*([^\\\n]+?)\s*(?:\\n|\n|$)", desc_value)
+        type_name = type_m.group(1).strip() if type_m else None
+        if type_name not in _BARE_TYPE_NAMES:
             continue
         tag = render_tag(tag_cfg, {"type": type_name})
         if not tag:
