@@ -237,3 +237,45 @@ def test_desc_without_title_yields_no_mission_but_keeps_item():
 
 def test_no_blueprint_entries_is_empty():
     assert build_blueprint_metadata([_Entry("vehicle_NameRSI_Polaris", "Polaris", "Ships")]) == {}
+
+
+class TestBareTypeKeyConventions:
+    """#266 follow-up: fuel nozzles and mining lasers don't follow the
+    item_Name<code> / vehicle_Name prefix every other component uses, so
+    Pass 1 never recognised their key as a Name entry -- tagged_name fell
+    back to the untagged bare name in the Blueprint Tracker even though
+    the enhancement generator's output (and the String Editor) showed the
+    real tag correctly. ("Tags work right in string editor but not in
+    blueprint tracker.")"""
+
+    def test_fuel_nozzle_item_fuelnozzle_prefix_gets_tagged_name(self):
+        desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- RN-7s"
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("item_fuelnozzle_MISC_Standard_Name", "[FN] RN-7s", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert meta["RN-7s"].tagged_name == "[FN] RN-7s"
+
+    def test_fuel_nozzle_nozzle_fuelgiver_prefix_gets_tagged_name(self):
+        """Regression guard: Greycat/Shubin nozzles ship under the
+        Nozzle_FuelGiver_* convention, not item_fuelnozzle_*."""
+        desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Marlin"
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("Nozzle_FuelGiver_GRIN_NozzleSecure_Name", "[FN] Marlin", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert meta["Marlin"].tagged_name == "[FN] Marlin"
+
+    def test_mining_laser_bare_key_gets_tagged_name(self):
+        """Mining laser Name keys carry no "_Name" suffix at all -- the
+        bare key (ending in the size code) IS the Name entry."""
+        desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Lancet MH1 Mining Laser"
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("item_Mining_MiningLaser_Greycat_1_S1",
+                   "[ML-S1] Lancet MH1 Mining Laser", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert meta["Lancet MH1 Mining Laser"].tagged_name == "[ML-S1] Lancet MH1 Mining Laser"

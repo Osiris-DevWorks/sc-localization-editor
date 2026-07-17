@@ -131,6 +131,24 @@ _TYPE_LABELS = {
     "BOMB": "Bomb",
 }
 
+# Extra Name-key conventions for #266's bare-type components, which don't
+# follow the item_Name<code> / vehicle_Name prefix every other component
+# uses. Fuel nozzles ship under two different manufacturer-specific
+# prefixes (MISC's item_fuelnozzle_* vs Greycat/Shubin's
+# Nozzle_FuelGiver_*); mining lasers share one prefix across all
+# manufacturers but carry no "_Name" marker at all -- the bare key IS the
+# name entry. Without these, the Blueprint Tracker's tagged_name fell back
+# to the untagged bare name for these items even though the String Editor
+# showed the real tag correctly (the enhancement generator's output was
+# fine — this module just never recognised the key as a Name entry).
+# Extend this alongside _BARE_TYPE_NAMES in generate_enhancements_ini.py
+# whenever a new bare-type category ships (fuel tank, mining module, ...).
+_EXTRA_NAME_KEY_PREFIXES = (
+    "item_fuelnozzle_",
+    "nozzle_fuelgiver_",
+    "item_mining_mininglaser_",
+)
+
 # The bracketed component tag, e.g. "[MIL-S3-B]" or the user-reconfigured
 # "[CMP.S1.B.PW]". Parsed by tokenizing the contents rather than a fixed
 # pattern, because the tag's separator, element order, and which elements
@@ -301,7 +319,8 @@ def build_blueprint_metadata(entries) -> dict:
         cat = getattr(e, "category", "") or ""
         kl = key.lower()
 
-        if kl.startswith("item_name") or kl.startswith("vehicle_name"):
+        if (kl.startswith("item_name") or kl.startswith("vehicle_name")
+                or kl.startswith(_EXTRA_NAME_KEY_PREFIXES)):
             nm = normalize_item_name(val)
             if nm:
                 # Prefer the longest value when multiple distinct keys
