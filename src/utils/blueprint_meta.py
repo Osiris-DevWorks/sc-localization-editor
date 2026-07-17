@@ -142,11 +142,12 @@ _TYPE_LABELS = {
 # showed the real tag correctly (the enhancement generator's output was
 # fine — this module just never recognised the key as a Name entry).
 # Extend this alongside _BARE_TYPE_NAMES in generate_enhancements_ini.py
-# whenever a new bare-type category ships (fuel tank, mining module, ...).
+# whenever a new bare-type category ships.
 _EXTRA_NAME_KEY_PREFIXES = (
     "item_fuelnozzle_",
     "nozzle_fuelgiver_",
     "item_mining_mininglaser_",
+    "item_scraper_",
 )
 
 # The bracketed component tag, e.g. "[MIL-S3-B]" or the user-reconfigured

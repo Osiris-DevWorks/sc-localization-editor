@@ -188,3 +188,48 @@ class TestEnhancementsBareTypeTags:
             {"loc": loc, "tag_configs": {"components": cfg}}
         )
         assert out == {}
+
+
+# Real stock text (tests/fixtures/kraken_global_latest.ini) for the Abrade
+# Scraper Module -- no Size:/Grade:/Class: line, same bare shape as fuel
+# nozzles, just a different manufacturer key prefix (item_scraper_GRIN_*).
+_ABRADE_DESC = (
+    "Manufacturer: Greycat Industrial\\nItem Type: Scraper Module\\n"
+    "Extraction Speed: 0.15/0.45\\nRadius: 3.5m\\nExtraction Efficiency: 70%\\n"
+)
+
+
+class TestEnhancementsBareTypeTagsScraperModule:
+    """Scraper Module (Trawler/Cinch/Abrade) -- only ships with blueprints
+    (Adagio Industrial salvage contracts), added alongside Fuel Nozzle and
+    Mining Laser per the user's narrowed #266 scope."""
+
+    def test_tags_scraper_module_when_type_enabled(self, gen_module):
+        cfg = _components_cfg_with_type(gen_module, style="short")
+        loc = {
+            "item_scraper_GRIN_Standard_Name": "Abrade Scraper Module",
+            "item_scraper_GRIN_Standard_Desc": _ABRADE_DESC,
+        }
+        out = gen_module.enhancements_bare_type_tags(
+            {"loc": loc, "tag_configs": {"components": cfg}}
+        )
+        assert out == {"item_scraper_GRIN_Standard_Name": "[SCM] Abrade Scraper Module"}
+
+    def test_no_tag_when_type_disabled_by_default(self, gen_module):
+        loc = {
+            "item_scraper_GRIN_Standard_Name": "Abrade Scraper Module",
+            "item_scraper_GRIN_Standard_Desc": _ABRADE_DESC,
+        }
+        out = gen_module.enhancements_bare_type_tags({"loc": loc, "tag_configs": {}})
+        assert out == {}
+
+    def test_respects_users_configured_type_style(self, gen_module):
+        cfg = _components_cfg_with_type(gen_module, style="long")
+        loc = {
+            "item_scraper_GRIN_Standard_Name": "Abrade Scraper Module",
+            "item_scraper_GRIN_Standard_Desc": _ABRADE_DESC,
+        }
+        out = gen_module.enhancements_bare_type_tags(
+            {"loc": loc, "tag_configs": {"components": cfg}}
+        )
+        assert out == {"item_scraper_GRIN_Standard_Name": "[Scraper Module] Abrade Scraper Module"}

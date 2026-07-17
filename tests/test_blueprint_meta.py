@@ -279,3 +279,28 @@ class TestBareTypeKeyConventions:
         ]
         meta = build_blueprint_metadata(entries)
         assert meta["Lancet MH1 Mining Laser"].tagged_name == "[ML-S1] Lancet MH1 Mining Laser"
+
+    @pytest.mark.regression
+    def test_scraper_module_joins_through_reputation_tier_and_category_annotation(self):
+        """End-to-end regression for the two compounding bugs found while
+        wiring up Scraper Module: the real Adagio Industrial mission body
+        groups bullets under an "Awarded from X level variants" sub-header
+        (previously mistaken for a section boundary, so the bullet was
+        never even reached) AND appends a "(Salvage Mod)" category
+        annotation the real item_Name never carries (so even once reached,
+        the normalized names wouldn't have matched). Both must be fixed for
+        this item to ever show up tagged in the Blueprint Tracker."""
+        desc = (
+            "Adagio Holdings...\\n\\n<EM4>POTENTIAL BLUEPRINTS</EM4>"
+            "\\n<EM4>Awarded from Contractor level variants</EM4>"
+            "\\n- Trawler Scraper Module (Salvage Mod)"
+            "\\n- Abrade Scraper Module (Salvage Mod)"
+            "\\n- Cinch Scraper Module (Salvage Mod)"
+        )
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("item_scraper_GRIN_Standard_Name", "[SCM] Abrade Scraper Module", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert "Abrade Scraper Module" in meta
+        assert meta["Abrade Scraper Module"].tagged_name == "[SCM] Abrade Scraper Module"

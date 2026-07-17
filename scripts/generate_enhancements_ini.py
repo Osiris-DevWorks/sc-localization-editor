@@ -5676,7 +5676,11 @@ def enhancements_medical_consumables(ctx: dict) -> dict[str, str]:
 # name" -- items like Shield Generator already get tagged via the strict
 # Class-based DataForge scan path (_component_name_tag), and blindly
 # matching their Item Type text here too would double-tag them.
-_BARE_TYPE_NAMES: frozenset[str] = frozenset({"Fuel Nozzle"})
+#
+# Scraper Module (Trawler/Cinch/Abrade, item_scraper_GRIN_*) shares the
+# exact same shape -- "Item Type: Scraper Module" with no Size:/Grade:/
+# Class: line -- confirmed via tests/fixtures/kraken_global_latest.ini.
+_BARE_TYPE_NAMES: frozenset[str] = frozenset({"Fuel Nozzle", "Scraper Module"})
 
 
 def _component_element(cfg: "TagConfig", kind: str) -> "ElementSpec | None":
