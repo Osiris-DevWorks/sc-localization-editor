@@ -215,8 +215,9 @@ def merge_ini_files(
     """Merge source INI with overrides, preserving all lines.
 
     Reads source file line-by-line, replaces values for matching keys,
-    and writes to output as UTF-8. Strips comma-based metadata suffixes
-    (e.g., "key,P") from keys to match normalized override keys.
+    and writes to output as UTF-8 **with a BOM** (#261). Strips comma-based
+    metadata suffixes (e.g., "key,P") from keys to match normalized
+    override keys.
 
     Note: Variant key syncing happens in merge_sources_by_hierarchy(), so
     the overrides_dict already has synced values when this is called.
@@ -253,7 +254,21 @@ def merge_ini_files(
         else:
             trailing_newline = False
 
-        with open(output_path, 'w', encoding='utf-8') as outfile:
+        # utf-8-sig, NOT utf-8 (#261): Data.p4k's own extracted global.ini
+        # ships with a UTF-8 BOM (confirmed: raw unp4k output starts with
+        # \xef\xbb\xbf), and Star Citizen's own loc-string loader appears to
+        # need that BOM to reliably detect the file's encoding. Every prior
+        # release wrote plain utf-8 (no BOM) here — Python's own readers
+        # (read_ini_text / parse_ini_file, both utf-8-sig-aware) never
+        # noticed the mismatch, so validate_applied_file's key-presence
+        # check always reported success even when the applied file was
+        # missing the BOM CIG's engine relies on. Symptom when it bites: the
+        # game shows every string as its raw @KeyName placeholder — not
+        # garbled individual values, because the failure is at the
+        # whole-file encoding-detection stage, before any per-key lookup
+        # happens. See validate_applied_file's BOM check for the second half
+        # of this fix — a safety net in case this write path regresses again.
+        with open(output_path, 'w', encoding='utf-8-sig') as outfile:
             for i, line_rstrip in enumerate(source_lines):
                 # Match the old per-line shape: every line ended with '\n'
                 # except a final line with no trailing newline.

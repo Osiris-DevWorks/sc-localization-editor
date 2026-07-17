@@ -188,7 +188,7 @@ class TestMergerAppliesCorruptedBase:
 
         out = tmp_path / "global.ini"
         merge_ini_files(corrupted_utf8_ini, {"vehicle_NameHunter": "OVERRIDDEN"}, out)
-        text = out.read_text(encoding="utf-8")
+        text = out.read_text(encoding="utf-8-sig")
         assert "vehicle_NameHunter=OVERRIDDEN" in text
         # Untouched keys pass through with their multi-byte chars intact.
         assert "item_NameSHLD_Aspirum=Aspirum™ Shield — Mk. II" in text
@@ -201,11 +201,43 @@ class TestMergerAppliesCorruptedBase:
         src.write_text("a=1\nb=2\n", encoding="utf-8")
         out = tmp_path / "out.ini"
         merge_ini_files(src, {}, out)
-        assert out.read_text(encoding="utf-8") == "a=1\nb=2\n"
+        # utf-8-sig on read strips the BOM merge_ini_files now writes (#261) —
+        # this test is about newline shape, not the BOM, which has its own
+        # dedicated coverage below.
+        assert out.read_text(encoding="utf-8-sig") == "a=1\nb=2\n"
 
         src.write_text("a=1\nb=2", encoding="utf-8")  # no trailing newline
         merge_ini_files(src, {}, out)
-        assert out.read_text(encoding="utf-8") == "a=1\nb=2"
+        assert out.read_text(encoding="utf-8-sig") == "a=1\nb=2"
+
+    def test_merge_ini_files_writes_utf8_bom(self, tmp_path):
+        """#261: Data.p4k's own extracted global.ini ships with a UTF-8 BOM,
+        and Star Citizen's own loc-string loader appears to need it to
+        reliably detect the file's encoding — without it the game can fail
+        to resolve every string (shown as raw @KeyName placeholders)
+        instead of just degrading the ones that changed. merge_ini_files
+        previously wrote plain utf-8 (no BOM); our own readers are
+        utf-8-sig-aware so they never noticed the mismatch, but the game's
+        own parser apparently does."""
+        from src.merger.ini_merger import merge_ini_files
+
+        src = tmp_path / "base.ini"
+        src.write_text("a=1\n", encoding="utf-8")
+        out = tmp_path / "out.ini"
+        merge_ini_files(src, {}, out)
+        assert out.read_bytes().startswith(b"\xef\xbb\xbf")
+
+    def test_merge_ini_files_writes_bom_even_when_source_lacks_one(self, tmp_path):
+        """The BOM in the output must not depend on the source file having
+        one — read_ini_text (#251) already strips a source BOM if present,
+        so the output's BOM always comes from the write side, not a passthrough."""
+        from src.merger.ini_merger import merge_ini_files
+
+        src = tmp_path / "base.ini"
+        src.write_bytes(b"a=1\n")  # deliberately no BOM on the source
+        out = tmp_path / "out.ini"
+        merge_ini_files(src, {}, out)
+        assert out.read_bytes().startswith(b"\xef\xbb\xbf")
 
 
 # ── Sibling #251-class guards (corrupt bytes in app-written state files) ──────
