@@ -1552,6 +1552,7 @@ class _TagBuilderPage(QWidget):
     def _on_mt_standardize_toggle(self, checked: bool) -> None:
         self.config.standardize_hauling_names = checked
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_abbrev_toggle(self, key: str, checked: bool) -> None:
         phrases = set(getattr(self.config, "abbreviated_phrases", frozenset()))
@@ -1561,6 +1562,7 @@ class _TagBuilderPage(QWidget):
             phrases.discard(key)
         self.config.abbreviated_phrases = frozenset(phrases)
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_shorten_titles_toggle(self, checked: bool) -> None:
         phrases = set(getattr(self.config, "abbreviated_phrases", frozenset()))
@@ -1568,10 +1570,12 @@ class _TagBuilderPage(QWidget):
         phrases = (phrases | keys) if checked else (phrases - keys)
         self.config.abbreviated_phrases = frozenset(phrases)
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_shorten_sizes_toggle(self, checked: bool) -> None:
         self.config.shortened_sizes = frozenset(_ALL_SIZE_WORDS) if checked else frozenset()
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_rank_sep_changed(self, _idx: int) -> None:
         self.config.rank_separator = self._mt_rank_sep.currentData() or self.config.rank_separator
