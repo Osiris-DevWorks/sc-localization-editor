@@ -4780,7 +4780,7 @@ class MainWindow(QMainWindow):
             import pyperclip
             try:
                 pyperclip.copy(self.entries[entry_idx].key)
-                self.statusBar().showMessage(tr("strings_tab.copied_key", key=self.entries[entry_idx].key))
+                self.statusBar().showMessage(tr("strings_tab.copied_key", loc_key=self.entries[entry_idx].key))
             except ImportError:
                 self.statusBar().showMessage(tr("strings_tab.pyperclip_missing"))
 

@@ -48,6 +48,10 @@ def lang_root(tmp_path, monkeypatch):
         "toolbar": {"apply_btn": "Apply to Game", "more_btn": "More"},
         "dialogs": {"export_complete": "Exported to {path} ({size} bytes)"},
         "status": {"ready": "Ready"},
+        # Placeholder deliberately named "key" — this is the exact shape
+        # that used to crash tr() before its own parameter was renamed
+        # away from "key" (see TestTr.test_kwarg_named_key_*).
+        "strings_tab": {"copied_key": "Copied: {key}"},
     })
     _write_lang(tmp_path, "french", {
         "toolbar": {"apply_btn": "Appliquer au jeu"},
@@ -84,6 +88,22 @@ class TestTr:
         assert (
             i18n.tr("dialogs.export_complete", wrong_kwarg=1)
             == "Exported to {path} ({size} bytes)"
+        )
+
+    def test_kwarg_named_key_does_not_collide(self, lang_root):
+        """Regression guard: tr()'s own first parameter must never be named
+        "key" — a loc key is a very natural thing to interpolate into a UI
+        message (e.g. "Copied: {key}"), and two real call sites crashed
+        with "TypeError: tr() got multiple values for argument 'key'"
+        before this was fixed by renaming the parameter to i18n_key."""
+        i18n.set_language("english")
+        assert i18n.tr("status.ready", key="some_loc_key") == "Ready"
+
+    def test_kwarg_named_key_interpolates_correctly(self, lang_root):
+        i18n.set_language("english")
+        assert (
+            i18n.tr("strings_tab.copied_key", key="item_Name_Foo")
+            == "Copied: item_Name_Foo"
         )
 
 
