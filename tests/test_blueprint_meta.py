@@ -304,3 +304,64 @@ class TestBareTypeKeyConventions:
         meta = build_blueprint_metadata(entries)
         assert "Abrade Scraper Module" in meta
         assert meta["Abrade Scraper Module"].tagged_name == "[SCM] Abrade Scraper Module"
+
+
+class TestBulletNameMismatches:
+    """A live mission body ("Crew Hasn't Checked In") reported bullets that
+    don't match any real item_Name value at all -- two different root
+    causes, both fixed here (#266 follow-up)."""
+
+    def test_key_slug_fallback_resolves_garbled_bullet_name(self):
+        """CIG's own bug: the bullet lists the de-slugified loc KEY instead
+        of the item's real localized name -- "Nozzle Fuelgiver Grin
+        Nozzleveryfast" for a key whose real value is "Lindstrom". This is
+        deterministic (title-case each underscore segment, drop a trailing
+        "_Name" segment first), so it's resolved generically rather than
+        via a hardcoded alias."""
+        desc = (
+            "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>"
+            "\\n- Nozzle Fuelgiver Grin Nozzleveryfast"
+        )
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("Nozzle_FuelGiver_GRIN_NozzleVeryFast_Name", "[FN] Lindstrom", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert "Lindstrom" in meta
+        assert meta["Lindstrom"].tagged_name == "[FN] Lindstrom"
+        assert "Nozzle Fuelgiver Grin Nozzleveryfast" not in meta
+
+    def test_known_alias_resolves_helix_mismatch(self):
+        """Not every mismatch is the key-slug bug -- "Helix" bears no
+        relation to its key's slug at all, just an informal short name a
+        mission author typed. The real item is "S0 Helix"."""
+        desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Helix"
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("item_NameMining_Head_S00_Helix_SCItem", "[Mining Laser] S0 Helix", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert "S0 Helix" in meta
+        assert meta["S0 Helix"].tagged_name == "[Mining Laser] S0 Helix"
+        assert "Helix" not in meta
+
+    def test_direct_match_is_not_overridden_by_alias_or_keyslug(self):
+        """A bullet name that already matches a real item directly must
+        win outright -- the alias/keyslug fallback only kicks in when the
+        direct match fails."""
+        desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Pitman Mining Laser"
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("item_Mining_MiningLaser_Drake_Default_S0", "Pitman Mining Laser", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert meta["Pitman Mining Laser"].tagged_name == "Pitman Mining Laser"
+
+    def test_unresolvable_bullet_name_falls_back_to_other(self):
+        """A bullet name matching neither a real item, a known alias, nor
+        any key's slug still shows up (as an untagged "Other" entry)
+        rather than being silently dropped."""
+        desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Totally Unknown Widget"
+        meta = build_blueprint_metadata([_Entry("M_Desc_001", desc, "Missions")])
+        assert "Totally Unknown Widget" in meta
+        assert meta["Totally Unknown Widget"].type == "Other"

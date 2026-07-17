@@ -150,6 +150,39 @@ _EXTRA_NAME_KEY_PREFIXES = (
     "item_scraper_",
 )
 
+
+def _key_slug(key: str) -> str:
+    """Title-case each underscore-separated segment of a loc key (after
+    dropping a trailing "_Name" segment, if present) and join with spaces
+    -- e.g. ``Nozzle_FuelGiver_GRIN_NozzleVeryFast_Name`` -> ``Nozzle
+    Fuelgiver Grin Nozzleveryfast``.
+
+    Reproduces a real CIG bug: some mission POTENTIAL BLUEPRINTS bullets
+    list this exact de-slugified KEY instead of the item's actual
+    localized name (confirmed via a live mission body reporting "Nozzle
+    Fuelgiver Grin Nozzleveryfast" as a blueprint reward -- the real item
+    is "Lindstrom", key ``Nozzle_FuelGiver_GRIN_NozzleVeryFast_Name``).
+    Deterministic and reversible, so rather than hardcoding aliases per
+    affected item, every bullet name that doesn't match a real item
+    directly is checked against this transform of every known Name key.
+    """
+    segments = key.split("_")
+    if segments and segments[-1].lower() == "name":
+        segments = segments[:-1]
+    return " ".join(seg.capitalize() for seg in segments)
+
+
+# Known one-off mismatches between a mission bullet's name and the item's
+# real localized display name that AREN'T explained by _key_slug's fallback
+# pattern -- just a mission author typing a short/informal name. Confirmed
+# via a live "Crew Hasn't Checked In" mining mission body listing "Helix" as
+# a blueprint reward; the real item is "S0 Helix"
+# (item_NameMining_Head_S00_Helix_SCItem). Extend this dict for any other
+# reported mismatch that isn't a key-slug case.
+_BULLET_NAME_ALIASES: dict[str, str] = {
+    "Helix": "S0 Helix",
+}
+
 # The bracketed component tag, e.g. "[MIL-S3-B]" or the user-reconfigured
 # "[CMP.S1.B.PW]". Parsed by tokenizing the contents rather than a fixed
 # pattern, because the tag's separator, element order, and which elements
@@ -313,6 +346,7 @@ def build_blueprint_metadata(entries) -> dict:
     attrs: dict = {}            # normalized name -> (cls, size, grade)
     titles: dict = {}           # (base_lower, num) -> cleaned mission name
     bp_descs: list = []         # (pair_key | None, value)
+    keyslug_to_name: dict = {}  # _key_slug(key) -> normalized display name
 
     for e in entries:
         key = getattr(e, "key", "") or ""
@@ -324,6 +358,7 @@ def build_blueprint_metadata(entries) -> dict:
                 or kl.startswith(_EXTRA_NAME_KEY_PREFIXES)):
             nm = normalize_item_name(val)
             if nm:
+                keyslug_to_name[_key_slug(key)] = nm
                 # Prefer the longest value when multiple distinct keys
                 # normalize to the same display name — e.g. two ship weapons
                 # with different manufacturer codes/sizes that happen to
@@ -362,10 +397,18 @@ def build_blueprint_metadata(entries) -> dict:
             bp_descs.append((pair, val))
 
     # Pass 2: gather each blueprint item's missions, then attach type + attrs.
+    # A bullet name that doesn't match any real item directly is checked
+    # against the known one-off aliases, then against the key-slug fallback
+    # (see _BULLET_NAME_ALIASES / _key_slug) before falling back to itself —
+    # so a mismatched bullet still joins the real, tagged item instead of
+    # creating a separate untagged "Other" entry.
     missions_by_name: dict = {}
     for pair, val in bp_descs:
         title = titles.get(pair) if pair else None
-        for nm in extract_bp_item_names(val):
+        for raw_nm in extract_bp_item_names(val):
+            nm = raw_nm if raw_nm in name_to_value else (
+                _BULLET_NAME_ALIASES.get(raw_nm) or keyslug_to_name.get(raw_nm, raw_nm)
+            )
             bucket = missions_by_name.setdefault(nm, set())
             if title:
                 bucket.add(title)
