@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from utils.owned_items import (  # noqa: E402
     apply_owned_to_value,
     extract_bp_item_names,
+    has_bp_section,
     normalize_item_name,
 )
 
@@ -168,6 +169,36 @@ class TestExtract:
         )
         names = extract_bp_item_names(desc)
         assert names == {"Cinch Scraper Module", "Trawler Scraper Module", "Abrade Scraper Module"}
+
+    @pytest.mark.regression
+    def test_multiple_blueprint_pools_header_recognised(self):
+        """CIG uses a second, entirely different section header ("MULTIPLE
+        BLUEPRINT POOLS") for missions offering more than one blueprint
+        pool -- confirmed via tests/fixtures/kraken_global_latest.ini: 35
+        missions use it (e.g. mining-laser purchase-order contracts that
+        award a weapon/armor Pool 1 alongside a mining-laser/radar Pool 2).
+        Pre-fix, only "POTENTIAL BLUEPRINTS" was recognised at all, so
+        these missions were never scanned -- not just untagged, their
+        items were entirely absent from the Blueprint Tracker."""
+        desc = (
+            "POSTING: Purchase Order...\\n\\n<EM4>Multiple Blueprint Pools</EM4>"
+            "\\n<EM4>Awarded from Sr. Contractor level variants</EM4>"
+            "\\n<EM4>Pool 1</EM4>"
+            "\\n- Arclight Pistol\\n- Venture Arms Base"
+            "\\n\\n<EM4>Pool 2</EM4>"
+            "\\n- Helix I Mining Laser (Mining Laser)\\n- BroadSpec (Radar)"
+        )
+        names = extract_bp_item_names(desc)
+        assert names == {
+            "Arclight Pistol", "Venture Arms Base",
+            "Helix I Mining Laser", "BroadSpec",
+        }
+
+    def test_has_bp_section_recognises_both_headers(self):
+        assert has_bp_section("x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Foo")
+        assert has_bp_section("x\\n<EM4>Multiple Blueprint Pools</EM4>\\n- Foo")
+        assert not has_bp_section("A description with no rewards section")
+        assert not has_bp_section("")
 
 
 class TestApply:

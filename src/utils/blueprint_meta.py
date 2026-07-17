@@ -62,8 +62,8 @@ _ARMOR_EXTRA_WORDS = (
     "gys_jacket", "gys_pants",
 )
 from src.utils.owned_items import (
-    BP_SECTION_HEADER,
     extract_bp_item_names,
+    has_bp_section,
     normalize_item_name,
 )
 from src.utils.tag_builder import DEFAULT_COMPONENT_CLASS_MAPPING
@@ -356,7 +356,7 @@ def build_blueprint_metadata(entries) -> dict:
             titles[_title_pair_key(tm.group("base"), tm.group("num"))] = \
                 clean_mission_title(val)
 
-        if BP_SECTION_HEADER in val.upper():
+        if has_bp_section(val):
             dm = _DESC_KEY_RE.match(key)
             pair = _title_pair_key(dm.group("base"), dm.group("num")) if dm else None
             bp_descs.append((pair, val))

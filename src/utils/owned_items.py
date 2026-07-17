@@ -64,7 +64,7 @@ _TRAILING_CATEGORY_RE = re.compile(
     r"\s*\((" + "|".join(re.escape(w) for w in _BULLET_CATEGORY_ANNOTATIONS) + r")\)\s*$"
 )
 
-# Marks the start of a POTENTIAL BLUEPRINTS section. The header text is
+# Marks the start of a blueprint-bearing section. The header text is
 # user-configurable (AppSettings.MISSION_HEADER_DEFAULTS["blueprints"]) but the
 # default is BP_SECTION_HEADER; we match that default case-insensitively. This
 # module stays settings-free by design, so it owns the default literal rather
@@ -72,37 +72,73 @@ _TRAILING_CATEGORY_RE = re.compile(
 # blueprint_meta.py and entry_filter.py import BP_SECTION_HEADER from here so
 # the three matchers share one source of truth. A value with no such header has
 # no bullets to tag, so it passes through untouched.
+#
+# CIG uses a SECOND, entirely different header for missions that offer more
+# than one blueprint pool (confirmed via tests/fixtures/kraken_global_
+# latest.ini: "MULTIPLE BLUEPRINT POOLS" appears on 35 missions in the
+# fixture, vs. 237 using "POTENTIAL BLUEPRINTS" -- e.g. the mining-laser
+# purchase-order contracts that award a weapon/armor Pool 1 alongside a
+# mining-laser/radar Pool 2). Missions using this header were entirely
+# unscanned before this fix -- not just untagged, absent from the Blueprint
+# Tracker altogether, regardless of any per-item fix.
+_ALT_BP_SECTION_HEADER = "MULTIPLE BLUEPRINT POOLS"
 BP_SECTION_HEADER = "POTENTIAL BLUEPRINTS"
-_BP_HEADER_RE = re.compile(BP_SECTION_HEADER, re.IGNORECASE)
+_BP_HEADER_RE = re.compile(
+    "(?:" + re.escape(BP_SECTION_HEADER) + "|" + re.escape(_ALT_BP_SECTION_HEADER) + ")",
+    re.IGNORECASE,
+)
+
+
+def has_bp_section(value: str) -> bool:
+    """True if *value* contains a recognised blueprint-section header.
+
+    Single source of truth for the "is this a blueprint-bearing mission
+    body" gate used by blueprint_meta.py (before collecting a Desc for
+    bullet scanning) and entry_filter.py (the String Editor's "BP
+    Descriptions" checkbox) -- both used to do their own raw ``BP_SECTION_
+    HEADER in value.upper()`` substring check, which missed the
+    "MULTIPLE BLUEPRINT POOLS" header entirely.
+    """
+    return bool(_BP_HEADER_RE.search(value or ""))
+
+
 # A tag that MIGHT be a genuine section header (POTENTIAL BLUEPRINTS, ITEM
 # REWARDS, MISSION DETAILS, BLUEPRINT DATA, ...) — filtered further in
-# _bp_section_span against the two known non-header sub-header shapes:
-# region labels (<EM4>[Nyx]</EM4>) and reputation-tier labels
-# (<EM4>Awarded from Contractor level variants</EM4>).
+# _bp_section_span against the known non-header sub-header shapes: region
+# labels (<EM4>[Nyx]</EM4>), reputation-tier labels (<EM4>Awarded from
+# Contractor level variants</EM4>), and blueprint-pool labels (<EM4>Pool
+# 1</EM4>, <EM4>Pool 2</EM4> -- appear under a MULTIPLE BLUEPRINT POOLS
+# header, grouping that mission's several independent bullet lists).
 _SECTION_HEADER_RE = re.compile(r"<EM([34])>([^<]*)</EM\1>")
 # Reputation-tiered contracts (Adagio Industrial salvage, Bounty Hunters
-# Guild, Security, ...) group their POTENTIAL BLUEPRINTS bullets under one
-# of these per-tier sub-headers *inside* the section — e.g. "Awarded from
-# Contractor level variants" followed by that tier's bullet list, sometimes
-# repeated for multiple tiers in one mission body. None of these are section
+# Guild, Security, ...) group their blueprint bullets under one of these
+# per-tier sub-headers *inside* the section — e.g. "Awarded from Contractor
+# level variants" followed by that tier's bullet list, sometimes repeated
+# for multiple tiers in one mission body. None of these are section
 # boundaries; treating them as one silently truncated the span before any
 # bullets were ever reached, so items awarded this way (Scraper Modules —
 # Trawler/Cinch/Abrade — among others) never surfaced in the Blueprint
 # Tracker at all, tag or no tag.
 _AWARDED_FROM_RE = re.compile(r"^awarded from .+ variants$", re.IGNORECASE)
+# "Pool 1", "Pool 2", ... under a MULTIPLE BLUEPRINT POOLS header.
+_POOL_LABEL_RE = re.compile(r"^pool \d+$", re.IGNORECASE)
 
 
 def _bp_section_span(value: str):
-    """Return (start, end) spanning just the POTENTIAL BLUEPRINTS section's
-    bullet content — from right after its header up to the next real section
-    header (or end of string). ``None`` when there's no such section.
+    """Return (start, end) spanning just the blueprint section's bullet
+    content — from right after its header (POTENTIAL BLUEPRINTS or MULTIPLE
+    BLUEPRINT POOLS) up to the next real section header (or end of string).
+    ``None`` when there's no such section.
 
     Bounding the scan this way matters: CIG mission bodies sometimes carry a
     stray "\\n- <word>" line in the flavor-text prose *before* the header
-    (e.g. "\\n- Stows\\n"), and a body with both a POTENTIAL BLUEPRINTS
-    section and a later ITEM REWARDS section (e.g. "\\n- Council Scrip")
-    puts a real bullet-shaped line after it too. Un-scoped bullet matching
-    swept both into the blueprint item set.
+    (e.g. "\\n- Stows\\n"), and a body with both a blueprint section and a
+    later ITEM REWARDS section (e.g. "\\n- Council Scrip") puts a real
+    bullet-shaped line after it too. Un-scoped bullet matching swept both
+    into the blueprint item set. Bullets across ALL pools/tiers within one
+    section are pooled into a single set -- this module doesn't track which
+    specific pool/tier a bullet belongs to, matching the pre-existing
+    region-label behaviour.
     """
     m = _BP_HEADER_RE.search(value)
     if not m:
@@ -110,8 +146,8 @@ def _bp_section_span(value: str):
     start = m.end()
     end = len(value)
     for hm in _SECTION_HEADER_RE.finditer(value, start):
-        text = hm.group(2)
-        if text.startswith("[") or _AWARDED_FROM_RE.match(text.strip()):
+        text = hm.group(2).strip()
+        if text.startswith("[") or _AWARDED_FROM_RE.match(text) or _POOL_LABEL_RE.match(text):
             continue
         end = hm.start()
         break

@@ -8,7 +8,7 @@ import logging
 
 from src.gui.string_table_model import NUM_COLUMNS
 from src.models.string_model import StringEntry
-from src.utils.owned_items import BP_SECTION_HEADER
+from src.utils.owned_items import has_bp_section
 from src.utils.ship_sort_prefix import get_order
 
 logger = logging.getLogger(__name__)
@@ -106,7 +106,7 @@ def filter_entry_indices(
         if bp_titles_only or bp_descs_only:
             val = entry.custom_value or entry.original_value
             is_bp_title = bp_titles_only and "[BP" in val
-            is_bp_desc = bp_descs_only and BP_SECTION_HEADER.lower() in val.lower()
+            is_bp_desc = bp_descs_only and has_bp_section(val)
             if not (is_bp_title or is_bp_desc):
                 continue
         if active_filter_fns:
