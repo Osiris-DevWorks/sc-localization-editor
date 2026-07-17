@@ -165,6 +165,21 @@ def test_blueprint_type_gys_jacket_and_pants():
     assert blueprint_type_from_key("item_Desc_DMC_Pants_01_01_01") is None
 
 
+def test_blueprint_type_combat_clothing():
+    """SC 4.9 introduced a non-armor "Combat Clothing" wardrobe line
+    (#265) -- confirmed live in-game, the only four blueprints today all
+    share the "hdtc" line token. None of jacket/shirt/pants/shoes are
+    armor-piece words, so without this they fell into "Other"."""
+    assert blueprint_type_from_key("item_Name_m_hdtc_jacket_01_01_01") == "Combat Clothing"
+    assert blueprint_type_from_key("item_Name_m_hdtc_shirt_02_01_01") == "Combat Clothing"
+    assert blueprint_type_from_key("item_Name_m_hdtc_pants_01_01_01") == "Combat Clothing"
+    assert blueprint_type_from_key("item_Name_m_hdtc_shoes_01_01_01") == "Combat Clothing"
+    # Scoped to the "hdtc" line token specifically — bare jacket/pants
+    # words from unrelated manufacturers must not be swept in.
+    assert blueprint_type_from_key("item_Name_987_jacket_01_01_01") is None
+    assert blueprint_type_from_key("item_Name_DMC_pants_01_01_01") is None
+
+
 def test_clean_mission_title_strips_reward_tags():
     raw = ("Salvager Needed (Lrg. Special Order) "
            "<EM4>[BP]</EM4> <EM4>[150 REP]</EM4>")

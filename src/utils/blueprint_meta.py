@@ -112,7 +112,19 @@ _ITEM_NAME_PREFIX = "item_Name"
 _TYPE_FPS_WEAPON = "FPS Weapon"
 _TYPE_SHIP_WEAPON = "Ship Weapon"
 _TYPE_ARMOR = "Armor"
+_TYPE_CLOTHING = "Combat Clothing"
 _TYPE_OTHER = "Other"
+
+# Combat Clothing (#265): a non-armor wardrobe line introduced in SC 4.9,
+# distinct from real protective Armor. Only four known blueprints today,
+# all sharing the "hdtc" line token: item_Name_m_hdtc_jacket_01_01_01,
+# ..._shirt_02_01_01, ..._pants_01_01_01, ..._shoes_01_01_01 (confirmed
+# live in-game, no older reference fixture has this category yet). None
+# of "jacket"/"shirt"/"pants"/"shoes" are armor-piece words in
+# _ARMOR_GEAR_WORDS/_ARMOR_EXTRA_WORDS, so without this they fell into
+# the catch-all "Other" bucket. Extend this tuple if CIG ships the line
+# under additional tokens later.
+_CLOTHING_KEY_TOKENS = ("_hdtc_",)
 
 # Friendly labels for the component type codes that appear right after
 # ``item_Name`` / ``item_Name_`` in a component loc key. Codes not in this map
@@ -238,9 +250,10 @@ def blueprint_type_from_key(key: str):
     """Coarse type bucket for a blueprint item from its matched name key.
 
     A recognized ship-component code wins (Shield / Quantum Drive / ...), then
-    FPS weapon and armor by key tokens. Returns ``None`` for anything else, so
-    the caller can fold it into the "Other" bucket. ``None`` key (the bullet
-    name matched no loaded name entry) is also ``None`` -> "Other".
+    FPS weapon, Combat Clothing, and armor by key tokens. Returns ``None`` for
+    anything else, so the caller can fold it into the "Other" bucket. ``None``
+    key (the bullet name matched no loaded name entry) is also ``None`` ->
+    "Other".
     """
     if not key:
         return None
@@ -250,6 +263,8 @@ def blueprint_type_from_key(key: str):
     kl = key.lower()
     if any(w in kl for w in _FPS_WEAPON_WORDS):
         return _TYPE_FPS_WEAPON
+    if any(w in kl for w in _CLOTHING_KEY_TOKENS):
+        return _TYPE_CLOTHING
     if any(w in kl for w in _ARMOR_GEAR_WORDS) or any(w in kl for w in _ARMOR_EXTRA_WORDS):
         return _TYPE_ARMOR
     # Ship weapons (#212): an uppercase-manufacturer ship item (item_Name<UPPER>…)
