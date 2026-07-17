@@ -262,3 +262,19 @@ class TestCorruptStateFileGuards:
         _backup_if_changing(user_ini, "key=value\n")
         backups_dir = tmp_path / "backups"
         assert not backups_dir.exists() or not list(backups_dir.glob("*"))
+
+    def test_locstring_workarounds_skip_corrupt_patch_file(self, tmp_path):
+        """A *.patch.json with corrupt bytes raises UnicodeDecodeError (a
+        ValueError but NOT a JSONDecodeError), which previously escaped the
+        (JSONDecodeError, OSError) guard and crashed the patch scan. It must
+        instead be skipped like any malformed patch, with valid sibling
+        patch files still loading."""
+        from src.utils.dataforge_patcher import load_locstring_workarounds
+
+        (tmp_path / "corrupt.patch.json").write_bytes(b'{"locstring\xa0broken"}')
+        (tmp_path / "valid.patch.json").write_text(
+            '{"locstring_workarounds": [{"target": "key_a", "append_from": "key_b"}]}',
+            encoding="utf-8",
+        )
+        out = load_locstring_workarounds(tmp_path)
+        assert [w.target for w in out] == ["key_a"]
