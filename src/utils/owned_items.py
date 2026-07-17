@@ -43,6 +43,27 @@ _TRAILING_TAG_RE = re.compile(r"\s*\[[^\]]*\]\s*$")
 # plain space, so the same item from a log and from loc data normalize alike.
 _WS_RE = re.compile(r"\s+")
 
+# CIG's own POTENTIAL BLUEPRINTS bullet text appends a category annotation to
+# some items -- "Bendix (Fuel Nozzle)", "Arbor MH1 Mining Laser (Mining
+# Laser)", "5CA 'Akura' (Shield)", "Trawler Scraper Module (Salvage Mod)" --
+# that never appears on the item's own item_Name value. Left unstripped, the
+# bullet-extracted name never matches the real (tagged) item, so it shows up
+# as a separate, untagged "Other"-type entry in the Blueprint Tracker instead
+# of joining with the real one (confirmed via tests/fixtures/kraken_global_
+# latest.ini across at least these 8 categories -- almost certainly a
+# systemic gap, not specific to any one item type). A small explicit
+# allow-list rather than "strip any trailing (...)": some items carry a
+# parenthetical that IS part of their real distinguishing name (e.g. "Artimex
+# Arms (Modified)"), and blindly stripping those would collide two actually
+# different items into one.
+_BULLET_CATEGORY_ANNOTATIONS = frozenset({
+    "Cooler", "Fuel Nozzle", "Mining Laser", "Powerplant", "Quantum Drive",
+    "Radar", "Salvage Mod", "Shield",
+})
+_TRAILING_CATEGORY_RE = re.compile(
+    r"\s*\((" + "|".join(re.escape(w) for w in _BULLET_CATEGORY_ANNOTATIONS) + r")\)\s*$"
+)
+
 # Marks the start of a POTENTIAL BLUEPRINTS section. The header text is
 # user-configurable (AppSettings.MISSION_HEADER_DEFAULTS["blueprints"]) but the
 # default is BP_SECTION_HEADER; we match that default case-insensitively. This
@@ -53,12 +74,22 @@ _WS_RE = re.compile(r"\s+")
 # no bullets to tag, so it passes through untouched.
 BP_SECTION_HEADER = "POTENTIAL BLUEPRINTS"
 _BP_HEADER_RE = re.compile(BP_SECTION_HEADER, re.IGNORECASE)
-# A genuine section header (POTENTIAL BLUEPRINTS, ITEM REWARDS, MISSION
-# DETAILS, BLUEPRINT DATA, ...) as opposed to a per-region sub-header inside
-# the blueprints list itself (e.g. <EM4>[Nyx]</EM4>,
-# <EM4>[Pyro RegionA, Pyro RegionB]</EM4>) — region labels always start with
-# "[" right after the tag, section headers never do.
-_SECTION_HEADER_RE = re.compile(r"<EM([34])>(?!\[)[^<]*</EM\1>")
+# A tag that MIGHT be a genuine section header (POTENTIAL BLUEPRINTS, ITEM
+# REWARDS, MISSION DETAILS, BLUEPRINT DATA, ...) — filtered further in
+# _bp_section_span against the two known non-header sub-header shapes:
+# region labels (<EM4>[Nyx]</EM4>) and reputation-tier labels
+# (<EM4>Awarded from Contractor level variants</EM4>).
+_SECTION_HEADER_RE = re.compile(r"<EM([34])>([^<]*)</EM\1>")
+# Reputation-tiered contracts (Adagio Industrial salvage, Bounty Hunters
+# Guild, Security, ...) group their POTENTIAL BLUEPRINTS bullets under one
+# of these per-tier sub-headers *inside* the section — e.g. "Awarded from
+# Contractor level variants" followed by that tier's bullet list, sometimes
+# repeated for multiple tiers in one mission body. None of these are section
+# boundaries; treating them as one silently truncated the span before any
+# bullets were ever reached, so items awarded this way (Scraper Modules —
+# Trawler/Cinch/Abrade — among others) never surfaced in the Blueprint
+# Tracker at all, tag or no tag.
+_AWARDED_FROM_RE = re.compile(r"^awarded from .+ variants$", re.IGNORECASE)
 
 
 def _bp_section_span(value: str):
@@ -77,8 +108,13 @@ def _bp_section_span(value: str):
     if not m:
         return None
     start = m.end()
-    next_header = _SECTION_HEADER_RE.search(value, start)
-    end = next_header.start() if next_header else len(value)
+    end = len(value)
+    for hm in _SECTION_HEADER_RE.finditer(value, start):
+        text = hm.group(2)
+        if text.startswith("[") or _AWARDED_FROM_RE.match(text.strip()):
+            continue
+        end = hm.start()
+        break
     return start, end
 
 
@@ -88,13 +124,18 @@ def normalize_item_name(name: str) -> str:
     Applies, in order: NFKC unicode folding (so a non-breaking space becomes a
     plain space), removal of any ``[Owned]`` tag, removal of a leading *and* a
     trailing bracketed component tag (``[Mil-S1-A] Norfield`` and
-    ``Norfield [Mil-S1-A]`` both reduce to the bare name), and whitespace
-    collapse. Used for both the owned set and bullet matching, so a tagged
-    bullet, a log-imported name, and a bare item row all resolve to one key.
+    ``Norfield [Mil-S1-A]`` both reduce to the bare name), removal of a
+    trailing bullet-only category annotation (``Bendix (Fuel Nozzle)`` ->
+    ``Bendix``), and whitespace collapse. Used for both the owned set and
+    bullet matching, so a tagged bullet, a log-imported name, and a bare item
+    row all resolve to one key.
 
     Both sides of every comparison pass through here (the owned-set entries and
     the mission bullets in ``apply_owned_to_value``), so the folding is
-    symmetric and can never introduce a one-sided mismatch.
+    symmetric and can never introduce a one-sided mismatch. The category-
+    annotation strip is safe on both sides even though it's bullet-specific:
+    the allow-listed words never appear as a real item_Name's own trailing
+    parenthetical, so it's a no-op wherever it doesn't apply.
     """
     if not name:
         return ""
@@ -102,6 +143,7 @@ def normalize_item_name(name: str) -> str:
     s = _OWNED_STRIP_RE.sub("", s)
     s = _LEADING_TAG_RE.sub("", s)
     s = _TRAILING_TAG_RE.sub("", s)
+    s = _TRAILING_CATEGORY_RE.sub("", s)
     return _WS_RE.sub(" ", s).strip()
 
 
