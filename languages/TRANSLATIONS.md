@@ -50,6 +50,17 @@ them against the new source.
 
 ## Backfill log
 
+- **2.2.1 pre-release (2026-07-18, Claude Fable 5):** AI backfill of the 215
+  keys the #247 hardcoded-string sweep added in English only (Tag Builder
+  tooltips and labels, Mission Titles page, mission detail fields, the Import
+  INI flow, OneDrive warnings, user.ini restore/reset dialogs, DataForge
+  extraction prompts, status-bar messages, String Editor context menu, and the
+  Test Plan panel). french, portuguese_br, and spanish each gained the same
+  215 `at`-only keys, styled on each file's existing human strings ("
+  enrichissements/étiquettes", "aprimoramentos/tags", "mejoras/etiquetas").
+  The `{plural}` placeholder was deliberately dropped where suffix-plurals
+  don't work in the target language (str.format ignores unused kwargs). All
+  new strings are `ht: ""` so translators can find them the usual way.
 - **2.2.0 pre-release (2026-07-15, Claude Fable 5):** AI backfill of the keys
   this cycle added in English only. french and portuguese_br each gained 43
   `at`-only keys (Blueprint Tracker tab, blueprint shuttle/facets, log-scan

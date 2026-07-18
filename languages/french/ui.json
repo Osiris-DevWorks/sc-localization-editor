@@ -35,6 +35,22 @@
     "defaults_hint": {
       "ht": "",
       "at": "Utilise vos réglages par défaut. Le premier lancement peut prendre quelques minutes, le temps d'extraire DataForge."
+    },
+    "set_game_folder_title": {
+      "ht": "",
+      "at": "Définir le dossier du jeu"
+    },
+    "set_game_folder_body": {
+      "ht": "",
+      "at": "Smart Citizen doit savoir où Star Citizen est installé avant de pouvoir appliquer des changements.\n\nPassage en mode Avancé pour définir le dossier du jeu dans l'onglet Paramètres."
+    },
+    "apply_enhancements_confirm_title": {
+      "ht": "",
+      "at": "Appliquer les enrichissements"
+    },
+    "apply_enhancements_confirm_body": {
+      "ht": "",
+      "at": "Ceci va générer les derniers enrichissements avec vos réglages actuels et les appliquer au global.ini de votre jeu. Une sauvegarde horodatée est d'abord créée.\n\nLe premier lancement peut prendre quelques minutes pendant l'extraction de DataForge. Continuer ?"
     }
   },
   "tabs": {
@@ -50,6 +66,10 @@
       "ht": "Enrichissements",
       "at": "Enrichissements"
     },
+    "blueprint_tracker": {
+      "ht": "",
+      "at": "Suivi des plans"
+    },
     "log": {
       "ht": "Journal",
       "at": "Journal"
@@ -58,17 +78,25 @@
       "ht": "À propos",
       "at": "À propos"
     },
+    "faq": {
+      "ht": "",
+      "at": "FAQ"
+    },
     "legal": {
       "ht": "Juridique",
       "at": "Juridique"
     },
-    "blueprint_tracker": {
+    "about_load_failed": {
       "ht": "",
-      "at": "Suivi des plans"
+      "at": "Impossible de charger les informations « À propos »."
     },
-    "faq": {
+    "faq_load_failed": {
       "ht": "",
-      "at": "FAQ"
+      "at": "Impossible de charger la FAQ."
+    },
+    "legal_load_failed": {
+      "ht": "",
+      "at": "Impossible de charger les informations légales."
     }
   },
   "toolbar": {
@@ -175,6 +203,18 @@
     "apply_disabled_tooltip": {
       "ht": "",
       "at": "Déjà appliqué — rien n'a changé depuis la dernière application au jeu."
+    },
+    "feedback_fallback_text": {
+      "ht": "",
+      "at": "Retours, bugs et vote des fonctionnalités"
+    },
+    "paypal_fallback_text": {
+      "ht": "",
+      "at": "Faire un don via PayPal"
+    },
+    "venmo_fallback_text": {
+      "ht": "",
+      "at": "Venmo"
     }
   },
   "filters": {
@@ -213,6 +253,14 @@
     "favorites_only": {
       "ht": "★ Favoris uniquement",
       "at": "★ Favoris uniquement"
+    },
+    "bp_titles_only": {
+      "ht": "",
+      "at": "Titres BP"
+    },
+    "bp_descs_only": {
+      "ht": "",
+      "at": "Descriptions BP"
     },
     "group_sort_btn": {
       "ht": "Tri par groupe",
@@ -261,14 +309,6 @@
     "copy_filtered_tooltip": {
       "ht": "",
       "at": "Copier toutes les lignes filtrées visibles dans le presse-papiers (séparées par des tabulations)"
-    },
-    "bp_titles_only": {
-      "ht": "",
-      "at": "Titres BP"
-    },
-    "bp_descs_only": {
-      "ht": "",
-      "at": "Descriptions BP"
     }
   },
   "strings_tab": {
@@ -304,6 +344,10 @@
       "ht": "Statut",
       "at": "Statut"
     },
+    "col_owned": {
+      "ht": "",
+      "at": "Possédé"
+    },
     "no_data": {
       "ht": "Aucune donnée chargée",
       "at": "Aucune donnée chargée"
@@ -336,9 +380,65 @@
       "ht": "",
       "at": "Filtrer {column}…"
     },
-    "col_owned": {
+    "editor_dock_title": {
       "ht": "",
-      "at": "Possédé"
+      "at": "Éditeur de chaînes"
+    },
+    "no_row_selected": {
+      "ht": "",
+      "at": "(aucune ligne sélectionnée)"
+    },
+    "editor_underline_btn": {
+      "ht": "",
+      "at": "Souligner"
+    },
+    "editor_highlight_btn": {
+      "ht": "",
+      "at": "Surligner"
+    },
+    "editor_placeholder": {
+      "ht": "",
+      "at": "Sélectionnez une ligne dans la table de l'éditeur de chaînes pour modifier sa valeur personnalisée ici."
+    },
+    "context_copy_cell": {
+      "ht": "",
+      "at": "Copier la cellule"
+    },
+    "context_copy_key": {
+      "ht": "",
+      "at": "Copier la clé"
+    },
+    "context_edit": {
+      "ht": "",
+      "at": "Modifier"
+    },
+    "context_reset_to_original": {
+      "ht": "",
+      "at": "Rétablir l'original"
+    },
+    "context_copy_all_filtered": {
+      "ht": "",
+      "at": "Copier tout le filtré"
+    },
+    "context_remove_favorite": {
+      "ht": "",
+      "at": "★ Retirer des favoris"
+    },
+    "context_add_favorite": {
+      "ht": "",
+      "at": "★ Ajouter aux favoris"
+    },
+    "showing_count": {
+      "ht": "",
+      "at": "Affichage de {shown} sur {total} chaînes"
+    },
+    "copied_key": {
+      "ht": "",
+      "at": "Copié : {loc_key}"
+    },
+    "pyperclip_missing": {
+      "ht": "",
+      "at": "pyperclip non installé"
     }
   },
   "config": {
@@ -661,6 +761,46 @@
     "extract_tooltip": {
       "ht": "",
       "at": "Extraire la localisation d'origine (base.ini) ainsi que les XML d'entités DataForge depuis votre Data.p4k installé. À exécuter après chaque mise à jour de Star Citizen — les chaînes se rechargent automatiquement dans la table une fois l'extraction terminée."
+    },
+    "include_new_cb": {
+      "ht": "",
+      "at": "Inclure les objets découverts"
+    },
+    "disable_tutorial_cb": {
+      "ht": "",
+      "at": "Désactiver le tutoriel"
+    },
+    "invalid_data_folder_body": {
+      "ht": "",
+      "at": "Le dossier de données sélectionné est un fichier, pas un dossier :\n{path}"
+    },
+    "onedrive_folder_title": {
+      "ht": "",
+      "at": "Dossier de données dans OneDrive"
+    },
+    "onedrive_folder_body": {
+      "ht": "",
+      "at": "Ce dossier se trouve dans OneDrive :\n\n{path}\n\nOneDrive peut synchroniser voire vider ces fichiers, ce qui a déjà causé des pertes de modifications. Un dossier local hors de OneDrive est fortement recommandé.\n\nUtiliser quand même ce dossier OneDrive ?"
+    },
+    "dataforge_cache_old_new": {
+      "ht": "",
+      "at": "Ancien : {old}\nNouveau : {new}"
+    },
+    "channel_not_installed_hint": {
+      "ht": "",
+      "at": "⚠ {channel} n'est pas installé sous cette racine — choisissez un autre canal"
+    },
+    "preview_merge_failed": {
+      "ht": "",
+      "at": "Échec de l'aperçu de la fusion : {error}"
+    },
+    "game_path_placeholder": {
+      "ht": "",
+      "at": "C:\\Program Files\\Roberts Space Industries\\StarCitizen"
+    },
+    "language_source_placeholder": {
+      "ht": "",
+      "at": "https://…/global.ini"
     }
   },
   "enhancements": {
@@ -703,6 +843,10 @@
     "cat_desc_journal": {
       "ht": "Compendium minier avec données de fabrication par minéral",
       "at": "Compendium minier avec données de fabrication par minéral"
+    },
+    "cat_desc_medical_consumables": {
+      "ht": "",
+      "at": "Résumés en clair des effets des stylos médicaux CureLife"
     },
     "apply_btn": {
       "ht": "Appliquer",
@@ -751,78 +895,6 @@
     "edit_mapping_btn": {
       "ht": "Modifier le mapping...",
       "at": "Modifier le mapping..."
-    },
-    "mission_field_ace_tooltip": {
-      "ht": "",
-      "at": "Afficher une ligne « Ace Pilot: Yes » dans le corps des détails de mission lorsque la mission fait apparaître un pilote as. L'étiquette de titre [ACE] est une option distincte sous Étiquettes générales. Prend effet à la prochaine génération des enrichissements."
-    },
-    "mission_field_default_tooltip": {
-      "ht": "",
-      "at": "Afficher la ligne {label} dans les corps de mission générés. Prend effet à la prochaine génération des enrichissements."
-    },
-    "stats_prepend_tooltip": {
-      "ht": "",
-      "at": "Placer le bloc de statistiques généré au-dessus de la description du fabricant/RP plutôt qu'en dessous (vaisseaux, composants, armes). Prend effet à la prochaine génération des enrichissements."
-    },
-    "standardize_ship_names_tooltip": {
-      "ht": "",
-      "at": "Renommer les variantes de vaisseau exec-hangar (PYX) et Wikelo (WIK) pour inclure un suffixe les distinguant de la version standard du magasin de pledge (ex. « Anvil F8C Lightning PYX »). Prend effet à la prochaine génération des enrichissements."
-    },
-    "apply_categories_tooltip": {
-      "ht": "",
-      "at": "Enregistrer la sélection des catégories. Les catégories décochées seront désactivées."
-    },
-    "generate_enabled_tooltip": {
-      "ht": "",
-      "at": "Générer les fichiers de localisation enrichis à partir du Data.p4k de votre jeu.\nLes données DataForge seront extraites automatiquement si elles ne sont pas déjà en cache\n(la première exécution prend quelques minutes ; les suivantes sont rapides)."
-    },
-    "generate_disabled_tooltip": {
-      "ht": "",
-      "at": "Déjà à jour — rien de ce qui affecte le résultat généré (catégories, champs de mission, options de statistiques/noms, Générateur d'étiquettes) n'a changé depuis la dernière exécution."
-    },
-    "favorite_prefix_tooltip": {
-      "ht": "",
-      "at": "Caractère ajouté devant les noms des vaisseaux favoris afin qu'ils apparaissent en tête de la liste des vaisseaux en jeu. Cliquez sur « Appliquer le préfixe » après modification pour mettre à jour tous les favoris existants."
-    },
-    "rep_xp_label_tooltip": {
-      "ht": "",
-      "at": "Libellé pour les missions sans nom de rang (ex. « Rep : +100 XP »)"
-    },
-    "header_em_tooltip": {
-      "ht": "",
-      "at": "Style des en-têtes de section : Souligné (EM3) ou Texte bleu (EM4)"
-    },
-    "prefix_enabled_tooltip": {
-      "ht": "",
-      "at": "Enregistrer le préfixe sélectionné et mettre à jour tous les favoris existants pour l'utiliser"
-    },
-    "prefix_disabled_tooltip": {
-      "ht": "",
-      "at": "Déjà appliqué — le préfixe sélectionné correspond à vos favoris actuels."
-    },
-    "annotate_mission_descs_tooltip": {
-      "ht": "",
-      "at": "Si coché, l'étiquette [CLASS-Sx-grade] configurée est ajoutée aux noms de composants dans la liste POTENTIAL BLUEPRINTS des descriptions de mission. Décochez pour un corps de mission plus épuré, tout en conservant l'étiquette sur les noms de composants ailleurs."
-    },
-    "reset_tag_tooltip": {
-      "ht": "",
-      "at": "Restaurer le modèle, le mappage et l'ordre par défaut pour chaque catégorie (Composants / Missiles / Armes de vaisseau). N'enregistre ni ne régénère tant que vous n'avez pas cliqué sur « Enregistrer les modifications d'étiquettes » ou « Générer les enrichissements »."
-    },
-    "tag_enabled_tooltip": {
-      "ht": "",
-      "at": "Enregistrer les configurations d'étiquettes Composants / Missiles / Armes de vaisseau et relancer le générateur d'enrichissements. Les nouvelles étiquettes apparaissent en jeu après la prochaine application des enrichissements."
-    },
-    "tag_disabled_tooltip": {
-      "ht": "",
-      "at": "Déjà enregistré — aucune modification du Générateur d'étiquettes depuis le dernier enregistrement."
-    },
-    "generating_enhancements_tooltip": {
-      "ht": "",
-      "at": "Génération des enrichissements en cours…"
-    },
-    "extracting_dataforge_tooltip": {
-      "ht": "",
-      "at": "Extraction de DataForge depuis Data.p4k…"
     },
     "blueprints_group": {
       "ht": "",
@@ -920,9 +992,347 @@
       "ht": "",
       "at": "{count} plan(s) ajouté(s) à votre liste de possédés.\n\n{visible} sont visibles dans vos listes de plans actuelles ; les autres afficheront [Owned] automatiquement dès que leur objet réapparaîtra dans les récompenses de plans d'une mission."
     },
-    "cat_desc_medical_consumables": {
+    "mission_field_ace_tooltip": {
       "ht": "",
-      "at": "Résumés en clair des effets des stylos médicaux CureLife"
+      "at": "Afficher une ligne « Ace Pilot: Yes » dans le corps des détails de mission lorsque la mission fait apparaître un pilote as. L'étiquette de titre [ACE] est une option distincte sous Étiquettes générales. Prend effet à la prochaine génération des enrichissements."
+    },
+    "mission_field_default_tooltip": {
+      "ht": "",
+      "at": "Afficher la ligne {label} dans les corps de mission générés. Prend effet à la prochaine génération des enrichissements."
+    },
+    "stats_prepend_tooltip": {
+      "ht": "",
+      "at": "Placer le bloc de statistiques généré au-dessus de la description du fabricant/RP plutôt qu'en dessous (vaisseaux, composants, armes). Prend effet à la prochaine génération des enrichissements."
+    },
+    "standardize_ship_names_tooltip": {
+      "ht": "",
+      "at": "Renommer les variantes de vaisseau exec-hangar (PYX) et Wikelo (WIK) pour inclure un suffixe les distinguant de la version standard du magasin de pledge (ex. « Anvil F8C Lightning PYX »). Prend effet à la prochaine génération des enrichissements."
+    },
+    "apply_categories_tooltip": {
+      "ht": "",
+      "at": "Enregistrer la sélection des catégories. Les catégories décochées seront désactivées."
+    },
+    "generate_enabled_tooltip": {
+      "ht": "",
+      "at": "Générer les fichiers de localisation enrichis à partir du Data.p4k de votre jeu.\nLes données DataForge seront extraites automatiquement si elles ne sont pas déjà en cache\n(la première exécution prend quelques minutes ; les suivantes sont rapides)."
+    },
+    "generate_disabled_tooltip": {
+      "ht": "",
+      "at": "Déjà à jour — rien de ce qui affecte le résultat généré (catégories, champs de mission, options de statistiques/noms, Générateur d'étiquettes) n'a changé depuis la dernière exécution."
+    },
+    "favorite_prefix_tooltip": {
+      "ht": "",
+      "at": "Caractère ajouté devant les noms des vaisseaux favoris afin qu'ils apparaissent en tête de la liste des vaisseaux en jeu. Cliquez sur « Appliquer le préfixe » après modification pour mettre à jour tous les favoris existants."
+    },
+    "rep_xp_label_tooltip": {
+      "ht": "",
+      "at": "Libellé pour les missions sans nom de rang (ex. « Rep : +100 XP »)"
+    },
+    "header_em_tooltip": {
+      "ht": "",
+      "at": "Style des en-têtes de section : Souligné (EM3) ou Texte bleu (EM4)"
+    },
+    "prefix_enabled_tooltip": {
+      "ht": "",
+      "at": "Enregistrer le préfixe sélectionné et mettre à jour tous les favoris existants pour l'utiliser"
+    },
+    "prefix_disabled_tooltip": {
+      "ht": "",
+      "at": "Déjà appliqué — le préfixe sélectionné correspond à vos favoris actuels."
+    },
+    "annotate_mission_descs_tooltip": {
+      "ht": "",
+      "at": "Si coché, l'étiquette [CLASS-Sx-grade] configurée est ajoutée aux noms de composants dans la liste POTENTIAL BLUEPRINTS des descriptions de mission. Décochez pour un corps de mission plus épuré, tout en conservant l'étiquette sur les noms de composants ailleurs."
+    },
+    "reset_tag_tooltip": {
+      "ht": "",
+      "at": "Restaurer le modèle, le mappage et l'ordre par défaut pour chaque catégorie (Composants / Missiles / Armes de vaisseau). N'enregistre ni ne régénère tant que vous n'avez pas cliqué sur « Enregistrer les modifications d'étiquettes » ou « Générer les enrichissements »."
+    },
+    "tag_enabled_tooltip": {
+      "ht": "",
+      "at": "Enregistrer les configurations d'étiquettes Composants / Missiles / Armes de vaisseau et relancer le générateur d'enrichissements. Les nouvelles étiquettes apparaissent en jeu après la prochaine application des enrichissements."
+    },
+    "tag_disabled_tooltip": {
+      "ht": "",
+      "at": "Déjà enregistré — aucune modification du Générateur d'étiquettes depuis le dernier enregistrement."
+    },
+    "generating_enhancements_tooltip": {
+      "ht": "",
+      "at": "Génération des enrichissements en cours…"
+    },
+    "extracting_dataforge_tooltip": {
+      "ht": "",
+      "at": "Extraction de DataForge depuis Data.p4k…"
+    },
+    "tag_move_up_tooltip": {
+      "ht": "",
+      "at": "Monter cet élément"
+    },
+    "tag_move_down_tooltip": {
+      "ht": "",
+      "at": "Descendre cet élément"
+    },
+    "tag_untick_exclude_tooltip": {
+      "ht": "",
+      "at": "Décochez pour exclure cet élément de l'étiquette"
+    },
+    "tag_edit_mapping_row_btn": {
+      "ht": "",
+      "at": "Modifier la correspondance…"
+    },
+    "tag_mapping_tooltip_ordinance": {
+      "ht": "",
+      "at": "Modifier le texte Court / Moyen / Long de chaque type de guidage (ex. Infrared → I / IR / Infrared)."
+    },
+    "tag_mapping_tooltip_damage": {
+      "ht": "",
+      "at": "Modifier le texte Court / Moyen / Long de chaque type de dégâts (ex. Energy → E / EN / Energy)."
+    },
+    "tag_mapping_tooltip_type": {
+      "ht": "",
+      "at": "Modifier le texte Court / Moyen / Long de chaque type de composant (ex. Shield Generator → SH / SHLD / Shield)."
+    },
+    "tag_mapping_tooltip_label": {
+      "ht": "",
+      "at": "Modifier le texte Court / Moyen / Long du libellé de fabrication (ex. Crafting → CF / Craft / Crafting)."
+    },
+    "tag_mapping_tooltip_collection": {
+      "ht": "",
+      "at": "Modifier le texte Court / Moyen / Long du libellé de collection (ex. Collection → Col / Collect / Collection)."
+    },
+    "tag_mapping_tooltip_default": {
+      "ht": "",
+      "at": "Modifier le texte Court / Moyen / Long de chaque classe (ex. Military → M / MIL / Military)."
+    },
+    "mission_detail_fields_heading": {
+      "ht": "",
+      "at": "Champs de détail de mission :"
+    },
+    "mission_field_mission_type": {
+      "ht": "",
+      "at": "Type de mission"
+    },
+    "mission_field_difficulty": {
+      "ht": "",
+      "at": "Difficulté"
+    },
+    "mission_field_hostiles": {
+      "ht": "",
+      "at": "Hostiles"
+    },
+    "mission_field_reputation": {
+      "ht": "",
+      "at": "Réputation"
+    },
+    "mission_field_blueprints": {
+      "ht": "",
+      "at": "Plans"
+    },
+    "mission_field_ace_pilot": {
+      "ht": "",
+      "at": "Pilote Ace"
+    },
+    "mission_detail_fields_note": {
+      "ht": "",
+      "at": "Les champs décochés sont omis des descriptions de mission. Prend effet au prochain « Générer les enrichissements »."
+    },
+    "stats_prepend_cb": {
+      "ht": "",
+      "at": "Afficher les statistiques au-dessus de la description"
+    },
+    "standardize_ship_names_cb": {
+      "ht": "",
+      "at": "Uniformiser les noms des vaisseaux gagnables"
+    },
+    "mission_labels_group": {
+      "ht": "",
+      "at": "Libellés de mission"
+    },
+    "mission_label_details": {
+      "ht": "",
+      "at": "Détails :"
+    },
+    "mission_label_blueprints": {
+      "ht": "",
+      "at": "Plans :"
+    },
+    "mission_label_item_rewards": {
+      "ht": "",
+      "at": "Objets en récompense :"
+    },
+    "mission_label_blueprint_data": {
+      "ht": "",
+      "at": "Données de plan :"
+    },
+    "mission_label_xp": {
+      "ht": "",
+      "at": "Libellé XP :"
+    },
+    "mission_label_header_style": {
+      "ht": "",
+      "at": "Style d'en-tête :"
+    },
+    "em_label_underline": {
+      "ht": "",
+      "at": "Souligné"
+    },
+    "em_label_blue_text": {
+      "ht": "",
+      "at": "Texte bleu"
+    },
+    "forge_status_not_extracted": {
+      "ht": "",
+      "at": "DataForge : pas encore extrait — cliquez sur « Générer les enrichissements » pour commencer"
+    },
+    "forge_status_outdated": {
+      "ht": "",
+      "at": "DataForge : cache obsolète — cliquez sur « Générer les enrichissements » pour ré-extraire et mettre à jour"
+    },
+    "forge_status_up_to_date": {
+      "ht": "",
+      "at": "DataForge : cache à jour ✓"
+    },
+    "tag_separator_label": {
+      "ht": "",
+      "at": "Séparateur :"
+    },
+    "tag_enclosing_label": {
+      "ht": "",
+      "at": "Encadrement :"
+    },
+    "tag_placement_label": {
+      "ht": "",
+      "at": "Position :"
+    },
+    "tag_craft_usage_separator_label": {
+      "ht": "",
+      "at": "Séparateur d'usage de fabrication :"
+    },
+    "mt_hauling_group": {
+      "ht": "",
+      "at": "Missions de transport"
+    },
+    "mt_enable_route_cb": {
+      "ht": "",
+      "at": "Ajouter l'itinéraire aux titres des missions de transport"
+    },
+    "mt_standardize_cb": {
+      "ht": "",
+      "at": "Uniformiser les noms des missions de transport (ex. « Medium Cargo Haul » pour toutes les compagnies, au lieu de « Large Shipment » / « Haul - Small Scale »)"
+    },
+    "mt_route_hint": {
+      "ht": "",
+      "at": "Le jeu renseigne les vrais lieux d'enlèvement et de livraison à l'acceptation de la mission."
+    },
+    "mt_route_arrow_label": {
+      "ht": "",
+      "at": "Flèche d'itinéraire :"
+    },
+    "mt_title_separator_label": {
+      "ht": "",
+      "at": "Séparateur de titre :"
+    },
+    "mt_rank_separator_label": {
+      "ht": "",
+      "at": "Séparateur de rang :"
+    },
+    "mt_location_detail_label": {
+      "ht": "",
+      "at": "Détail des lieux :"
+    },
+    "mt_shorten_titles_cb": {
+      "ht": "",
+      "at": "Raccourcir les titres d'origine (raccourcit les tournures standard, ex. « Local Shipment Route » → « Route »)"
+    },
+    "mt_shorten_sizes_cb": {
+      "ht": "",
+      "at": "Raccourcir les tailles de cargaison (abrège les tailles, ex. « Extra Small » → « XS »)"
+    },
+    "mt_underline_direct_cb": {
+      "ht": "",
+      "at": "Souligner « Direct » (met en valeur les transports « Direct » en jeu)"
+    },
+    "mt_general_tags_group": {
+      "ht": "",
+      "at": "Étiquettes générales"
+    },
+    "mt_general_tags_hint": {
+      "ht": "",
+      "at": "Afficher ou masquer ces étiquettes sur le titre de mission uniquement"
+    },
+    "mt_tag_rep_cb": {
+      "ht": "",
+      "at": "Étiquette Rep (ajoute « [500 REP] »)"
+    },
+    "mt_tag_blueprint_cb": {
+      "ht": "",
+      "at": "Étiquette BP (ajoute « [BP] » / « [BP?] »)"
+    },
+    "mt_tag_ace_cb": {
+      "ht": "",
+      "at": "Étiquette ACE (ajoute « [ACE] » / « [ACE?] »)"
+    },
+    "mt_tag_rep_track_cb": {
+      "ht": "",
+      "at": "Étiquette de filière de réputation (ajoute « (Security) » / « (Contractor) » à l'étiquette Rep)"
+    },
+    "mt_scanning_group": {
+      "ht": "",
+      "at": "Missions de scan/minage"
+    },
+    "mt_scanning_hint": {
+      "ht": "",
+      "at": "Les missions de scan/minage de Recco Battaglia ciblent des minerais spécifiques ; affiche la valeur de signature de ressource (RS) de chaque minerai sur le titre de mission."
+    },
+    "mt_tag_rs_cb": {
+      "ht": "",
+      "at": "Afficher les étiquettes de signature de ressource (RS)"
+    },
+    "mt_preview_route_off": {
+      "ht": "",
+      "at": "Aperçu :  {display} [50 REP]  (itinéraire désactivé)"
+    },
+    "mt_preview_route_on": {
+      "ht": "",
+      "at": "Aperçu :  {display} [50 REP]"
+    },
+    "tag_preview": {
+      "ht": "",
+      "at": "Aperçu :  {content}"
+    },
+    "tag_preview_no_tag": {
+      "ht": "",
+      "at": "Aperçu :  {name}   (aucune étiquette — tous les éléments sont vides ou désactivés)"
+    }
+  },
+  "blueprint_tracker": {
+    "title": {
+      "ht": "",
+      "at": "Suivi des plans"
+    },
+    "scan_logs_btn": {
+      "ht": "",
+      "at": "Rechercher les plans possédés dans les journaux"
+    },
+    "scan_logs_tooltip": {
+      "ht": "",
+      "at": "Analyse les fichiers journaux de Star Citizen (Game.log et logbackups) à la recherche des notifications de récompense « Received Blueprint » et marque automatiquement ces plans comme possédés."
+    },
+    "apply_owned_tag_btn": {
+      "ht": "",
+      "at": "Appliquer les étiquettes [Owned]"
+    },
+    "apply_owned_tag_tooltip": {
+      "ht": "",
+      "at": "Met à jour l'étiquette [Owned] sur les noms de plans dans la table des chaînes pour refléter votre liste actuelle de plans possédés."
+    },
+    "apply_owned_tag_tooltip_disabled": {
+      "ht": "",
+      "at": "Déjà à jour : votre liste de plans possédés n'a pas changé depuis la dernière application."
+    },
+    "owned_tags_refreshed": {
+      "ht": "",
+      "at": "Étiquettes [Owned] actualisées selon votre liste de possédés actuelle."
     }
   },
   "log": {
@@ -1378,18 +1788,6 @@
       "ht": "",
       "at": "Échec de la copie vers le presse-papiers : {error}"
     },
-    "browse_ini_tooltip": {
-      "ht": "",
-      "at": "Choisir un fichier .ini local à importer."
-    },
-    "generate_now_tooltip": {
-      "ht": "",
-      "at": "Lancer maintenant l'extraction DataForge et le pipeline d'enrichissements. Prend quelques minutes la première fois."
-    },
-    "skip_generate_tooltip": {
-      "ht": "",
-      "at": "Continuer sans générer les enrichissements. Vous pourrez le faire plus tard depuis l'onglet Enrichissements."
-    },
     "unapplied_changes_title": {
       "ht": "",
       "at": "Modifications non appliquées"
@@ -1405,6 +1803,50 @@
     "unapplied_changes_exit": {
       "ht": "",
       "at": "Quitter sans appliquer"
+    },
+    "browse_ini_tooltip": {
+      "ht": "",
+      "at": "Choisir un fichier .ini local à importer."
+    },
+    "generate_now_tooltip": {
+      "ht": "",
+      "at": "Lancer maintenant l'extraction DataForge et le pipeline d'enrichissements. Prend quelques minutes la première fois."
+    },
+    "skip_generate_tooltip": {
+      "ht": "",
+      "at": "Continuer sans générer les enrichissements. Vous pourrez le faire plus tard depuis l'onglet Enrichissements."
+    },
+    "crash_error_title": {
+      "ht": "",
+      "at": "Smart Citizen — Erreur"
+    },
+    "show_log_btn": {
+      "ht": "",
+      "at": "Afficher le journal"
+    },
+    "dismiss_btn": {
+      "ht": "",
+      "at": "Ignorer"
+    },
+    "suppressed_errors_suffix": {
+      "ht": "",
+      "at": "\n\n(+{count} erreur{plural} supplémentaire{plural} supprimée{plural} — voir l'onglet Journal pour les détails)"
+    },
+    "failed_to_delete_global_ini": {
+      "ht": "",
+      "at": "Échec de la suppression de global.ini : {error}"
+    },
+    "failed_to_merge_sources": {
+      "ht": "",
+      "at": "Échec de la fusion des sources : {error}"
+    },
+    "failed_to_load_sources": {
+      "ht": "",
+      "at": "Échec du chargement des sources : {error}"
+    },
+    "app_title": {
+      "ht": "",
+      "at": "Smart Citizen"
     }
   },
   "progress": {
@@ -1471,9 +1913,37 @@
     "snapshot_diff": {
       "ht": "",
       "at": "Capture du cache pour le diff…"
+    },
+    "syncing_sources": {
+      "ht": "",
+      "at": "Synchronisation des sources..."
+    },
+    "starting_up_title": {
+      "ht": "",
+      "at": "Démarrage"
+    },
+    "enhancements_label": {
+      "ht": "",
+      "at": "Génération des localisations enrichies depuis DataForge…\n\nLe premier lancement peut prendre quelques minutes."
+    },
+    "generating_enhancements_title": {
+      "ht": "",
+      "at": "Génération des enrichissements"
+    },
+    "reloading_with_enhancements": {
+      "ht": "",
+      "at": "Rechargement des chaînes avec les enrichissements à jour…"
+    },
+    "reloading_after_user_ini_restore": {
+      "ht": "",
+      "at": "Rechargement de {channel} après restauration de user.ini..."
     }
   },
   "status_bar": {
+    "no_strings_loaded": {
+      "ht": "",
+      "at": "Aucune chaîne chargée : extrayez d'abord depuis Data.p4k dans l'onglet Config"
+    },
     "update_checking": {
       "ht": "Vérification…",
       "at": "Vérification…"
@@ -1506,9 +1976,441 @@
       "ht": "",
       "at": "Ouvrir la page de version pour la v{version}"
     },
-    "no_strings_loaded": {
+    "downloading_ini": {
       "ht": "",
-      "at": "Aucune chaîne chargée : extrayez d'abord depuis Data.p4k dans l'onglet Config"
+      "at": "Téléchargement du fichier INI..."
+    },
+    "starting_up": {
+      "ht": "",
+      "at": "Démarrage — synchronisation des sources..."
+    },
+    "generating_enhancements_background": {
+      "ht": "",
+      "at": "Génération des enrichissements en arrière-plan…"
+    },
+    "enhancements_generated_applying": {
+      "ht": "",
+      "at": "Enrichissements générés — application au jeu…"
+    },
+    "enhancements_generated_reloading": {
+      "ht": "",
+      "at": "Enrichissements générés — rechargement des entrées…"
+    },
+    "enhancement_generation_failed": {
+      "ht": "",
+      "at": "Échec de la génération des enrichissements — consultez l'onglet Journal pour les détails"
+    },
+    "user_ini_reset": {
+      "ht": "",
+      "at": "user.ini réinitialisé pour {channel} (sauvegarde créée)"
+    },
+    "user_ini_restored": {
+      "ht": "",
+      "at": "user.ini restauré pour {channel}"
+    },
+    "channel_indicator": {
+      "ht": "",
+      "at": "Canal : {channel}"
+    },
+    "channel_switched_extracting": {
+      "ht": "",
+      "at": "Passage à {channel} — extraction de Data.p4k…"
+    },
+    "channel_switched_reloading": {
+      "ht": "",
+      "at": "Passage à {channel} — rechargement des sources…"
+    },
+    "data_folder_changed_extracting": {
+      "ht": "",
+      "at": "Dossier de données changé pour {data_dir} — extraction de Data.p4k…"
+    },
+    "data_folder_changed_reloading": {
+      "ht": "",
+      "at": "Dossier de données changé pour {data_dir} — rechargement des sources…"
+    },
+    "cache_folder_changed": {
+      "ht": "",
+      "at": "Dossier du cache DataForge modifié — ré-extraction depuis Data.p4k…"
+    },
+    "syncing_source": {
+      "ht": "",
+      "at": "Synchronisation de {source_name}..."
+    },
+    "source_updated": {
+      "ht": "",
+      "at": "mis à jour ↑"
+    },
+    "source_offline": {
+      "ht": "",
+      "at": "(hors ligne ?)"
+    },
+    "entry_count": {
+      "ht": "",
+      "at": "{count} entrées"
+    },
+    "override_count_suffix": {
+      "ht": "",
+      "at": " | {count} remplacements"
+    },
+    "manifest_missing": {
+      "ht": "",
+      "at": "SC {channel} (manifeste manquant)"
+    }
+  },
+  "import_flow": {
+    "source_dialog_title": {
+      "ht": "",
+      "at": "Importer un fichier INI"
+    },
+    "source_dialog_label": {
+      "ht": "",
+      "at": "Saisissez un chemin de fichier local ou une URL :"
+    },
+    "source_dialog_placeholder": {
+      "ht": "",
+      "at": "C:\\chemin\\vers\\fichier.ini ou https://exemple.com/fichier.ini"
+    },
+    "browse_btn": {
+      "ht": "",
+      "at": "Parcourir..."
+    },
+    "select_ini_file_title": {
+      "ht": "",
+      "at": "Sélectionner un fichier INI"
+    },
+    "ini_file_filter": {
+      "ht": "",
+      "at": "Fichiers INI (*.ini);;Tous les fichiers (*)"
+    },
+    "download_error_title": {
+      "ht": "",
+      "at": "Erreur de téléchargement"
+    },
+    "download_error_body": {
+      "ht": "",
+      "at": "Échec du téléchargement :\n{source}\n\n{error}"
+    },
+    "no_base_data_title": {
+      "ht": "",
+      "at": "Aucune donnée de base"
+    },
+    "no_base_data_body": {
+      "ht": "",
+      "at": "INI de base pas encore chargé. Extrayez d'abord depuis Data.p4k."
+    },
+    "no_valid_keys_title": {
+      "ht": "",
+      "at": "Aucune clé valide"
+    },
+    "no_valid_keys_body": {
+      "ht": "",
+      "at": "Aucune des {count} clés importées n'existe dans base.ini.\nToutes les clés ont été exclues."
+    },
+    "nothing_to_import_title": {
+      "ht": "",
+      "at": "Rien à importer"
+    },
+    "nothing_to_import_body": {
+      "ht": "",
+      "at": "Toutes les clés importées existent déjà dans user.ini avec les mêmes valeurs."
+    },
+    "confirm_title": {
+      "ht": "",
+      "at": "Importer un INI"
+    },
+    "confirm_body": {
+      "ht": "",
+      "at": "{new_count} nouvelles clés seront ajoutées à user.ini.\n{excluded_count} clés exclues (absentes de base.ini).\n\nContinuer ?"
+    },
+    "reload_status": {
+      "ht": "",
+      "at": "Rechargement avec les données importées..."
+    },
+    "complete_title": {
+      "ht": "",
+      "at": "Import terminé"
+    },
+    "complete_body": {
+      "ht": "",
+      "at": "Import réussi.\n\n  Ajoutées : {added} clés\n  Conflits résolus : {resolved} clés\n  Exclues : {excluded} clés"
+    },
+    "error_title": {
+      "ht": "",
+      "at": "Erreur d'import"
+    },
+    "error_body": {
+      "ht": "",
+      "at": "Échec de l'import du fichier INI :\n{error}"
+    }
+  },
+  "restore_backup": {
+    "select_file_title": {
+      "ht": "",
+      "at": "Sélectionner la sauvegarde à restaurer"
+    },
+    "file_filter": {
+      "ht": "",
+      "at": "Fichiers de sauvegarde (*.bak_*);;Fichiers INI (*.ini);;Tous les fichiers (*)"
+    },
+    "success_body": {
+      "ht": "",
+      "at": "Sauvegarde restaurée depuis :\n{name}"
+    },
+    "error_body": {
+      "ht": "",
+      "at": "Échec de la restauration de la sauvegarde : {error}"
+    }
+  },
+  "onedrive": {
+    "warning_title": {
+      "ht": "",
+      "at": "Vos données Smart Citizen sont dans OneDrive"
+    },
+    "warning_body": {
+      "ht": "",
+      "at": "Smart Citizen stocke vos modifications (user.ini), le cache des sources et les sauvegardes dans :\n\n{data_dir}\n\nCe dossier est dans OneDrive. OneDrive peut synchroniser voire vider ces fichiers, ce qui a déjà causé des pertes de modifications. Déplacer vos données vers un dossier local hors de OneDrive évite cela.\n\nLes déplacer vers :\n{local} ?"
+    },
+    "move_btn": {
+      "ht": "",
+      "at": "Déplacer vers un dossier local"
+    },
+    "keep_here_btn": {
+      "ht": "",
+      "at": "Garder ici"
+    },
+    "dont_warn_again": {
+      "ht": "",
+      "at": "Ne plus m'avertir"
+    }
+  },
+  "user_ini_reset": {
+    "backup_note": {
+      "ht": "",
+      "at": "\n\nSauvegarde enregistrée dans :\n{path}"
+    },
+    "complete_title": {
+      "ht": "",
+      "at": "Réinitialisation de user.ini"
+    },
+    "complete_body": {
+      "ht": "",
+      "at": "Tous les remplacements personnalisés du canal {channel} ont été effacés.{backup_note}"
+    }
+  },
+  "restore_user_ini": {
+    "no_snapshots_title": {
+      "ht": "",
+      "at": "Aucun instantané pour l'instant"
+    },
+    "no_snapshots_body": {
+      "ht": "",
+      "at": "Smart Citizen n'a encore aucun instantané automatique de user.ini pour le canal {channel}. Un instantané est enregistré à chaque changement de vos remplacements ; des points de restauration apparaîtront dès que vous aurez fait et enregistré des modifications."
+    },
+    "snapshot_label": {
+      "ht": "",
+      "at": "{when}  —  {lines} remplacements, {size_kb} Ko"
+    },
+    "picker_title": {
+      "ht": "",
+      "at": "Restaurer user.ini"
+    },
+    "picker_label": {
+      "ht": "",
+      "at": "Choisissez un instantané à restaurer pour le canal {channel}.\nVotre user.ini actuel est d'abord sauvegardé en instantané : l'opération est réversible."
+    },
+    "restore_failed_title": {
+      "ht": "",
+      "at": "Échec de la restauration"
+    },
+    "restore_failed_body": {
+      "ht": "",
+      "at": "Smart Citizen n'a pas pu restaurer l'instantané :\n\n{error_type} : {error}"
+    },
+    "restored_title": {
+      "ht": "",
+      "at": "user.ini restauré"
+    },
+    "restored_body": {
+      "ht": "",
+      "at": "Vos remplacements pour le canal {channel} ont été restaurés depuis :\n{name}\n\nLancez « Appliquer les enrichissements » pour pousser les remplacements restaurés en jeu."
+    }
+  },
+  "extract": {
+    "path_required_title": {
+      "ht": "",
+      "at": "Chemin Star Citizen requis"
+    },
+    "path_required_body": {
+      "ht": "",
+      "at": "Aucun chemin d'installation de Star Citizen n'est configuré et aucune donnée de localisation en cache n'a été trouvée.\n\nDéfinissez votre chemin d'installation de Star Citizen dans l'onglet Paramètres, puis cliquez sur Extraire pour charger les chaînes de localisation de votre jeu."
+    },
+    "p4k_prompt_title": {
+      "ht": "",
+      "at": "Extraire depuis Data.p4k"
+    },
+    "p4k_prompt_base_missing": {
+      "ht": "",
+      "at": "Aucun fichier de localisation de base trouvé dans le cache.\n\nExtraire global.ini depuis Data.p4k maintenant ?\n(Nécessaire pour charger et afficher les chaînes de localisation.)"
+    },
+    "p4k_prompt_p4k_newer": {
+      "ht": "",
+      "at": "Data.p4k est plus récent que votre base.ini en cache.\n\nExtraire global.ini depuis Data.p4k maintenant ?\n(Vous obtenez ainsi les chaînes d'origine correspondant exactement à votre version du jeu.)"
+    },
+    "dataforge_outdated_title": {
+      "ht": "",
+      "at": "Cache DataForge obsolète"
+    },
+    "dataforge_outdated_body": {
+      "ht": "",
+      "at": "Votre cache d'entités DataForge est plus ancien que le Data.p4k actuel.\n\nRé-extraire DataForge et régénérer les enrichissements maintenant ?\n\nCela prend quelques minutes et s'exécute en arrière-plan — vous pouvez continuer à modifier les chaînes pendant ce temps. Passez pour l'instant si vous préférez ne pas attendre ; vous pourrez toujours le lancer depuis l'onglet Enrichissements."
+    },
+    "generate_dialog_title": {
+      "ht": "",
+      "at": "Générer les enrichissements"
+    },
+    "category_singular": {
+      "ht": "",
+      "at": "catégorie d'enrichissement manque"
+    },
+    "category_plural": {
+      "ht": "",
+      "at": "catégories d'enrichissement manquent"
+    },
+    "missing_categories_body": {
+      "ht": "",
+      "at": "{count} {noun}.\nSélectionnez celles à générer.\nVous pourrez changer cela plus tard dans l'onglet Enrichissements."
+    },
+    "missing_category_label": {
+      "ht": "",
+      "at": "{label}  (manquante)"
+    },
+    "dataforge_auto_extract_note": {
+      "ht": "",
+      "at": "Les données DataForge seront extraites automatiquement si elles ne sont pas déjà en cache.\nLe premier lancement prend quelques minutes."
+    },
+    "generate_btn": {
+      "ht": "",
+      "at": "Générer"
+    },
+    "skip_btn": {
+      "ht": "",
+      "at": "Passer"
+    },
+    "dataforge_extracting_background": {
+      "ht": "",
+      "at": "Extraction de DataForge en arrière-plan — cela prend plusieurs minutes…"
+    },
+    "dataforge_extracting_label": {
+      "ht": "",
+      "at": "Extraction de DataForge depuis Data.p4k — cela prend plusieurs minutes…"
+    },
+    "dataforge_extraction_title": {
+      "ht": "",
+      "at": "Extraction DataForge"
+    },
+    "dataforge_extraction_error_title": {
+      "ht": "",
+      "at": "Erreur d'extraction DataForge"
+    },
+    "dataforge_extraction_error_body": {
+      "ht": "",
+      "at": "L'extraction DataForge a échoué :\n\n{message}\n\nConsultez l'onglet Journal pour les détails."
+    },
+    "dataforge_extracted_generating": {
+      "ht": "",
+      "at": "DataForge extrait — génération des enrichissements…"
+    },
+    "dataforge_extraction_failed": {
+      "ht": "",
+      "at": "Échec de l'extraction DataForge — consultez l'onglet Journal pour les détails"
+    },
+    "p4k_extracting_label": {
+      "ht": "",
+      "at": "Extraction de global.ini depuis Data.p4k..."
+    },
+    "p4k_extraction_title": {
+      "ht": "",
+      "at": "Extraction P4K"
+    },
+    "extraction_error_title": {
+      "ht": "",
+      "at": "Erreur d'extraction"
+    }
+  },
+  "apply": {
+    "cannot_save_edits_title": {
+      "ht": "",
+      "at": "Impossible d'enregistrer vos modifications"
+    },
+    "cannot_save_edits_body": {
+      "ht": "",
+      "at": "Smart Citizen n'a pas pu écrire vos modifications dans :\n\n  {path}\n\n{error_type} : {error}\n\nLe fichier du jeu n'a PAS été modifié. Causes fréquentes :\n  • Un antivirus / l'Accès contrôlé aux dossiers de Windows bloque l'écriture dans le dossier du jeu\n  • Le fichier user.ini est ouvert dans un autre programme\n  • Le disque est en lecture seule ou plein\n\nRésolvez le problème sous-jacent puis appliquez de nouveau."
+    },
+    "applied_body": {
+      "ht": "",
+      "at": "Appliqué à {target_path}\n\n  Modifications utilisateur : {user_count}\n\n{enhancement_block}"
+    },
+    "failed_body": {
+      "ht": "",
+      "at": "Échec de l'application au jeu : {error}"
+    }
+  },
+  "test_plan": {
+    "intro": {
+      "ht": "",
+      "at": "Parcourez chaque élément sur cette version et cochez-le au fur et à mesure de vos vérifications. Votre progression est enregistrée automatiquement. Une fois terminé, utilisez Copier le rapport ou Soumettre pour partager vos constats."
+    },
+    "tester_label": {
+      "ht": "",
+      "at": "Testeur :"
+    },
+    "tester_placeholder": {
+      "ht": "",
+      "at": "Votre nom ou pseudo"
+    },
+    "submit_btn": {
+      "ht": "",
+      "at": "Soumettre à Discord"
+    },
+    "no_webhook_tooltip": {
+      "ht": "",
+      "at": "Aucun webhook Discord configuré. Définissez la variable d'environnement {env_var} (ou le réglage test_plan/webhook_url) pour activer l'envoi. Utilisez Copier le rapport en attendant."
+    },
+    "copy_report_btn": {
+      "ht": "",
+      "at": "Copier le rapport"
+    },
+    "reset_btn": {
+      "ht": "",
+      "at": "Réinitialiser"
+    },
+    "notes_label": {
+      "ht": "",
+      "at": "Retours supplémentaires (facultatif) :"
+    },
+    "notes_placeholder": {
+      "ht": "",
+      "at": "Décrivez bugs, surprises ou suggestions..."
+    },
+    "copied_status": {
+      "ht": "",
+      "at": "Rapport copié dans le presse-papiers."
+    },
+    "copy_failed_status": {
+      "ht": "",
+      "at": "Impossible de copier le rapport dans le presse-papiers."
+    },
+    "reset_status": {
+      "ht": "",
+      "at": "Liste de contrôle réinitialisée."
+    },
+    "no_webhook_status": {
+      "ht": "",
+      "at": "Aucun webhook Discord configuré."
+    },
+    "sending_status": {
+      "ht": "",
+      "at": "Envoi du rapport à Discord..."
     }
   },
   "tutorial": {
@@ -1701,32 +2603,6 @@
         "ht": "",
         "at": "Marquez les plans que vous possédez. Cherchez dans la liste de gauche par nom ou par mission, ou affinez par Type, Classe, Taille et Grade de composant, puis utilisez les flèches pour déplacer des éléments vers votre liste de possédés. Les plans possédés reçoivent une étiquette [Owned] partout où ils apparaissent dans les récompenses potentielles d'une mission, pour voir d'un coup d'œil ce qui vaut la peine d'être chassé."
       }
-    }
-  },
-  "blueprint_tracker": {
-    "title": {
-      "ht": "",
-      "at": "Suivi des plans"
-    },
-    "scan_logs_btn": {
-      "ht": "",
-      "at": "Rechercher les plans possédés dans les journaux"
-    },
-    "scan_logs_tooltip": {
-      "ht": "",
-      "at": "Analyse les fichiers journaux de Star Citizen (Game.log et logbackups) à la recherche des notifications de récompense « Received Blueprint » et marque automatiquement ces plans comme possédés."
-    },
-    "apply_owned_tag_btn": {
-      "ht": "",
-      "at": "Appliquer les étiquettes [Owned]"
-    },
-    "apply_owned_tag_tooltip": {
-      "ht": "",
-      "at": "Met à jour l'étiquette [Owned] sur les noms de plans dans la table des chaînes pour refléter votre liste actuelle de plans possédés."
-    },
-    "apply_owned_tag_tooltip_disabled": {
-      "ht": "",
-      "at": "Déjà à jour : votre liste de plans possédés n'a pas changé depuis la dernière application."
     }
   }
 }
