@@ -674,6 +674,78 @@ class TestBlueprintNameTags:
         # (#281), and now carries the tag tier 3 previously dropped.
         assert pools["pool-uuid"] == ["[FN] Norfield"]
 
+    @pytest.mark.regression
+    def test_blueprint_pool_name_fallback_tags_apply_without_any_entity_linkage(
+        self, gen_module, tmp_path
+    ):
+        """The real 2.3.0 live-report shape: the fuel nozzle's entity XML
+        isn't UUID-linked to its blueprint AT ALL (same broken linkage
+        behind #281's garbled names), so entity_name_tags -- keyed by
+        entity __ref -- can never supply the tag no matter which tier the
+        name came from. name_fallback_tags is keyed by display name and
+        derived purely from base.ini loc pairs (bare_type_name_tag_lookup),
+        so it covers exactly this hole: tier-3 alias gives "Norfield", the
+        name-keyed dict tags it."""
+        pool_dir = tmp_path / "blueprintrewards"
+        bp_dir = tmp_path / "blueprints" / "crafting"
+        pool_dir.mkdir(parents=True)
+        bp_dir.mkdir(parents=True)
+
+        (pool_dir / "pool.xml").write_text(
+            '<?xml version="1.0" encoding="utf-8"?>\n'
+            '<BlueprintPoolRecord __ref="pool-uuid">\n'
+            '  <BlueprintReward blueprintRecord="bp-nozzle-uuid"/>\n'
+            '</BlueprintPoolRecord>\n',
+            encoding="utf-8",
+        )
+        (bp_dir / "bp_craft_nozzle_fuelgiver_grin_nozzlefast.xml").write_text(
+            '<?xml version="1.0" encoding="utf-8"?>\n'
+            '<CraftingBlueprintRecord __ref="bp-nozzle-uuid">\n'
+            '  <CraftingProcess_Creation entityClass="ent-nozzle-uuid"/>\n'
+            '</CraftingBlueprintRecord>\n',
+            encoding="utf-8",
+        )
+
+        # ALL entity-XML-derived dicts empty -- no UUID hit, no filename
+        # hit, no UUID-keyed tag. Only the loc-derived name-keyed dict.
+        pools, _pool_names = gen_module.build_blueprint_pool_lookup(
+            pool_dir, bp_dir, entity_names={},
+            entity_names_by_filename={},
+            entity_name_tags={},
+            name_fallback_tags={"Norfield": "[FN]"},
+        )
+        assert pools["pool-uuid"] == ["[FN] Norfield"]
+
+    def test_blueprint_pool_entity_tag_wins_over_name_fallback(self, gen_module, tmp_path):
+        """When the entity-XML route DOES have a tag (normal components),
+        the name-keyed fallback must not double-weave or override it."""
+        pool_dir = tmp_path / "blueprintrewards"
+        bp_dir = tmp_path / "blueprints" / "crafting"
+        pool_dir.mkdir(parents=True)
+        bp_dir.mkdir(parents=True)
+
+        (pool_dir / "pool.xml").write_text(
+            '<?xml version="1.0" encoding="utf-8"?>\n'
+            '<BlueprintPoolRecord __ref="pool-uuid">\n'
+            '  <BlueprintReward blueprintRecord="bp-uuid"/>\n'
+            '</BlueprintPoolRecord>\n',
+            encoding="utf-8",
+        )
+        (bp_dir / "bp_craft_shield.xml").write_text(
+            '<?xml version="1.0" encoding="utf-8"?>\n'
+            '<CraftingBlueprintRecord __ref="bp-uuid">\n'
+            '  <CraftingProcess_Creation entityClass="ent-uuid"/>\n'
+            '</CraftingBlueprintRecord>\n',
+            encoding="utf-8",
+        )
+
+        pools, _pool_names = gen_module.build_blueprint_pool_lookup(
+            pool_dir, bp_dir, entity_names={"ent-uuid": "Aspirum"},
+            entity_name_tags={"ent-uuid": "[MIL-S1-A]"},
+            name_fallback_tags={"Aspirum": "[WRONG]"},
+        )
+        assert pools["pool-uuid"] == ["[MIL-S1-A] Aspirum"]
+
 
 class TestPoolRankLabels:
     """1.4.0 sub-section labels: progression-gated pool filenames

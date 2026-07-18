@@ -335,7 +335,12 @@ def write_ini(path: Path, entries: dict[str, str]) -> None:
 #     scan_crafting_blueprints's xml_file.relative_to(bp_dir) with "not in
 #     the subpath of". Bump flushes any pre-#231 pickle.
 _LOOKUP_VERSIONS: dict[str, str] = {
-    "blueprint_pools": "v12",
+    # v13: tags apply regardless of name-resolution tier + loc-derived
+    # name_fallback_tags for bare-type items (fuel nozzle [FN] missing
+    # from mission text) + #281 filename-fallback aliases. Without this
+    # bump, a regen against an unchanged DataForge reuses pools baked
+    # before those fixes and the mission text stays untagged/garbled.
+    "blueprint_pools": "v13",
     "scitem_lookups": "v8",
     "standings": "v3",
     "xml_path_index": "v2",
@@ -3125,6 +3130,7 @@ def build_blueprint_pool_lookup(
     entity_names_by_filename: dict[str, str] | None = None,
     entity_name_tags: dict[str, str] | None = None,
     name_tag_placement: str = "prepend",
+    name_fallback_tags: dict[str, str] | None = None,
 ) -> tuple[dict[str, list[str]], dict[str, str]]:
     """Build mapping of blueprint pool UUID → list of craftable item display names.
 
@@ -3183,6 +3189,7 @@ def build_blueprint_pool_lookup(
     """
     entity_names_by_filename = entity_names_by_filename or {}
     entity_name_tags = entity_name_tags or {}
+    name_fallback_tags = name_fallback_tags or {}
     if not pool_dir.exists() or not bp_dir.exists():
         return {}, {}
 
@@ -3253,18 +3260,22 @@ def build_blueprint_pool_lookup(
                     # Mirror the components-pipeline annotation: ship
                     # components get an inline [CLASS-Sx-grade] tag (e.g.
                     # "Norfield [MIL-S1-A]"); bare-type components (fuel
-                    # nozzles, scraper modules) get a Type-only tag (e.g.
-                    # "[FN] Bendix"). entity_name_tags is keyed by the
-                    # entity's own __ref and built from its Description
-                    # alone (#266's build_scitem_lookups) — independent of
-                    # whether entity_ref ever resolved in entity_names, so
-                    # this lookup can (and for fuel nozzles, does) succeed
-                    # even when tiers 1/2 both missed and tier 3 fired.
-                    # Applying it regardless of which tier supplied `name`
-                    # is what makes the tag actually reach the applied
-                    # global.ini instead of only ever working for the
-                    # Blueprint Tracker's own internal display.
-                    tag = entity_name_tags.get(entity_ref)
+                    # nozzles) get a Type-only tag (e.g.
+                    # "[FN] Bendix"). Applied regardless of which tier
+                    # supplied `name` — entity_name_tags is keyed by the
+                    # entity's own __ref, built from its Description alone,
+                    # so it can outlive a tier-1/2 name miss.
+                    #
+                    # name_fallback_tags is the second chance for items
+                    # whose entity XML isn't UUID-linked to the blueprint
+                    # AT ALL (fuel nozzles — the same broken linkage behind
+                    # #281's garbled names): keyed by display name and
+                    # derived purely from base.ini Name/Desc pairs (see
+                    # bare_type_name_tag_lookup), it's the exact loc-only
+                    # derivation that already tags these items in the
+                    # String Editor, so the mission text finally matches
+                    # what the app shows.
+                    tag = entity_name_tags.get(entity_ref) or name_fallback_tags.get(name)
                     if tag:
                         if name_tag_placement == "append":
                             name = f"{name} {tag}"
@@ -5353,8 +5364,8 @@ def build_scitem_lookups(
     * entity_name_tags: __ref UUID → ``[CLASS-Sx-grade]`` tag (e.g.
       ``[MIL-S1-A]``) when the entity is a ship component whose
       description carries the Size:/Grade:/Class: header trio, plus
-      three narrower exceptions (#266 follow-up): a Type-only tag for
-      size-less Fuel Nozzle/Scraper Module entities (matching
+      two narrower exceptions (#266 follow-up): a Type-only tag for
+      size-less Fuel Nozzle entities (matching
       enhancements_bare_type_tags), and a Type+Size tag for ship-mounted
       Mining Laser entities (matching _ship_weapon_name_tag_factory's own
       mining-laser branch) despite living under the excluded "weapons"
@@ -5479,7 +5490,7 @@ def build_scitem_lookups(
                     tag = _component_name_tag(
                         desc_value, root, config=tag_config, component_type=comp_type
                     )
-                    # #266 follow-up: Fuel Nozzle and Scraper Module carry no
+                    # #266 follow-up: Fuel Nozzle carries no
                     # Size:/Grade:/Class: at all, so _component_name_tag above
                     # always returns None for them -- fall back to the same
                     # Type-only bare-type tag enhancements_bare_type_tags
@@ -5832,7 +5843,7 @@ def _component_element(cfg: "TagConfig", kind: str) -> "ElementSpec | None":
 
 def _bare_type_tag_from_desc(desc_value: str, comp_cfg: "TagConfig | None") -> str | None:
     """Render a Type-only tag (e.g. ``[Fuel Nozzle]``) for a size-less
-    item (Fuel Nozzle, Scraper Module) from its raw description text, or
+    item (Fuel Nozzle) from its raw description text, or
     None when the description's Item Type isn't in the small bare-type
     allow-list (_BARE_TYPE_NAMES) or the user hasn't enabled the
     Components > Type element.
@@ -5899,6 +5910,40 @@ def enhancements_bare_type_tags(ctx: dict) -> dict[str, str]:
             out[short_key] = f"{short_value} {tag}" if placement == "append" else f"{tag} {short_value}"
 
     logger.info(f"Finished bare-type tags ({len(out)} entries)")
+    return out
+
+
+def bare_type_name_tag_lookup(loc: dict, comp_cfg: "TagConfig | None") -> dict[str, str]:
+    """Map each bare-type item's DISPLAY NAME to its Type-only tag,
+    derived purely from base.ini Name/Desc pairs — no entity XML involved.
+
+    Fuel nozzles' entity XMLs aren't UUID-linked to their crafting
+    blueprints in CIG's data (the root cause behind #281's garbled names),
+    so build_blueprint_pool_lookup's entity_name_tags — keyed by entity
+    __ref — can never supply their tag no matter which resolution tier
+    the *name* came from. The loc pairs, however, carry everything needed:
+    the item's real name and a description whose "Item Type:" line is
+    exactly what _bare_type_tag_from_desc keys on. This is the same
+    loc-only derivation that already tags these items in the components
+    strings (enhancements_bare_type_tags — the reason the tag shows
+    correctly in the String Editor), reshaped as name → tag so the
+    blueprint-pool weave can fall back to it when the entity-XML route
+    has nothing (#266 follow-up / live 2.3.0 report).
+    """
+    out: dict[str, str] = {}
+    if not comp_cfg:
+        return out
+    for key, name_value in loc.items():
+        if not name_value:
+            continue
+        if not key.lower().endswith("_name"):
+            continue
+        desc_value = loc.get(f"{key[:-len('_Name')]}_Desc", "")
+        if not desc_value:
+            continue
+        tag = _bare_type_tag_from_desc(desc_value, comp_cfg)
+        if tag:
+            out[name_value] = tag
     return out
 
 
@@ -6130,6 +6175,14 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
     # default the rest of the generator uses.
     _comp_cfg         = tag_configs.get("components") or DEFAULT_TAG_CONFIGS.get("components")
     comp_placement    = getattr(_comp_cfg, "placement", "prepend") if _comp_cfg else "prepend"
+    # Display-name-keyed Type-only tags for bare-type items (fuel nozzles)
+    # whose entity XMLs aren't UUID-linked to their
+    # blueprints in CIG's data — entity_name_tags can never cover them, so
+    # the blueprint-pool weave falls back to this loc-derived dict. Gated on
+    # the same annotate toggle as effective_tags.
+    name_fallback_tags = (
+        bare_type_name_tag_lookup(loc, _comp_cfg) if annotate_descs else {}
+    )
 
     mission_sep = f"\\n\\n<{mh_em}>{hdr_details}</{mh_em}>\\n"
 
@@ -6212,6 +6265,7 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
             entity_names_by_filename=entity_names_by_filename,
             entity_name_tags=effective_tags,
             name_tag_placement=comp_placement,
+            name_fallback_tags=name_fallback_tags,
         ),
         # blueprint pool names bake in the components tag — fold the
         # components config key AND the annotate-toggle in so a user edit

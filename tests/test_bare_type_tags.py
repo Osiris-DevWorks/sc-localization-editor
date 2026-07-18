@@ -188,3 +188,46 @@ class TestEnhancementsBareTypeTags:
             {"loc": loc, "tag_configs": {"components": cfg}}
         )
         assert out == {}
+
+
+class TestBareTypeNameTagLookup:
+    """#266 follow-up (live 2.3.0 report): fuel nozzle mission bullets showed
+    correct names but no [FN] tag in-game, while the String Editor tagged
+    them fine. bare_type_name_tag_lookup reshapes the same loc-pair
+    derivation as name -> tag so the blueprint-pool weave can fall back to
+    it when the entity-XML route has nothing (broken UUID linkage)."""
+
+    def test_maps_display_name_to_tag(self, gen_module):
+        cfg = _components_cfg_with_type(gen_module, style="short")
+        loc = {
+            "item_fuelnozzle_MISC_Standard_Name": "RN-7s",
+            "item_fuelnozzle_MISC_Standard_Desc": _RN7S_DESC,
+            "Nozzle_FuelGiver_GRIN_NozzleSecure_Name": "Marlin",
+            "Nozzle_FuelGiver_GRIN_NozzleSecure_Desc": _MARLIN_DESC,
+        }
+        out = gen_module.bare_type_name_tag_lookup(loc, cfg)
+        assert out == {"RN-7s": "[FN]", "Marlin": "[FN]"}
+
+    def test_non_bare_type_items_excluded(self, gen_module):
+        cfg = _components_cfg_with_type(gen_module, style="short")
+        loc = {
+            "item_NameSHLD_Aspirum": "Aspirum",
+            "item_DescSHLD_Aspirum": "Item Type: Shield Generator\nSize: 1\n",
+        }
+        # Shield Generator isn't in _BARE_TYPE_NAMES (it's tagged via the
+        # strict Class-based path) -- and this key doesn't end in _Name
+        # anyway, matching enhancements_bare_type_tags' own key filter.
+        assert gen_module.bare_type_name_tag_lookup(loc, cfg) == {}
+
+    def test_empty_when_type_element_disabled(self, gen_module):
+        # Default components config has Type disabled -- same opt-in gate
+        # as every other Type-tag path.
+        cfg = gen_module.DEFAULT_TAG_CONFIGS["components"]
+        loc = {
+            "item_fuelnozzle_MISC_Standard_Name": "RN-7s",
+            "item_fuelnozzle_MISC_Standard_Desc": _RN7S_DESC,
+        }
+        assert gen_module.bare_type_name_tag_lookup(loc, cfg) == {}
+
+    def test_empty_when_cfg_none(self, gen_module):
+        assert gen_module.bare_type_name_tag_lookup({"a_Name": "A"}, None) == {}
