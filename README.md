@@ -240,6 +240,10 @@ All bug reports, feature requests, and prioritization happen in the dedicated `#
 - **[Discord Server Invite](https://discord.gg/BNzRegKZ7k)** — join the server first, then jump into the [Smart Citizen feedback channel](https://discord.com/channels/1438175448420057323/1472394204347895890).
 - When reporting a bug, attach the log (Log tab → **Export**) and mention the SC version you're on.
 
+### Video Guides
+
+- **[Star Citizen Hides Important Mission Info – This Tool Shows It In-Game & More!](https://www.youtube.com/watch?v=Xo1t404gsgs)** by **Karolinger** — a community overview of Smart Citizen's features.
+
 ### Support the Project
 
 Smart Citizen is a free, open-source project. If you find it useful and want to support development:
