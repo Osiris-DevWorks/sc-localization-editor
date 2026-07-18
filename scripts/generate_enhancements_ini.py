@@ -3240,26 +3240,36 @@ def build_blueprint_pool_lookup(
                     # attribute, e.g. "Norfield" / "Harkin" / "RN-7s").
                     if entity_ref in entity_names:
                         name = _strip_cig_size_prefix(entity_names[entity_ref])
-                        # Mirror the components-pipeline annotation:
-                        # ship components get an inline [CLASS-Sx-grade]
-                        # tag (e.g. "Norfield [MIL-S1-A]"). FPS gear and
-                        # other non-component blueprints have no tag
-                        # entry and pass through bare.
-                        tag = entity_name_tags.get(entity_ref)
-                        if tag:
-                            if name_tag_placement == "append":
-                                name = f"{name} {tag}"
-                            else:
-                                name = f"{tag} {name}"
                     # Tier 2: filename-stem match. Recovers real product
                     # names when CIG ships the blueprint ahead of the
                     # entity-UUID linkage (PTU 4.8 fuel-nozzle pattern).
                     elif entity_stem in entity_names_by_filename:
                         name = _strip_cig_size_prefix(entity_names_by_filename[entity_stem])
-                    # Tier 3: filename-derived placeholder. Ugly but
-                    # ensures the BP tag still surfaces.
+                    # Tier 3: filename-derived placeholder (falls back to a
+                    # known-alias correction for fuel nozzles, #281). Ugly
+                    # but ensures the BP tag still surfaces.
                     else:
                         name = filename_fallback
+                    # Mirror the components-pipeline annotation: ship
+                    # components get an inline [CLASS-Sx-grade] tag (e.g.
+                    # "Norfield [MIL-S1-A]"); bare-type components (fuel
+                    # nozzles, scraper modules) get a Type-only tag (e.g.
+                    # "[FN] Bendix"). entity_name_tags is keyed by the
+                    # entity's own __ref and built from its Description
+                    # alone (#266's build_scitem_lookups) — independent of
+                    # whether entity_ref ever resolved in entity_names, so
+                    # this lookup can (and for fuel nozzles, does) succeed
+                    # even when tiers 1/2 both missed and tier 3 fired.
+                    # Applying it regardless of which tier supplied `name`
+                    # is what makes the tag actually reach the applied
+                    # global.ini instead of only ever working for the
+                    # Blueprint Tracker's own internal display.
+                    tag = entity_name_tags.get(entity_ref)
+                    if tag:
+                        if name_tag_placement == "append":
+                            name = f"{name} {tag}"
+                        else:
+                            name = f"{tag} {name}"
                     if name and name not in names:
                         names.append(name)
             if names:
