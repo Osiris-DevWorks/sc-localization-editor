@@ -50,6 +50,15 @@ them against the new source.
 
 ## Backfill log
 
+- **2.3.0 cycle (2026-07-18, Claude Fable 5):** AI backfill of two doc sections
+  that landed in English after the initial #248 backfill below: the "Known
+  Issues" / "Problèmes connus" / "Problemas Conhecidos" / "Problemas
+  conocidos" entry for the #281 fuel-nozzle-name bug (in `HELP.md`, all three
+  languages, including a small broadening of the section's intro paragraph
+  to match the English edit), and a "Video Guides" section crediting
+  Karolinger's community overview video (in `ABOUT.md`, all three
+  languages). Same AI-styled-on-existing-human-strings approach and the
+  same review flag as the entry below.
 - **2.3.0 cycle (2026-07-17, Claude Sonnet 5):** AI backfill of the in-app docs
   (#248). french and portuguese_br `HELP.md`/`ABOUT.md` gained the 2.2.0
   sections they were missing (Simple & Advanced mode, dirty-state button

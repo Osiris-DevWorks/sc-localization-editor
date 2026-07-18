@@ -136,6 +136,9 @@ As strings do jogo em idiomas diferentes do inglês são traduções da comunida
 - 💬 [Comunidade no Discord](https://discord.gg/BNzRegKZ7k): suporte, compartilhamento de configurações, pedidos de recursos
 - 🐛 [Feedback, Bugs e Votação de Recursos do Smart Citizen](https://discord.com/channels/1438175448420057323/1472394204347895890): canal dedicado a relatos de bug, feedback e votação dos próximos recursos (entre antes no servidor pelo convite acima)
 
+### Guias em Vídeo
+- 🎥 [Star Citizen Hides Important Mission Info – This Tool Shows It In-Game & More!](https://www.youtube.com/watch?v=Xo1t404gsgs) por **Karolinger**: uma visão geral do Smart Citizen feita pela comunidade
+
 ### Apoie Este Projeto
 O Smart Citizen é totalmente gratuito. Se ele é útil para você:
 - 💳 [Doe via PayPal](https://paypal.me/RighteousKill)
