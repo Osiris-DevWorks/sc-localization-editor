@@ -195,13 +195,15 @@ The **FAQ** tab answers the questions we get most often, right inside the app �
 
 ## Known Issues
 
-Some mission text anomalies originate in Star Citizen's own data (wrong loc-key references in CIG's contract records). The game reads contracts from its own `Data.p4k` at runtime, so Smart Citizen can't change which loc-key the game looks up — it can only edit the *text* under each loc-key. Where practical, we work around these by merging the intended content into the loc key the game actually reads.
+Some mission text anomalies originate in Star Citizen's own data — a wrong loc-key reference in a contract record, or a blueprint reward whose data doesn't link back to a real display name. The game reads contracts and blueprint rewards from its own `Data.p4k` at runtime, so Smart Citizen can't fix these at the source; it can only correct the *text* it generates and applies. Where practical, we work around these at the data or generation level so the in-game result reads correctly anyway.
 
 - **Jorrit Dossier — "Updated Power Usage Data" shows Energy Anomaly text** — CIG Issue Council [STARC-176797](https://issue-council.robertsspaceindustries.com/projects/STAR-CITIZEN/issues/STARC-176797). CIG's `Hockrow_FacilityDelve_P2M4-Stanton4_Repeat` contract points its `Description` parameter at `@Hockrow_FacilityDelve_P2M1_Repeat_desc` instead of its own `P2M4_Repeat_desc`, so in-game players see P2M1's Energy Anomaly flavor text for a mission titled "Power Usage Data". Smart Citizen works around this in two steps, both declared in `patches/contracts/contractgenerator/mercenary_guild/hockrowagency/hockrowagency_facilitydelve.patch.json`:
   1. A DataForge XML edit so our enhancement generator attaches the correct P2M4 blueprint pool (Corbel Smolder, Geist Rogue/Whiteout) to `P2M4_Repeat_desc` instead of collapsing onto P2M1's.
   2. A loc-string workaround that appends `P2M4_Repeat_desc`'s full content (its flavor text plus its own blueprint pool) onto `P2M1_Repeat_desc`, separated by a labeled divider. Because the game reads the bugged pointer and looks up `P2M1_Repeat_desc` for both contracts, the P2M4 contract now displays its intended content. P2M1 players see the P2M4 block as a labeled appendix after their own description — noisier, but both contracts now show the right blueprint pool and the right flavor text.
 
   When CIG corrects STARC-176797, the whole patch file can be deleted and the next regenerate produces clean split descriptions again.
+
+- **Refueling missions showing garbled nozzle names** (e.g. "Nozzle Fuelgiver Grin Nozzlefast" instead of "Norfield") in a mission's POTENTIAL BLUEPRINTS list. Fuel nozzle blueprint rewards don't link back to a resolvable entity name in CIG's data the way other craftables do, so our enhancement generator was falling back to a de-slugified version of the internal filename instead of the real product name. Fixed for all 8 known fuel nozzle variants (Marlin, Lindstrom, Bendix, Torrez, Ezra, Norfield, Harkin, RN-7s) via a known-name correction in `scripts/generate_enhancements_ini.py`; re-run **Generate Enhancements** and **Apply to Game** to pick up the fix on missions you've already seen.
 
 ## Feedback, Bugs & Feature Voting
 
