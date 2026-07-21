@@ -76,7 +76,13 @@ class JsonSettings:
                     "(got %s); starting empty",
                     self._path, type(loaded).__name__,
                 )
-        except (OSError, json.JSONDecodeError) as e:
+        except (OSError, ValueError) as e:
+            # ValueError, not just JSONDecodeError: a settings.json whose
+            # bytes are corrupt raises UnicodeDecodeError during the read —
+            # a ValueError but NOT a JSONDecodeError — which previously
+            # escaped this guard and crashed the portable app at startup
+            # (#251 bug class). JSONDecodeError is itself a ValueError, so
+            # this catches both.
             logger.warning(
                 "JsonSettings could not load %s (%s); starting empty",
                 self._path, e,

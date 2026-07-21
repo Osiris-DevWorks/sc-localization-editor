@@ -266,7 +266,9 @@ def load_locstring_workarounds(patch_root: Path) -> list[LocstringWorkaround]:
         try:
             with patch_file.open(encoding="utf-8") as f:
                 patch = json.load(f)
-        except (json.JSONDecodeError, OSError) as e:
+        except (ValueError, OSError) as e:
+            # ValueError covers both JSONDecodeError and UnicodeDecodeError
+            # (a patch file with corrupt bytes — #251 bug class).
             logger.warning(f"Could not parse {patch_file.name}: {e}")
             continue
         for entry in patch.get("locstring_workarounds", []):

@@ -2325,7 +2325,9 @@ class AppSettings:
         stamp = AppSettings.get_enhancements_dir(language) / AppSettings.ENHANCEMENTS_STAMP_NAME
         try:
             return stamp.read_text(encoding="utf-8").strip()
-        except OSError:
+        except (OSError, ValueError):
+            # ValueError: a corrupt stamp raises UnicodeDecodeError (#251
+            # bug class) — treat it like a missing stamp, not a crash.
             return ""
 
     @staticmethod
@@ -2611,7 +2613,9 @@ class AppSettings:
             text = stamp.read_text(encoding="utf-8").strip()
             if text:
                 return text
-        except OSError:
+        except (OSError, ValueError):
+            # ValueError: a corrupt stamp raises UnicodeDecodeError (#251
+            # bug class) — fall through to the records-dir heuristic.
             pass
         records = forge_dir / "raw" / "libs" / "foundry" / "records"
         try:
