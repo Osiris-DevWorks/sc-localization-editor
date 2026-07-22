@@ -418,6 +418,38 @@ class EnhancementsTab(QWidget):
         button never lighting up to prompt a re-run."""
         self._mark_enhancements_dirty()
 
+    def refresh_enhancements_dirty_state(self) -> None:
+        """Public entrypoint for external callers (MainWindow) to re-derive
+        the Generate Enhancements button's enabled state from the current
+        channel's real disk state (#273).
+
+        _enhancements_dirty is otherwise only ever set once, at tab
+        construction, then nudged True/False by discrete UI events
+        (a checkbox toggle, clicking Generate itself). Switching the active
+        channel changes what "the current channel's real disk state" even
+        means — the flag needs recomputing from scratch, not left at
+        whatever it held for the previous channel. Without this, switching
+        to a channel that genuinely needs (re)generation left the button
+        disabled (still reflecting the previous channel's now-clean state),
+        so clicking it silently did nothing until the user happened to
+        retoggle some checkbox that forces the flag back on."""
+        self._set_generate_btn_dirty(self._compute_initial_enhancements_dirty())
+
+    def refresh_tag_builder_dirty_state(self) -> None:
+        """Public entrypoint for external callers (MainWindow) to light the
+        Save Tag Changes button after a channel switch (#273 follow-up).
+
+        Tag Builder configs are global, but the generated enhancement INIs
+        they feed are per-channel, and nothing records which configs a
+        channel's INIs were last generated with — so after a switch there
+        is no way to prove the new channel's output carries the current
+        tags. Err on the side of clickable: a grey button here left the
+        user unable to stamp their tags onto the freshly selected channel
+        at all (the "can't apply changes" half of the report), while a lit
+        button costs at worst one redundant regeneration."""
+        if getattr(self, "_apply_tag_btn", None) is not None:
+            self._set_tag_btn_dirty(True)
+
     def _on_category_checkbox_changed(self):
         """Enable Apply button if any checkbox differs from saved settings."""
         has_changes = any(
@@ -1552,6 +1584,7 @@ class _TagBuilderPage(QWidget):
     def _on_mt_standardize_toggle(self, checked: bool) -> None:
         self.config.standardize_hauling_names = checked
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_abbrev_toggle(self, key: str, checked: bool) -> None:
         phrases = set(getattr(self.config, "abbreviated_phrases", frozenset()))
@@ -1561,6 +1594,7 @@ class _TagBuilderPage(QWidget):
             phrases.discard(key)
         self.config.abbreviated_phrases = frozenset(phrases)
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_shorten_titles_toggle(self, checked: bool) -> None:
         phrases = set(getattr(self.config, "abbreviated_phrases", frozenset()))
@@ -1568,10 +1602,12 @@ class _TagBuilderPage(QWidget):
         phrases = (phrases | keys) if checked else (phrases - keys)
         self.config.abbreviated_phrases = frozenset(phrases)
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_shorten_sizes_toggle(self, checked: bool) -> None:
         self.config.shortened_sizes = frozenset(_ALL_SIZE_WORDS) if checked else frozenset()
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_rank_sep_changed(self, _idx: int) -> None:
         self.config.rank_separator = self._mt_rank_sep.currentData() or self.config.rank_separator

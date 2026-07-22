@@ -187,6 +187,24 @@ def test_both_bp_flags_show_titles_or_descs():
     assert result == [0, 1, 2]  # titles OR descriptions
 
 
+@pytest.mark.regression
+def test_bp_descs_only_recognises_multiple_blueprint_pools_header():
+    """CIG uses a second, entirely different header ("MULTIPLE BLUEPRINT
+    POOLS") for missions offering more than one blueprint pool (#266
+    follow-up) -- pre-fix, the "BP Descriptions" checkbox only recognised
+    "POTENTIAL BLUEPRINTS" and silently excluded these mission bodies."""
+    entries = [
+        _e("desc_pools", original_value=(
+            "POSTING...\n<EM4>MULTIPLE BLUEPRINT POOLS</EM4>"
+            "\n<EM4>Pool 1</EM4>\n- Helix I Mining Laser (Mining Laser)"
+        )),
+        _e("plain_desc", original_value="A description with no rewards section"),
+    ]
+    result = filter_entry_indices(entries, {}, _no_filters(), "All", "All", False, False, "★",
+                                  bp_descs_only=True)
+    assert result == [0]
+
+
 def test_bp_filter_reads_custom_override_when_present():
     # A user override on a title row is what's shown, so the tag must be read
     # from custom_value when set.

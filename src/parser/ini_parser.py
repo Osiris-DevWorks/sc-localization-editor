@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 
 from src.models.string_model import StringEntry
 from src.merger.ini_merger import merge_sources_by_hierarchy
+from src.utils.ini_io import read_ini_text
 from src.utils.perf import timed
 
 logger = logging.getLogger(__name__)
@@ -37,29 +38,34 @@ def parse_ini_file(path: str | Path, *, strip_values: bool = True) -> Dict[str, 
         return result
 
     try:
-        with open(path, 'r', encoding='utf-8-sig') as f:
-            for line in f:
-                line = line.rstrip('\n\r')
+        # split('\n') + rstrip('\r'), NOT str.splitlines(): splitlines also
+        # breaks on U+2028/U+0085 etc., which a loc value could legitimately
+        # contain — file iteration never split on those and neither do we.
+        # read_ini_text (#251) tolerates non-UTF-8 content; the previous
+        # strict streaming decode raised mid-iteration and the except below
+        # silently truncated the result at the first bad byte.
+        for line in read_ini_text(path).split('\n'):
+            line = line.rstrip('\r')
 
-                # Skip empty lines and comments
-                if not line.strip() or line.strip().startswith(';'):
-                    continue
+            # Skip empty lines and comments
+            if not line.strip() or line.strip().startswith(';'):
+                continue
 
-                # Split on first '=' only
-                if '=' not in line:
-                    continue
+            # Split on first '=' only
+            if '=' not in line:
+                continue
 
-                key, value = line.split('=', 1)
-                key = key.strip()
-                if strip_values:
-                    value = value.strip()
+            key, value = line.split('=', 1)
+            key = key.strip()
+            if strip_values:
+                value = value.strip()
 
-                if key:
-                    # Strip comma-based metadata suffix (e.g., "key,P" → "key")
-                    # This is used in some source files to track properties
-                    clean_key = key.split(',')[0].strip()
-                    if clean_key:
-                        result[clean_key] = value
+            if key:
+                # Strip comma-based metadata suffix (e.g., "key,P" → "key")
+                # This is used in some source files to track properties
+                clean_key = key.split(',')[0].strip()
+                if clean_key:
+                    result[clean_key] = value
     except Exception as e:
         logger.warning(f"Error parsing INI file {path}: {e}")
 
