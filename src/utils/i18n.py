@@ -116,13 +116,20 @@ def set_language(lang: str) -> None:
     logger.debug(f"i18n: UI language set to {lang!r}")
 
 
-def tr(key: str, **kwargs) -> str:
-    """Return the translated string for *key*.
+def tr(i18n_key: str, **kwargs) -> str:
+    """Return the translated string for *i18n_key*.
 
     Supports dot-separated paths: ``tr("toolbar.apply_btn")``.
     Interpolates *kwargs* using str.format — e.g.
     ``tr("config.p4k_status_found_with_base", date="2025-01-01")``.
-    Returns the bare *key* if not found anywhere so callers never crash.
+    Returns the bare *i18n_key* if not found anywhere so callers never crash.
+
+    Named ``i18n_key`` rather than the more natural ``key`` so a caller
+    interpolating a loc key into the message text (a very natural thing to
+    show in a UI string) can freely pass ``key=...`` as a kwarg without
+    colliding with this function's own first parameter (crashed as
+    ``TypeError: tr() got multiple values for argument 'key'`` — see
+    import_dialog.py's custom_value_prompt call).
     """
     global _strings
     if not _strings:
@@ -130,22 +137,22 @@ def tr(key: str, **kwargs) -> str:
         # by tests, CLI-adjacent utils) get English instead of bare keys.
         set_language(_current_lang)
     node = _strings
-    for part in key.split("."):
+    for part in i18n_key.split("."):
         if not isinstance(node, dict) or _is_leaf(node):
             node = None
             break
         node = node.get(part)
 
     if node is None:
-        logger.debug(f"i18n: missing key {key!r} (lang={_current_lang!r})")
-        return key
+        logger.debug(f"i18n: missing key {i18n_key!r} (lang={_current_lang!r})")
+        return i18n_key
 
     # Leaf -> ht (preferred) or at (fallback); legacy plain string -> itself.
     # A non-leaf section dict resolves to "" and falls through to the bare key.
     val = _leaf_value(node)
     if val == "":
-        logger.debug(f"i18n: empty/blank key {key!r} (lang={_current_lang!r})")
-        return key
+        logger.debug(f"i18n: empty/blank key {i18n_key!r} (lang={_current_lang!r})")
+        return i18n_key
 
     if kwargs:
         try:

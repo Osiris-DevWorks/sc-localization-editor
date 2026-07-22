@@ -247,7 +247,22 @@ def _backup_if_changing(user_ini_path: Path, new_text: str) -> None:
     """
     try:
         if user_ini_path.exists() and user_ini_path.stat().st_size > 0:
-            if user_ini_path.read_text(encoding="utf-8") != new_text:
+            # Compare bytes, not decoded text: read_text(encoding="utf-8")
+            # raises UnicodeDecodeError (a ValueError, so it sailed past the
+            # OSError guard below) if the on-disk file is corrupt — and this
+            # runs on EVERY save, so one bad byte bricked all saves (#251
+            # bug class). Byte inequality also correctly treats a corrupt
+            # file as "changing", so it gets snapshotted before the clean
+            # rewrite replaces it. Newlines are normalized first: the save
+            # below uses text mode, which writes \n as \r\n on Windows,
+            # while new_text carries bare \n — without this every identical
+            # save would look "changed" and churn real history out of the
+            # 5-slot backup rotation.
+            on_disk = (
+                user_ini_path.read_bytes()
+                .replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+            )
+            if on_disk != new_text.encode("utf-8"):
                 backup_user_ini(user_ini_path)
     except OSError as e:
         logger.warning(

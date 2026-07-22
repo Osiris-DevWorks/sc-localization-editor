@@ -3,6 +3,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from src.utils.ini_io import read_ini_text
 from src.utils.perf import timed
 
 # Component type codes used to canonicalize item_name*/item_desc* key variants.
@@ -25,8 +26,10 @@ def merge_sources_by_hierarchy(
     overwrite earlier ones. User overrides (if provided) always have highest priority
     and are applied last.
 
-    Syncs values across key variants (e.g., item_Name_QDRV_RSI_S02_Hemera and
-    item_nameQDRV_RSI_S02_Hemera_SCItem get the same value).
+    Syncs values across item_Name*/item_Desc* key variants (e.g.,
+    item_Name_QDRV_RSI_S02_Hemera and item_nameQDRV_RSI_S02_Hemera_SCItem get
+    the same value) — see sync_key_variants for why this is scoped to that
+    namespace and not the whole table (#255).
 
     Args:
         sources_dict: Dictionary mapping source name to its key-value pairs.
@@ -145,6 +148,22 @@ def sync_key_variants(
 
     This modifies merged_dict in-place.
 
+    Scoped to item_Name*/item_Desc* keys only (#255). Canonicalization
+    strips ALL underscores and lowercases, which is exactly right for the
+    ship-item naming quirks this function targets — but running it over
+    every key in the ~90k-key table let two completely unrelated CIG loc
+    keys collide by coincidence: ``Stanton2`` (the Crusader planet's name
+    key) and ``Stanton_2`` (a different key, the star, holding "Stanton
+    (Star)") both canonicalize to "stanton2". The longest-value tie-break
+    then overwrote the planet's name with the star's. An audit of a real
+    base.ini found 14 more live collisions of this shape (comm-array
+    button text, a mission title, ship-interior area names, Options-menu
+    turret labels, two different thruster names merged into one, …) —
+    this was silently corrupting shipped content anywhere in the table,
+    not just item names. The item_Name/item_Desc prefix is exactly the
+    boundary every existing test case here already lives inside; nothing
+    outside it was ever an intentional target of this sync.
+
     Args:
         merged_dict: Dictionary of keys to values from merged sources
         user_edited_keys: Keys the user explicitly edited (user.ini
@@ -159,10 +178,15 @@ def sync_key_variants(
             of *those* wins (same tie-break as the no-override case — we
             have no ordering signal between two deliberate edits).
     """
-    # Build a mapping of canonical → list of actual keys with that canonical form
+    # Build a mapping of canonical → list of actual keys with that canonical
+    # form, restricted to the item_Name*/item_Desc* namespace this sync is
+    # actually for (#255) — any other key (locations, missions, UI labels,
+    # options-menu strings, ...) is left completely untouched by this pass.
     canonical_keys: Dict[str, List[str]] = {}
 
     for key in list(merged_dict.keys()):
+        if not key.lower().startswith(("item_name", "item_desc")):
+            continue
         canonical = _get_canonical_key(key)
         if canonical not in canonical_keys:
             canonical_keys[canonical] = []
@@ -214,8 +238,9 @@ def merge_ini_files(
     """Merge source INI with overrides, preserving all lines.
 
     Reads source file line-by-line, replaces values for matching keys,
-    and writes to output as UTF-8. Strips comma-based metadata suffixes
-    (e.g., "key,P") from keys to match normalized override keys.
+    and writes to output as UTF-8 **with a BOM** (#261). Strips comma-based
+    metadata suffixes (e.g., "key,P") from keys to match normalized
+    override keys.
 
     Note: Variant key syncing happens in merge_sources_by_hierarchy(), so
     the overrides_dict already has synced values when this is called.
@@ -234,13 +259,43 @@ def merge_ini_files(
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
-        with open(source_path, 'r', encoding='utf-8') as infile, \
-             open(output_path, 'w', encoding='utf-8') as outfile:
+        # read_ini_text (#251) tolerates non-UTF-8 content — the previous
+        # strict open() meant one corrupt byte in base.ini failed the whole
+        # Apply to Game. It also strips a source BOM if present (Data.p4k's
+        # own extracted base.ini has one) via its own utf-8-sig decode,
+        # instead of leaking it into the first key's name. Normalize
+        # newlines to match the old open() default (universal newlines
+        # translated \r\n and \r to \n on read), then re-attach a trailing
+        # \n per line like file iteration yielded.
+        source_lines = (
+            read_ini_text(source_path)
+            .replace('\r\n', '\n').replace('\r', '\n')
+            .split('\n')
+        )
+        # split('\n') yields one trailing '' when the file ends with a
+        # newline — file iteration never yielded that empty last line.
+        if source_lines and source_lines[-1] == '':
+            trailing_newline = True
+            source_lines.pop()
+        else:
+            trailing_newline = False
 
-            for line in infile:
-                # Preserve line ending style, but work with stripped version
-                line_rstrip = line.rstrip('\n\r')
-                original_ending = line[len(line_rstrip):]
+        # utf-8-sig on write (#261) WRITES a BOM — Star Citizen's own
+        # loc-string loader appears to need it to reliably detect the
+        # file's encoding; without it the game can fail to resolve every
+        # key (shown as raw @KeyName placeholders) rather than degrading
+        # per-key. Every prior release wrote plain utf-8 (no BOM) here; our
+        # own readers are utf-8-sig-aware so they never noticed the
+        # mismatch, but the game's own parser does — see
+        # validate_applied_file's BOM check for the safety net half of
+        # this fix.
+        with open(output_path, 'w', encoding='utf-8-sig') as outfile:
+            for i, line_rstrip in enumerate(source_lines):
+                # Match the old per-line shape: every line ended with '\n'
+                # except a final line with no trailing newline.
+                is_last = i == len(source_lines) - 1
+                original_ending = '\n' if (not is_last or trailing_newline) else ''
+                line = line_rstrip + original_ending
 
                 # Skip processing for comments and empty lines
                 if not line_rstrip.strip() or line_rstrip.strip().startswith(';'):
