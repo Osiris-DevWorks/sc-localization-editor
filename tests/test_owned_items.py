@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from utils.owned_items import (  # noqa: E402
     apply_owned_to_value,
     extract_bp_item_names,
+    has_bp_section,
     normalize_item_name,
 )
 
@@ -79,6 +80,29 @@ class TestNormalize:
         assert normalize_item_name("Barbican [IND-S3-B]") == \
             normalize_item_name("[IND-S3-B] Barbican")
 
+    # ── #266 follow-up: bullet-only category annotations ──────────────────────
+    def test_strips_trailing_category_annotation(self):
+        """CIG's own POTENTIAL BLUEPRINTS bullet text appends a category
+        annotation to some items (confirmed via tests/fixtures/
+        kraken_global_latest.ini) that never appears on the item's own
+        item_Name value -- left unstripped, the bullet never matches the
+        real (tagged) item."""
+        assert normalize_item_name("Bendix (Fuel Nozzle)") == "Bendix"
+        assert normalize_item_name("Arbor MH1 Mining Laser (Mining Laser)") == "Arbor MH1 Mining Laser"
+        assert normalize_item_name("Trawler Scraper Module (Salvage Mod)") == "Trawler Scraper Module"
+        assert normalize_item_name("5CA 'Akura' (Shield)") == "5CA 'Akura'"
+
+    def test_category_annotation_matches_bare_item_name(self):
+        assert normalize_item_name("Bendix (Fuel Nozzle)") == normalize_item_name("Bendix")
+
+    def test_unrecognized_parenthetical_is_kept(self):
+        """Not every trailing parenthetical is a bullet-only annotation --
+        some are part of the item's own real distinguishing name (e.g. a
+        "(Modified)" armor variant). Only the small allow-listed category
+        words get stripped; anything else survives untouched."""
+        assert normalize_item_name("Artimex Arms (Modified)") == "Artimex Arms (Modified)"
+        assert normalize_item_name("Ballistic Gatling (x2)") == "Ballistic Gatling (x2)"
+
 
 class TestExtract:
     def test_finds_normalized_bullet_names(self):
@@ -108,6 +132,73 @@ class TestExtract:
         names = extract_bp_item_names(_DESC_WITH_FALSE_POSITIVES)
         assert {"Cryo-Star SL", "Kelvid"} <= names  # [Nyx] region
         assert {"DuraJet", "ZapJet"} <= names        # [Pyro] region
+
+    @pytest.mark.regression
+    def test_awarded_from_tier_sub_headers_not_mistaken_for_section_end(self):
+        """Reputation-tiered contracts (Adagio Industrial salvage, Bounty
+        Hunters Guild, Security, ...) group POTENTIAL BLUEPRINTS bullets
+        under an "Awarded from X level variants" sub-header *inside* the
+        section, sometimes repeated for multiple tiers in one mission body.
+        Pre-fix, the first such sub-header was mistaken for a genuine
+        section boundary (it doesn't start with "[" like a region label
+        does), truncating the span before any bullets were ever reached --
+        so items awarded this way (Scraper Modules among others) never
+        surfaced in the Blueprint Tracker at all, tag or no tag."""
+        desc = (
+            "Adagio Holdings...\\n\\n<EM4>POTENTIAL BLUEPRINTS</EM4>"
+            "\\n<EM4>Awarded from Contractor level variants</EM4>"
+            "\\n- Trawler Scraper Module (Salvage Mod)"
+            "\\n- Abrade Scraper Module (Salvage Mod)"
+            "\\n- Cinch Scraper Module (Salvage Mod)"
+        )
+        names = extract_bp_item_names(desc)
+        assert names == {"Trawler Scraper Module", "Abrade Scraper Module", "Cinch Scraper Module"}
+
+    @pytest.mark.regression
+    def test_multiple_awarded_from_tiers_in_one_body_all_included(self):
+        """Some missions list several reputation tiers, each with its own
+        sub-header + bullet group, in a single POTENTIAL BLUEPRINTS section."""
+        desc = (
+            "\\n\\n<EM4>POTENTIAL BLUEPRINTS</EM4>"
+            "\\n<EM4>Awarded from Jr. Contractor level variants</EM4>"
+            "\\n- Cinch Scraper Module (Salvage Mod)"
+            "\\n<EM4>Awarded from Contractor level variants</EM4>"
+            "\\n- Trawler Scraper Module (Salvage Mod)"
+            "\\n- Abrade Scraper Module (Salvage Mod)"
+            "\\n\\n<EM3>MISSION DETAILS</EM3>\\n<EM4>Difficulty:</EM4> 2"
+        )
+        names = extract_bp_item_names(desc)
+        assert names == {"Cinch Scraper Module", "Trawler Scraper Module", "Abrade Scraper Module"}
+
+    @pytest.mark.regression
+    def test_multiple_blueprint_pools_header_recognised(self):
+        """CIG uses a second, entirely different section header ("MULTIPLE
+        BLUEPRINT POOLS") for missions offering more than one blueprint
+        pool -- confirmed via tests/fixtures/kraken_global_latest.ini: 35
+        missions use it (e.g. mining-laser purchase-order contracts that
+        award a weapon/armor Pool 1 alongside a mining-laser/radar Pool 2).
+        Pre-fix, only "POTENTIAL BLUEPRINTS" was recognised at all, so
+        these missions were never scanned -- not just untagged, their
+        items were entirely absent from the Blueprint Tracker."""
+        desc = (
+            "POSTING: Purchase Order...\\n\\n<EM4>Multiple Blueprint Pools</EM4>"
+            "\\n<EM4>Awarded from Sr. Contractor level variants</EM4>"
+            "\\n<EM4>Pool 1</EM4>"
+            "\\n- Arclight Pistol\\n- Venture Arms Base"
+            "\\n\\n<EM4>Pool 2</EM4>"
+            "\\n- Helix I Mining Laser (Mining Laser)\\n- BroadSpec (Radar)"
+        )
+        names = extract_bp_item_names(desc)
+        assert names == {
+            "Arclight Pistol", "Venture Arms Base",
+            "Helix I Mining Laser", "BroadSpec",
+        }
+
+    def test_has_bp_section_recognises_both_headers(self):
+        assert has_bp_section("x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Foo")
+        assert has_bp_section("x\\n<EM4>Multiple Blueprint Pools</EM4>\\n- Foo")
+        assert not has_bp_section("A description with no rewards section")
+        assert not has_bp_section("")
 
 
 class TestApply:

@@ -3,6 +3,7 @@ import base64
 import json
 import logging
 import os
+import string
 from pathlib import Path
 
 from PyQt6.QtCore import QSettings
@@ -76,6 +77,66 @@ def _path_ends_in_channel(path: str) -> bool:
     except (OSError, ValueError):
         return False
     return name in {c.upper() for c in AppSettings.AVAILABLE_CHANNELS}
+
+
+# Relative install paths under a drive's root, in the order real installs are
+# most likely to use them. RSI Launcher's own default is the first two; the
+# rest cover users who point the launcher at a secondary drive and either
+# keep RSI's own folder shape or nest it under a personal "Games" folder --
+# both are common in the wild (a real tester install turned up at
+# ``E:\Games\Roberts Space Industries\StarCitizen``, which none of the
+# previous hardcoded C:\ candidates could ever have matched).
+_COMMON_SC_SUBPATHS = (
+    r"Program Files\Roberts Space Industries\StarCitizen",
+    r"Program Files (x86)\Roberts Space Industries\StarCitizen",
+    r"Roberts Space Industries\StarCitizen",
+    r"Games\Roberts Space Industries\StarCitizen",
+)
+
+
+# Sentinel distinct from a real scan outcome — the scan legitimately returns
+# None ("nothing found"), so that value can't double as "not run yet".
+_SC_SCAN_UNSET = object()
+_sc_scan_cache: "str | None | object" = _SC_SCAN_UNSET
+
+
+def _scan_common_sc_install_locations() -> "str | None":
+    """Search every local drive letter for a real Star Citizen install.
+
+    Only a last-resort fallback (see :meth:`AppSettings.get_sc_install_root`)
+    -- everywhere else, an explicit setting or a registry trace from the
+    installer already told us where the game is. This exists for the case
+    none of those do: a portable build's first run, or a fresh profile,
+    where the only way to find an install on a non-default drive is to look.
+    Cheap in practice -- most drive letters don't exist and short-circuit on
+    the very first ``exists()`` check, and a hit is validated the same way
+    every other candidate is (:func:`_is_valid_sc_root`), so an empty/stub
+    folder (e.g. a partial RSI Launcher download with no real ``Data.p4k``
+    channel folder yet) is never mistaken for a real install.
+
+    Cached in-memory for the process's lifetime, including a "found
+    nothing" result -- without this, a no-install profile re-walks every
+    drive letter on every call (e.g. after each channel switch clears
+    GAME_INSTALL_PATH), and a disconnected network drive can make a single
+    ``exists()`` check hang for seconds. The cache resets naturally on app
+    restart since it's a plain module global, not persisted to settings.
+    """
+    global _sc_scan_cache
+    if _sc_scan_cache is not _SC_SCAN_UNSET:
+        return _sc_scan_cache
+
+    for letter in string.ascii_uppercase:
+        drive_root = Path(f"{letter}:\\")
+        if not drive_root.exists():
+            continue
+        for subpath in _COMMON_SC_SUBPATHS:
+            candidate = drive_root / subpath
+            if _is_valid_sc_root(str(candidate)):
+                _sc_scan_cache = str(candidate)
+                return _sc_scan_cache
+
+    _sc_scan_cache = None
+    return None
 
 
 class AppSettings:
@@ -1199,12 +1260,20 @@ class AppSettings:
                 AppSettings.settings().setValue(AppSettings.GAME_INSTALL_PATH, sc_directory)
                 return sc_directory
 
-        for candidate in [
-            r"C:\Program Files\Roberts Space Industries\StarCitizen\LIVE",
-            r"C:\Program Files (x86)\Roberts Space Industries\StarCitizen\LIVE",
-        ]:
-            if Path(candidate).exists():
-                return candidate
+        root = _scan_common_sc_install_locations()
+        if root:
+            result = str(Path(root) / AppSettings.get_active_channel())
+            # _scan_common_sc_install_locations only proves SOME channel
+            # folder exists at this root (via _is_valid_sc_root) — not
+            # necessarily the active one. Caching a path the active
+            # channel doesn't actually have would just get discarded by
+            # whatever reads it next, forcing a rescan anyway; skip the
+            # write so a later channel switch (or the channel actually
+            # appearing after an install) gets a fresh scan instead of a
+            # stale miss.
+            if Path(result).is_dir():
+                AppSettings.settings().setValue(AppSettings.GAME_INSTALL_PATH, result)
+            return result
 
         return ""
 
@@ -2141,7 +2210,13 @@ class AppSettings:
           2. Derived from legacy ``GAME_INSTALL_PATH`` (strip trailing
              ``\LIVE`` if present)
           3. The old installer's registry key (``sc_directory``)
-          4. Auto-detected from the common RSI install locations
+          4. Auto-detected by scanning every local drive letter for a
+             real install at a common RSI Launcher install path (see
+             :func:`_scan_common_sc_install_locations`) -- covers a
+             default C:\\ install, a secondary drive kept in the same
+             shape, and one nested under a personal "Games" folder.
+             Persists the result once found, so this scan only runs
+             once per profile.
 
         Returns an empty string when nothing resolves — the Config tab shows
         a placeholder in that case.
@@ -2196,12 +2271,10 @@ class AppSettings:
                 AppSettings.settings().setValue(AppSettings.SC_INSTALL_ROOT, root)
                 return root
 
-        for candidate in [
-            r"C:\Program Files\Roberts Space Industries\StarCitizen",
-            r"C:\Program Files (x86)\Roberts Space Industries\StarCitizen",
-        ]:
-            if Path(candidate).exists():
-                return candidate
+        root = _scan_common_sc_install_locations()
+        if root:
+            AppSettings.settings().setValue(AppSettings.SC_INSTALL_ROOT, root)
+            return root
         return ""
 
     @staticmethod
@@ -2325,7 +2398,9 @@ class AppSettings:
         stamp = AppSettings.get_enhancements_dir(language) / AppSettings.ENHANCEMENTS_STAMP_NAME
         try:
             return stamp.read_text(encoding="utf-8").strip()
-        except OSError:
+        except (OSError, ValueError):
+            # ValueError: a corrupt stamp raises UnicodeDecodeError (#251
+            # bug class) — treat it like a missing stamp, not a crash.
             return ""
 
     @staticmethod
@@ -2611,7 +2686,9 @@ class AppSettings:
             text = stamp.read_text(encoding="utf-8").strip()
             if text:
                 return text
-        except OSError:
+        except (OSError, ValueError):
+            # ValueError: a corrupt stamp raises UnicodeDecodeError (#251
+            # bug class) — fall through to the records-dir heuristic.
             pass
         records = forge_dir / "raw" / "libs" / "foundry" / "records"
         try:

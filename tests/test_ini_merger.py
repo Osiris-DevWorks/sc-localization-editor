@@ -7,6 +7,17 @@ variant wins" pass, then a "prefer non-_SCItem" pre-filter, both wrong in
 opposite ways — see the docstring in ini_merger.py). These tests pin the
 three real-data shapes that broke it, plus the guard added so a user's
 override to a variant can't be silently outvoted by the longest-value rule.
+
+TestSyncKeyVariantsDomainScope (#255) pins a third, more severe bug: the
+canonical-key grouping used to run over EVERY key in the merged table, not
+just item_Name*/item_Desc*. Two completely unrelated CIG loc keys —
+Stanton2 (the Crusader planet) and Stanton_2 (the Stanton star) — collapsed
+to the same canonical string purely because underscore-stripping ignores
+what the underscore was actually separating, and the star's longer value
+overwrote the planet's name on the in-game starmap. A real base.ini audit
+found 14 total live corruptions of this shape. The fix scopes the sync to
+item_Name*/item_Desc* keys only; these tests lock that boundary down so it
+can never again silently expand to swallow unrelated content.
 """
 from __future__ import annotations
 
@@ -17,7 +28,11 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.merger.ini_merger import merge_sources_by_hierarchy, sync_key_variants  # noqa: E402
+from src.merger.ini_merger import (  # noqa: E402
+    merge_ini_files,
+    merge_sources_by_hierarchy,
+    sync_key_variants,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -146,3 +161,150 @@ class TestMergeSourcesByHierarchyUserOverrideSurvival:
         }
         result = merge_sources_by_hierarchy(sources, ["global"])
         assert result["item_Name_COOL_WCPR_S02_Taiga"] == "[COOL-S2-B] Taiga Cooler"
+
+
+class TestSyncKeyVariantsDomainScope:
+    """#255: sync_key_variants must never touch a key outside item_Name*/
+    item_Desc* — that's the one guarantee this whole test class exists to
+    pin down. Real key/value pairs pulled straight from the bug's audit."""
+
+    def test_crusader_planet_not_overwritten_by_stanton_star(self):
+        """The reported bug, verbatim: Stanton2 (planet, "Crusader") and
+        Stanton_2 (star, "Stanton (Star)") canonicalize to the same string
+        after underscore-stripping. Pre-fix, the longer star value won and
+        got written into both — the starmap showed "Stanton (Star)" where
+        "Crusader" should be."""
+        merged = {"Stanton2": "Crusader", "Stanton_2": "Stanton (Star)"}
+        sync_key_variants(merged)
+        assert merged["Stanton2"] == "Crusader"
+        assert merged["Stanton_2"] == "Stanton (Star)"
+
+    def test_comm_array_button_labels_not_merged(self):
+        merged = {"CommArray_Deactivate": "Deactivate", "comm_Array_Deactivate": "Disconnect Uplink"}
+        sync_key_variants(merged)
+        assert merged["CommArray_Deactivate"] == "Deactivate"
+        assert merged["comm_Array_Deactivate"] == "Disconnect Uplink"
+
+    def test_mission_title_format_string_not_overwritten_by_body_text(self):
+        merged = {
+            "LocalDelivery_title": "~mission(Contractor|LocalDeliveryTitle) - ~mission(Reward)",
+            "Local_Delivery_Title": "Courier\\nLocal Multi-Stop Delivery\\nReward",
+        }
+        sync_key_variants(merged)
+        assert merged["LocalDelivery_title"] == "~mission(Contractor|LocalDeliveryTitle) - ~mission(Reward)"
+        assert merged["Local_Delivery_Title"] == "Courier\\nLocal Multi-Stop Delivery\\nReward"
+
+    def test_two_distinct_thruster_names_not_collapsed(self):
+        """Mid Left and Mid Lower are different thrusters — collapsing them
+        to one name would mislabel a ship component, not just cosmetic."""
+        merged = {"port_NameThrusterMavML": "Thruster Mid Left", "port_NameThrusterMavML_": "Thruster Mid Lower"}
+        sync_key_variants(merged)
+        assert merged["port_NameThrusterMavML"] == "Thruster Mid Left"
+        assert merged["port_NameThrusterMavML_"] == "Thruster Mid Lower"
+
+    def test_hardpoint_slot_suffix_not_dropped(self):
+        """Two power-plant loadout slots must stay distinguishable — losing
+        the "- 02" suffix makes them look like the same slot in the UI."""
+        merged = {
+            "itemPort_hardpoint_power_plant_02": "Power Plant",
+            "itemPort_hardpoint_powerplant_02": "Power Plant - 02",
+        }
+        sync_key_variants(merged)
+        assert merged["itemPort_hardpoint_power_plant_02"] == "Power Plant"
+        assert merged["itemPort_hardpoint_powerplant_02"] == "Power Plant - 02"
+
+    def test_options_menu_turret_labels_not_merged(self):
+        merged = {
+            "pause_OptionsLookAhead_Turret_Forward": "Turrets - Look Ahead - Strength - Forward vector",
+            "pause_options_look_ahead_turret_forward": "Turret - Look Ahead - Strength - Forward Vector",
+        }
+        sync_key_variants(merged)
+        assert merged["pause_OptionsLookAhead_Turret_Forward"] == "Turrets - Look Ahead - Strength - Forward vector"
+        assert merged["pause_options_look_ahead_turret_forward"] == "Turret - Look Ahead - Strength - Forward Vector"
+
+    def test_kiosk_label_does_not_leak_literal_underscore(self):
+        """Shop_Terminal (with a literal underscore) must never win and
+        display in a user-facing kiosk prompt."""
+        merged = {"kiosk_ShopTerminal": "Shop Terminal", "kiosk_Shop_Terminal": "Shop_Terminal"}
+        sync_key_variants(merged)
+        assert merged["kiosk_ShopTerminal"] == "Shop Terminal"
+        assert merged["kiosk_Shop_Terminal"] == "Shop_Terminal"
+
+    def test_item_desc_variants_still_sync(self):
+        """The fix must not become so narrow it stops syncing real item
+        variants — two item_Desc keys for the same entity (missing
+        underscore after "item_Desc") must still reach each other, same
+        as the item_Name case every other test in this file already pins."""
+        merged = {
+            "item_Desc_SHLD_BEHR_S01_7SA": "[SHLD-S1-B] BEHR Shield description",
+            "item_DescSHLD_BEHR_S01_7sa": "BEHR Shield description",
+        }
+        sync_key_variants(merged)
+        assert merged["item_Desc_SHLD_BEHR_S01_7SA"] == "[SHLD-S1-B] BEHR Shield description"
+        assert merged["item_DescSHLD_BEHR_S01_7sa"] == "[SHLD-S1-B] BEHR Shield description"
+
+    def test_full_merge_pipeline_preserves_crusader(self):
+        """Integration-level: the bug reproduces through the full
+        merge_sources_by_hierarchy pipeline used by the app, not just the
+        unit-level sync_key_variants."""
+        sources = {"global": {"Stanton2": "Crusader", "Stanton_2": "Stanton (Star)"}}
+        result = merge_sources_by_hierarchy(sources, ["global"])
+        assert result["Stanton2"] == "Crusader"
+        assert result["Stanton_2"] == "Stanton (Star)"
+
+
+class TestMergeIniFilesBom:
+    """#261: applying wrote the game's global.ini as plain UTF-8 with no BOM.
+
+    Data.p4k's own extracted global.ini ships with a UTF-8 BOM, and Star
+    Citizen's own loc-string loader appears to need it to reliably detect
+    the file's encoding — without it, the game can fail to resolve the
+    ENTIRE loc table (every string shows its raw @KeyName placeholder)
+    rather than degrading per-key. Confirmed on a real install: after
+    Apply, the whole in-game UI showed raw loc keys; deleting the applied
+    file restored correct text. merge_ini_files now writes utf-8-sig
+    (BOM included), matching Data.p4k's own format byte-for-byte.
+    """
+
+    def test_output_starts_with_utf8_bom(self, tmp_path):
+        src = tmp_path / "base.ini"
+        src.write_text("a=1\n", encoding="utf-8")
+        out = tmp_path / "out.ini"
+        merge_ini_files(src, {}, out)
+        assert out.read_bytes().startswith(b"\xef\xbb\xbf")
+
+    def test_output_has_bom_even_when_source_lacks_one(self, tmp_path):
+        """The output BOM must not depend on the source having one — a
+        cached base.ini that was hand-edited or re-saved without a BOM
+        must still produce a correctly-BOM'd applied file."""
+        src = tmp_path / "base.ini"
+        src.write_bytes(b"a=1\n")  # deliberately no BOM
+        out = tmp_path / "out.ini"
+        merge_ini_files(src, {}, out)
+        assert out.read_bytes().startswith(b"\xef\xbb\xbf")
+
+    def test_source_bom_does_not_leak_into_first_key_name(self, tmp_path):
+        """A BOM'd source (Data.p4k's native extraction format) must not
+        prepend the BOM character onto the first key's name — that would
+        silently corrupt the first key in the output on every apply."""
+        src = tmp_path / "base.ini"
+        # BOM written as explicit bytes rather than the invisible U+FEFF
+        # character inline in a string literal — the latter is easy to lose
+        # or miscopy since it renders as nothing in an editor.
+        src.write_bytes(b"\xef\xbb\xbf" + "FirstKey=first value\nSecondKey=second\n".encode("utf-8"))
+        out = tmp_path / "out.ini"
+        merge_ini_files(src, {"FirstKey": "overridden"}, out)
+        # utf-8-sig strips the (correct, expected) leading BOM the output
+        # itself carries; a *second*, stray BOM glued onto the key name
+        # would mean the source's BOM leaked through unstripped.
+        text = out.read_text(encoding="utf-8-sig")
+        assert "FirstKey=overridden" in text
+        assert (chr(0xFEFF) + "FirstKey") not in text
+
+    def test_values_and_structure_preserved_alongside_bom(self, tmp_path):
+        src = tmp_path / "base.ini"
+        src.write_text("a=1\nb=2\n; a comment\nc=3\n", encoding="utf-8")
+        out = tmp_path / "out.ini"
+        merge_ini_files(src, {"b": "overridden"}, out)
+        text = out.read_text(encoding="utf-8-sig")
+        assert text == "a=1\nb=overridden\n; a comment\nc=3\n"

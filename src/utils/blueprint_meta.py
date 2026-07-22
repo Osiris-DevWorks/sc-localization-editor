@@ -62,8 +62,8 @@ _ARMOR_EXTRA_WORDS = (
     "gys_jacket", "gys_pants",
 )
 from src.utils.owned_items import (
-    BP_SECTION_HEADER,
     extract_bp_item_names,
+    has_bp_section,
     normalize_item_name,
 )
 from src.utils.tag_builder import DEFAULT_COMPONENT_CLASS_MAPPING
@@ -130,6 +130,109 @@ _TYPE_LABELS = {
     "GMISL": "Guided Missile",
     "BOMB": "Bomb",
 }
+
+# Blueprints that exist in-game but were never advertised via a mission's
+# POTENTIAL BLUEPRINTS text (#267) -- CIG announced these purely on their own
+# website/socials for a limited-time event, so there's no loc-string source to
+# scan them out of. Keyed by the bare item name a "Received Blueprint: ..."
+# log line or a bullet would carry (no component tag). Extend this tuple for
+# any future item reported missing the same way.
+_MANUAL_MISSION_LABEL = "Limited time event reward"
+MANUAL_BLUEPRINT_ITEMS: tuple[tuple[str, str], ...] = (
+    # XenoThreat "Purgatory Camo" armor sets
+    ("Chiron Arms Purgatory Camo", _TYPE_ARMOR),
+    ("Chiron Backpack Purgatory Camo", _TYPE_ARMOR),
+    ("Chiron Core Purgatory Camo", _TYPE_ARMOR),
+    ("Chiron Helmet Purgatory Camo", _TYPE_ARMOR),
+    ("Chiron Legs Purgatory Camo", _TYPE_ARMOR),
+    ("Testudo Arms Purgatory Camo", _TYPE_ARMOR),
+    ("Testudo Backpack Purgatory Camo", _TYPE_ARMOR),
+    ("Testudo Core Purgatory Camo", _TYPE_ARMOR),
+    ("Testudo Helmet Purgatory Camo", _TYPE_ARMOR),
+    ("Testudo Legs Purgatory Camo", _TYPE_ARMOR),
+    ("Monde Arms Purgatory Camo", _TYPE_ARMOR),
+    ("Monde Core Purgatory Camo", _TYPE_ARMOR),
+    ("Monde Helmet Purgatory Camo", _TYPE_ARMOR),
+    ("Monde Legs Purgatory Camo", _TYPE_ARMOR),
+    ("Warden Backpack Purgatory Camo", _TYPE_ARMOR),
+    # XenoThreat "Purgatory Camo" FPS weapons
+    ('Demeco "Purgatory Camo" LMG', _TYPE_FPS_WEAPON),
+    ('S71 "Purgatory Camo" Rifle', _TYPE_FPS_WEAPON),
+    ('BR-2 "Purgatory Camo" Shotgun', _TYPE_FPS_WEAPON),
+    # XenoThreat ship components
+    ("QuadraCell", _TYPE_LABELS["POWR"]),
+    ("QuadraCell MT", _TYPE_LABELS["POWR"]),
+    ("FR-66", _TYPE_LABELS["SHLD"]),
+    ("FR-76", _TYPE_LABELS["SHLD"]),
+    ("NDB-26 Repeater", _TYPE_SHIP_WEAPON),
+    ("NDB-28 Repeater", _TYPE_SHIP_WEAPON),
+    ("NDB-30 Repeater", _TYPE_SHIP_WEAPON),
+)
+
+
+def _key_slug(key: str) -> str:
+    """Title-case each underscore-separated segment of a loc key (after
+    dropping a trailing "_Name" segment, if present) and join with spaces
+    -- e.g. ``Nozzle_FuelGiver_GRIN_NozzleVeryFast_Name`` -> ``Nozzle
+    Fuelgiver Grin Nozzleveryfast``.
+
+    Reproduces a real CIG bug: some mission POTENTIAL BLUEPRINTS bullets
+    list this exact de-slugified KEY instead of the item's actual
+    localized name (confirmed via a live mission body reporting "Nozzle
+    Fuelgiver Grin Nozzleveryfast" as a blueprint reward -- the real item
+    is "Lindstrom", key ``Nozzle_FuelGiver_GRIN_NozzleVeryFast_Name``).
+    Deterministic and reversible, so rather than hardcoding aliases per
+    affected item, every bullet name that doesn't match a real item
+    directly is checked against this transform of every known Name key.
+    """
+    segments = key.split("_")
+    if segments and segments[-1].lower() == "name":
+        segments = segments[:-1]
+    return " ".join(seg.capitalize() for seg in segments)
+
+
+# Known one-off mismatches between a mission bullet's name and the item's
+# real localized display name that AREN'T explained by _key_slug's fallback
+# pattern -- just a mission author typing a short/informal name. Confirmed
+# via a live "Crew Hasn't Checked In" mining mission body listing "Helix" and
+# "Hofstede" as blueprint rewards; the real items are "S0 Helix" and "S00
+# Hofstede" (item_NameMining_Head_S00_<Name>_SCItem). All four "Mining Head"
+# variants share this exact bullet-uses-bare-manufacturer-name pattern
+# (confirmed via tests/fixtures/kraken_global_latest.ini: item_NameMining_
+# Head_S00_Arbor_SCItem=S0 Arbor, ..._Klein_SCItem=Lawson Mining Laser),
+# added preemptively rather than waiting for each to be individually
+# reported. Extend this dict for any other reported mismatch that isn't a
+# key-slug case.
+_BULLET_NAME_ALIASES: dict[str, str] = {
+    "Arbor": "S0 Arbor",
+    "Helix": "S0 Helix",
+    "Hofstede": "S00 Hofstede",
+    "Klein": "Lawson Mining Laser",
+    # Fuel nozzles (#266 follow-up): most manufacturer variants resolve
+    # generically via _key_slug (their real key genuinely follows
+    # Nozzle_FuelGiver_<MFR>_Nozzle<Variant>_Name), but these three still
+    # showed up ungarbled/untagged after that fix -- their real underlying
+    # key must not match that exact pattern. Confirmed via a live Blueprint
+    # Tracker screenshot listing all three as separate untagged entries
+    # while their siblings (Marlin, Lindstrom, Bendix, Torrez, Ezra) had
+    # already resolved correctly.
+    "Nozzle Fuelgiver Grin Nozzlefast": "Norfield",
+    "Nozzle Fuelgiver Grin Nozzleverysecure": "Harkin",
+    "Nozzle Fuelgiver Misc Nozzlestandard": "RN-7s",
+}
+
+# Fuel nozzle Name-key conventions (#266 follow-up): nozzles ship under two
+# different manufacturer-specific prefixes (MISC's item_fuelnozzle_* vs
+# Greycat/Shubin's Nozzle_FuelGiver_*), neither matching the item_Name /
+# vehicle_Name convention every other component uses. Without these, Pass 1
+# never recognised a nozzle's key as a Name entry at all, so the _key_slug
+# fallback and the explicit aliases above had nothing to resolve against --
+# the bullet stayed as a separate untagged/garbled entry instead of joining
+# the real item.
+_EXTRA_NAME_KEY_PREFIXES = (
+    "item_fuelnozzle_",
+    "nozzle_fuelgiver_",
+)
 
 # The bracketed component tag, e.g. "[MIL-S3-B]" or the user-reconfigured
 # "[CMP.S1.B.PW]". Parsed by tokenizing the contents rather than a fixed
@@ -294,6 +397,7 @@ def build_blueprint_metadata(entries) -> dict:
     attrs: dict = {}            # normalized name -> (cls, size, grade)
     titles: dict = {}           # (base_lower, num) -> cleaned mission name
     bp_descs: list = []         # (pair_key | None, value)
+    keyslug_to_name: dict = {}  # _key_slug(key) -> normalized display name
 
     for e in entries:
         key = getattr(e, "key", "") or ""
@@ -301,9 +405,11 @@ def build_blueprint_metadata(entries) -> dict:
         cat = getattr(e, "category", "") or ""
         kl = key.lower()
 
-        if kl.startswith("item_name") or kl.startswith("vehicle_name"):
+        if (kl.startswith("item_name") or kl.startswith("vehicle_name")
+                or kl.startswith(_EXTRA_NAME_KEY_PREFIXES)):
             nm = normalize_item_name(val)
             if nm:
+                keyslug_to_name[_key_slug(key)] = nm
                 # Prefer the longest value when multiple distinct keys
                 # normalize to the same display name — e.g. two ship weapons
                 # with different manufacturer codes/sizes that happen to
@@ -336,16 +442,24 @@ def build_blueprint_metadata(entries) -> dict:
             titles[_title_pair_key(tm.group("base"), tm.group("num"))] = \
                 clean_mission_title(val)
 
-        if BP_SECTION_HEADER in val.upper():
+        if has_bp_section(val):
             dm = _DESC_KEY_RE.match(key)
             pair = _title_pair_key(dm.group("base"), dm.group("num")) if dm else None
             bp_descs.append((pair, val))
 
     # Pass 2: gather each blueprint item's missions, then attach type + attrs.
+    # A bullet name that doesn't match any real item directly is checked
+    # against the known one-off aliases, then against the key-slug fallback
+    # (see _BULLET_NAME_ALIASES / _key_slug) before falling back to itself —
+    # so a mismatched bullet still joins the real, tagged item instead of
+    # creating a separate untagged "Other" entry.
     missions_by_name: dict = {}
     for pair, val in bp_descs:
         title = titles.get(pair) if pair else None
-        for nm in extract_bp_item_names(val):
+        for raw_nm in extract_bp_item_names(val):
+            nm = raw_nm if raw_nm in name_to_value else (
+                _BULLET_NAME_ALIASES.get(raw_nm) or keyslug_to_name.get(raw_nm, raw_nm)
+            )
             bucket = missions_by_name.setdefault(nm, set())
             if title:
                 bucket.add(title)
@@ -358,6 +472,28 @@ def build_blueprint_metadata(entries) -> dict:
             name=nm,
             missions=frozenset(missions),
             type=type_,
+            cls=cls,
+            size=size,
+            grade=grade,
+            tagged_name=name_to_value.get(nm) or nm,
+        )
+
+    # Pass 3: fold in manually-declared items no mission ever advertised
+    # (#267). Prefer real data from Pass 1 if this install's loaded strings
+    # happen to carry a matching item_Name/vehicle_Name entry (picks up the
+    # real tag/class/size/grade); otherwise fall back to a bare entry so the
+    # item still shows up rather than being silently dropped. Never
+    # overwrites an item a mission already supplied.
+    for raw_name, manual_type in MANUAL_BLUEPRINT_ITEMS:
+        nm = normalize_item_name(raw_name)
+        if not nm or nm in result:
+            continue
+        key = name_to_key.get(nm)
+        cls, size, grade = attrs.get(nm, (None, None, None))
+        result[nm] = BlueprintItem(
+            name=nm,
+            missions=frozenset({_MANUAL_MISSION_LABEL}),
+            type=(blueprint_type_from_key(key) or manual_type),
             cls=cls,
             size=size,
             grade=grade,
