@@ -149,7 +149,7 @@ class ImportConflictDialog(QDialog):
             initial = self._custom_values.get(key, imported_val)
             text, ok = QInputDialog.getText(
                 self, tr("import_dialog.custom_value_title"),
-                tr("import_dialog.custom_value_prompt", key=key),
+                tr("import_dialog.custom_value_prompt", loc_key=key),
                 text=initial)
             if ok:
                 self._custom_values[key] = text

@@ -1029,8 +1029,8 @@
       "at": "Valor Personalizado"
     },
     "custom_value_prompt": {
-      "ht": "Insira um valor personalizado para a chave:\n{key}",
-      "at": "Insira um valor personalizado para a chave:\n{key}"
+      "ht": "Insira um valor personalizado para a chave:\n{loc_key}",
+      "at": "Insira um valor personalizado para a chave:\n{loc_key}"
     },
     "auto_add_summary": {
       "ht": "{count} chaves serão adicionadas automaticamente.",

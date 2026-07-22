@@ -1055,7 +1055,7 @@
       "at": ""
     },
     "custom_value_prompt": {
-      "ht": "Enter custom value for key:\n{key}",
+      "ht": "Enter custom value for key:\n{loc_key}",
       "at": ""
     },
     "auto_add_summary": {
