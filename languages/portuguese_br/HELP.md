@@ -65,7 +65,7 @@ Use o filtro de **Categoria** para focar em um domínio:
 
 Clique em **Aplicar ao Jogo** para gravar suas edições na instalação do jogo. Um backup com data e hora do `global.ini` atual é criado em `<pasta de dados>\<canal>\backups\` antes de qualquer sobrescrita.
 
-O Smart Citizen também carimba uma pequena marca d'água na string de versão do launcher (`Frontend_PU_Version`), acrescentando `| Localizations Enhanced with Smart Citizen v{VERSION}`. É assim que você confirma no jogo que seu loc-pack está ativo: olhe o rótulo de versão no menu principal do Star Citizen. A marca é reescrita a cada aplicação, então nunca se acumula entre versões.
+O Smart Citizen também carimba uma pequena marca d'água na string de versão do launcher (`Frontend_PU_Version`), acrescentando `\nLocalizations Enhanced with Smart Citizen v{VERSION}` em sua própria linha. É assim que você confirma no jogo que seu loc-pack está ativo: olhe o rótulo de versão no menu principal do Star Citizen. A marca é reescrita a cada aplicação, então nunca se acumula entre versões.
 
 ## 8. Restaurar um Backup
 

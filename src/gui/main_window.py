@@ -101,25 +101,30 @@ _JOURNAL_TITLE_KEY_RE = _re_mod.compile(
 
 # Frontend version chip (main-menu watermark). CIG ships a key called
 # ``Frontend_PU_Version`` whose value the main menu renders verbatim.
-# We append " | Localizations Enhanced with Smart Citizen vX.Y.Z" so
-# users (and their screenshots / support tickets) can see at a glance
-# that the localization has been customized. Idempotency works the same
-# way as the journal stamp: ``_FRONTEND_VERSION_STAMP_RE`` strips any
+# We append a literal "\nLocalizations Enhanced with Smart Citizen vX.Y.Z" so
+# users (and their screenshots / support tickets) can see at a glance that
+# the localization has been customized, on its own second line rather than
+# crowding the build-info line — same literal-\n line-break convention the
+# journal stamp uses (see _JOURNAL_STAMP_RE above). Idempotency works the
+# same way as the journal stamp: ``_FRONTEND_VERSION_STAMP_RE`` strips any
 # prior watermark before re-appending the current one, so successive
 # applies and version bumps don't accumulate suffixes. The regex is
-# intentionally permissive — it matches the current "Enhanced with"
-# phrasing as well as the two legacy phrasings ("Enhanced by",
-# "Enhanced with <3 by"), with or without a leading ``v`` on the
-# version, so installs that already have an older watermark on disk
-# roll forward cleanly on the next apply.
+# intentionally permissive — it matches the current "\n"-separated form as
+# well as the original " | "-separated form (pre-2.3.0 installs already
+# have that on disk) and the two legacy phrasings ("Enhanced by", "Enhanced
+# with <3 by"), with or without a leading ``v`` on the version, so every
+# on-disk watermark generation rolls forward cleanly on the next apply.
 _FRONTEND_VERSION_KEY = "Frontend_PU_Version"
 _FRONTEND_VERSION_STAMP_RE = _re_mod.compile(
-    r"\s*\|\s*(?:Localizations Enhanced (?:with|by)|Enhanced with <3 by)\s+Smart Citizen\s+v?[^\s|]+\s*$"
+    r"\s*(?:\|\s*|(?:\\n)+\s*)"
+    r"(?:Localizations Enhanced (?:with|by)|Enhanced with <3 by)\s+Smart Citizen\s+v?[^\s|]+\s*$"
 )
 
 
 def _stamp_frontend_version(merged: dict) -> dict:
-    """Append the Smart Citizen watermark to Frontend_PU_Version in place.
+    """Append the Smart Citizen watermark to Frontend_PU_Version in place, on
+    its own line (a literal "\\n" — see the module comment above this
+    function's constants for why).
 
     Skips entirely if the key is not present in *merged* — we don't
     fabricate the key when stock doesn't have it. Mutates and returns
@@ -129,7 +134,7 @@ def _stamp_frontend_version(merged: dict) -> dict:
         return merged
     from src.utils.version import get_version
     base = _FRONTEND_VERSION_STAMP_RE.sub("", merged[_FRONTEND_VERSION_KEY]).rstrip()
-    merged[_FRONTEND_VERSION_KEY] = f"{base} | Localizations Enhanced with Smart Citizen v{get_version()}"
+    merged[_FRONTEND_VERSION_KEY] = f"{base}\\nLocalizations Enhanced with Smart Citizen v{get_version()}"
     return merged
 
 

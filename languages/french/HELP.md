@@ -65,7 +65,7 @@ Utilisez le filtre **Catégorie** pour vous concentrer sur un domaine :
 
 Cliquez sur **Appliquer au jeu** pour écrire vos modifications dans l'installation du jeu. Une sauvegarde horodatée du `global.ini` actuel est créée dans `<dossier de données>\<canal>\backups\` avant toute écriture.
 
-Smart Citizen ajoute aussi un petit filigrane à la version affichée par le lanceur (`Frontend_PU_Version`), en ajoutant `| Localizations Enhanced with Smart Citizen v{VERSION}`. C'est ainsi que vous pouvez confirmer en jeu que votre loc-pack est actif : regardez l'étiquette de version sur le menu principal de Star Citizen. Le filigrane est réécrit à chaque application, il ne s'accumule donc jamais d'une version à l'autre.
+Smart Citizen ajoute aussi un petit filigrane à la version affichée par le lanceur (`Frontend_PU_Version`), en ajoutant `\nLocalizations Enhanced with Smart Citizen v{VERSION}` sur sa propre ligne. C'est ainsi que vous pouvez confirmer en jeu que votre loc-pack est actif : regardez l'étiquette de version sur le menu principal de Star Citizen. Le filigrane est réécrit à chaque application, il ne s'accumule donc jamais d'une version à l'autre.
 
 ## 8. Restaurer une sauvegarde
 
