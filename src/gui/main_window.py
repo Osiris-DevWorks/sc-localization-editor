@@ -4246,9 +4246,17 @@ class MainWindow(QMainWindow):
         self._run_enhancements_pipeline()
 
     def _run_enhancements_pipeline(self):
-        """Entry point for the enhancements button: extract DataForge if needed, then generate enhancements."""
+        """Entry point for every Generate Enhancements trigger — manual
+        click, Tag Builder apply, the simple-mode run button, and the
+        automated freshness check — so it's the single place to clear the
+        button's dirty flag (#292). Only the click handler used to clear it,
+        which left the button stuck red after a successful *automated* run
+        since that path calls straight in here. Extract DataForge if
+        needed, then generate enhancements."""
         if self._enhancements_worker is not None or self._forge_worker is not None:
             return  # already running
+
+        self.enhancements_tab.mark_enhancements_clean()
 
         from src.utils.pak_extractor import dataforge_cache_is_fresh
         forge_dir = AppSettings.get_dataforge_cache_dir()

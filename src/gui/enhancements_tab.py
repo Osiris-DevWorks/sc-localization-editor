@@ -418,6 +418,17 @@ class EnhancementsTab(QWidget):
         button never lighting up to prompt a re-run."""
         self._mark_enhancements_dirty()
 
+    def mark_enhancements_clean(self) -> None:
+        """Public entrypoint for external callers (MainWindow) to flag that
+        a Generate Enhancements run is starting, regardless of how it was
+        triggered — manual click, Tag Builder apply, or the automated
+        freshness check (#292). Call at the point a run is launched, not on
+        completion: set_operation_idle() only re-enables the button on
+        success, it doesn't force it clean, so if a run is triggered while
+        already dirty this needs to have cleared the flag first or the
+        button stays red after a successful generation."""
+        self._set_generate_btn_dirty(False)
+
     def refresh_enhancements_dirty_state(self) -> None:
         """Public entrypoint for external callers (MainWindow) to re-derive
         the Generate Enhancements button's enabled state from the current
@@ -705,11 +716,11 @@ class EnhancementsTab(QWidget):
         self._generate_enhancements_btn.setToolTip(message)
 
     def set_operation_idle(self, success: bool = True):
-        """Re-enable after a background run. A successful run means the
-        button's own click already cleared the dirty flag, so leave it grey
-        unless something changed mid-run; a failed run re-enables
-        unconditionally so the user has a way to retry without first having
-        to touch an unrelated setting."""
+        """Re-enable after a background run. A successful run means
+        mark_enhancements_clean() already cleared the dirty flag when the
+        run was launched (#292), so leave it grey unless something changed
+        mid-run; a failed run re-enables unconditionally so the user has a
+        way to retry without first having to touch an unrelated setting."""
         if not success:
             self._enhancements_dirty = True
         self._set_generate_btn_dirty(self._enhancements_dirty)
@@ -915,8 +926,11 @@ class EnhancementsTab(QWidget):
         still got the old tag in the output.
         """
         self._persist_tag_builder_state()
+        # enhancements_pipeline_requested is a direct connection, so by the
+        # time emit() returns MainWindow._run_enhancements_pipeline has
+        # already called mark_enhancements_clean() for us (#292) — no need
+        # to clear the dirty flag here too.
         self.enhancements_pipeline_requested.emit()
-        self._set_generate_btn_dirty(False)
         # Generate also persists Tag Builder edits (see docstring above), so
         # it satisfies Save Tag Changes too — otherwise that button would
         # stay lit for a save that already happened.
