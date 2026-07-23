@@ -2414,6 +2414,48 @@ class AppSettings:
         except OSError as e:
             logger.warning(f"Could not write enhancements stamp for {language!r}: {e}")
 
+    # Marker file stamped into a language's enhancement dir recording which
+    # Tag Builder config its enhancements were generated against. Sibling of
+    # ENHANCEMENTS_STAMP_NAME: that one tracks the DataForge *build*, this one
+    # tracks the *tag config*, so the Save Tag Changes button can do a real
+    # per-channel freshness check on switch instead of always lighting up.
+    TAG_CONFIG_STAMP_NAME = ".tag_config_stamp"
+
+    @staticmethod
+    def get_tag_config_stamp(language: "str | None" = None) -> str:
+        """Return the Tag Builder config fingerprint recorded for *language*'s
+        enhancements, or '' when no stamp has been written yet."""
+        stamp = AppSettings.get_enhancements_dir(language) / AppSettings.TAG_CONFIG_STAMP_NAME
+        try:
+            return stamp.read_text(encoding="utf-8").strip()
+        except (OSError, ValueError):
+            # ValueError: a corrupt stamp raises UnicodeDecodeError (#251
+            # bug class) — treat it like a missing stamp, not a crash.
+            return ""
+
+    @staticmethod
+    def set_tag_config_stamp(key: str, language: "str | None" = None) -> None:
+        """Record *key* (a Tag Builder config fingerprint) for *language*'s
+        enhancements, so a later channel switch can tell whether the current
+        Tag Builder config still matches what these INIs were generated with."""
+        stamp = AppSettings.get_enhancements_dir(language) / AppSettings.TAG_CONFIG_STAMP_NAME
+        try:
+            stamp.parent.mkdir(parents=True, exist_ok=True)
+            stamp.write_text(key, encoding="utf-8")
+        except OSError as e:
+            logger.warning(f"Could not write tag-config stamp for {language!r}: {e}")
+
+    @staticmethod
+    def get_current_tag_config_fingerprint() -> str:
+        """Fingerprint of the Tag Builder config as it stands in settings right
+        now — compare against get_tag_config_stamp() to decide whether a
+        channel's generated INIs already carry the current tags."""
+        from src.utils.tag_builder import tag_config_fingerprint
+        return tag_config_fingerprint(
+            AppSettings.get_all_tag_configs(),
+            AppSettings.get_tag_annotate_mission_descs(),
+        )
+
     @staticmethod
     def get_language_source_override(language: str) -> str:
         """User-set override URL for *language*'s base.ini, or '' if unset."""
