@@ -4982,7 +4982,11 @@ class MainWindow(QMainWindow):
 
         AppSettings.set_owned_items(owned | set(new_names))
         self._recompute_owned()
-        self.blueprint_tracker_tab.mark_owned_dirty()
+        # _recompute_owned() just did the exact re-weave Apply Owned Tags
+        # performs, so mark the button clean rather than dirty (#296) —
+        # otherwise it stayed red immediately after the summary below told
+        # the user its tags were applied.
+        self.blueprint_tracker_tab.mark_owned_clean()
 
         # How many of the newly-added names are visible right now (i.e. appear
         # as a blueprint bullet in the currently-loaded data). The rest light up

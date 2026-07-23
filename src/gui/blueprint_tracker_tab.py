@@ -449,9 +449,17 @@ class BlueprintTrackerTab(QWidget):
     # Mirrors the Enhancements tab's Generate Enhancements / Save Tag Changes
     # pattern: the button greys out once its own click clears the dirty flag,
     # and lights back up the moment the Owned set changes again — from the
-    # arrow buttons above, or a log scan (MainWindow calls mark_owned_dirty()
-    # after merging newly-found blueprints, since that path bypasses this
-    # tab's own move methods).
+    # arrow buttons above, or a channel switch (MainWindow calls
+    # mark_owned_dirty() there since the reload bypasses this tab's own move
+    # methods, and the owned set's items may not all be visible bullets in
+    # the new channel's data yet).
+    #
+    # A log scan is *not* one of these cases (#296): MainWindow's scan-finish
+    # handler already calls _recompute_owned() itself — the same re-weave
+    # Apply Owned Tags performs — before the button is touched, so it calls
+    # mark_owned_clean() instead of mark_owned_dirty(). Re-dirtying after
+    # work that just happened left the button red right after the scan
+    # summary had told the user its tags were applied.
 
     def _set_owned_btn_dirty(self, dirty: bool) -> None:
         """Single chokepoint for the button's enabled state, tooltip, and
@@ -468,9 +476,16 @@ class BlueprintTrackerTab(QWidget):
 
     def mark_owned_dirty(self) -> None:
         """Public: light the Apply Owned Tags button back up. Called from
-        this tab's own arrow-button moves, and by MainWindow after a log
-        scan merges newly-found blueprints into the owned set."""
+        this tab's own arrow-button moves, and by MainWindow after a channel
+        switch."""
         self._set_owned_btn_dirty(True)
+
+    def mark_owned_clean(self) -> None:
+        """Public: grey the Apply Owned Tags button out. Called by
+        MainWindow after a log scan's own _recompute_owned() call has
+        already done the re-weave the button would otherwise prompt for
+        (#296)."""
+        self._set_owned_btn_dirty(False)
 
     def _on_apply_owned_clicked(self) -> None:
         self.apply_owned_requested.emit()
