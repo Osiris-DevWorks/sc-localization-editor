@@ -50,6 +50,16 @@ them against the new source.
 
 ## Backfill log
 
+- **2.3.0 (2026-07-24, Claude Fable 5):** New language **japanese** added (#301).
+  Full AI translation of all 376 UI keys plus the 19-step guided tour
+  (`tutorial.*`), all `at`-only (`ht` empty). Translated `HELP.md`, `ABOUT.md`,
+  and `LEGAL.md` (the latter carries the standard "English version is
+  authoritative" caveat). Base `global.ini` mapped to
+  stdblue/StarCitizenJapaneseResources in `sources.json`;
+  `SC_LANGUAGE_IDS["japanese"] = "japanese_(japan)"`; installer
+  `LanguageChoicePage` gained a Japanese option. Locked by
+  `tests/test_japanese_activation.py`.
+
 - **2.2.0 pre-release (2026-07-15, Claude Fable 5):** AI backfill of the keys
   this cycle added in English only. french and portuguese_br each gained 43
   `at`-only keys (Blueprint Tracker tab, blueprint shuttle/facets, log-scan
@@ -81,3 +91,13 @@ them against the new source.
   source (99.9% vs 78.4% key coverage). Spanish writes to the game's
   `spanish_(spain)` Localization folder with `g_language = spanish_(spain)`
   (`SC_LANGUAGE_IDS`), confirmed to render in-game.
+- **japanese** — AI-translated by **Claude** (#301). No human translator yet, so
+  **every** key is `at`-only (`ht` empty) — the whole UI, the guided tour
+  (`tutorial.*`), and the `HELP.md` / `ABOUT.md` / `LEGAL.md` documents are
+  awaiting human review (grep `"ht": ""` returns the entire file by design).
+  The base `global.ini` is sourced from **stdblue/StarCitizenJapaneseResources**
+  (`v4.x/release/japanese_(japan)/global.ini`) rather than Dymerz, which does not
+  ship a Japanese pack. Japanese writes to the game's `japanese_(japan)`
+  Localization folder with `g_language = japanese_(japan)` (`SC_LANGUAGE_IDS`).
+  A Japanese-speaking reviewer replacing the `at` strings with `ht` is the next
+  step to promote it from AI-only to human-reviewed.
