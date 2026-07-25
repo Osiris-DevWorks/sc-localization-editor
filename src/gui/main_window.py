@@ -3450,6 +3450,19 @@ class MainWindow(QMainWindow):
         self.enhancements_tab.retranslate_ui()
         self.blueprint_tracker_tab.retranslate_ui()
 
+        # About / FAQ / Legal tab bodies — loaded from a per-language doc
+        # file (get_localized_doc_path) but only rendered at tab-creation
+        # time and on theme swap (refresh_action_buttons), never on a
+        # language switch. Without this, switching language mid-session
+        # left these three tabs showing whatever language was active at
+        # startup until the app was restarted.
+        if hasattr(self, "about_browser"):
+            self._render_about_html()
+        if hasattr(self, "faq_browser"):
+            self._render_faq_html()
+        if hasattr(self, "legal_browser"):
+            self._render_legal_html()
+
         # Status-bar version indicator + Config-tab update status hold the
         # last update-check result; re-render them in the new language
         # (after the cascade so this write wins).

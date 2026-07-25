@@ -1,0 +1,1732 @@
+{
+  "branding": {
+    "title": {
+      "ht": "",
+      "at": "智慧公民"
+    },
+    "tagline": {
+      "ht": "",
+      "at": "为星际公民打造更智能的字符串"
+    }
+  },
+  "window": {
+    "title": {
+      "ht": "",
+      "at": "智慧公民 v{version}"
+    }
+  },
+  "simple_mode": {
+    "switch_to_advanced": {
+      "ht": "",
+      "at": "切换到高级模式"
+    },
+    "switch_to_advanced_tip": {
+      "ht": "",
+      "at": "显示包含所有标签页和选项的完整智慧公民界面。"
+    },
+    "generate_apply_btn": {
+      "ht": "",
+      "at": "应用增强内容"
+    },
+    "generate_apply_tip": {
+      "ht": "",
+      "at": "使用当前设置生成最新的增强内容并应用到游戏中。会先备份当前的 global.ini。"
+    },
+    "defaults_hint": {
+      "ht": "",
+      "at": "使用你当前的设置（与高级视图显示的相同）。\n首次运行在提取 DataForge 时可能需要几分钟。"
+    }
+  },
+  "tabs": {
+    "string_editor": {
+      "ht": "",
+      "at": "字符串编辑器"
+    },
+    "config": {
+      "ht": "",
+      "at": "配置"
+    },
+    "enhancements": {
+      "ht": "",
+      "at": "增强内容"
+    },
+    "blueprint_tracker": {
+      "ht": "",
+      "at": "蓝图追踪器"
+    },
+    "log": {
+      "ht": "",
+      "at": "日志"
+    },
+    "about": {
+      "ht": "",
+      "at": "关于"
+    },
+    "faq": {
+      "ht": "",
+      "at": "常见问题"
+    },
+    "legal": {
+      "ht": "",
+      "at": "法律信息"
+    }
+  },
+  "toolbar": {
+    "apply_btn": {
+      "ht": "",
+      "at": "应用增强内容"
+    },
+    "restore_backup_btn": {
+      "ht": "",
+      "at": "恢复备份"
+    },
+    "clear_btn": {
+      "ht": "",
+      "at": "清除"
+    },
+    "import_export_btn": {
+      "ht": "",
+      "at": "导入 / 导出"
+    },
+    "open_loc_dir_btn": {
+      "ht": "",
+      "at": "打开本地化目录"
+    },
+    "editor_btn": {
+      "ht": "",
+      "at": "编辑器"
+    },
+    "help_btn": {
+      "ht": "",
+      "at": "帮助"
+    },
+    "tutorial_btn": {
+      "ht": "",
+      "at": "教程"
+    },
+    "more_btn": {
+      "ht": "",
+      "at": "更多"
+    },
+    "menu_clear_localization": {
+      "ht": "",
+      "at": "清除本地化"
+    },
+    "menu_clear_cache": {
+      "ht": "",
+      "at": "清除缓存"
+    },
+    "menu_import_ini": {
+      "ht": "",
+      "at": "导入 INI…"
+    },
+    "menu_export_ini": {
+      "ht": "",
+      "at": "导出 INI…"
+    },
+    "menu_test_plan": {
+      "ht": "",
+      "at": "测试计划"
+    },
+    "menu_switch_to_simple": {
+      "ht": "",
+      "at": "切换到简易模式"
+    },
+    "editor_tooltip": {
+      "ht": "",
+      "at": "切换侧边停靠的字符串编辑器，用更大的编辑区域编辑所选行的自定义值"
+    },
+    "help_tooltip": {
+      "ht": "",
+      "at": "切换帮助侧边面板"
+    },
+    "tutorial_tooltip": {
+      "ht": "",
+      "at": "开始智慧公民工作流程的引导教程。首次启动时会自动运行；随时点击此处可重新播放。"
+    },
+    "restore_backup_tooltip": {
+      "ht": "",
+      "at": "从备份文件夹恢复之前的 global.ini。最多保留 5 个带时间戳的备份；创建新备份时会清除最旧的一个。"
+    },
+    "test_plan_tooltip": {
+      "ht": "",
+      "at": "打开测试者的测试计划：本次版本更新内容的检查清单，带进度跟踪，并可提交报告。"
+    },
+    "switch_to_simple_tooltip": {
+      "ht": "",
+      "at": "切换到简化的单按钮视图。"
+    },
+    "more_tooltip": {
+      "ht": "",
+      "at": "更多操作：恢复备份、清除本地化或缓存、导入或导出、打开本地化文件夹"
+    },
+    "osiris_github_tooltip": {
+      "ht": "",
+      "at": "打开 Osiris DevWorks 的 GitHub 组织页面"
+    },
+    "feedback_tooltip": {
+      "ht": "",
+      "at": "打开智慧公民 Discord 频道，反馈问题、报告 Bug，并为即将推出的功能投票（需要加入 Osiris DevWorks Discord）。"
+    },
+    "apply_enabled_tooltip": {
+      "ht": "",
+      "at": "将合并后的表格内容写入游戏的 global.ini。会先创建当前 global.ini 的带时间戳备份。"
+    },
+    "apply_disabled_tooltip": {
+      "ht": "",
+      "at": "已经应用：自上次应用到游戏以来没有任何更改。"
+    }
+  },
+  "filters": {
+    "category_label": {
+      "ht": "",
+      "at": "分类："
+    },
+    "status_label": {
+      "ht": "",
+      "at": "状态："
+    },
+    "status_all": {
+      "ht": "",
+      "at": "全部"
+    },
+    "status_modified": {
+      "ht": "",
+      "at": "已修改"
+    },
+    "status_enhanced": {
+      "ht": "",
+      "at": "已增强"
+    },
+    "status_unmodified": {
+      "ht": "",
+      "at": "未修改"
+    },
+    "status_new": {
+      "ht": "",
+      "at": "新增"
+    },
+    "hide_unmodified": {
+      "ht": "",
+      "at": "隐藏未修改项"
+    },
+    "favorites_only": {
+      "ht": "",
+      "at": "★ 仅显示收藏"
+    },
+    "bp_titles_only": {
+      "ht": "",
+      "at": "蓝图标题"
+    },
+    "bp_descs_only": {
+      "ht": "",
+      "at": "蓝图描述"
+    },
+    "group_sort_btn": {
+      "ht": "",
+      "at": "分组排序"
+    },
+    "clear_filters_btn": {
+      "ht": "",
+      "at": "清除筛选"
+    },
+    "copy_filtered_btn": {
+      "ht": "",
+      "at": "复制筛选结果"
+    },
+    "category_tooltip": {
+      "ht": "",
+      "at": "按领域筛选行（飞船、飞船物品、任务、装备、商品、日志、其他）。分类由本地化键的前缀决定。"
+    },
+    "status_tooltip": {
+      "ht": "",
+      "at": "按状态筛选。已修改 = 你设置了自定义值；已增强 = 由智慧公民的增强流程生成（飞船数据、任务奖励等）；未修改 = 仅默认文本；新增 = 该键仅存在于增强内容/user.ini 中，不在基础文件里。"
+    },
+    "hide_unmodified_tooltip": {
+      "ht": "",
+      "at": "仅显示你设置了自定义值的行。与状态筛选中的“已修改”选项相同，但可单独开关。"
+    },
+    "favorites_only_tooltip": {
+      "ht": "",
+      "at": "仅显示你标记为收藏的行。收藏项会加上可自定义的前缀，使其排在游戏内列表的最前面。"
+    },
+    "bp_titles_only_tooltip": {
+      "ht": "",
+      "at": "仅显示带有 [BP] / [BP?] 蓝图标签的任务标题。"
+    },
+    "bp_descs_only_tooltip": {
+      "ht": "",
+      "at": "仅显示包含“潜在蓝图”部分的任务描述。"
+    },
+    "group_sort_tooltip": {
+      "ht": "",
+      "at": "将同一实体的标题和描述放在一起排序"
+    },
+    "clear_filters_tooltip": {
+      "ht": "",
+      "at": "重置所有筛选条件（分类、状态、搜索、逐列筛选框、复选框），显示完整表格。"
+    },
+    "copy_filtered_tooltip": {
+      "ht": "",
+      "at": "将当前可见的筛选行复制到剪贴板（以制表符分隔）"
+    }
+  },
+  "strings_tab": {
+    "col_category": {
+      "ht": "",
+      "at": "分类"
+    },
+    "col_key": {
+      "ht": "",
+      "at": "键名"
+    },
+    "col_default_value": {
+      "ht": "",
+      "at": "默认值"
+    },
+    "col_current_value": {
+      "ht": "",
+      "at": "当前值"
+    },
+    "col_star": {
+      "ht": "",
+      "at": "★"
+    },
+    "col_order": {
+      "ht": "",
+      "at": "#"
+    },
+    "col_custom_value": {
+      "ht": "",
+      "at": "自定义值"
+    },
+    "col_status": {
+      "ht": "",
+      "at": "状态"
+    },
+    "col_owned": {
+      "ht": "",
+      "at": "已拥有"
+    },
+    "no_data": {
+      "ht": "",
+      "at": "未加载数据"
+    },
+    "preview_placeholder": {
+      "ht": "",
+      "at": "选择一行以预览其渲染后的文本。"
+    },
+    "context_underline": {
+      "ht": "",
+      "at": "下划线"
+    },
+    "context_highlight": {
+      "ht": "",
+      "at": "高亮"
+    },
+    "editor_underline_tooltip": {
+      "ht": "",
+      "at": "为所选文本添加下划线（用 <EM3>...</EM3> 包裹）"
+    },
+    "editor_highlight_tooltip": {
+      "ht": "",
+      "at": "为所选文本添加颜色高亮（用 <EM4>...</EM4> 包裹）"
+    },
+    "column_filter_tooltip": {
+      "ht": "",
+      "at": "筛选 {column} 列。跨列筛选条件以“与”组合。"
+    },
+    "column_filter_placeholder": {
+      "ht": "",
+      "at": "筛选 {column}…"
+    }
+  },
+  "config": {
+    "title": {
+      "ht": "",
+      "at": "配置"
+    },
+    "instructions": {
+      "ht": "",
+      "at": "配置你的《星际公民》安装路径，从 Data.p4k 提取基础本地化数据，并导入外部 INI 文件以自定义你的字符串。"
+    },
+    "tools_group": {
+      "ht": "",
+      "at": "工具"
+    },
+    "tools_desc": {
+      "ht": "",
+      "at": "导入外部 INI 文件，将自定义字符串合并到你的 user.ini 中。键会与 base.ini 进行校验，冲突可交互式解决。"
+    },
+    "import_ini_btn": {
+      "ht": "",
+      "at": "导入 INI…"
+    },
+    "reset_user_ini_btn": {
+      "ht": "",
+      "at": "重置 user.ini…"
+    },
+    "restore_user_ini_btn": {
+      "ht": "",
+      "at": "恢复 user.ini…"
+    },
+    "preview_apply_btn": {
+      "ht": "",
+      "at": "预览应用"
+    },
+    "check_updates_btn": {
+      "ht": "",
+      "at": "检查更新"
+    },
+    "appearance_group": {
+      "ht": "",
+      "at": "外观"
+    },
+    "theme_label": {
+      "ht": "",
+      "at": "主题："
+    },
+    "theme_default": {
+      "ht": "",
+      "at": "默认"
+    },
+    "theme_light": {
+      "ht": "",
+      "at": "浅色"
+    },
+    "theme_dark": {
+      "ht": "",
+      "at": "深色"
+    },
+    "theme_odw": {
+      "ht": "",
+      "at": "ODW"
+    },
+    "star_citizen_group": {
+      "ht": "",
+      "at": "星际公民"
+    },
+    "installation_label": {
+      "ht": "",
+      "at": "安装位置"
+    },
+    "installation_desc": {
+      "ht": "",
+      "at": "你的《星际公民》安装根目录路径（包含 LIVE、PTU、EPTU、HOTFIX、TECH-PREVIEW 的目录）。"
+    },
+    "browse_btn": {
+      "ht": "",
+      "at": "浏览…"
+    },
+    "channel_label": {
+      "ht": "",
+      "at": "频道："
+    },
+    "language_label": {
+      "ht": "",
+      "at": "语言："
+    },
+    "map_language_btn": {
+      "ht": "",
+      "at": "映射语言文件"
+    },
+    "map_language_title": {
+      "ht": "",
+      "at": "映射语言文件"
+    },
+    "map_language_desc": {
+      "ht": "",
+      "at": "为每种语言的 global.ini 设置一个下载地址。切换到该语言时，智慧公民会下载并将其用作基础字符串，而不是使用英文 Data.p4k 提取结果。下载内容按语言缓存，仅在发生变化时才会重新获取。留空则使用内置默认值（如果有）。"
+    },
+    "base_localization_label": {
+      "ht": "",
+      "at": "基础本地化"
+    },
+    "base_localization_desc": {
+      "ht": "",
+      "at": "从你已安装的 Data.p4k 中提取 global.ini，获取与你所安装版本完全匹配的官方游戏字符串。"
+    },
+    "extract_btn": {
+      "ht": "",
+      "at": "从 Data.p4k 提取"
+    },
+    "data_group": {
+      "ht": "",
+      "at": "智慧公民数据"
+    },
+    "data_desc": {
+      "ht": "",
+      "at": "存放 user.ini、源缓存、增强内容 INI 及备份的文件夹。如果清理缓存失败，请将其移出 OneDrive 同步的“文档”文件夹。DataForge XML 缓存有独立的路径设置见下方——它约 1.4 GB，默认路径会自动让它避开 OneDrive。"
+    },
+    "app_data_label": {
+      "ht": "",
+      "at": "应用数据文件夹："
+    },
+    "dataforge_cache_label": {
+      "ht": "",
+      "at": "DataForge 缓存文件夹："
+    },
+    "reset_btn": {
+      "ht": "",
+      "at": "重置"
+    },
+    "p4k_group": {
+      "ht": "",
+      "at": "基础本地化（P4K 提取）"
+    },
+    "p4k_desc": {
+      "ht": "",
+      "at": "从你已安装的 Data.p4k 中提取 global.ini，获取与你所安装版本完全匹配的官方游戏字符串。"
+    },
+    "p4k_status_found_with_base": {
+      "ht": "",
+      "at": "已找到 Data.p4k  |  base.ini 上次更新：{date}"
+    },
+    "p4k_status_found_no_base": {
+      "ht": "",
+      "at": "已找到 Data.p4k  |  base.ini 尚未提取"
+    },
+    "p4k_status_not_found": {
+      "ht": "",
+      "at": "在此路径未找到 Data.p4k：{path}"
+    },
+    "p4k_status_no_path": {
+      "ht": "",
+      "at": "尚未配置游戏安装路径"
+    },
+    "select_sc_root": {
+      "ht": "",
+      "at": "选择《星际公民》安装根目录"
+    },
+    "select_data_folder": {
+      "ht": "",
+      "at": "选择智慧公民数据文件夹"
+    },
+    "select_cache_folder": {
+      "ht": "",
+      "at": "选择 DataForge 缓存文件夹"
+    },
+    "migrate_data_title": {
+      "ht": "",
+      "at": "是否迁移你的数据？"
+    },
+    "migrate_data_body": {
+      "ht": "",
+      "at": "是否将你现有的智慧公民数据（覆盖项、备份、缓存的字符串）从\n\n{old_dir}\n\n移动到新文件夹\n\n{new_dir}？\n\n新文件夹中已存在的文件将被保留。移动完成后会清理旧文件夹。"
+    },
+    "migrate_data_done_title": {
+      "ht": "",
+      "at": "数据已移动"
+    },
+    "migrate_data_done_body": {
+      "ht": "",
+      "at": "已将 {count} 个文件移动到新的数据文件夹。"
+    },
+    "migrate_data_failed_title": {
+      "ht": "",
+      "at": "迁移失败"
+    },
+    "migrate_data_failed_body": {
+      "ht": "",
+      "at": "无法迁移你的数据：\n{error}"
+    },
+    "channel_not_installed_title": {
+      "ht": "",
+      "at": "该频道未安装"
+    },
+    "channel_not_installed_body": {
+      "ht": "",
+      "at": "当前根目录下未安装 {channel}。请通过 RSI 启动器安装，或选择其他频道。"
+    },
+    "invalid_data_folder_title": {
+      "ht": "",
+      "at": "无效的数据文件夹"
+    },
+    "invalid_cache_folder_title": {
+      "ht": "",
+      "at": "无效的缓存文件夹"
+    },
+    "dataforge_cache_changed_title": {
+      "ht": "",
+      "at": "DataForge 缓存路径已更改"
+    },
+    "dataforge_cache_changed_body": {
+      "ht": "",
+      "at": "更改 DataForge 缓存路径需要重新从 Data.p4k 提取。\n\n重新提取完成后，应如何处理之前的缓存？"
+    },
+    "re_extract_delete_old": {
+      "ht": "",
+      "at": "重新提取并删除旧缓存"
+    },
+    "re_extract_keep_old": {
+      "ht": "",
+      "at": "重新提取并保留旧缓存"
+    },
+    "preview_title": {
+      "ht": "",
+      "at": "应用预览"
+    },
+    "preview_header": {
+      "ht": "",
+      "at": "应用预览\n\n合并顺序（从上到下）：\n"
+    },
+    "preview_total": {
+      "ht": "",
+      "at": "\n总键数：{count:,}\n状态统计：\n"
+    },
+    "no_sources_warning": {
+      "ht": "",
+      "at": "没有可供合并的来源。"
+    },
+    "include_new_tooltip": {
+      "ht": "",
+      "at": "勾选后，从 DataForge XML 中发现的、且文本非空的项目（状态为“新增”）将被包含到应用的 global.ini 中。"
+    },
+    "import_ini_tooltip": {
+      "ht": "",
+      "at": "将外部 .ini 合并到你的覆盖项中。冲突解决对话框可让你逐键决定：保留当前值、使用导入值、追加、前置，或提供自定义值。"
+    },
+    "reset_user_ini_tooltip": {
+      "ht": "",
+      "at": "删除当前频道的所有自定义字符串覆盖。会在原文件旁保存带时间戳的备份，方便恢复。"
+    },
+    "restore_user_ini_tooltip": {
+      "ht": "",
+      "at": "从自动快照恢复你的自定义字符串覆盖。智慧公民会保留 user.ini 最近的几个状态，方便你回滚错误编辑或在文件被清空后恢复。"
+    },
+    "preview_apply_tooltip": {
+      "ht": "",
+      "at": "预演“应用增强内容”将写入的内容——按来源统计键数（增强内容按分类细分），以及已修改/已增强/未修改/新增的状态统计。在你点击“应用增强内容”之前，不会向游戏写入任何内容。"
+    },
+    "check_updates_tooltip": {
+      "ht": "",
+      "at": "在 GitHub 上检查是否有更新的智慧公民版本。"
+    },
+    "theme_tooltip": {
+      "ht": "",
+      "at": "切换应用主题。会立即在主窗口、工具栏、标签页和帮助面板中生效。"
+    },
+    "disable_tutorial_tooltip": {
+      "ht": "",
+      "at": "勾选后，引导教程将不会在新版本中自动启动。工具栏中的教程按钮仍然可用。"
+    },
+    "game_path_tooltip": {
+      "ht": "",
+      "at": "《星际公民》安装根目录——包含 LIVE/、PTU/、EPTU/、HOTFIX/ 和（或）TECH-PREVIEW/ 的目录。安装时会自动检测；如果你的游戏安装在其他位置，可在此编辑。下方的“频道”下拉菜单选择应用读写哪个频道。"
+    },
+    "browse_game_tooltip": {
+      "ht": "",
+      "at": "在文件夹浏览器中选择《星际公民》安装根目录。"
+    },
+    "channel_tooltip": {
+      "ht": "",
+      "at": "读取 Data.p4k 及写入 global.ini 所用的《星际公民》频道。安装根目录下没有 Data.p4k 的频道会被禁用。切换频道会立即针对新频道的数据重新加载字符串。"
+    },
+    "channel_not_installed_tooltip": {
+      "ht": "",
+      "at": "{channel} 未安装——在 {path} 未找到 Data.p4k"
+    },
+    "language_tooltip": {
+      "ht": "",
+      "at": "应用到游戏的语言。翻译中缺失的键会自动回退到英文。"
+    },
+    "map_language_tooltip": {
+      "ht": "",
+      "at": "为每种语言的 global.ini 设置一个下载地址。切换到该语言时，智慧公民会下载并将其用作基础字符串，而不是使用英文 Data.p4k 提取结果。"
+    },
+    "data_dir_tooltip": {
+      "ht": "",
+      "at": "智慧公民的应用数据根目录。每个频道在此目录下都有自己的子文件夹。留空或点击重置以使用 文档\\Smart Citizen。"
+    },
+    "browse_data_tooltip": {
+      "ht": "",
+      "at": "在文件夹浏览器中选择智慧公民数据文件夹。"
+    },
+    "reset_data_tooltip": {
+      "ht": "",
+      "at": "清除自定义数据文件夹，改用 文档\\Smart Citizen。"
+    },
+    "cache_dir_tooltip": {
+      "ht": "",
+      "at": "提取出的 DataForge XML 树的基础文件夹（约 1.4 GB）。每个频道会嵌套为 {base}\\{channel}\\cache\\dataforge\\。默认使用 %LOCALAPPDATA%\\Smart Citizen，使其不受 OneDrive 影响。更改路径会触发重新提取。"
+    },
+    "browse_cache_tooltip": {
+      "ht": "",
+      "at": "在文件夹浏览器中选择 DataForge 缓存基础文件夹。"
+    },
+    "reset_cache_tooltip": {
+      "ht": "",
+      "at": "清除自定义缓存文件夹，改用平台默认值。"
+    },
+    "extract_tooltip": {
+      "ht": "",
+      "at": "从你已安装的 Data.p4k 中解包官方本地化内容（base.ini）以及 DataForge 实体 XML。每次《星际公民》更新后运行——提取完成后字符串会自动重新加载到表格中。"
+    }
+  },
+  "enhancements": {
+    "title": {
+      "ht": "",
+      "at": "增强内容"
+    },
+    "desc": {
+      "ht": "",
+      "at": "扩展基础本地化数据的可选功能：增强内容生成器的分类开关、游戏内飞船列表的收藏前缀，以及用于自定义组件、导弹和飞船武器括号名称标签的标签生成器。"
+    },
+    "enhancements_group": {
+      "ht": "",
+      "at": "本地化增强内容"
+    },
+    "enhancements_desc": {
+      "ht": "",
+      "at": "选择要包含的增强内容分类。点击“应用”保存更改。增强内容根据你已安装的 Data.p4k 生成。"
+    },
+    "cat_desc_ships": {
+      "ht": "",
+      "at": "飞船性能、配装及船员数据"
+    },
+    "cat_desc_ship_items": {
+      "ht": "",
+      "at": "组件等级/尺寸/品级注释及统计数据"
+    },
+    "cat_desc_gear": {
+      "ht": "",
+      "at": "FPS 武器的战斗数据"
+    },
+    "cat_desc_missions": {
+      "ht": "",
+      "at": "任务的经验奖励与蓝图掉落"
+    },
+    "cat_desc_commodities": {
+      "ht": "",
+      "at": "制作配方与材料用量"
+    },
+    "cat_desc_journal": {
+      "ht": "",
+      "at": "包含每种矿物制作数据的采矿汇编"
+    },
+    "cat_desc_medical_consumables": {
+      "ht": "",
+      "at": "CureLife 医疗笔的通俗效果说明"
+    },
+    "apply_btn": {
+      "ht": "",
+      "at": "应用"
+    },
+    "generate_btn": {
+      "ht": "",
+      "at": "生成增强内容"
+    },
+    "favorites_group": {
+      "ht": "",
+      "at": "收藏"
+    },
+    "favorites_desc": {
+      "ht": "",
+      "at": "生成的飞船列表中，星标飞船名称会加上可自定义的前缀，使其排在游戏内飞船选择列表的最前面。"
+    },
+    "sort_prefix_label": {
+      "ht": "",
+      "at": "排序前缀："
+    },
+    "tag_builder_group": {
+      "ht": "",
+      "at": "标签生成器"
+    },
+    "tag_builder_desc": {
+      "ht": "",
+      "at": "自定义组件、导弹和飞船武器上括号内的名称标签。更改需在点击“保存标签更改”并重新运行“生成增强内容”后生效。"
+    },
+    "preview_label": {
+      "ht": "",
+      "at": "预览："
+    },
+    "annotate_mission_descs_cb": {
+      "ht": "",
+      "at": "在任务描述中为组件添加注释"
+    },
+    "apply_tag_changes_btn": {
+      "ht": "",
+      "at": "保存标签更改"
+    },
+    "reset_defaults_btn": {
+      "ht": "",
+      "at": "恢复默认值"
+    },
+    "edit_mapping_btn": {
+      "ht": "",
+      "at": "编辑映射…"
+    },
+    "blueprints_group": {
+      "ht": "",
+      "at": "蓝图"
+    },
+    "blueprints_desc": {
+      "ht": "",
+      "at": "标记你已拥有的蓝图。已拥有的物品在任务的潜在蓝图奖励中出现时会带有 [已拥有] 标签，让你一眼就能看出哪些值得追求。在左侧选择物品，用箭头将它们移动到你的已拥有列表。"
+    },
+    "blueprints_empty_note": {
+      "ht": "",
+      "at": "请先生成任务增强内容以填充此列表。蓝图来自任务奖励数据。"
+    },
+    "blueprints_search_placeholder": {
+      "ht": "",
+      "at": "按名称搜索蓝图…"
+    },
+    "blueprints_show_tags_checkbox": {
+      "ht": "",
+      "at": "在蓝图名称上显示标签"
+    },
+    "blueprints_mission_label": {
+      "ht": "",
+      "at": "任务："
+    },
+    "blueprints_facet_any": {
+      "ht": "",
+      "at": "任意"
+    },
+    "blueprints_facet_type": {
+      "ht": "",
+      "at": "类型："
+    },
+    "blueprints_facet_class": {
+      "ht": "",
+      "at": "等级："
+    },
+    "blueprints_facet_size": {
+      "ht": "",
+      "at": "尺寸："
+    },
+    "blueprints_facet_grade": {
+      "ht": "",
+      "at": "品级："
+    },
+    "blueprints_filter_note": {
+      "ht": "",
+      "at": "类型会将所有物品分类为组件、FPS 武器、护甲或其他。等级、尺寸和品级仅适用于飞船组件。"
+    },
+    "blueprints_tooltip_missions": {
+      "ht": "",
+      "at": "任务：{missions}"
+    },
+    "blueprints_available_label": {
+      "ht": "",
+      "at": "可用蓝图"
+    },
+    "blueprints_owned_label": {
+      "ht": "",
+      "at": "已拥有蓝图"
+    },
+    "blueprints_add_tooltip": {
+      "ht": "",
+      "at": "将所选蓝图标记为已拥有"
+    },
+    "blueprints_remove_tooltip": {
+      "ht": "",
+      "at": "将所选蓝图从已拥有列表中移除"
+    },
+    "bp_scan_title": {
+      "ht": "",
+      "at": "蓝图扫描"
+    },
+    "bp_scan_starting": {
+      "ht": "",
+      "at": "正在扫描《星际公民》日志以查找已获得的蓝图…"
+    },
+    "bp_scan_progress": {
+      "ht": "",
+      "at": "正在扫描 {file}…"
+    },
+    "bp_scan_finishing": {
+      "ht": "",
+      "at": "正在完成…"
+    },
+    "bp_scan_no_path": {
+      "ht": "",
+      "at": "未配置《星际公民》安装路径，因此没有可扫描的日志。请先在配置标签页设置你的游戏文件夹。"
+    },
+    "bp_scan_none": {
+      "ht": "",
+      "at": "自上次扫描以来没有发现新的蓝图。"
+    },
+    "bp_scan_summary": {
+      "ht": "",
+      "at": "已将 {count} 个蓝图添加到你的已拥有列表。\n\n其中 {visible} 个目前可在你当前的蓝图列表中看到；其余的会在其物品下次出现在任务蓝图奖励中时自动显示 [已拥有]。"
+    },
+    "mission_field_ace_tooltip": {
+      "ht": "",
+      "at": "当任务生成王牌飞行员时，在任务详情正文中显示“王牌飞行员：是”一行。[ACE] 标题标签是一个独立的开关，位于“通用标签”下。将在下次“生成增强内容”时生效。"
+    },
+    "mission_field_default_tooltip": {
+      "ht": "",
+      "at": "在生成的任务正文中显示 {label} 一行。将在下次“生成增强内容”时生效。"
+    },
+    "stats_prepend_tooltip": {
+      "ht": "",
+      "at": "将生成的数据统计块放在制造商/公关描述上方，而不是下方（飞船、组件、武器）。将在下次“生成增强内容”时生效。"
+    },
+    "standardize_ship_names_tooltip": {
+      "ht": "",
+      "at": "为高管机库（PYX）和 Wikelo（WIK）飞船变体重命名，加上后缀以区别于标准认购版本（例如“Anvil F8C Lightning PYX”）。将在下次“生成增强内容”时生效。"
+    },
+    "apply_categories_tooltip": {
+      "ht": "",
+      "at": "保存分类选择。未勾选的分类将被禁用。"
+    },
+    "generate_enabled_tooltip": {
+      "ht": "",
+      "at": "根据你游戏的 Data.p4k 生成增强本地化文件。\n如果 DataForge 数据尚未缓存，将自动提取\n（首次运行需几分钟；之后运行会很快）。"
+    },
+    "generate_disabled_tooltip": {
+      "ht": "",
+      "at": "已是最新——自上次运行以来，影响生成输出的内容（分类、任务字段、统计/名称选项、标签生成器）没有变化。"
+    },
+    "favorite_prefix_tooltip": {
+      "ht": "",
+      "at": "添加到收藏飞船名称前的字符，使其排在游戏内飞船列表的最前面。更改后点击“应用前缀”以更新所有现有收藏。"
+    },
+    "rep_xp_label_tooltip": {
+      "ht": "",
+      "at": "没有阵营等级名称的任务所使用的标签（例如“声望：+100 经验”）"
+    },
+    "header_em_tooltip": {
+      "ht": "",
+      "at": "分区标题的样式：下划线（EM3）或蓝色文字（EM4）"
+    },
+    "prefix_enabled_tooltip": {
+      "ht": "",
+      "at": "保存所选前缀，并更新所有现有收藏以使用它"
+    },
+    "prefix_disabled_tooltip": {
+      "ht": "",
+      "at": "已经应用——所选前缀与你当前的收藏一致。"
+    },
+    "annotate_mission_descs_tooltip": {
+      "ht": "",
+      "at": "勾选后，配置的 [等级-Sx-品级] 标签会被添加到任务描述“潜在蓝图”列表中的组件名称上。取消勾选可让任务正文更简洁，同时在其他地方的实际组件名称上保留标签。"
+    },
+    "reset_tag_tooltip": {
+      "ht": "",
+      "at": "恢复每个分类（组件 / 导弹 / 飞船武器）的默认格式、映射和顺序。在你点击“保存标签更改”或“生成增强内容”之前不会保存或重新生成。"
+    },
+    "tag_enabled_tooltip": {
+      "ht": "",
+      "at": "保存组件 / 导弹 / 飞船武器的标签配置，并重新运行增强内容生成器。新标签会在下次“应用增强内容”后出现在游戏中。"
+    },
+    "tag_disabled_tooltip": {
+      "ht": "",
+      "at": "已保存——自上次保存以来标签生成器没有更改。"
+    },
+    "generating_enhancements_tooltip": {
+      "ht": "",
+      "at": "正在生成增强内容…"
+    },
+    "extracting_dataforge_tooltip": {
+      "ht": "",
+      "at": "正在从 Data.p4k 提取 DataForge…"
+    }
+  },
+  "blueprint_tracker": {
+    "title": {
+      "ht": "",
+      "at": "蓝图追踪器"
+    },
+    "scan_logs_btn": {
+      "ht": "",
+      "at": "扫描日志以查找已拥有蓝图"
+    },
+    "scan_logs_tooltip": {
+      "ht": "",
+      "at": "扫描你的《星际公民》日志文件（Game.log 及 logbackups）以查找“已获得蓝图”奖励通知，并自动将其标记为已拥有。"
+    },
+    "apply_owned_tag_btn": {
+      "ht": "",
+      "at": "应用已拥有标签"
+    },
+    "apply_owned_tag_tooltip": {
+      "ht": "",
+      "at": "刷新字符串表中蓝图名称的 [已拥有] 标签，使其与你当前的已拥有列表匹配。"
+    },
+    "apply_owned_tag_tooltip_disabled": {
+      "ht": "",
+      "at": "已是最新——自上次应用以来，你的已拥有列表没有变化。"
+    }
+  },
+  "log": {
+    "min_level_label": {
+      "ht": "",
+      "at": "最低级别："
+    },
+    "auto_scroll_check": {
+      "ht": "",
+      "at": "自动滚动"
+    },
+    "clear_btn": {
+      "ht": "",
+      "at": "清除"
+    },
+    "export_btn": {
+      "ht": "",
+      "at": "导出到文件…"
+    },
+    "export_title": {
+      "ht": "",
+      "at": "导出日志"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "导出失败"
+    },
+    "lines_label": {
+      "ht": "",
+      "at": "{count} 行"
+    },
+    "min_level_tooltip": {
+      "ht": "",
+      "at": "显示的最低严重级别。低于所选级别的条目将被隐藏（DEBUG < INFO < WARNING < ERROR）。"
+    },
+    "auto_scroll_tooltip": {
+      "ht": "",
+      "at": "新日志到达时自动滚动到最新条目。关闭后可在查看旧日志时固定视图。"
+    },
+    "clear_tooltip": {
+      "ht": "",
+      "at": "清除屏幕上的日志缓冲区。磁盘上的会话日志文件不受影响。"
+    },
+    "export_tooltip": {
+      "ht": "",
+      "at": "将当前日志缓冲区保存为 .log 文件——在提交 Bug 报告时很有用。"
+    }
+  },
+  "import_dialog": {
+    "title": {
+      "ht": "",
+      "at": "导入冲突"
+    },
+    "conflicts_group": {
+      "ht": "",
+      "at": "冲突（{count} 个键）"
+    },
+    "keep_all_btn": {
+      "ht": "",
+      "at": "全部保留当前值"
+    },
+    "import_all_btn": {
+      "ht": "",
+      "at": "全部导入"
+    },
+    "col_key": {
+      "ht": "",
+      "at": "键名"
+    },
+    "col_current_value": {
+      "ht": "",
+      "at": "当前值"
+    },
+    "col_imported_value": {
+      "ht": "",
+      "at": "导入值"
+    },
+    "col_resolution": {
+      "ht": "",
+      "at": "处理方式"
+    },
+    "resolution_keep": {
+      "ht": "",
+      "at": "保留当前值"
+    },
+    "resolution_use": {
+      "ht": "",
+      "at": "使用导入值"
+    },
+    "resolution_append": {
+      "ht": "",
+      "at": "追加导入值"
+    },
+    "resolution_prepend": {
+      "ht": "",
+      "at": "前置导入值"
+    },
+    "resolution_custom": {
+      "ht": "",
+      "at": "自定义…"
+    },
+    "custom_value_title": {
+      "ht": "",
+      "at": "自定义值"
+    },
+    "custom_value_prompt": {
+      "ht": "",
+      "at": "为该键输入自定义值：\n{key}"
+    },
+    "auto_add_summary": {
+      "ht": "",
+      "at": "{count} 个键将被自动添加。"
+    },
+    "excluded_summary": {
+      "ht": "",
+      "at": "{count} 个键被排除（不在 base.ini 中）。"
+    },
+    "keep_all_tooltip": {
+      "ht": "",
+      "at": "通过保留现有值并丢弃导入值来解决所有冲突。"
+    },
+    "import_all_tooltip": {
+      "ht": "",
+      "at": "通过接受导入值并覆盖现有值来解决所有冲突。"
+    }
+  },
+  "coach": {
+    "back_btn": {
+      "ht": "",
+      "at": "上一步"
+    },
+    "next_btn": {
+      "ht": "",
+      "at": "下一步"
+    },
+    "skip_btn": {
+      "ht": "",
+      "at": "跳过"
+    },
+    "finish_btn": {
+      "ht": "",
+      "at": "完成"
+    },
+    "step_counter": {
+      "ht": "",
+      "at": "第 {current} 步，共 {total} 步"
+    }
+  },
+  "tag_mapping_dialog": {
+    "hint": {
+      "ht": "",
+      "at": "编辑每个原始值在短/中/长长度下的呈现方式。标签生成器中元素的样式下拉菜单决定使用哪种长度。"
+    },
+    "reset_btn": {
+      "ht": "",
+      "at": "恢复默认值"
+    },
+    "col_value": {
+      "ht": "",
+      "at": "值"
+    },
+    "col_short": {
+      "ht": "",
+      "at": "短"
+    },
+    "col_medium": {
+      "ht": "",
+      "at": "中"
+    },
+    "col_long": {
+      "ht": "",
+      "at": "长"
+    },
+    "reset_tooltip": {
+      "ht": "",
+      "at": "将此映射表中的每个单元格恢复为智慧公民内置的默认值。"
+    }
+  },
+  "dialogs": {
+    "warning_title": {
+      "ht": "",
+      "at": "警告"
+    },
+    "error_title": {
+      "ht": "",
+      "at": "错误"
+    },
+    "success_title": {
+      "ht": "",
+      "at": "成功"
+    },
+    "no_file_loaded": {
+      "ht": "",
+      "at": "请先加载一个文件"
+    },
+    "no_game_path": {
+      "ht": "",
+      "at": "请在配置标签页中配置游戏安装路径"
+    },
+    "missing_sources_title": {
+      "ht": "",
+      "at": "缺少来源"
+    },
+    "missing_sources_body": {
+      "ht": "",
+      "at": "以下已启用的来源无法加载：\n\n  {names}\n\n它们的自定义内容将不会包含在应用的文件中。\n\n是否仍要应用？"
+    },
+    "apply_status": {
+      "ht": "",
+      "at": "已应用到游戏 | {user_count} 处用户编辑 | {enhancement_count} 处增强内容"
+    },
+    "apply_failed_status": {
+      "ht": "",
+      "at": "应用失败——校验错误"
+    },
+    "validation_failed_title": {
+      "ht": "",
+      "at": "校验失败"
+    },
+    "validation_failed_body": {
+      "ht": "",
+      "at": "写入的文件未通过校验，已被删除。\n\n{msg}{restore_note}"
+    },
+    "nothing_to_clear_title": {
+      "ht": "",
+      "at": "没有可清除的内容"
+    },
+    "nothing_to_clear_body": {
+      "ht": "",
+      "at": "在游戏的本地化目录中未找到自定义 global.ini。\n游戏当前使用的是原版文本。"
+    },
+    "clear_localization_title": {
+      "ht": "",
+      "at": "清除本地化"
+    },
+    "clear_localization_body": {
+      "ht": "",
+      "at": "这将删除以下位置的自定义 global.ini：\n{loc_dir}\n\n游戏将恢复为默认（原版）本地化文本。\n\n你的覆盖项会保留在应用中，可随时重新应用。\n\n是否继续？"
+    },
+    "clear_localization_done_title": {
+      "ht": "",
+      "at": "完成"
+    },
+    "clear_localization_done_body": {
+      "ht": "",
+      "at": "自定义本地化已移除。\n游戏现在将使用默认文本。\n\n要重新应用你的覆盖项和数据统计描述，请点击“应用增强内容”。"
+    },
+    "clear_localization_status": {
+      "ht": "",
+      "at": "本地化已清除——游戏已恢复为原版文本"
+    },
+    "cache_empty_title": {
+      "ht": "",
+      "at": "缓存为空"
+    },
+    "cache_empty_body": {
+      "ht": "",
+      "at": "缓存目录已经是空的。"
+    },
+    "clear_cache_title": {
+      "ht": "",
+      "at": "清除缓存"
+    },
+    "dataforge_cache_title": {
+      "ht": "",
+      "at": "是否清除 DataForge 缓存？"
+    },
+    "cache_cleared_title": {
+      "ht": "",
+      "at": "缓存已清除"
+    },
+    "dir_not_found_title": {
+      "ht": "",
+      "at": "未找到目录"
+    },
+    "nothing_to_export_title": {
+      "ht": "",
+      "at": "没有可导出的内容"
+    },
+    "nothing_to_export_body": {
+      "ht": "",
+      "at": "在游戏的本地化目录中未找到已应用的 global.ini。\n\n请先点击“应用增强内容”写入你的自定义内容，然后再导出以打包分享。"
+    },
+    "export_loc_pack_title": {
+      "ht": "",
+      "at": "导出本地化包"
+    },
+    "export_complete_title": {
+      "ht": "",
+      "at": "导出完成"
+    },
+    "export_complete_body": {
+      "ht": "",
+      "at": "本地化包已写入：\n{out_path}\n\n频道：{channel}\n源文件大小：{source_size:,} 字节\n压缩包大小：{zip_size:,} 字节"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "导出失败"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "无法写入本地化包压缩文件：\n{error}"
+    },
+    "update_available_title": {
+      "ht": "",
+      "at": "智慧公民 — 有可用更新"
+    },
+    "update_available_body": {
+      "ht": "",
+      "at": "有新版本可用：v{latest}\n你当前是 v{current}。"
+    },
+    "update_open_release": {
+      "ht": "",
+      "at": "打开发布页面"
+    },
+    "update_later": {
+      "ht": "",
+      "at": "稍后"
+    },
+    "update_now": {
+      "ht": "",
+      "at": "立即更新"
+    },
+    "update_auto_note": {
+      "ht": "",
+      "at": "智慧公民将自动关闭、安装更新并重新打开。Windows 会先请求授权。"
+    },
+    "update_download_title": {
+      "ht": "",
+      "at": "正在下载更新"
+    },
+    "update_download_label": {
+      "ht": "",
+      "at": "正在下载智慧公民 v{latest}…"
+    },
+    "update_download_failed_title": {
+      "ht": "",
+      "at": "更新下载失败"
+    },
+    "update_download_failed_body": {
+      "ht": "",
+      "at": "无法下载更新：\n\n{message}\n\n你可以从发布页面手动下载。"
+    },
+    "update_launch_failed_title": {
+      "ht": "",
+      "at": "更新未启动"
+    },
+    "update_launch_failed_body": {
+      "ht": "",
+      "at": "更新安装程序未能启动（Windows 授权被拒绝或启动失败）。\n\n你可以稍后自行运行它：\n{path}\n\n智慧公民目前将继续在当前版本上运行。"
+    },
+    "up_to_date_title": {
+      "ht": "",
+      "at": "智慧公民 — 已是最新版本"
+    },
+    "up_to_date_body": {
+      "ht": "",
+      "at": "你正在使用最新版本（v{current}）。"
+    },
+    "update_check_failed_title": {
+      "ht": "",
+      "at": "智慧公民 — 更新检查失败"
+    },
+    "update_check_failed_body": {
+      "ht": "",
+      "at": "无法检查更新：\n\n{message}"
+    },
+    "nothing_to_reset_title": {
+      "ht": "",
+      "at": "没有可重置的内容"
+    },
+    "nothing_to_reset_body": {
+      "ht": "",
+      "at": "{channel} 频道没有 user.ini——已经是原始值。\n\n检查的路径：\n{path}"
+    },
+    "reset_user_ini_title": {
+      "ht": "",
+      "at": "是否重置 user.ini？"
+    },
+    "reset_failed_title": {
+      "ht": "",
+      "at": "重置失败"
+    },
+    "reset_failed_body": {
+      "ht": "",
+      "at": "无法重置 user.ini：\n\n{error}\n\n文件仍然存在。请关闭其他可能打开该文件的程序（文本编辑器、同步客户端），然后重试。"
+    },
+    "no_sources_body": {
+      "ht": "",
+      "at": "未配置任何来源。请在配置标签页中配置数据来源。"
+    },
+    "merge_failed": {
+      "ht": "",
+      "at": "合并失败"
+    },
+    "merging_sources": {
+      "ht": "",
+      "at": "正在合并来源…"
+    },
+    "language_changed_status": {
+      "ht": "",
+      "at": "语言已切换为 {language}——正在重新加载来源…"
+    },
+    "language_downloading": {
+      "ht": "",
+      "at": "正在下载 {language} 本地化内容…"
+    },
+    "language_no_url": {
+      "ht": "",
+      "at": "尚未为 {language} 设置下载地址；显示英文基础内容。请使用“映射语言文件”设置一个。"
+    },
+    "language_download_failed": {
+      "ht": "",
+      "at": "无法下载 {language} 本地化内容，也未找到缓存副本。改为显示英文基础内容。请检查“映射语言文件”中的地址及你的网络连接，然后重试。"
+    },
+    "language_generating_enhancements": {
+      "ht": "",
+      "at": "正在从 DataForge 生成 {language} 增强内容…"
+    },
+    "file_not_found_title": {
+      "ht": "",
+      "at": "未找到文件"
+    },
+    "file_not_found_body": {
+      "ht": "",
+      "at": "文件不存在：\n{path}"
+    },
+    "empty_file_title": {
+      "ht": "",
+      "at": "空文件"
+    },
+    "empty_file_body": {
+      "ht": "",
+      "at": "导入的文件不包含任何有效的 key=value 条目。"
+    },
+    "copy_filtered_title": {
+      "ht": "",
+      "at": "复制筛选结果"
+    },
+    "copy_filtered_empty": {
+      "ht": "",
+      "at": "没有可复制的行。"
+    },
+    "copy_filtered_done": {
+      "ht": "",
+      "at": "已将 {count} 行复制到剪贴板。"
+    },
+    "copy_error_title": {
+      "ht": "",
+      "at": "复制错误"
+    },
+    "copy_error_body": {
+      "ht": "",
+      "at": "复制到剪贴板失败：{error}"
+    },
+    "unapplied_changes_title": {
+      "ht": "",
+      "at": "存在未应用的更改"
+    },
+    "unapplied_changes_body": {
+      "ht": "",
+      "at": "你有尚未应用到游戏的更改（“应用增强内容”按钮仍显示为红色）。\n\n是否立即应用，还是不应用直接退出？"
+    },
+    "unapplied_changes_apply_now": {
+      "ht": "",
+      "at": "立即应用"
+    },
+    "unapplied_changes_exit": {
+      "ht": "",
+      "at": "不应用直接退出"
+    },
+    "browse_ini_tooltip": {
+      "ht": "",
+      "at": "选择要导入的本地 .ini 文件。"
+    },
+    "generate_now_tooltip": {
+      "ht": "",
+      "at": "立即运行 DataForge 提取 + 增强内容流程。首次运行需要几分钟。"
+    },
+    "skip_generate_tooltip": {
+      "ht": "",
+      "at": "跳过生成增强内容，继续操作。你可以之后在增强内容标签页中运行它。"
+    }
+  },
+  "progress": {
+    "reading_sources": {
+      "ht": "",
+      "at": "正在读取源文件…"
+    },
+    "creating_entries": {
+      "ht": "",
+      "at": "正在创建字符串条目对象…"
+    },
+    "computing_sort_keys": {
+      "ht": "",
+      "at": "正在计算排序键…"
+    },
+    "ready": {
+      "ht": "",
+      "at": "就绪"
+    },
+    "applying_patches": {
+      "ht": "",
+      "at": "正在应用 DataForge 补丁…"
+    },
+    "loading_generator": {
+      "ht": "",
+      "at": "正在加载增强内容生成器…"
+    },
+    "generating_enhancements": {
+      "ht": "",
+      "at": "正在生成增强内容（首次运行可能需要几分钟）…"
+    },
+    "unp4k_launch": {
+      "ht": "",
+      "at": "正在启动 unp4k——这可能需要一分钟…"
+    },
+    "unp4k_launch_short": {
+      "ht": "",
+      "at": "正在启动 unp4k…"
+    },
+    "copy_global": {
+      "ht": "",
+      "at": "正在将提取的 global.ini 复制到缓存…"
+    },
+    "copy_global_short": {
+      "ht": "",
+      "at": "正在复制提取的 global.ini…"
+    },
+    "extract_dcb": {
+      "ht": "",
+      "at": "正在从 Data.p4k 提取 Game2.dcb…"
+    },
+    "unforge": {
+      "ht": "",
+      "at": "正在转换 DataForge 数据库——这需要几分钟…"
+    },
+    "unforge_short": {
+      "ht": "",
+      "at": "正在转换 DataForge 数据库…"
+    },
+    "caching_entities": {
+      "ht": "",
+      "at": "正在缓存实体文件…"
+    },
+    "snapshot_diff": {
+      "ht": "",
+      "at": "正在为差异对比创建缓存快照…"
+    }
+  },
+  "status_bar": {
+    "no_strings_loaded": {
+      "ht": "",
+      "at": "未加载字符串：请先在配置标签页从 Data.p4k 提取"
+    },
+    "update_checking": {
+      "ht": "",
+      "at": "正在检查…"
+    },
+    "update_available": {
+      "ht": "",
+      "at": "v{version} 可用"
+    },
+    "update_up_to_date": {
+      "ht": "",
+      "at": "已是最新（v{version}）"
+    },
+    "update_check_failed": {
+      "ht": "",
+      "at": "检查失败"
+    },
+    "update_indicator_available": {
+      "ht": "",
+      "at": "v{current} · 有可用更新"
+    },
+    "update_indicator_up_to_date": {
+      "ht": "",
+      "at": "v{current} · 已是最新"
+    },
+    "update_indicator_failed": {
+      "ht": "",
+      "at": "v{current} · 检查失败"
+    },
+    "open_release_page_tooltip": {
+      "ht": "",
+      "at": "打开 v{version} 的发布页面"
+    }
+  },
+  "tutorial": {
+    "welcome": {
+      "title": {
+        "ht": "",
+        "at": "欢迎使用智慧公民"
+      },
+      "description": {
+        "ht": "",
+        "at": "这段简短的教程将介绍自定义字符串并将结果应用到《星际公民》的核心工作流程。其中许多步骤会自动完成，但也可以按需手动执行。你可以随时跳过。"
+      }
+    },
+    "extract": {
+      "title": {
+        "ht": "",
+        "at": "1. 从 Data.p4k 提取"
+      },
+      "description": {
+        "ht": "",
+        "at": "点击“提取”会解包你已安装游戏的官方本地化文件。如果你当前的文件因补丁而过期，系统应会提示你执行此操作；如果没有，你也可以随时手动运行。提取完成后，字符串会自动重新加载到表格中。"
+      }
+    },
+    "enhancements": {
+      "title": {
+        "ht": "",
+        "at": "2. 增强内容"
+      },
+      "description": {
+        "ht": "",
+        "at": "可选但推荐：增强内容标签页可切换飞船、组件、武器、任务蓝图/奖励以及商品制作的数据统计叠加层。“生成增强内容”会运行从你提取的数据中生成这些叠加层的流程。接下来的几步将逐一介绍此标签页中的各个部分。"
+      }
+    },
+    "enh_categories": {
+      "title": {
+        "ht": "",
+        "at": "3. 增强内容：分类"
+      },
+      "description": {
+        "ht": "",
+        "at": "切换生成时运行的增强内容分类。飞船、组件、飞船武器、FPS 武器、任务、任务奖励、商品制作和医疗消耗品均可独立启用。"
+      }
+    },
+    "enh_favorites": {
+      "title": {
+        "ht": "",
+        "at": "4. 增强内容：收藏"
+      },
+      "description": {
+        "ht": "",
+        "at": "选择添加到收藏飞船名称前的前缀字符，使其排在游戏内 ASOP 终端列表的最前面。默认是 *。"
+      }
+    },
+    "enh_mission_labels": {
+      "title": {
+        "ht": "",
+        "at": "5. 增强内容：任务标签"
+      },
+      "description": {
+        "ht": "",
+        "at": "自定义分区标题（任务详情 / 潜在蓝图 / 物品奖励 / 蓝图数据）、在没有特定阵营等级的任务上显示的经验标签（默认“声望”），以及标题的强调标签（EM3 = 下划线，EM4 = 颜色）。"
+      }
+    },
+    "enh_tag_builder": {
+      "title": {
+        "ht": "",
+        "at": "6. 增强内容：标签生成器"
+      },
+      "description": {
+        "ht": "",
+        "at": "构建添加到组件、导弹、飞船武器和商品上的括号名称标签。用 ▲/▼ 重新排序元素，取消勾选可排除，更改缩写长度，选择分隔符和括号，或将标签放在名称之后而不是之前。"
+      }
+    },
+    "blueprint_tracker": {
+      "title": {
+        "ht": "",
+        "at": "7. 蓝图追踪器"
+      },
+      "description": {
+        "ht": "",
+        "at": "标记你拥有的蓝图。可按名称或任务搜索左侧列表，或按组件类型、等级、尺寸和品级缩小范围，然后用箭头将物品移动到你的已拥有列表。已拥有的蓝图在任务的潜在奖励中出现时会带有 [已拥有] 标签，让你一眼就能看出哪些值得追求。"
+      }
+    },
+    "edit": {
+      "title": {
+        "ht": "",
+        "at": "8. 编辑字符串"
+      },
+      "description": {
+        "ht": "",
+        "at": "每一行都是一条本地化记录。双击“自定义值”列中的单元格进行编辑——你的更改会自动保存。★ 列将飞船标记为收藏，使其排在 ASOP 的最前面。"
+      }
+    },
+    "filter_row": {
+      "title": {
+        "ht": "",
+        "at": "9. 按列筛选"
+      },
+      "description": {
+        "ht": "",
+        "at": "列标题下方的搜索框行会在你输入时筛选表格。每个框仅作用于其所属的列（键名、默认值、当前值、自定义值）；跨列的筛选条件以“与”组合。点击框内的 × 可清空它。"
+      }
+    },
+    "editor": {
+      "title": {
+        "ht": "",
+        "at": "10. 编辑器面板"
+      },
+      "description": {
+        "ht": "",
+        "at": "对于较长的字符串，点击“编辑器”打开一个空间更大的侧边停靠编辑区域。该面板会跟随你选择的行；右键点击所选文本可添加下划线/高亮强调。拖动标题栏可将其取消停靠为自由浮动窗口。"
+      }
+    },
+    "preview": {
+      "title": {
+        "ht": "",
+        "at": "11. 预览面板"
+      },
+      "description": {
+        "ht": "",
+        "at": "每当你选择一行，右侧的这个面板会显示其当前值渲染后的文本。"
+      }
+    },
+    "apply": {
+      "title": {
+        "ht": "",
+        "at": "12. 应用增强内容"
+      },
+      "description": {
+        "ht": "",
+        "at": "“应用”会将合并结果写入游戏的 global.ini。会先创建当前 global.ini 的带时间戳备份（最多保留 5 个，可通过“恢复备份”还原）。"
+      }
+    },
+    "cfg_appearance": {
+      "title": {
+        "ht": "",
+        "at": "13. 配置：外观"
+      },
+      "description": {
+        "ht": "",
+        "at": "选择应用主题（默认 / 浅色 / 深色 / ODW），并可选择禁用新版本的自动教程。"
+      }
+    },
+    "cfg_sc_install": {
+      "title": {
+        "ht": "",
+        "at": "14. 配置：星际公民安装"
+      },
+      "description": {
+        "ht": "",
+        "at": "你的《星际公民》安装根目录路径（包含 LIVE、PTU、EPTU 等的目录）。安装时会自动检测；如果你的游戏安装在其他位置，可在此编辑。“频道”下拉菜单选择应用读写哪个频道，“语言”下拉菜单则同时切换应用界面和游戏字符串。"
+      }
+    },
+    "cfg_data_folder": {
+      "title": {
+        "ht": "",
+        "at": "15. 配置：智慧公民数据"
+      },
+      "description": {
+        "ht": "",
+        "at": "存放 user.ini、缓存、DataForge 提取内容、生成的增强内容 INI 及备份的位置。默认是 文档\\Smart Citizen；如果提取或缓存清理速度较慢，请将其移出 OneDrive。"
+      }
+    },
+    "cfg_p4k_extraction": {
+      "title": {
+        "ht": "",
+        "at": "16. 配置：基础本地化"
+      },
+      "description": {
+        "ht": "",
+        "at": "“从 Data.p4k 提取”按钮就在此处。这是基础字符串和增强内容数据的唯一来源——在游戏更新后重新运行以刷新数据。"
+      }
+    },
+    "cfg_tools": {
+      "title": {
+        "ht": "",
+        "at": "17. 配置：工具"
+      },
+      "description": {
+        "ht": "",
+        "at": "通过冲突解决对话框将外部 INI 导入到你的覆盖项中，或重置当前频道的 user.ini（清除前会自动备份）。"
+      }
+    },
+    "help": {
+      "title": {
+        "ht": "",
+        "at": "18. 帮助与反馈"
+      },
+      "description": {
+        "ht": "",
+        "at": "“帮助”按钮会打开一个侧边面板，其中包含完整指南、已知问题列表，以及智慧公民 Discord 频道的反馈链接。到这里，你需要了解的一切就都齐了——祝你好运，公民。"
+      }
+    }
+  }
+}
