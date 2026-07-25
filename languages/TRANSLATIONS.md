@@ -94,3 +94,15 @@ them against the new source.
   source (99.9% vs 78.4% key coverage). Spanish writes to the game's
   `spanish_(spain)` Localization folder with `g_language = spanish_(spain)`
   (`SC_LANGUAGE_IDS`), confirmed to render in-game.
+- **italian** — AI-translated by **Claude** (#298). No human translator yet, so
+  **every** key is `at`-only (`ht` empty) — the whole UI, the guided tour
+  (`tutorial.*`), and the `HELP.md` / `ABOUT.md` / `LEGAL.md` / `FAQ.md`
+  documents are awaiting human review (grep `"ht": ""` returns the entire
+  file by design). The base `global.ini` is sourced from
+  **Dymerz/StarCitizen-Localization**
+  (`data/Localization/italian_(italy)/global.ini`), the same source repo
+  already used for french and portuguese_br. Italian writes to the game's
+  `italian_(italy)` Localization folder with `g_language = italian_(italy)`
+  (`SC_LANGUAGE_IDS`). An Italian-speaking reviewer replacing the `at`
+  strings with `ht` is the next step to promote it from AI-only to
+  human-reviewed.

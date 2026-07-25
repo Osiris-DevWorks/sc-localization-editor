@@ -1056,7 +1056,7 @@
     },
     "custom_value_prompt": {
       "ht": "",
-      "at": "Inserisci il valore personalizzato per la chiave:\n{loc_key}"
+      "at": "Inserisci il valore personalizzato per la chiave:\n{key}"
     },
     "auto_add_summary": {
       "ht": "",
