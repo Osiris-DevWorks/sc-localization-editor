@@ -50,6 +50,19 @@ them against the new source.
 
 ## Backfill log
 
+- **2.3.0 cycle (2026-07-24, Claude Sonnet 5):** Full AI translation for the new
+  **italian** language (#298). All 376 `ui.json` keys plus the full 19-step
+  `tutorial.*` guided tour (38 keys) translated to Italian, `ht: ""` / `at:
+  "<translation>"` throughout — there is no human translator yet, so every
+  key is a review candidate (grep `"ht": ""` finds all of it). `HELP.md`,
+  `ABOUT.md`, `LEGAL.md`, and `FAQ.md` translated in full from the English
+  originals. The base `global.ini` for Italian is sourced from
+  `Dymerz/StarCitizen-Localization`
+  (`data/Localization/italian_(italy)/global.ini`), the same source repo
+  already used for french and portuguese_br. Italian writes to the game's
+  `italian_(italy)` Localization folder with `g_language = italian_(italy)`
+  (`SC_LANGUAGE_IDS`). Also added Italian to the installer's
+  `LanguageChoicePage` (`installer.iss`) as the 5th option.
 - **2.2.0 pre-release (2026-07-15, Claude Fable 5):** AI backfill of the keys
   this cycle added in English only. french and portuguese_br each gained 43
   `at`-only keys (Blueprint Tracker tab, blueprint shuttle/facets, log-scan
