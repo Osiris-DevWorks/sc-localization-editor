@@ -53,6 +53,11 @@ class ConfigTab(QWidget):
     # Emitted when the user picks a different language. MainWindow listens and
     # triggers a merge+reload so the table reflects the new language strings.
     language_changed = pyqtSignal(str)
+    # Emitted by the Settings Backup buttons. MainWindow owns the file
+    # dialogs, the zip I/O (src/utils/settings_profile.py), and the
+    # post-import restart flow so this tab stays presentation-only.
+    export_settings_requested = pyqtSignal()
+    import_settings_requested = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -361,6 +366,34 @@ class ConfigTab(QWidget):
         # Tools last, so it sits at the bottom of the Config tab.
         layout.addWidget(self._tools_group)
 
+        # ── Settings Backup (Export / Import Settings) ───────────────────────
+        self._backup_group = QGroupBox(tr("config.backup_group"))
+        backup_layout = QVBoxLayout(self._backup_group)
+
+        self._backup_desc_label = QLabel(tr("config.backup_desc"))
+        self._backup_desc_label.setProperty("role", "secondary")
+        self._backup_desc_label.setStyleSheet("font-size: 11px;")
+        self._backup_desc_label.setWordWrap(True)
+        backup_layout.addWidget(self._backup_desc_label)
+
+        backup_btn_layout = QHBoxLayout()
+
+        self._export_settings_btn = QPushButton(tr("config.export_settings_btn"))
+        self._export_settings_btn.setMaximumWidth(150)
+        self._export_settings_btn.setToolTip(tr("config.export_settings_tooltip"))
+        self._export_settings_btn.clicked.connect(self.export_settings_requested.emit)
+        backup_btn_layout.addWidget(self._export_settings_btn)
+
+        self._import_settings_btn = QPushButton(tr("config.import_settings_btn"))
+        self._import_settings_btn.setMaximumWidth(150)
+        self._import_settings_btn.setToolTip(tr("config.import_settings_tooltip"))
+        self._import_settings_btn.clicked.connect(self.import_settings_requested.emit)
+        backup_btn_layout.addWidget(self._import_settings_btn)
+
+        backup_btn_layout.addStretch()
+        backup_layout.addLayout(backup_btn_layout)
+        layout.addWidget(self._backup_group)
+
         layout.addStretch()
 
         # Host the content in a scroll area. MainWindow adds the tab widget
@@ -400,6 +433,12 @@ class ConfigTab(QWidget):
         self._preview_btn.setToolTip(tr("config.preview_apply_tooltip"))
         self._check_updates_btn.setText(tr("config.check_updates_btn"))
         self._check_updates_btn.setToolTip(tr("config.check_updates_tooltip"))
+        self._backup_group.setTitle(tr("config.backup_group"))
+        self._backup_desc_label.setText(tr("config.backup_desc"))
+        self._export_settings_btn.setText(tr("config.export_settings_btn"))
+        self._export_settings_btn.setToolTip(tr("config.export_settings_tooltip"))
+        self._import_settings_btn.setText(tr("config.import_settings_btn"))
+        self._import_settings_btn.setToolTip(tr("config.import_settings_tooltip"))
         self._appearance_group.setTitle(tr("config.appearance_group"))
         self._theme_label.setText(tr("config.theme_label"))
         self.theme_combo.setToolTip(tr("config.theme_tooltip"))

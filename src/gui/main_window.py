@@ -321,6 +321,11 @@ class MainWindow(QMainWindow):
         # apply_to_game. Cleared on completion or any failure.
         self._simple_run_active = False
 
+        # Import Settings: True while closing for the post-import restart, so
+        # closeEvent neither nags about unapplied edits nor autosaves the
+        # in-memory user.ini over the files the import just wrote.
+        self._suppress_user_ini_autosave = False
+
         # #157: item names (normalized) that appear in any POTENTIAL BLUEPRINTS
         # list — the rows eligible for the Owned star. Recomputed on each load.
         self._bp_item_names: set[str] = set()
@@ -413,6 +418,8 @@ class MainWindow(QMainWindow):
         self.config_tab.check_updates_requested.connect(self._on_check_updates_clicked)
         self.config_tab.data_dir_changed.connect(self._on_data_dir_changed)
         self.config_tab.cache_dir_changed.connect(self._on_cache_dir_changed)
+        self.config_tab.export_settings_requested.connect(self._handle_export_settings)
+        self.config_tab.import_settings_requested.connect(self._handle_import_settings)
         self._config_tab_index = self.tabs.addTab(self.config_tab, tr("tabs.config"))
 
         # Enhancements tab
@@ -2315,6 +2322,249 @@ class MainWindow(QMainWindow):
             tr("restore_user_ini.restored_body", channel=channel, name=chosen.name),
         )
 
+    def _handle_export_settings(self):
+        """Export Settings: snapshot settings + per-channel user.ini into a zip.
+
+        The zip is a few KB — preferences and string overrides only, never
+        the regenerable cache. Works identically in registry and portable
+        builds (AppSettings.export_all_values is backend-agnostic).
+        """
+        from src.utils.settings_profile import (
+            SOURCE_MODE_PORTABLE,
+            SOURCE_MODE_REGISTRY,
+            default_backup_filename,
+            write_profile_zip,
+        )
+
+        # Flush on-screen Tag Builder edits first — same "what you see is
+        # what you save" rule Generate Enhancements follows (#215). Tag
+        # configs only reach settings via Save Tag Changes / Generate, so
+        # without this a user who tweaked tags and went straight to Export
+        # would back up their *previous* config.
+        self.enhancements_tab.flush_pending_tag_edits()
+
+        settings_values = AppSettings.export_all_values()
+        overrides = AppSettings.export_channel_overrides()
+
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            tr("settings_backup.export_dialog_title"),
+            default_backup_filename(),
+            tr("settings_backup.zip_filter"),
+        )
+        if not path:
+            return
+
+        try:
+            write_profile_zip(
+                path,
+                settings=settings_values,
+                overrides=overrides,
+                app_version=get_version(),
+                source_mode=SOURCE_MODE_PORTABLE if IS_PORTABLE else SOURCE_MODE_REGISTRY,
+            )
+        except OSError as e:
+            logger.exception(f"Export Settings failed writing {path}")
+            QMessageBox.critical(
+                self,
+                tr("settings_backup.export_failed_title"),
+                tr("settings_backup.export_failed_body",
+                   error_type=type(e).__name__, error=e),
+            )
+            return
+
+        self.statusBar().showMessage(tr("status_bar.settings_exported"), 5000)
+        QMessageBox.information(
+            self,
+            tr("settings_backup.export_done_title"),
+            tr("settings_backup.export_done_body",
+               path=path,
+               n_settings=len(settings_values),
+               channels=", ".join(sorted(overrides)) or tr("settings_backup.no_channels")),
+        )
+
+    def _handle_import_settings(self):
+        """Import Settings: restore a backup zip, then restart to load it.
+
+        Flow: pick zip → validate → confirm → snapshot current user.ini files
+        (rotating backups, so the import is reversible) → write overrides +
+        settings → re-detect the SC install (machine paths never travel in a
+        backup) → set the post-import flag so the NEXT launch offers to
+        regenerate + apply enhancements → offer restart.
+        """
+        from src.utils.settings_profile import InvalidProfileError, read_profile_zip
+        from src.utils.user_ini_manager import backup_user_ini
+
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            tr("settings_backup.import_dialog_title"),
+            "",
+            tr("settings_backup.zip_filter"),
+        )
+        if not path:
+            return
+
+        try:
+            profile = read_profile_zip(path)
+        except InvalidProfileError as e:
+            QMessageBox.critical(
+                self,
+                tr("settings_backup.import_invalid_title"),
+                tr("settings_backup.import_invalid_body", error=e),
+            )
+            return
+
+        made_with = profile.app_version or "?"
+        when = profile.exported_at.replace("T", " ") if profile.exported_at else "?"
+        channels = ", ".join(sorted(profile.overrides)) or tr("settings_backup.no_channels")
+        reply = QMessageBox.question(
+            self,
+            tr("settings_backup.import_confirm_title"),
+            tr("settings_backup.import_confirm_body",
+               version=made_with, when=when,
+               n_settings=len(profile.settings), channels=channels),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        # Write per-channel overrides, snapshotting any existing user.ini
+        # into the channel's rotating backups first (#172 machinery) so an
+        # accidental import is recoverable.
+        try:
+            for channel, text in profile.overrides.items():
+                target = AppSettings.get_channel_user_ini_path(channel)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                if target.exists():
+                    backup_user_ini(target)
+                target.write_text(text, encoding="utf-8")
+                logger.info(f"Import Settings: wrote {target}")
+        except OSError as e:
+            logger.exception("Import Settings failed writing overrides")
+            QMessageBox.critical(
+                self,
+                tr("settings_backup.import_failed_title"),
+                tr("settings_backup.import_failed_body",
+                   error_type=type(e).__name__, error=e),
+            )
+            return
+
+        applied = AppSettings.import_values(profile.settings)
+        logger.info(
+            f"Import Settings: {applied} settings applied, "
+            f"{len(profile.overrides)} channel override(s) from {path}"
+        )
+
+        # Resync widgets that cache settings at construction. Without this the
+        # Tag Builder pages still hold the pre-import config, and the next
+        # Save Tag Changes / Generate Enhancements / Export Settings would
+        # write that stale state back over what we just imported — which is
+        # exactly how imported tag configs were getting lost.
+        self.enhancements_tab.reload_tag_builder_from_settings()
+        self.enhancements_tab.revert_category_checkboxes()
+
+        # The backup carries the SC install path so a same-PC restore keeps
+        # it, but it's only trusted if the folder actually exists here —
+        # otherwise this clears it and falls back to auto-detection.
+        outcome = AppSettings.reconcile_imported_install_path()
+        resolved_root = AppSettings.get_sc_install_root()
+
+        # Next launch prompts to regenerate + apply enhancements against the
+        # imported settings (fresh cache, imported tag configs and overrides).
+        AppSettings.set_post_import_apply_pending(True)
+
+        if outcome == AppSettings.INSTALL_PATH_RESTORED:
+            body = tr("settings_backup.import_done_body_restored",
+                      applied=applied, channels=channels, root=resolved_root)
+        elif outcome == AppSettings.INSTALL_PATH_REDETECTED:
+            body = tr("settings_backup.import_done_body_detected",
+                      applied=applied, channels=channels, root=resolved_root)
+        else:
+            body = tr("settings_backup.import_done_body_no_install",
+                      applied=applied, channels=channels)
+
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle(tr("settings_backup.import_done_title"))
+        box.setText(body)
+        restart_btn = box.addButton(
+            tr("settings_backup.restart_now_btn"), QMessageBox.ButtonRole.AcceptRole
+        )
+        box.addButton(
+            tr("settings_backup.restart_later_btn"), QMessageBox.ButtonRole.RejectRole
+        )
+        box.setDefaultButton(restart_btn)
+        box.exec()
+
+        if box.clickedButton() is restart_btn:
+            self._relaunch_app()
+
+    def _relaunch_app(self) -> None:
+        """Restart Smart Citizen: spawn a detached copy, then close this one.
+
+        Used by Import Settings so the freshly-imported settings are what the
+        new process reads at startup. The suppress flag keeps closeEvent
+        from autosaving stale in-memory state over the imported files.
+        """
+        from PyQt6.QtCore import QProcess
+
+        self._suppress_user_ini_autosave = True
+
+        if getattr(sys, "frozen", False):
+            program, args = sys.executable, []
+        else:
+            program, args = sys.executable, [os.path.abspath(sys.argv[0])]
+        workdir = str(Path(program).resolve().parent)
+
+        if not QProcess.startDetached(program, args, workdir):
+            logger.error(f"Relaunch failed for {program} {args}")
+            QMessageBox.warning(
+                self,
+                tr("settings_backup.relaunch_failed_title"),
+                tr("settings_backup.relaunch_failed_body"),
+            )
+            # Fall through to close anyway — the user relaunches by hand and
+            # still gets the imported state + post-import prompt.
+        self.close()
+
+    def _maybe_prompt_post_import_apply(self) -> None:
+        """Offer to regenerate + apply enhancements after importing settings.
+
+        Runs once per import: the flag Import Settings left behind is cleared
+        the moment it's read, so declining just leaves the normal manual
+        Apply Enhancements path. Reuses the Simple-mode continuation
+        (#180) — generate, then apply_to_game — regardless of UI mode.
+        """
+        if not AppSettings.get_post_import_apply_pending():
+            return
+        AppSettings.set_post_import_apply_pending(False)
+
+        if not AppSettings.get_game_install_path():
+            QMessageBox.information(
+                self,
+                tr("settings_backup.post_import_no_install_title"),
+                tr("settings_backup.post_import_no_install_body"),
+            )
+            self.tabs.setCurrentIndex(self._config_tab_index)
+            return
+
+        reply = QMessageBox.question(
+            self,
+            tr("settings_backup.post_import_apply_title"),
+            tr("settings_backup.post_import_apply_body"),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        if self._enhancements_worker is not None or self._forge_worker is not None:
+            return  # a pipeline is somehow already running; don't stack
+        self._simple_run_active = True
+        self.simple_page.set_busy(True)
+        self._run_enhancements_pipeline()
+
     def _handle_import_ini(self):
         """Handle Import INI button: get source, validate, resolve conflicts, merge."""
         from PyQt6.QtWidgets import (
@@ -3047,6 +3297,7 @@ class MainWindow(QMainWindow):
         self._startup_gate_pending = False
         self._start_startup_sync()
         self._maybe_warn_onedrive_data_dir()
+        self._maybe_prompt_post_import_apply()
 
     def _maybe_warn_onedrive_data_dir(self) -> None:
         """Warn once when the data root is inside a OneDrive-managed folder (#172).
@@ -4531,7 +4782,7 @@ class MainWindow(QMainWindow):
         # _apply_dirty directly since the latter also starts True at launch
         # (see its comment) — that boot-time uncertainty shouldn't nag a user
         # who hasn't touched anything this session.
-        if self._session_has_unapplied_edit:
+        if self._session_has_unapplied_edit and not self._suppress_user_ini_autosave:
             box = QMessageBox(self)
             box.setIcon(QMessageBox.Icon.Warning)
             box.setWindowTitle(tr("dialogs.unapplied_changes_title"))
@@ -4565,8 +4816,14 @@ class MainWindow(QMainWindow):
             # exit_btn: fall through to the normal close sequence below,
             # exiting without applying.
 
-        # Auto-save overrides if there are unsaved edits
-        if self.entries and not (self._loader_worker and self._loader_worker.isRunning()):
+        # Auto-save overrides if there are unsaved edits. Skipped when closing
+        # for a post-import restart — the in-memory entries reflect the OLD
+        # user.ini and would clobber the files Import Settings just wrote.
+        if (
+            self.entries
+            and not self._suppress_user_ini_autosave
+            and not (self._loader_worker and self._loader_worker.isRunning())
+        ):
             try:
                 from src.utils.user_ini_manager import save_user_ini, should_autosave_user_ini
                 user_ini_path = AppSettings.get_user_ini_path()
