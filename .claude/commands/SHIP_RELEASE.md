@@ -99,7 +99,13 @@ This triggers `release.yml`. The workflow auto-creates and pushes `vX.Y.Z` — n
 
 **CHECKPOINT — `main` pushed. The release workflow is now running. Watch it at:** `gh run watch` or the Actions tab. Wait for the user to confirm the workflow completed successfully (installer + portable zip attached, Discord notification posted).
 
-## 4. Open the next integration branch
+## 4. Close Resolved Issues
+
+Review the open issues and close any with a resolution comment if they were fixed in this release. Present a table of issues that were closed and why.
+
+**CHECKPOINT — `issues` closed. Okay to proceed to the next step, or do you want to re-open any of these issues?
+
+## 5. Open the next integration branch
 
 Offer to run `/start_release patch` to open the next bug-fix-scoped branch immediately. Most ships are followed by a patch branch as the new integration target. If the user wants `minor` or `major` instead, defer to them.
 

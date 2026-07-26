@@ -418,6 +418,17 @@ class EnhancementsTab(QWidget):
         button never lighting up to prompt a re-run."""
         self._mark_enhancements_dirty()
 
+    def mark_enhancements_clean(self) -> None:
+        """Public entrypoint for external callers (MainWindow) to flag that
+        a Generate Enhancements run is starting, regardless of how it was
+        triggered — manual click, Tag Builder apply, or the automated
+        freshness check (#292). Call at the point a run is launched, not on
+        completion: set_operation_idle() only re-enables the button on
+        success, it doesn't force it clean, so if a run is triggered while
+        already dirty this needs to have cleared the flag first or the
+        button stays red after a successful generation."""
+        self._set_generate_btn_dirty(False)
+
     def refresh_enhancements_dirty_state(self) -> None:
         """Public entrypoint for external callers (MainWindow) to re-derive
         the Generate Enhancements button's enabled state from the current
@@ -435,20 +446,48 @@ class EnhancementsTab(QWidget):
         retoggle some checkbox that forces the flag back on."""
         self._set_generate_btn_dirty(self._compute_initial_enhancements_dirty())
 
-    def refresh_tag_builder_dirty_state(self) -> None:
-        """Public entrypoint for external callers (MainWindow) to light the
-        Save Tag Changes button after a channel switch (#273 follow-up).
+    def _live_tag_config_fingerprint(self) -> str:
+        """Fingerprint the Tag Builder config as it stands in the pages right
+        now — INCLUDING unsaved in-session edits — so a freshness check reflects
+        what the user actually sees, not just what's been persisted. Falls back
+        to the persisted config when the Tag Builder group hasn't been built
+        yet (same getattr guard as _persist_tag_builder_state).
 
-        Tag Builder configs are global, but the generated enhancement INIs
-        they feed are per-channel, and nothing records which configs a
-        channel's INIs were last generated with — so after a switch there
-        is no way to prove the new channel's output carries the current
-        tags. Err on the side of clickable: a grey button here left the
-        user unable to stamp their tags onto the freshly selected channel
-        at all (the "can't apply changes" half of the report), while a lit
-        button costs at worst one redundant regeneration."""
-        if getattr(self, "_apply_tag_btn", None) is not None:
-            self._set_tag_btn_dirty(True)
+        Using the live page state (not AppSettings.get_current_tag_config_
+        fingerprint()) is deliberate: comparing persisted-only config against a
+        channel's stamp could clear the button while unsaved edits still sit in
+        the pages, silently dropping the "you have unsaved changes" signal. In
+        the no-edit steady state the pages equal the persisted config, so this
+        still matches the stamp the generator wrote from those same values."""
+        from src.utils.tag_builder import tag_config_fingerprint
+        pages = getattr(self, "_tag_builder_pages", None)
+        annotate_cb = getattr(self, "_annotate_mission_descs_cb", None)
+        if not pages or annotate_cb is None:
+            return AppSettings.get_current_tag_config_fingerprint()
+        configs = {cat: page.config for cat, page in pages.items()}
+        return tag_config_fingerprint(configs, annotate_cb.isChecked())
+
+    def refresh_tag_builder_dirty_state(self) -> None:
+        """Public entrypoint for external callers (MainWindow) to re-derive the
+        Save Tag Changes button's state after a channel switch (#273 follow-up).
+
+        Tag Builder configs are global, but the generated enhancement INIs they
+        feed are per-channel. Generation now stamps each channel's enhancement
+        dir with a fingerprint of the tag config it was built from (see
+        workers.py / AppSettings.get/set_tag_config_stamp), so we can do a real
+        freshness check here — matching Generate Enhancements' own
+        refresh_enhancements_dirty_state — instead of always lighting the
+        button. Light it only when the new channel's stamp is missing or
+        differs from the config currently shown in the pages (so its INIs
+        genuinely lack those tags); leave it grey when they already match. A
+        missing stamp (channels generated before this feature, or never
+        generated) reads as dirty, so the button stays clickable exactly as it
+        did before until the next generation records a stamp."""
+        if getattr(self, "_apply_tag_btn", None) is None:
+            return
+        stamp = AppSettings.get_tag_config_stamp()
+        current = self._live_tag_config_fingerprint()
+        self._set_tag_btn_dirty(not stamp or stamp != current)
 
     def _on_category_checkbox_changed(self):
         """Enable Apply button if any checkbox differs from saved settings."""
@@ -705,11 +744,11 @@ class EnhancementsTab(QWidget):
         self._generate_enhancements_btn.setToolTip(message)
 
     def set_operation_idle(self, success: bool = True):
-        """Re-enable after a background run. A successful run means the
-        button's own click already cleared the dirty flag, so leave it grey
-        unless something changed mid-run; a failed run re-enables
-        unconditionally so the user has a way to retry without first having
-        to touch an unrelated setting."""
+        """Re-enable after a background run. A successful run means
+        mark_enhancements_clean() already cleared the dirty flag when the
+        run was launched (#292), so leave it grey unless something changed
+        mid-run; a failed run re-enables unconditionally so the user has a
+        way to retry without first having to touch an unrelated setting."""
         if not success:
             self._enhancements_dirty = True
         self._set_generate_btn_dirty(self._enhancements_dirty)
@@ -915,8 +954,11 @@ class EnhancementsTab(QWidget):
         still got the old tag in the output.
         """
         self._persist_tag_builder_state()
+        # enhancements_pipeline_requested is a direct connection, so by the
+        # time emit() returns MainWindow._run_enhancements_pipeline has
+        # already called mark_enhancements_clean() for us (#292) — no need
+        # to clear the dirty flag here too.
         self.enhancements_pipeline_requested.emit()
-        self._set_generate_btn_dirty(False)
         # Generate also persists Tag Builder edits (see docstring above), so
         # it satisfies Save Tag Changes too — otherwise that button would
         # stay lit for a save that already happened.

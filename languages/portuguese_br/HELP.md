@@ -76,7 +76,7 @@ Clique em **Aplicar Aprimoramentos** para gravar suas edições na instalação 
 
 A cor do botão mostra a situação: **vermelho** significa que algo mudou desde a última aplicação (uma edição, uma regeneração, uma troca de idioma ou canal) e o jogo ainda não recebeu; **verde** significa que o jogo já corresponde ao que está carregado, e o botão fica desativado porque não há nada a refazer. A mesma convenção vermelho/verde vale para **Gerar Aprimoramentos** e **Aplicar alterações nas tags** na aba Aprimoramentos. Se você fechar o app com o botão Aplicar ainda vermelho, o Smart Citizen pergunta se deve aplicar agora ou sair sem aplicar, para que trabalho não aplicado nunca se perca em silêncio.
 
-O Smart Citizen também carimba uma pequena marca d'água na string de versão do launcher (`Frontend_PU_Version`), acrescentando `| Localizations Enhanced with Smart Citizen v{VERSION}`. É assim que você confirma no jogo que seu loc-pack está ativo: olhe o rótulo de versão no menu principal do Star Citizen. A marca é reescrita a cada aplicação, então nunca se acumula entre versões.
+O Smart Citizen também carimba uma pequena marca d'água na string de versão do launcher (`Frontend_PU_Version`), acrescentando `\nLocalizations Enhanced with Smart Citizen v{VERSION}` em sua própria linha. É assim que você confirma no jogo que seu loc-pack está ativo: olhe o rótulo de versão no menu principal do Star Citizen. A marca é reescrita a cada aplicação, então nunca se acumula entre versões.
 
 ## 8. Restaurar um Backup
 

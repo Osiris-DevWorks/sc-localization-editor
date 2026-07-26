@@ -13,6 +13,7 @@ change in their generated INIs until they edit a config.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
@@ -646,6 +647,39 @@ class TagConfig:
     @classmethod
     def from_json(cls, blob: str) -> "TagConfig":
         return cls.from_dict(json.loads(blob))
+
+
+def tag_config_fingerprint(
+    tag_configs: "dict[str, TagConfig]", annotate_mission_descs: bool
+) -> str:
+    """Stable 12-char hex fingerprint of the complete Tag Builder config state.
+
+    Two calls with equivalent config always return the same string, so a
+    channel's generated enhancement INIs can be stamped with the config they
+    were built from and a later channel switch can tell whether the current
+    Tag Builder config still matches (#292/#296 sibling: the Save Tag Changes
+    button used to light unconditionally after a switch because nothing
+    recorded which config a channel's INIs were generated with). Mirrors the
+    hashing shape of test_plan.plan_hash(): canonical JSON (sorted keys,
+    ASCII-escaped) → sha256 → first 12 hex chars.
+
+    Covers exactly what the "Save Tag Changes" button tracks in-session and
+    what _persist_tag_builder_state() writes: the per-category TagConfigs
+    (TagConfig.to_json() is itself canonical — sorted keys, frozensets sorted)
+    plus the annotate-mission-descriptions toggle. Deliberately excludes
+    generation *scope/target* inputs (which categories are enabled, the
+    selected language) since those pick what/where to generate, not the tag
+    content this button governs — folding them in would light the button for
+    changes it doesn't otherwise react to.
+    """
+    payload = {
+        "configs": {
+            cat: cfg.to_json() for cat, cfg in sorted(tag_configs.items())
+        },
+        "annotate_mission_descs": bool(annotate_mission_descs),
+    }
+    blob = json.dumps(payload, sort_keys=True, ensure_ascii=True)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:12]
 
 
 # ── Default configs (must match the previously hardcoded output) ─────────────

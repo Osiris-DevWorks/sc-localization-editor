@@ -76,7 +76,7 @@ Cliquez sur **Appliquer les enrichissements** pour écrire vos modifications dan
 
 La couleur du bouton vous indique où vous en êtes : **rouge** signifie que quelque chose a changé depuis votre dernière application (une modification, une régénération, un changement de langue ou de canal) et que le jeu ne l'a pas encore ; **vert** signifie que le jeu correspond déjà à ce qui est chargé, et le bouton reste désactivé puisqu'il n'y a rien à refaire. La même convention rouge/vert s'applique à **Générer les enrichissements** et **Appliquer les modifications d'étiquettes** dans l'onglet Enrichissements. Si vous fermez l'application alors que le bouton Appliquer est encore rouge, Smart Citizen vous demande s'il faut appliquer maintenant ou quitter sans appliquer, pour qu'aucun travail non appliqué ne se perde en silence.
 
-Smart Citizen ajoute aussi un petit filigrane à la version affichée par le lanceur (`Frontend_PU_Version`), en ajoutant `| Localizations Enhanced with Smart Citizen v{VERSION}`. C'est ainsi que vous pouvez confirmer en jeu que votre loc-pack est actif : regardez l'étiquette de version sur le menu principal de Star Citizen. Le filigrane est réécrit à chaque application, il ne s'accumule donc jamais d'une version à l'autre.
+Smart Citizen ajoute aussi un petit filigrane à la version affichée par le lanceur (`Frontend_PU_Version`), en ajoutant `\nLocalizations Enhanced with Smart Citizen v{VERSION}` sur sa propre ligne. C'est ainsi que vous pouvez confirmer en jeu que votre loc-pack est actif : regardez l'étiquette de version sur le menu principal de Star Citizen. Le filigrane est réécrit à chaque application, il ne s'accumule donc jamais d'une version à l'autre.
 
 ## 8. Restaurer une sauvegarde
 

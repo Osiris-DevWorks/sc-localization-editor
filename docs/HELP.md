@@ -74,7 +74,7 @@ Click **Apply Enhancements** to write your edits to the game installation. A tim
 
 The button's color tells you where you stand: **red** means something changed since your last apply (an edit, a regen, a language or channel switch) and the game doesn't have it yet; **green** means the game already matches what's loaded, and the button stays disabled so there's nothing to redo. The same red/green convention applies to **Generate Enhancements** and **Save Tag Changes** on the Enhancements tab. If you close the app while the Apply button is still red, Smart Citizen asks whether to apply now or exit without applying, so unapplied work can't slip away silently.
 
-Smart Citizen also stamps a small watermark onto the launcher version string (`Frontend_PU_Version`), appending `| Localizations Enhanced with Smart Citizen v{VERSION}`. That's how you can confirm in-game that your loc-pack is active — look at the version label on the Star Citizen main menu. The stamp is rewritten on each apply, so it never piles up across versions.
+Smart Citizen also stamps a small watermark onto the launcher version string (`Frontend_PU_Version`), appending `\nLocalizations Enhanced with Smart Citizen v{VERSION}` on its own line. That's how you can confirm in-game that your loc-pack is active — look at the version label on the Star Citizen main menu. The stamp is rewritten on each apply, so it never piles up across versions.
 
 ## 8. Restore a Backup
 

@@ -7,6 +7,8 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
+from src.utils.version import get_version
+
 logger = logging.getLogger(__name__)
 
 
@@ -73,7 +75,12 @@ def download_file_if_changed(url: str, output_path: str | Path) -> bool:
         Exception on non-304 HTTP errors, timeouts, or write failures.
     """
     output_path = Path(output_path)
-    headers: dict[str, str] = {}
+    # Some source hosts (e.g. ini.42kit.com) reject requests carrying
+    # urllib's default "Python-urllib/x.y" User-Agent with a 403, even though
+    # the same request succeeds with any explicit UA. GitHub raw content
+    # doesn't care either way, so this was latent until a non-GitHub source
+    # was added.
+    headers: dict[str, str] = {"User-Agent": f"SmartCitizen/{get_version()}"}
 
     if output_path.exists():
         mtime = output_path.stat().st_mtime

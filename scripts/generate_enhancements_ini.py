@@ -2795,13 +2795,15 @@ def _rep_reward_line(field_name: str, amount_str: str, rep_xp_label: str, track:
     """Render one reputation-reward line for a MISSION DETAILS body.
 
     *field_name* is the rank / standing name when known (e.g. ``"Neutral"``),
-    otherwise ``""``. *amount_str* is the pre-formatted signed amount, e.g.
-    ``"+500"``, ``"+500–4,000"``, or ``"-100"``. The configured reputation
-    label (``rep_xp_label``, default ``"Rep"``) becomes the field name when no
-    rank is known, and the trailing unit otherwise; it is never doubled. The
-    literal ``"XP"`` is never emitted: the label is the single source of the
-    unit word, so renaming it (Enhancements tab) flows through every mission
-    body (issue #102).
+    otherwise ``""``. *amount_str* is the pre-formatted amount, e.g. ``"500"``,
+    ``"500–4,000"``, or ``"-100"``. A leading ``"+"`` is deliberately never
+    added for a reward gain (issue #319: it read as confusing rather than
+    informative next to a plain number), while a penalty still shows its own
+    ``"-"`` sign. The configured reputation label (``rep_xp_label``, default
+    ``"Rep"``) becomes the field name when no rank is known, and the trailing
+    unit otherwise; it is never doubled. The literal ``"XP"`` is never
+    emitted: the label is the single source of the unit word, so renaming it
+    (Enhancements tab) flows through every mission body (issue #102).
 
     *track* is the reputation TRACK a faction's rank belongs to (e.g.
     "Security" vs the generic Contractor/Standing track — some factions have
@@ -2809,7 +2811,7 @@ def _rep_reward_line(field_name: str, amount_str: str, rep_xp_label: str, track:
     after the unit so a shared field name/label is never ambiguous about
     which track it feeds. Suppressed when it's identical to *field_name*
     (some ranks are named the same as their own track, e.g. Contractor rank 2
-    of the Contractor track — "Contractor: +200 Rep (Contractor)" would just
+    of the Contractor track, "Contractor: 200 Rep (Contractor)" would just
     repeat itself with no new information).
     """
     suffix = f" ({track})" if track and track != field_name else ""
@@ -2871,7 +2873,7 @@ def enhancements_mission(root: ET.Element, reputation_lookup: dict[str, int] | N
 
         total_rep_xp = _extract_mission_xp(root, reputation_lookup)
         if total_rep_xp > 0 and _show("reputation"):
-            lines.append(f"<EM4>{rep_xp_label}:</EM4> +{total_rep_xp:,}")
+            lines.append(f"<EM4>{rep_xp_label}:</EM4> {total_rep_xp:,}")
 
         # Extract spawn/wave counts — bucketed Hostiles / Friendlies /
         # Objectives / Unknown rather than the pre-1.4.1 single-tally
@@ -6238,14 +6240,14 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
             if _show("reputation"):
                 if len(nonzero_tiers) == 1:
                     sxp, fxp, rn, rt = nonzero_tiers[0]
-                    details_lines.append(_rep_reward_line(rn, f"+{sxp:,}", rep_xp_label, rt))
+                    details_lines.append(_rep_reward_line(rn, f"{sxp:,}", rep_xp_label, rt))
                     if fxp < 0:
                         details_lines.append(
                             _rep_reward_line("Failure Penalty", f"{fxp:,}", rep_xp_label)
                         )
                 elif len(nonzero_tiers) > 1:
                     for i, (sxp, fxp, rn, rt) in enumerate(sorted(nonzero_tiers, key=lambda t: t[0]), 1):
-                        line = _rep_reward_line(rn if rn else f"Tier {i}", f"+{sxp:,}", rep_xp_label, rt)
+                        line = _rep_reward_line(rn if rn else f"Tier {i}", f"{sxp:,}", rep_xp_label, rt)
                         if fxp < 0:
                             line += f" (Failure: {fxp:,})"
                         details_lines.append(line)
