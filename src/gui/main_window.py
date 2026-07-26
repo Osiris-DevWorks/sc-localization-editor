@@ -2549,14 +2549,25 @@ class MainWindow(QMainWindow):
             self.tabs.setCurrentIndex(self._config_tab_index)
             return
 
-        reply = QMessageBox.question(
-            self,
-            tr("settings_backup.post_import_apply_title"),
-            tr("settings_backup.post_import_apply_body"),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.Yes,
+        # Named buttons rather than stock Yes/No: "Apply Now" / "Later" says
+        # what each choice does without the body having to end in a question,
+        # and "Later" reads as a real option rather than a refusal (declining
+        # is fine — the Apply Enhancements button does the same thing).
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Question)
+        box.setWindowTitle(tr("settings_backup.post_import_apply_title"))
+        box.setText(tr("settings_backup.post_import_apply_body"))
+        apply_btn = box.addButton(
+            tr("settings_backup.post_import_apply_now_btn"),
+            QMessageBox.ButtonRole.AcceptRole,
         )
-        if reply != QMessageBox.StandardButton.Yes:
+        box.addButton(
+            tr("settings_backup.post_import_apply_later_btn"),
+            QMessageBox.ButtonRole.RejectRole,
+        )
+        box.setDefaultButton(apply_btn)
+        box.exec()
+        if box.clickedButton() is not apply_btn:
             return
 
         if self._enhancements_worker is not None or self._forge_worker is not None:

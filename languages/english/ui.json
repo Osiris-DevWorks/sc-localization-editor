@@ -2539,11 +2539,19 @@
       "at": ""
     },
     "post_import_apply_title": {
-      "ht": "Apply Your Imported Settings?",
+      "ht": "Almost Done — Apply to Your Game?",
       "at": ""
     },
     "post_import_apply_body": {
-      "ht": "Your imported settings are loaded, but the game caches on this PC are fresh — enhancements need to be regenerated and applied before your customizations show up in-game. This can take a few minutes (game data is extracted first when needed).\n\nDo this now?",
+      "ht": "Your settings are imported. The last step is to build your enhancements from this PC's game files and write them into the game.\n\nBackups store your settings, not the generated game text, so this has to be done once on each new PC. It usually takes a few minutes — a little longer the first time, while your game files are unpacked.\n\nYou can also do this later with the Apply Enhancements button.",
+      "at": ""
+    },
+    "post_import_apply_now_btn": {
+      "ht": "Apply Now",
+      "at": ""
+    },
+    "post_import_apply_later_btn": {
+      "ht": "Later",
       "at": ""
     }
   }
