@@ -216,6 +216,24 @@ try:
     print(f"Installer dir: dist/{exe_name}/")
     print()
 
+    # --collect-all=lxml (needed so dynamically-imported lxml submodules
+    # aren't missed) also drags in isoschematron's bundled reference-XSLT
+    # resources — used only if code calls lxml.isoschematron.Schematron(),
+    # which nothing here does. Those files add ~100+ chars of nested path
+    # depth (_internal/lxml/isoschematron/resources/xsl/iso-schematron-xslt1/...)
+    # for zero functional benefit, and combined with the patches/ tree's own
+    # depth that's enough to push some paths past Windows' 260-char MAX_PATH
+    # once extracted — which is what makes Explorer refuse to Recycle-Bin
+    # them on delete. Safe to strip post-build: doesn't touch lxml's actual
+    # etree/XPath parsing (compiled extension code, unaffected).
+    isoschematron_resources = os.path.join(
+        root_dir, 'dist', exe_name, '_internal', 'lxml', 'isoschematron', 'resources'
+    )
+    if os.path.exists(isoschematron_resources):
+        shutil.rmtree(isoschematron_resources)
+        print("  - Removed unused lxml isoschematron resources (dead weight, deep paths)")
+        print()
+
     # Portable distribution: zip up the onedir output for a no-install
     # USB-stick-friendly download. Recipients extract anywhere, run the
     # .exe inside; portable mode writes its data/ folder right there.
@@ -230,10 +248,16 @@ try:
             for root, _dirs, files in os.walk(onedir_path):
                 for fname in files:
                     full = os.path.join(root, fname)
-                    # Inside the zip: keep the SmartCitizen-Portable-vX.Y.Z/
-                    # top-level dir so an unzip-here doesn't dump 100+
-                    # files in the user's current directory.
-                    arcname = os.path.relpath(full, os.path.join(root_dir, 'dist'))
+                    # Inside the zip: files sit at the top level (no extra
+                    # SmartCitizen-Portable-vX.Y.Z/ wrapper). Explorer's
+                    # "Extract All" already creates an enclosing folder
+                    # named after the zip, so wrapping here too used to
+                    # double that prefix on the common extraction path —
+                    # exactly the kind of redundant length that tips deep
+                    # _internal/ paths over MAX_PATH. Recipients who
+                    # manually unzip into an already-open folder instead
+                    # of using Extract All will get the files loose there.
+                    arcname = os.path.relpath(full, onedir_path)
                     zf.write(full, arcname=arcname)
         zip_size_mb = os.path.getsize(zip_path) / (1024 * 1024)
         print(f"  Portable zip ready: dist/{zip_name} ({zip_size_mb:.1f} MB)")

@@ -99,6 +99,49 @@ class TestEnhancementsStamp:
         assert stamp.is_file()
 
 
+class TestTagConfigStamp:
+    """The .tag_config_stamp marker mirrors .dataforge_stamp: per-language,
+    round-trips, isolated between languages, and a corrupt (non-UTF-8) stamp
+    reads as missing rather than crashing (#251 bug class). Backs the Save Tag
+    Changes button's per-channel freshness check on switch."""
+
+    def test_absent_stamp_reads_empty(self, env):
+        assert AppSettings.get_tag_config_stamp("french") == ""
+
+    def test_round_trip(self, env):
+        AppSettings.set_tag_config_stamp("abc123def456", "french")
+        assert AppSettings.get_tag_config_stamp("french") == "abc123def456"
+
+    def test_stamps_are_per_language(self, env):
+        AppSettings.set_tag_config_stamp("french-fp", "french")
+        assert AppSettings.get_tag_config_stamp("portuguese_br") == ""
+
+    def test_independent_of_dataforge_stamp(self, env):
+        # Both stamps live in the same dir but must not read each other.
+        AppSettings.set_enhancements_stamp("p4k-key", "french")
+        AppSettings.set_tag_config_stamp("tag-fp", "french")
+        assert AppSettings.get_enhancements_stamp("french") == "p4k-key"
+        assert AppSettings.get_tag_config_stamp("french") == "tag-fp"
+
+    def test_stamp_file_lives_in_enhancements_dir(self, env):
+        AppSettings.set_tag_config_stamp("fp", "french")
+        stamp = (
+            AppSettings.get_enhancements_dir("french")
+            / AppSettings.TAG_CONFIG_STAMP_NAME
+        )
+        assert stamp.is_file()
+
+    def test_corrupt_stamp_reads_empty(self, env):
+        # A non-UTF-8 stamp must be treated as missing, not raise (#251).
+        stamp = (
+            AppSettings.get_enhancements_dir("french")
+            / AppSettings.TAG_CONFIG_STAMP_NAME
+        )
+        stamp.parent.mkdir(parents=True, exist_ok=True)
+        stamp.write_bytes(b"stamp\xa0value")
+        assert AppSettings.get_tag_config_stamp("french") == ""
+
+
 class TestLanguageBaseUrl:
     def test_unset_and_unbundled_resolves_empty(self, env, monkeypatch):
         monkeypatch.setattr(settings_module, "_bundled_language_sources", lambda: {})

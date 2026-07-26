@@ -134,6 +134,41 @@ def test_blueprint_type_buckets():
     assert blueprint_type_from_key(None) is None
 
 
+def test_blueprint_type_mining_head_family_not_ship_weapon():
+    """Reported: "S0 Helix" showed under Ship Weapon in the Blueprint
+    Tracker's Type filter while other mining lasers showed under Other.
+
+    Root cause: every real ship-mounted mining laser shares CIG's generic
+    "Mining_Head" entity-model key (item_NameMining_Head_S00_<Name>[_SCItem])
+    -- "Mining" starts with an uppercase letter like a manufacturer code, and
+    "_S00" is the head's own size-0 designator, so EVERY variant (not just
+    Helix) satisfies the #212 ship-weapon heuristic by coincidence. All four
+    real variants must land in Other, consistently."""
+    assert blueprint_type_from_key("item_NameMining_Head_S00_Arbor_SCItem") is None
+    assert blueprint_type_from_key("item_NameMining_Head_S00_Helix_SCItem") is None
+    assert blueprint_type_from_key("item_NameMining_Head_S00_Hofstede_SCItem") is None
+    assert blueprint_type_from_key("item_NameMining_Head_S00_Klein_SCItem") is None
+    # Real ship weapons must still classify correctly -- the carve-out is
+    # scoped to the "mining_head" token, not a blanket size-designator skip.
+    assert blueprint_type_from_key("item_NameKLWE_LaserCannon_S2") == "Ship Weapon"
+
+
+def test_build_metadata_mining_head_family_lands_in_other():
+    """End-to-end via build_blueprint_metadata, not just the key classifier
+    in isolation -- confirms the fix actually reaches the Blueprint Tracker's
+    Type filter for a real mission bullet + item_Name pair."""
+    desc = ("x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>"
+            "\\n- S0 Helix\\n- S0 Arbor")
+    entries = [
+        _Entry("M_Desc_001", desc, "Missions"),
+        _Entry("item_NameMining_Head_S00_Helix_SCItem", "S0 Helix", "Ship Items"),
+        _Entry("item_NameMining_Head_S00_Arbor_SCItem", "S0 Arbor", "Ship Items"),
+    ]
+    meta = build_blueprint_metadata(entries)
+    assert meta["S0 Helix"].type == "Other"
+    assert meta["S0 Arbor"].type == "Other"
+
+
 def test_blueprint_type_armor_core_pieces():
     """FPS armor torso-platform pieces ("Core") reported showing up in the
     Blueprint Tracker's "Other" bucket instead of "Armor". Newer

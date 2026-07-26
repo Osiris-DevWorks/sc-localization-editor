@@ -355,6 +355,17 @@ def blueprint_type_from_key(key: str):
         return _TYPE_FPS_WEAPON
     if any(w in kl for w in _ARMOR_GEAR_WORDS) or any(w in kl for w in _ARMOR_EXTRA_WORDS):
         return _TYPE_ARMOR
+    # Ship-mounted mining lasers share CIG's generic "Mining_Head" entity-model
+    # key shape across every real variant (item_NameMining_Head_S00_Arbor_SCItem,
+    # ..._Helix_SCItem, ..._Hofstede_SCItem, ..._Klein_SCItem): "Mining" starts
+    # with an uppercase letter like a manufacturer code, and "_S00" is the
+    # head's own size-0 designator -- both signals the ship-weapon heuristic
+    # below looks for, so every one of them satisfies it by coincidence and
+    # misclassifies as "Ship Weapon". None of these are combat ship weapons;
+    # carve the family out before that check so they land in "Other", same as
+    # any mining laser CIG ships under a different key shape.
+    if "mining_head" in kl:
+        return None
     # Ship weapons (#212): an uppercase-manufacturer ship item (item_Name<UPPER>…)
     # carrying a weapon size designator (_S2 / _XL / _L-2) but no recognized
     # subsystem code — the same signal string_model uses to route ship weapons

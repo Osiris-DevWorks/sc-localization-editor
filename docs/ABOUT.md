@@ -64,14 +64,15 @@ Smart Citizen also bundles upstream tooling from:
 
 The non-English game strings are community translations:
 
-- [**Dymerz/StarCitizen-Localization**](https://github.com/Dymerz/StarCitizen-Localization) — the community-maintained `global.ini` translations that power the French, Spanish, and Brazilian Portuguese language options. Their translators do the real work here; we just deliver it.
+- [**Dymerz/StarCitizen-Localization**](https://github.com/Dymerz/StarCitizen-Localization) — the community-maintained `global.ini` translations that power the French, Spanish, Brazilian Portuguese, and Italian language options. Their translators do the real work here; we just deliver it.
+- [**42Kit**](https://ini.42kit.com/) — the community-maintained `global.ini` translation that powers the Chinese language option.
 
 ## Key Features
 
 ### 🎯 Core Features
 - **Load & Edit**: Load `global.ini` from your Star Citizen installation and customize strings in an intuitive table view
 - **Multi-Channel Support**: LIVE / PTU / EPTU / HOTFIX / TECH-PREVIEW each get their own isolated `user.ini`, cache, backups, and DataForge extraction — switch channels from the Config tab without restarting
-- **Multi-Language Support**: Switch the app and game strings between English, French, Spanish, and Brazilian Portuguese from the Config tab. Non-English languages layer a community-translated `global.ini` over the English base, with English fallback for anything untranslated. More languages will be exposed as community translations land (see `languages/TRANSLATIONS.md`)
+- **Multi-Language Support**: Switch the app and game strings between English, French, Spanish, Brazilian Portuguese, Japanese, Chinese, and Italian from the Config tab. Non-English languages layer a community-translated `global.ini` over the English base, with English fallback for anything untranslated. More languages will be exposed as community translations land (see `languages/TRANSLATIONS.md`)
 - **Mission Contracts**: Edit mission contract and briefing text from the dedicated Missions category
 - **Smart Filtering**: Search strings, filter by category (Ships, Ship Items, Missions, Gear, Commodities, Journal, Other), or modification status
 - **Per-Column Filters**: Type directly into filter boxes below each column header for fine-grained searching
@@ -133,6 +134,9 @@ The non-English game strings are community translations:
 ### Join Us
 - 💬 [Discord Community](https://discord.gg/BNzRegKZ7k) - Get support, share configs, request features
 - 🐛 [Smart Citizen Feedback, Bugs, & Feature Voting](https://discord.com/channels/1438175448420057323/1472394204347895890) - Dedicated channel for bug reports, feedback, and voting on upcoming features (join the server first via the invite above)
+
+### Video Guides
+- 🎥 [Star Citizen Hides Important Mission Info – This Tool Shows It In-Game & More!](https://www.youtube.com/watch?v=Xo1t404gsgs) by **Karolinger** - a community overview of Smart Citizen's features
 
 ### Support This Project
 Smart Citizen is completely free. If you find it valuable:

@@ -101,25 +101,30 @@ _JOURNAL_TITLE_KEY_RE = _re_mod.compile(
 
 # Frontend version chip (main-menu watermark). CIG ships a key called
 # ``Frontend_PU_Version`` whose value the main menu renders verbatim.
-# We append " | Localizations Enhanced with Smart Citizen vX.Y.Z" so
-# users (and their screenshots / support tickets) can see at a glance
-# that the localization has been customized. Idempotency works the same
-# way as the journal stamp: ``_FRONTEND_VERSION_STAMP_RE`` strips any
+# We append a literal "\nLocalizations Enhanced with Smart Citizen vX.Y.Z" so
+# users (and their screenshots / support tickets) can see at a glance that
+# the localization has been customized, on its own second line rather than
+# crowding the build-info line — same literal-\n line-break convention the
+# journal stamp uses (see _JOURNAL_STAMP_RE above). Idempotency works the
+# same way as the journal stamp: ``_FRONTEND_VERSION_STAMP_RE`` strips any
 # prior watermark before re-appending the current one, so successive
 # applies and version bumps don't accumulate suffixes. The regex is
-# intentionally permissive — it matches the current "Enhanced with"
-# phrasing as well as the two legacy phrasings ("Enhanced by",
-# "Enhanced with <3 by"), with or without a leading ``v`` on the
-# version, so installs that already have an older watermark on disk
-# roll forward cleanly on the next apply.
+# intentionally permissive — it matches the current "\n"-separated form as
+# well as the original " | "-separated form (pre-2.3.0 installs already
+# have that on disk) and the two legacy phrasings ("Enhanced by", "Enhanced
+# with <3 by"), with or without a leading ``v`` on the version, so every
+# on-disk watermark generation rolls forward cleanly on the next apply.
 _FRONTEND_VERSION_KEY = "Frontend_PU_Version"
 _FRONTEND_VERSION_STAMP_RE = _re_mod.compile(
-    r"\s*\|\s*(?:Localizations Enhanced (?:with|by)|Enhanced with <3 by)\s+Smart Citizen\s+v?[^\s|]+\s*$"
+    r"\s*(?:\|\s*|(?:\\n)+\s*)"
+    r"(?:Localizations Enhanced (?:with|by)|Enhanced with <3 by)\s+Smart Citizen\s+v?[^\s|]+\s*$"
 )
 
 
 def _stamp_frontend_version(merged: dict) -> dict:
-    """Append the Smart Citizen watermark to Frontend_PU_Version in place.
+    """Append the Smart Citizen watermark to Frontend_PU_Version in place, on
+    its own line (a literal "\\n" — see the module comment above this
+    function's constants for why).
 
     Skips entirely if the key is not present in *merged* — we don't
     fabricate the key when stock doesn't have it. Mutates and returns
@@ -129,7 +134,7 @@ def _stamp_frontend_version(merged: dict) -> dict:
         return merged
     from src.utils.version import get_version
     base = _FRONTEND_VERSION_STAMP_RE.sub("", merged[_FRONTEND_VERSION_KEY]).rstrip()
-    merged[_FRONTEND_VERSION_KEY] = f"{base} | Localizations Enhanced with Smart Citizen v{get_version()}"
+    merged[_FRONTEND_VERSION_KEY] = f"{base}\\nLocalizations Enhanced with Smart Citizen v{get_version()}"
     return merged
 
 
@@ -3309,11 +3314,13 @@ class MainWindow(QMainWindow):
             # (re)generation, the button stayed disabled and clicks did
             # nothing until the user happened to retoggle some checkbox.
             self.enhancements_tab.refresh_enhancements_dirty_state()
-            # #273 follow-up: same stuck-button class for Save Tag Changes.
-            # Tag configs are global but the generated INIs are per-channel,
-            # and nothing records which configs a channel was last generated
-            # with — light the button so the user can stamp their tags onto
-            # the new channel instead of finding it greyed out.
+            # Save Tag Changes freshness check. Tag configs are global but the
+            # generated INIs are per-channel; generation now stamps each
+            # channel with a fingerprint of the tag config it was built from
+            # (.tag_config_stamp), so this does a real check — light the button
+            # only when the new channel's stamp is missing or differs from the
+            # live Tag Builder config, matching the Generate Enhancements
+            # freshness check above rather than always lighting it.
             self.enhancements_tab.refresh_tag_builder_dirty_state()
         if hasattr(self, "blueprint_tracker_tab"):
             # #273 follow-up: and for Apply Owned Tags. The reload's own
@@ -3321,6 +3328,14 @@ class MainWindow(QMainWindow):
             # left grey ("no changes") after a switch, so the user couldn't
             # force a re-weave for the new channel. Only the button's own
             # click clears this flag, so it survives the reload below.
+            #
+            # Deliberately NOT given the same real-freshness treatment as
+            # Save Tag Changes above: a prior attempt at that (mark_owned_
+            # clean() here, matching #296's scan-path fix) made the button
+            # stay grey on every switch, which took away the user's ability
+            # to force-reapply owned tags on a freshly-switched channel — an
+            # affordance they want to keep regardless of whether the reload
+            # already did the weave.
             self.blueprint_tracker_tab.mark_owned_dirty()
 
         # Reset the "already prompted once" flag so the category-selection
@@ -3489,6 +3504,19 @@ class MainWindow(QMainWindow):
         self.config_tab.retranslate_ui()
         self.enhancements_tab.retranslate_ui()
         self.blueprint_tracker_tab.retranslate_ui()
+
+        # About / FAQ / Legal tab bodies — loaded from a per-language doc
+        # file (get_localized_doc_path) but only rendered at tab-creation
+        # time and on theme swap (refresh_action_buttons), never on a
+        # language switch. Without this, switching language mid-session
+        # left these three tabs showing whatever language was active at
+        # startup until the app was restarted.
+        if hasattr(self, "about_browser"):
+            self._render_about_html()
+        if hasattr(self, "faq_browser"):
+            self._render_faq_html()
+        if hasattr(self, "legal_browser"):
+            self._render_legal_html()
 
         # Status-bar version indicator + Config-tab update status hold the
         # last update-check result; re-render them in the new language
@@ -4235,9 +4263,17 @@ class MainWindow(QMainWindow):
         self._run_enhancements_pipeline()
 
     def _run_enhancements_pipeline(self):
-        """Entry point for the enhancements button: extract DataForge if needed, then generate enhancements."""
+        """Entry point for every Generate Enhancements trigger — manual
+        click, Tag Builder apply, the simple-mode run button, and the
+        automated freshness check — so it's the single place to clear the
+        button's dirty flag (#292). Only the click handler used to clear it,
+        which left the button stuck red after a successful *automated* run
+        since that path calls straight in here. Extract DataForge if
+        needed, then generate enhancements."""
         if self._enhancements_worker is not None or self._forge_worker is not None:
             return  # already running
+
+        self.enhancements_tab.mark_enhancements_clean()
 
         from src.utils.pak_extractor import dataforge_cache_is_fresh
         forge_dir = AppSettings.get_dataforge_cache_dir()
@@ -4967,7 +5003,11 @@ class MainWindow(QMainWindow):
 
         AppSettings.set_owned_items(owned | set(new_names))
         self._recompute_owned()
-        self.blueprint_tracker_tab.mark_owned_dirty()
+        # _recompute_owned() just did the exact re-weave Apply Owned Tags
+        # performs, so mark the button clean rather than dirty (#296) —
+        # otherwise it stayed red immediately after the summary below told
+        # the user its tags were applied.
+        self.blueprint_tracker_tab.mark_owned_clean()
 
         # How many of the newly-added names are visible right now (i.e. appear
         # as a blueprint bullet in the currently-loaded data). The rest light up
