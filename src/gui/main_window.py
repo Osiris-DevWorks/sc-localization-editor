@@ -3310,6 +3310,38 @@ class MainWindow(QMainWindow):
             # label. Calling only refresh_forge_status() would leave the
             # per-category dots showing the prior channel's state.
             self.enhancements_tab.refresh_enhancements_status()
+            # #273: the Generate Enhancements button's enabled state
+            # (_enhancements_dirty) is normally only nudged by discrete UI
+            # events (a checkbox toggle, clicking Generate), never
+            # recomputed wholesale — left alone here, it kept reflecting
+            # whatever it was for the PREVIOUS channel. If that channel
+            # ended clean (nothing to do) but the new one genuinely needs
+            # (re)generation, the button stayed disabled and clicks did
+            # nothing until the user happened to retoggle some checkbox.
+            self.enhancements_tab.refresh_enhancements_dirty_state()
+            # Save Tag Changes freshness check. Tag configs are global but the
+            # generated INIs are per-channel; generation now stamps each
+            # channel with a fingerprint of the tag config it was built from
+            # (.tag_config_stamp), so this does a real check — light the button
+            # only when the new channel's stamp is missing or differs from the
+            # live Tag Builder config, matching the Generate Enhancements
+            # freshness check above rather than always lighting it.
+            self.enhancements_tab.refresh_tag_builder_dirty_state()
+        if hasattr(self, "blueprint_tracker_tab"):
+            # #273 follow-up: and for Apply Owned Tags. The reload's own
+            # re-weave keeps the in-memory table right, but the button was
+            # left grey ("no changes") after a switch, so the user couldn't
+            # force a re-weave for the new channel. Only the button's own
+            # click clears this flag, so it survives the reload below.
+            #
+            # Deliberately NOT given the same real-freshness treatment as
+            # Save Tag Changes above: a prior attempt at that (mark_owned_
+            # clean() here, matching #296's scan-path fix) made the button
+            # stay grey on every switch, which took away the user's ability
+            # to force-reapply owned tags on a freshly-switched channel — an
+            # affordance they want to keep regardless of whether the reload
+            # already did the weave.
+            self.blueprint_tracker_tab.mark_owned_dirty()
 
         # Reset the "already prompted once" flag so the category-selection
         # dialog fires again for this channel's (potentially different) set

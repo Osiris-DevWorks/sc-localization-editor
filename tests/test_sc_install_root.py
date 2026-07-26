@@ -89,21 +89,15 @@ class TestInstallRootCrossCheck:
     def test_neither_set_falls_through(self, json_backend, monkeypatch):
         """Neither setting set -- falls through to auto-detection.
 
-        We monkeypatch Path.exists to return False for the standard
-        install locations so the method returns empty string.
+        The drive-scan fallback is stubbed out directly (rather than faking
+        Path.exists) so this doesn't depend on whether the test machine
+        happens to have a real -- or stub -- SC install anywhere findable.
         """
         # Ensure neither key is set
         json_backend.remove(AppSettings.SC_INSTALL_ROOT)
         json_backend.remove(AppSettings.GAME_INSTALL_PATH)
 
-        # Block the filesystem auto-detection candidates
-        original_exists = Path.exists
-        def _fake_exists(self):
-            s = str(self)
-            if "Roberts Space Industries" in s:
-                return False
-            return original_exists(self)
-        monkeypatch.setattr(Path, "exists", _fake_exists)
+        monkeypatch.setattr("src.utils.settings._scan_common_sc_install_locations", lambda: None)
 
         result = AppSettings.get_sc_install_root()
         assert result == ""
@@ -309,17 +303,10 @@ class TestIsValidScRoot:
         json_backend.setValue(AppSettings.SC_INSTALL_ROOT, str(stale_dir))
         json_backend.remove(AppSettings.GAME_INSTALL_PATH)
 
-        # Block filesystem auto-detection so the test doesn't accidentally
-        # find a real SC install on the test machine
-        original_exists = Path.exists
-
-        def _fake_exists(self):
-            s = str(self)
-            if "Roberts Space Industries" in s:
-                return False
-            return original_exists(self)
-
-        monkeypatch.setattr(Path, "exists", _fake_exists)
+        # Block auto-detection directly so this doesn't depend on whether
+        # the test machine happens to have a real -- or stub -- SC install
+        # anywhere the drive scan would find.
+        monkeypatch.setattr("src.utils.settings._scan_common_sc_install_locations", lambda: None)
 
         result = AppSettings.get_sc_install_root()
         # The stale value must be rejected, falling through to '' (no auto-detect)
@@ -334,16 +321,152 @@ class TestIsValidScRoot:
         json_backend.remove(AppSettings.SC_INSTALL_ROOT)
         json_backend.setValue(AppSettings.GAME_INSTALL_PATH, str(stale_dir))
 
-        original_exists = Path.exists
-
-        def _fake_exists(self):
-            s = str(self)
-            if "Roberts Space Industries" in s:
-                return False
-            return original_exists(self)
-
-        monkeypatch.setattr(Path, "exists", _fake_exists)
+        monkeypatch.setattr("src.utils.settings._scan_common_sc_install_locations", lambda: None)
 
         result = AppSettings.get_sc_install_root()
         # The stale value must be rejected, falling through to ''
         assert result == ""
+
+
+class TestScanCommonScInstallLocations:
+    """A tester's real install (a real Data.p4k, correctly detected via
+    sc_install_root) turned up at ``E:\\Games\\Roberts Space Industries\\
+    StarCitizen`` -- a shape neither of the old hardcoded C:\\-only
+    candidates could ever match, so a portable build's first run (no saved
+    settings yet) surfaced the "configure your install path" dialog even
+    though a real install existed. This scans every local drive letter for
+    a handful of common shapes instead of just two fixed C:\\ paths."""
+
+    def test_finds_install_at_a_matching_candidate(self, monkeypatch):
+        import src.utils.settings as settings_mod
+        from src.utils.settings import _scan_common_sc_install_locations
+
+        # The scan result is cached in-memory for the process's lifetime
+        # (see the function's own docstring) — reset it so an earlier
+        # test's outcome in this same run can't leak in here.
+        monkeypatch.setattr(settings_mod, "_sc_scan_cache", settings_mod._SC_SCAN_UNSET)
+        target = r"C:\Games\Roberts Space Industries\StarCitizen"
+        monkeypatch.setattr(
+            "src.utils.settings._is_valid_sc_root",
+            lambda p: os.path.normcase(p) == os.path.normcase(target),
+        )
+        assert _scan_common_sc_install_locations() == target
+
+    def test_returns_none_when_nothing_valid_anywhere(self, monkeypatch):
+        import src.utils.settings as settings_mod
+        from src.utils.settings import _scan_common_sc_install_locations
+
+        monkeypatch.setattr(settings_mod, "_sc_scan_cache", settings_mod._SC_SCAN_UNSET)
+        monkeypatch.setattr("src.utils.settings._is_valid_sc_root", lambda p: False)
+        assert _scan_common_sc_install_locations() is None
+
+    def test_result_is_cached_for_process_lifetime(self, monkeypatch):
+        """A second call must not re-scan — it should return the cached
+        result even if the underlying validator's answer would now differ,
+        proving the cache (not a fresh scan) is what answered."""
+        import src.utils.settings as settings_mod
+        from src.utils.settings import _scan_common_sc_install_locations
+
+        monkeypatch.setattr(settings_mod, "_sc_scan_cache", settings_mod._SC_SCAN_UNSET)
+        target = r"C:\Games\Roberts Space Industries\StarCitizen"
+        monkeypatch.setattr(
+            "src.utils.settings._is_valid_sc_root",
+            lambda p: os.path.normcase(p) == os.path.normcase(target),
+        )
+        assert _scan_common_sc_install_locations() == target
+        # Flip the validator so a real re-scan would find nothing.
+        monkeypatch.setattr("src.utils.settings._is_valid_sc_root", lambda p: False)
+        assert _scan_common_sc_install_locations() == target
+
+    def test_documented_subpaths_cover_default_and_secondary_drive_shapes(self):
+        """Locks the exact candidate list down -- covers RSI Launcher's own
+        default (Program Files, both bitness variants), a secondary drive
+        kept in RSI's own shape, and one nested under a personal "Games"
+        folder (the real shape a tester's install turned up in)."""
+        from src.utils.settings import _COMMON_SC_SUBPATHS
+
+        assert _COMMON_SC_SUBPATHS == (
+            r"Program Files\Roberts Space Industries\StarCitizen",
+            r"Program Files (x86)\Roberts Space Industries\StarCitizen",
+            r"Roberts Space Industries\StarCitizen",
+            r"Games\Roberts Space Industries\StarCitizen",
+        )
+
+
+class TestGetScInstallRootUsesDriveScan:
+    """Integration: get_sc_install_root()/get_game_install_path() must fall
+    through to the drive scan (and persist what it finds) when nothing else
+    resolves -- exactly the "portable build, fresh profile" case a tester
+    hit."""
+
+    def test_get_sc_install_root_persists_scan_result(self, json_backend, monkeypatch):
+        json_backend.remove(AppSettings.SC_INSTALL_ROOT)
+        json_backend.remove(AppSettings.GAME_INSTALL_PATH)
+
+        found_root = r"E:\Games\Roberts Space Industries\StarCitizen"
+        monkeypatch.setattr(
+            "src.utils.settings._scan_common_sc_install_locations", lambda: found_root
+        )
+        result = AppSettings.get_sc_install_root()
+
+        assert result == found_root
+        # Persisted -- a subsequent call doesn't need the scan to run again.
+        assert json_backend.value(AppSettings.SC_INSTALL_ROOT, "") == found_root
+
+    def test_get_game_install_path_persists_scan_result_with_channel(self, json_backend, monkeypatch, tmp_path):
+        """The channel subdir must actually exist for the result to persist
+        (see the sibling "not persisted" test below) -- a real directory on
+        disk, not a fake path, so ``Path(result).is_dir()`` is genuinely
+        true."""
+        found_root = tmp_path / "StarCitizen"
+        (found_root / "PTU").mkdir(parents=True)
+        # Patch BEFORE touching active_channel: set_active_channel() itself
+        # queries get_sc_install_root() internally (to sync the legacy path)
+        # -- with the patch not yet in place, that inner call would find
+        # this machine's own real (or stub) install and persist THAT,
+        # clobbering the very state this test is trying to control.
+        monkeypatch.setattr(
+            "src.utils.settings._scan_common_sc_install_locations", lambda: str(found_root)
+        )
+        json_backend.remove(AppSettings.SC_INSTALL_ROOT)
+        json_backend.remove(AppSettings.GAME_INSTALL_PATH)
+        AppSettings.set_active_channel("PTU")
+
+        result = AppSettings.get_game_install_path()
+
+        expected = str(found_root / "PTU")
+        assert result == expected
+        assert json_backend.value(AppSettings.GAME_INSTALL_PATH, "") == expected
+
+    def test_scan_result_not_persisted_when_active_channel_folder_absent(self, json_backend, monkeypatch, tmp_path):
+        """The scan only proves SOME channel folder exists at this root, not
+        the active one -- if the active channel isn't actually installed
+        there, the guessed path is still returned (best guess) but must not
+        be cached, or the next read would trust a path that doesn't exist
+        instead of re-scanning.
+
+        Sets ACTIVE_CHANNEL directly rather than via set_active_channel(),
+        which has its own separate, unconditional GAME_INSTALL_PATH sync —
+        this test isolates get_game_install_path()'s own guard."""
+        found_root = tmp_path / "StarCitizen"
+        found_root.mkdir()  # root exists, but no "PTU" subfolder inside it
+        monkeypatch.setattr(
+            "src.utils.settings._scan_common_sc_install_locations", lambda: str(found_root)
+        )
+        json_backend.remove(AppSettings.SC_INSTALL_ROOT)
+        json_backend.remove(AppSettings.GAME_INSTALL_PATH)
+        json_backend.setValue(AppSettings.ACTIVE_CHANNEL, "PTU")
+
+        result = AppSettings.get_game_install_path()
+
+        expected = str(found_root / "PTU")
+        assert result == expected
+        assert json_backend.value(AppSettings.GAME_INSTALL_PATH, "") == ""
+
+    def test_no_scan_result_returns_empty(self, json_backend, monkeypatch):
+        json_backend.remove(AppSettings.SC_INSTALL_ROOT)
+        json_backend.remove(AppSettings.GAME_INSTALL_PATH)
+        monkeypatch.setattr("src.utils.settings._scan_common_sc_install_locations", lambda: None)
+
+        assert AppSettings.get_sc_install_root() == ""
+        assert AppSettings.get_game_install_path() == ""

@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from src.utils.blueprint_meta import (  # noqa: E402
+    MANUAL_BLUEPRINT_ITEMS,
     blueprint_type_from_key,
     build_blueprint_metadata,
     clean_mission_title,
@@ -24,6 +25,7 @@ from src.utils.blueprint_meta import (  # noqa: E402
     size_from_key,
     strip_size_prefix,
 )
+from src.utils.owned_items import normalize_item_name  # noqa: E402
 
 pytestmark = [pytest.mark.unit, pytest.mark.regression]
 
@@ -186,7 +188,9 @@ def _sample_entries():
 
 def test_build_joins_component_attributes():
     meta = build_blueprint_metadata(_sample_entries())
-    assert set(meta) == {"Balandin", "Abrade Scraper Module"}
+    # Subset, not equality: the manually-curated items (#267) always ride
+    # along too now, covered separately in TestManualBlueprintItems.
+    assert {"Balandin", "Abrade Scraper Module"} <= set(meta)
     bal = meta["Balandin"]
     assert (bal.type, bal.cls, bal.size, bal.grade) == ("Quantum Drive", "Military", "3", "B")
     # Plain item with no matching name entry -> "Other" type, no class/size/grade.
@@ -236,4 +240,199 @@ def test_desc_without_title_yields_no_mission_but_keeps_item():
 
 
 def test_no_blueprint_entries_is_empty():
-    assert build_blueprint_metadata([_Entry("vehicle_NameRSI_Polaris", "Polaris", "Ships")]) == {}
+    """No mission-derived items -- only the manually-curated ones (#267),
+    which ride along regardless of what's loaded."""
+    meta = build_blueprint_metadata([_Entry("vehicle_NameRSI_Polaris", "Polaris", "Ships")])
+    assert "Polaris" not in meta
+    assert set(meta) == {normalize_item_name(n) for n, _ in MANUAL_BLUEPRINT_ITEMS}
+
+
+class TestManualBlueprintItems:
+    """#267: XenoThreat "Purgatory Camo" items were never advertised via any
+    mission's POTENTIAL BLUEPRINTS text (CIG announced them on their own
+    website for a limited-time event), so mission-text scanning alone could
+    never surface them -- players only ever saw them in the Owned list, via
+    the log scanner's independent "Received Blueprint: ..." matching, never
+    in Available. These lock down the manual-item fold-in that fixes that."""
+
+    def test_all_manual_items_present_with_no_source_data(self):
+        meta = build_blueprint_metadata([])
+        for raw_name, expected_type in MANUAL_BLUEPRINT_ITEMS:
+            assert raw_name in meta, f"{raw_name!r} missing from blueprint metadata"
+            assert meta[raw_name].type == expected_type
+
+    def test_manual_item_missions_label_explains_itself(self):
+        meta = build_blueprint_metadata([])
+        assert meta["QuadraCell"].missions == frozenset({"Limited time event reward"})
+
+    def test_manual_item_falls_back_to_bare_name_with_no_match(self):
+        meta = build_blueprint_metadata([])
+        fr66 = meta["FR-66"]
+        assert fr66.tagged_name == "FR-66"
+        assert (fr66.cls, fr66.size, fr66.grade) == (None, None, None)
+
+    def test_manual_item_picks_up_real_facets_when_actually_loaded(self):
+        """If this install's own loaded strings DO carry a matching
+        item_Name entry (the item exists in the base game data, just never
+        listed as a mission reward), the manual entry should use its real
+        tag/class/size/grade instead of the bare fallback."""
+        entries = [_Entry("item_NamePOWR_XNTH_S01_QuadraCell", "[MIL-S1-A] QuadraCell", "Ship Items")]
+        meta = build_blueprint_metadata(entries)
+        qc = meta["QuadraCell"]
+        assert qc.type == "Power Plant"
+        assert (qc.cls, qc.size, qc.grade) == ("Military", "1", "A")
+        assert qc.tagged_name == "[MIL-S1-A] QuadraCell"
+        assert qc.missions == frozenset({"Limited time event reward"})
+
+    def test_mission_derived_item_is_not_overwritten_by_manual_entry(self):
+        """If a manual item's name ever DOES turn up in a real mission's
+        POTENTIAL BLUEPRINTS text (CIG could add one later), the real
+        mission-derived entry must win, not the manual fallback."""
+        desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- QuadraCell"
+        entries = [
+            _Entry("M_Title_001", "Real Mission", "Missions"),
+            _Entry("M_Desc_001", desc, "Missions"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert meta["QuadraCell"].missions == frozenset({"Real Mission"})
+
+    def test_manual_items_do_not_duplicate_or_error_on_repeated_build(self):
+        """Calling build twice (e.g. re-Extract) must be stable -- same
+        result, no accumulation."""
+        first = build_blueprint_metadata([])
+        second = build_blueprint_metadata([])
+        assert first == second
+
+    def test_fuel_nozzle_nozzle_fuelgiver_prefix_gets_tagged_name(self):
+        """Regression guard: Greycat/Shubin nozzles ship under the
+        Nozzle_FuelGiver_* convention, not item_fuelnozzle_*."""
+        desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Marlin"
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("Nozzle_FuelGiver_GRIN_NozzleSecure_Name", "Marlin", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert meta["Marlin"].tagged_name == "Marlin"
+
+
+class TestBulletNameMismatches:
+    """A live mission body ("Crew Hasn't Checked In") reported bullets that
+    don't match any real item_Name value at all -- two different root
+    causes, both fixed here (#266 follow-up)."""
+
+    def test_key_slug_fallback_resolves_garbled_bullet_name(self):
+        """CIG's own bug: the bullet lists the de-slugified loc KEY instead
+        of the item's real localized name -- "Nozzle Fuelgiver Grin
+        Nozzleveryfast" for a key whose real value is "Lindstrom". This is
+        deterministic (title-case each underscore segment, drop a trailing
+        "_Name" segment first), so it's resolved generically rather than
+        via a hardcoded alias."""
+        desc = (
+            "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>"
+            "\\n- Nozzle Fuelgiver Grin Nozzleveryfast"
+        )
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("Nozzle_FuelGiver_GRIN_NozzleVeryFast_Name", "Lindstrom", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert "Lindstrom" in meta
+        assert meta["Lindstrom"].tagged_name == "Lindstrom"
+        assert "Nozzle Fuelgiver Grin Nozzleveryfast" not in meta
+
+    def test_known_alias_resolves_helix_mismatch(self):
+        """Not every mismatch is the key-slug bug -- "Helix" bears no
+        relation to its key's slug at all, just an informal short name a
+        mission author typed. The real item is "S0 Helix"."""
+        desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Helix"
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("item_NameMining_Head_S00_Helix_SCItem", "[Mining Laser] S0 Helix", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert "S0 Helix" in meta
+        assert meta["S0 Helix"].tagged_name == "[Mining Laser] S0 Helix"
+        assert "Helix" not in meta
+
+    @pytest.mark.regression
+    def test_known_alias_resolves_hofstede_mismatch(self):
+        """Same "Mining Head" bare-name pattern as Helix, reported
+        separately in a live mission body -- confirms this isn't a
+        one-off, it's the whole item family."""
+        desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Hofstede"
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("item_NameMining_Head_S00_Hofstede_SCItem", "[Mining Laser] S00 Hofstede", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert "S00 Hofstede" in meta
+        assert meta["S00 Hofstede"].tagged_name == "[Mining Laser] S00 Hofstede"
+        assert "Hofstede" not in meta
+
+    def test_known_aliases_cover_the_whole_mining_head_family(self):
+        """Arbor and Klein share the same key convention as Helix/Hofstede
+        (item_NameMining_Head_S00_<Name>_SCItem) -- added preemptively
+        rather than waiting for each to be reported individually."""
+        desc = (
+            "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>"
+            "\\n- Arbor\\n- Klein"
+        )
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("item_NameMining_Head_S00_Arbor_SCItem", "[Mining Laser] S0 Arbor", "Ship Items"),
+            _Entry("item_NameMining_Head_S00_Klein_SCItem", "Lawson Mining Laser", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert meta["S0 Arbor"].tagged_name == "[Mining Laser] S0 Arbor"
+        assert meta["Lawson Mining Laser"].tagged_name == "Lawson Mining Laser"
+        assert "Arbor" not in meta
+        assert "Klein" not in meta
+
+    @pytest.mark.regression
+    def test_known_aliases_cover_the_three_fuel_nozzles_key_slug_missed(self):
+        """Most fuel nozzle variants resolve generically via _key_slug, but
+        a live Blueprint Tracker screenshot showed these three still
+        untagged/ungarbled after that fix -- their real underlying key
+        apparently doesn't follow the Nozzle_FuelGiver_<MFR>_Nozzle
+        <Variant>_Name pattern the others do, so they need explicit
+        aliases like Helix/Hofstede."""
+        desc = (
+            "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>"
+            "\\n- Nozzle Fuelgiver Grin Nozzlefast"
+            "\\n- Nozzle Fuelgiver Grin Nozzleverysecure"
+            "\\n- Nozzle Fuelgiver Misc Nozzlestandard"
+        )
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("item_fuelnozzle_GRIN_Fast_Name", "Norfield", "Ship Items"),
+            _Entry("item_fuelnozzle_GRIN_Safe_Name", "Harkin", "Ship Items"),
+            _Entry("item_fuelnozzle_MISC_Standard_Name", "RN-7s", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert meta["Norfield"].tagged_name == "Norfield"
+        assert meta["Harkin"].tagged_name == "Harkin"
+        assert meta["RN-7s"].tagged_name == "RN-7s"
+        assert "Nozzle Fuelgiver Grin Nozzlefast" not in meta
+        assert "Nozzle Fuelgiver Grin Nozzleverysecure" not in meta
+        assert "Nozzle Fuelgiver Misc Nozzlestandard" not in meta
+
+    def test_direct_match_is_not_overridden_by_alias_or_keyslug(self):
+        """A bullet name that already matches a real item directly must
+        win outright -- the alias/keyslug fallback only kicks in when the
+        direct match fails."""
+        desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Pitman Mining Laser"
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("item_NameMining_Head_S00_Pitman_SCItem", "Pitman Mining Laser", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert meta["Pitman Mining Laser"].tagged_name == "Pitman Mining Laser"
+
+    def test_unresolvable_bullet_name_falls_back_to_other(self):
+        """A bullet name matching neither a real item, a known alias, nor
+        any key's slug still shows up (as an untagged "Other" entry)
+        rather than being silently dropped."""
+        desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Totally Unknown Widget"
+        meta = build_blueprint_metadata([_Entry("M_Desc_001", desc, "Missions")])
+        assert "Totally Unknown Widget" in meta
+        assert meta["Totally Unknown Widget"].type == "Other"

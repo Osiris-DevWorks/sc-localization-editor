@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pytest
@@ -112,3 +113,45 @@ class TestReputationTrackSuffix:
         assert gen._rep_reward_line("Failure Penalty", "-100", "Rep", "Security") == (
             "<EM4>Failure Penalty:</EM4> -100 Rep (Security)"
         )
+
+
+class TestNoPlusSignOnRepGain:
+    """Issue #319: a "+" in front of the mission-description rep reward read
+    as confusing next to a plain number, so gains render unsigned ("500 Rep")
+    while a penalty keeps its own "-" sign ("-100 Rep"). _rep_reward_line
+    itself stays a dumb passthrough (tested above); this locks down the two
+    call sites that used to build the "+" themselves."""
+
+    @staticmethod
+    def _mission_with_reputation():
+        # Minimal MissionBrokerEntry: one success-outcome reputation reward
+        # from the primary scope, referencing a UUID resolved via the
+        # reputation_lookup table (mirrors how the real DataForge XML and
+        # lookup table are shaped).
+        return ET.fromstring(
+            '<MissionBrokerEntry description="@Some_desc">'
+            '<missionResultReputationRewards>'
+            '<SReputationAmountListParams>'
+            '<SReputationAmountParams reputationScope="pirate" '
+            'reward="{11111111-1111-1111-1111-111111111111}"/>'
+            '</SReputationAmountListParams>'
+            '</missionResultReputationRewards>'
+            '</MissionBrokerEntry>'
+        )
+
+    def test_enhancements_mission_body_has_no_plus_sign(self, gen):
+        root = self._mission_with_reputation()
+        lookup = {"{11111111-1111-1111-1111-111111111111}": 500}
+        body = gen.enhancements_mission(root, reputation_lookup=lookup)
+        assert "<EM4>Rep:</EM4> 500" in body
+        assert "+500" not in body
+        assert "+" not in body
+
+    def test_enhancements_mission_respects_custom_label_still_no_plus(self, gen):
+        root = self._mission_with_reputation()
+        lookup = {"{11111111-1111-1111-1111-111111111111}": 1_200}
+        body = gen.enhancements_mission(
+            root, reputation_lookup=lookup, rep_xp_label="Reputation"
+        )
+        assert "<EM4>Reputation:</EM4> 1,200" in body
+        assert "+" not in body
