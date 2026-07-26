@@ -3,5 +3,7 @@
   "french": "https://raw.githubusercontent.com/Dymerz/StarCitizen-Localization/main/data/Localization/french_(france)/global.ini",
   "spanish": "https://raw.githubusercontent.com/Thord82/Star_citizen_ES/propuestas_thord/global.ini",
   "portuguese_br": "https://raw.githubusercontent.com/Dymerz/StarCitizen-Localization/main/data/Localization/portuguese_(brazil)/global.ini",
+  "japanese": "https://raw.githubusercontent.com/stdblue/StarCitizenJapaneseResources/master/v4.x/release/japanese_(japan)/global.ini",
+  "chinese": "https://ini.42kit.com/full/global.ini",
   "italian": "https://raw.githubusercontent.com/Dymerz/StarCitizen-Localization/main/data/Localization/italian_(italy)/global.ini"
 }

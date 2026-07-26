@@ -29,6 +29,7 @@ from src.utils.i18n import tr
 from src.utils.resource_path import resolve_patches_dir
 from src.utils.settings import AppSettings
 from src.utils.dataforge_diff import dirty_categories
+from src.utils.tag_builder import tag_config_fingerprint
 logger = logging.getLogger(__name__)
 
 
@@ -417,6 +418,18 @@ class EnhancementsGeneratorWorker(QThread):
             # from stale and skip a redundant regen (#30, Approach 1).
             AppSettings.set_enhancements_stamp(
                 AppSettings.get_dataforge_build_key(), self.language
+            )
+            # And which Tag Builder config they were generated against, so a
+            # later channel switch can tell whether the Save Tag Changes button
+            # actually needs to light up instead of always lighting it. Uses
+            # the configs captured for THIS run (self.*), not live settings, so
+            # the stamp reflects exactly what was generated. Belongs beside the
+            # DataForge stamp: both mark "what these INIs were built from".
+            AppSettings.set_tag_config_stamp(
+                tag_config_fingerprint(
+                    self.tag_configs, self.annotate_mission_descs
+                ),
+                self.language,
             )
 
             self.finished.emit(True)

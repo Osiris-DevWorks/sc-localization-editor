@@ -418,6 +418,66 @@ class EnhancementsTab(QWidget):
         button never lighting up to prompt a re-run."""
         self._mark_enhancements_dirty()
 
+    def refresh_enhancements_dirty_state(self) -> None:
+        """Public entrypoint for external callers (MainWindow) to re-derive
+        the Generate Enhancements button's enabled state from the current
+        channel's real disk state (#273).
+
+        _enhancements_dirty is otherwise only ever set once, at tab
+        construction, then nudged True/False by discrete UI events
+        (a checkbox toggle, clicking Generate itself). Switching the active
+        channel changes what "the current channel's real disk state" even
+        means — the flag needs recomputing from scratch, not left at
+        whatever it held for the previous channel. Without this, switching
+        to a channel that genuinely needs (re)generation left the button
+        disabled (still reflecting the previous channel's now-clean state),
+        so clicking it silently did nothing until the user happened to
+        retoggle some checkbox that forces the flag back on."""
+        self._set_generate_btn_dirty(self._compute_initial_enhancements_dirty())
+
+    def _live_tag_config_fingerprint(self) -> str:
+        """Fingerprint the Tag Builder config as it stands in the pages right
+        now — INCLUDING unsaved in-session edits — so a freshness check reflects
+        what the user actually sees, not just what's been persisted. Falls back
+        to the persisted config when the Tag Builder group hasn't been built
+        yet (same getattr guard as _persist_tag_builder_state).
+
+        Using the live page state (not AppSettings.get_current_tag_config_
+        fingerprint()) is deliberate: comparing persisted-only config against a
+        channel's stamp could clear the button while unsaved edits still sit in
+        the pages, silently dropping the "you have unsaved changes" signal. In
+        the no-edit steady state the pages equal the persisted config, so this
+        still matches the stamp the generator wrote from those same values."""
+        from src.utils.tag_builder import tag_config_fingerprint
+        pages = getattr(self, "_tag_builder_pages", None)
+        annotate_cb = getattr(self, "_annotate_mission_descs_cb", None)
+        if not pages or annotate_cb is None:
+            return AppSettings.get_current_tag_config_fingerprint()
+        configs = {cat: page.config for cat, page in pages.items()}
+        return tag_config_fingerprint(configs, annotate_cb.isChecked())
+
+    def refresh_tag_builder_dirty_state(self) -> None:
+        """Public entrypoint for external callers (MainWindow) to re-derive the
+        Save Tag Changes button's state after a channel switch (#273 follow-up).
+
+        Tag Builder configs are global, but the generated enhancement INIs they
+        feed are per-channel. Generation now stamps each channel's enhancement
+        dir with a fingerprint of the tag config it was built from (see
+        workers.py / AppSettings.get/set_tag_config_stamp), so we can do a real
+        freshness check here — matching Generate Enhancements' own
+        refresh_enhancements_dirty_state — instead of always lighting the
+        button. Light it only when the new channel's stamp is missing or
+        differs from the config currently shown in the pages (so its INIs
+        genuinely lack those tags); leave it grey when they already match. A
+        missing stamp (channels generated before this feature, or never
+        generated) reads as dirty, so the button stays clickable exactly as it
+        did before until the next generation records a stamp."""
+        if getattr(self, "_apply_tag_btn", None) is None:
+            return
+        stamp = AppSettings.get_tag_config_stamp()
+        current = self._live_tag_config_fingerprint()
+        self._set_tag_btn_dirty(not stamp or stamp != current)
+
     def _on_category_checkbox_changed(self):
         """Enable Apply button if any checkbox differs from saved settings."""
         has_changes = any(
@@ -1552,6 +1612,7 @@ class _TagBuilderPage(QWidget):
     def _on_mt_standardize_toggle(self, checked: bool) -> None:
         self.config.standardize_hauling_names = checked
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_abbrev_toggle(self, key: str, checked: bool) -> None:
         phrases = set(getattr(self.config, "abbreviated_phrases", frozenset()))
@@ -1561,6 +1622,7 @@ class _TagBuilderPage(QWidget):
             phrases.discard(key)
         self.config.abbreviated_phrases = frozenset(phrases)
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_shorten_titles_toggle(self, checked: bool) -> None:
         phrases = set(getattr(self.config, "abbreviated_phrases", frozenset()))
@@ -1568,10 +1630,12 @@ class _TagBuilderPage(QWidget):
         phrases = (phrases | keys) if checked else (phrases - keys)
         self.config.abbreviated_phrases = frozenset(phrases)
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_shorten_sizes_toggle(self, checked: bool) -> None:
         self.config.shortened_sizes = frozenset(_ALL_SIZE_WORDS) if checked else frozenset()
         self._refresh_preview()
+        self.config_changed.emit()
 
     def _on_mt_rank_sep_changed(self, _idx: int) -> None:
         self.config.rank_separator = self._mt_rank_sep.currentData() or self.config.rank_separator

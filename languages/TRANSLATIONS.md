@@ -63,6 +63,34 @@ them against the new source.
   `italian_(italy)` Localization folder with `g_language = italian_(italy)`
   (`SC_LANGUAGE_IDS`). Also added Italian to the installer's
   `LanguageChoicePage` (`installer.iss`) as the 5th option.
+- **2.3.0 (2026-07-25, Claude Sonnet 5):** New language **chinese** added
+  (#300). Full AI translation of all 376 UI keys plus the 19-step guided tour
+  (`tutorial.*`), all `at`-only (`ht` empty). Translated `HELP.md`,
+  `ABOUT.md`, `LEGAL.md`, and `FAQ.md`. Base `global.ini` mapped to
+  [42Kit](https://ini.42kit.com/full/global.ini) (a Simplified Chinese
+  community translation — confirmed by character form, e.g. 开 not 開) in
+  `sources.json`; `SC_LANGUAGE_IDS["chinese"] = "chinese_(simplified)"`;
+  installer `LanguageChoicePage` gained a Chinese option. Unlike the other
+  community sources, Star Citizen has no official Chinese localization
+  folder shipped by CIG — 42Kit's file is meant as a full replacement for
+  the game's English strings — but `chinese_(simplified)` /
+  `chinese_(traditional)` are both documented, working `g_language` /
+  Localization-folder values via the community, so Chinese follows the same
+  per-language-folder pattern as every other language here rather than
+  overwriting the `english` folder. Also fixed `download_file_if_changed`
+  (`src/utils/updater.py`) sending no `User-Agent`, which 42Kit's host
+  rejects with an HTTP 403 (GitHub-raw-hosted sources never hit this since
+  GitHub doesn't check). Locked by `tests/test_chinese_activation.py`.
+- **2.3.0 (2026-07-24, Claude Fable 5):** New language **japanese** added (#301).
+  Full AI translation of all 376 UI keys plus the 19-step guided tour
+  (`tutorial.*`), all `at`-only (`ht` empty). Translated `HELP.md`, `ABOUT.md`,
+  and `LEGAL.md` (the latter carries the standard "English version is
+  authoritative" caveat). Base `global.ini` mapped to
+  stdblue/StarCitizenJapaneseResources in `sources.json`;
+  `SC_LANGUAGE_IDS["japanese"] = "japanese_(japan)"`; installer
+  `LanguageChoicePage` gained a Japanese option. Locked by
+  `tests/test_japanese_activation.py`.
+
 - **2.2.0 pre-release (2026-07-15, Claude Fable 5):** AI backfill of the keys
   this cycle added in English only. french and portuguese_br each gained 43
   `at`-only keys (Blueprint Tracker tab, blueprint shuttle/facets, log-scan
@@ -106,3 +134,25 @@ them against the new source.
   (`SC_LANGUAGE_IDS`). An Italian-speaking reviewer replacing the `at`
   strings with `ht` is the next step to promote it from AI-only to
   human-reviewed.
+- **chinese** — AI-translated by **Claude** (#300). No human translator yet,
+  so **every** key is `at`-only (`ht` empty) — the whole UI, the guided tour
+  (`tutorial.*`), and the `HELP.md` / `ABOUT.md` / `LEGAL.md` / `FAQ.md`
+  documents are awaiting human review (grep `"ht": ""` returns the entire
+  file by design). The base `global.ini` is sourced from
+  **[42Kit](https://ini.42kit.com/full/global.ini)**, a Simplified Chinese
+  community translation. Chinese writes to the game's `chinese_(simplified)`
+  Localization folder with `g_language = chinese_(simplified)`
+  (`SC_LANGUAGE_IDS`) — a community-known value CIG doesn't officially ship
+  a stock folder for, unlike the other languages here. A Chinese-speaking
+  reviewer replacing the `at` strings with `ht` is the next step to promote
+  it from AI-only to human-reviewed.
+- **japanese** — AI-translated by **Claude** (#301). No human translator yet, so
+  **every** key is `at`-only (`ht` empty) — the whole UI, the guided tour
+  (`tutorial.*`), and the `HELP.md` / `ABOUT.md` / `LEGAL.md` documents are
+  awaiting human review (grep `"ht": ""` returns the entire file by design).
+  The base `global.ini` is sourced from **stdblue/StarCitizenJapaneseResources**
+  (`v4.x/release/japanese_(japan)/global.ini`) rather than Dymerz, which does not
+  ship a Japanese pack. Japanese writes to the game's `japanese_(japan)`
+  Localization folder with `g_language = japanese_(japan)` (`SC_LANGUAGE_IDS`).
+  A Japanese-speaking reviewer replacing the `at` strings with `ht` is the next
+  step to promote it from AI-only to human-reviewed.

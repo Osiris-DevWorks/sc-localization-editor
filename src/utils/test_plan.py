@@ -96,6 +96,24 @@ TEST_SECTIONS: list[dict] = [
             "The String Editor filter row and preview pane sit in the table area, not inside the shared toolbar, and the Enhancements category grid packs left without horizontal scrolling.",
         ],
     },
+    {
+        "title": "2.2.1 bug-fix bundle (#251, #261, #255, #267, #269, #273, #259, #281, #266 general fixes)",
+        "items": [
+            "Apply to Game against a base.ini with one corrupt/non-UTF-8 byte: Apply completes instead of crashing, and every other string (including accented characters) reads correctly.",
+            "After Apply, open global.ini in a hex-aware editor: the file starts with a UTF-8 BOM, and in-game every loc string resolves (no raw @KeyName placeholders).",
+            "Open the starmap in-game: Crusader shows as \"Crusader\", not \"Stanton (Star)\" or any other collided label.",
+            "Blueprint Tracker: XenoThreat limited-time-event items (Purgatory Camo armor/weapons, QuadraCell, FR-66/FR-76 shields, NDB repeaters) appear even though no mission ever advertised them.",
+            "On a fresh profile with Star Citizen installed on a non-default drive letter, open the Config tab: the install path is auto-detected without manually browsing.",
+            "Switch channels (e.g. LIVE -> PTU): Generate Enhancements does not stay stuck disabled after the switch.",
+            "After that same channel switch, Save Tag Changes (Tag Builder) and Apply Owned Tags (Blueprint Tracker) light up clickable so tags can be applied to the new channel.",
+            "Tag Builder > Mission Titles: toggle any of the 7 checkboxes that previously didn't arm Save Tag Changes; the button turns red immediately.",
+            "Blueprint Tracker: bullets grouped under a reputation-tier sub-header or a MULTIPLE BLUEPRINT POOLS header still show up, not just plain POTENTIAL BLUEPRINTS lists.",
+            "Blueprint Tracker: bullets with a \"(Category)\" annotation (e.g. \"Bendix (Fuel Nozzle)\") join their real item instead of appearing as a separate untagged entry.",
+            "Blueprint Tracker: all 8 fuel nozzle variants resolve to their real display name (Marlin, Lindstrom, Bendix, Torrez, Ezra, Norfield, Harkin, RN-7s), none left garbled or duplicated.",
+            "Blueprint Tracker: the Mining Head family (Helix, Hofstede, Arbor, Klein) all resolve to their real display name.",
+            "Apply to Game, then find a refueling mission in-game: fuel nozzle names in POTENTIAL BLUEPRINTS read correctly (e.g. \"Norfield\"), not garbled text like \"Nozzle Fuelgiver Grin Nozzlefast\".",
+        ],
+    },
 ]
 
 

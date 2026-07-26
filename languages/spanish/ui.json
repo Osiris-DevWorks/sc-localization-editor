@@ -1029,7 +1029,7 @@
       "at": ""
     },
     "custom_value_prompt": {
-      "ht": "Introduce un valor personalizado para la clave:\n{key}",
+      "ht": "Introduce un valor personalizado para la clave:\n{loc_key}",
       "at": ""
     },
     "auto_add_summary": {

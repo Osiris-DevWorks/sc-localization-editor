@@ -1,0 +1,1732 @@
+{
+  "branding": {
+    "title": {
+      "ht": "",
+      "at": "SMART CITIZEN"
+    },
+    "tagline": {
+      "ht": "",
+      "at": "SMARTER STRINGS FOR STAR CITIZEN"
+    }
+  },
+  "window": {
+    "title": {
+      "ht": "",
+      "at": "Smart Citizen v{version}"
+    }
+  },
+  "simple_mode": {
+    "switch_to_advanced": {
+      "ht": "",
+      "at": "詳細モードに切り替え"
+    },
+    "switch_to_advanced_tip": {
+      "ht": "",
+      "at": "すべてのタブとオプションを備えた Smart Citizen の完全なインターフェースを表示します。"
+    },
+    "generate_apply_btn": {
+      "ht": "",
+      "at": "拡張を適用"
+    },
+    "generate_apply_tip": {
+      "ht": "",
+      "at": "現在の設定で最新の拡張を生成し、ゲームに適用します。最初に現在の global.ini のバックアップが作成されます。"
+    },
+    "defaults_hint": {
+      "ht": "",
+      "at": "現在の設定（詳細ビューに表示されるものと同じ）を使用します。\n初回実行時は DataForge の抽出に数分かかることがあります。"
+    }
+  },
+  "tabs": {
+    "string_editor": {
+      "ht": "",
+      "at": "文字列エディター"
+    },
+    "config": {
+      "ht": "",
+      "at": "設定"
+    },
+    "enhancements": {
+      "ht": "",
+      "at": "拡張"
+    },
+    "blueprint_tracker": {
+      "ht": "",
+      "at": "ブループリントトラッカー"
+    },
+    "log": {
+      "ht": "",
+      "at": "ログ"
+    },
+    "about": {
+      "ht": "",
+      "at": "情報"
+    },
+    "faq": {
+      "ht": "",
+      "at": "FAQ"
+    },
+    "legal": {
+      "ht": "",
+      "at": "法的情報"
+    }
+  },
+  "toolbar": {
+    "apply_btn": {
+      "ht": "",
+      "at": "拡張を適用"
+    },
+    "restore_backup_btn": {
+      "ht": "",
+      "at": "バックアップを復元"
+    },
+    "clear_btn": {
+      "ht": "",
+      "at": "クリア"
+    },
+    "import_export_btn": {
+      "ht": "",
+      "at": "インポート / エクスポート"
+    },
+    "open_loc_dir_btn": {
+      "ht": "",
+      "at": "ローカライズフォルダーを開く"
+    },
+    "editor_btn": {
+      "ht": "",
+      "at": "エディター"
+    },
+    "help_btn": {
+      "ht": "",
+      "at": "ヘルプ"
+    },
+    "tutorial_btn": {
+      "ht": "",
+      "at": "チュートリアル"
+    },
+    "more_btn": {
+      "ht": "",
+      "at": "その他"
+    },
+    "menu_clear_localization": {
+      "ht": "",
+      "at": "ローカライズをクリア"
+    },
+    "menu_clear_cache": {
+      "ht": "",
+      "at": "キャッシュをクリア"
+    },
+    "menu_import_ini": {
+      "ht": "",
+      "at": "INI をインポート…"
+    },
+    "menu_export_ini": {
+      "ht": "",
+      "at": "INI をエクスポート…"
+    },
+    "menu_test_plan": {
+      "ht": "",
+      "at": "テストプラン"
+    },
+    "menu_switch_to_simple": {
+      "ht": "",
+      "at": "シンプルモードに切り替え"
+    },
+    "editor_tooltip": {
+      "ht": "",
+      "at": "サイドにドッキングする文字列エディターを切り替えます。選択した行のカスタム値をより広い領域で編集できます。"
+    },
+    "help_tooltip": {
+      "ht": "",
+      "at": "ヘルプサイドパネルを切り替えます。"
+    },
+    "tutorial_tooltip": {
+      "ht": "",
+      "at": "Smart Citizen のワークフローのガイドツアーを開始します。初回起動時に自動的に実行されます。いつでもここをクリックして再生できます。"
+    },
+    "restore_backup_tooltip": {
+      "ht": "",
+      "at": "バックアップフォルダーから以前の global.ini を復元します。タイムスタンプ付きのバックアップは最大 5 個まで保持され、新しいものが作成されると最も古いものが削除されます。"
+    },
+    "test_plan_tooltip": {
+      "ht": "",
+      "at": "テスター向けのテストプランを開きます。このリリースでの変更点のチェックリストで、進捗の追跡と提出可能なレポートが含まれます。"
+    },
+    "switch_to_simple_tooltip": {
+      "ht": "",
+      "at": "簡略化されたワンボタンビューに切り替えます。"
+    },
+    "more_tooltip": {
+      "ht": "",
+      "at": "その他の操作：バックアップの復元、ローカライズまたはキャッシュのクリア、インポートまたはエクスポート、ローカライズフォルダーを開く。"
+    },
+    "osiris_github_tooltip": {
+      "ht": "",
+      "at": "Osiris DevWorks の GitHub 組織を開きます。"
+    },
+    "feedback_tooltip": {
+      "ht": "",
+      "at": "フィードバック、バグ報告、今後の機能への投票のために Smart Citizen の Discord チャンネルを開きます（Osiris DevWorks の Discord への参加が必要です）。"
+    },
+    "apply_enabled_tooltip": {
+      "ht": "",
+      "at": "マージされたテーブルの内容をゲームの global.ini に書き込みます。最初に現在の global.ini のタイムスタンプ付きバックアップが作成されます。"
+    },
+    "apply_disabled_tooltip": {
+      "ht": "",
+      "at": "すでに適用済みです：前回のゲームへの適用以降、変更はありません。"
+    }
+  },
+  "filters": {
+    "category_label": {
+      "ht": "",
+      "at": "カテゴリー："
+    },
+    "status_label": {
+      "ht": "",
+      "at": "ステータス："
+    },
+    "status_all": {
+      "ht": "",
+      "at": "すべて"
+    },
+    "status_modified": {
+      "ht": "",
+      "at": "変更済み"
+    },
+    "status_enhanced": {
+      "ht": "",
+      "at": "拡張済み"
+    },
+    "status_unmodified": {
+      "ht": "",
+      "at": "未変更"
+    },
+    "status_new": {
+      "ht": "",
+      "at": "新規"
+    },
+    "hide_unmodified": {
+      "ht": "",
+      "at": "未変更を非表示"
+    },
+    "favorites_only": {
+      "ht": "",
+      "at": "★ お気に入りのみ"
+    },
+    "bp_titles_only": {
+      "ht": "",
+      "at": "BP タイトル"
+    },
+    "bp_descs_only": {
+      "ht": "",
+      "at": "BP 説明"
+    },
+    "group_sort_btn": {
+      "ht": "",
+      "at": "グループソート"
+    },
+    "clear_filters_btn": {
+      "ht": "",
+      "at": "フィルターをクリア"
+    },
+    "copy_filtered_btn": {
+      "ht": "",
+      "at": "フィルター結果をコピー"
+    },
+    "category_tooltip": {
+      "ht": "",
+      "at": "ドメイン（艦船、艦船アイテム、ミッション、装備、商品、ジャーナル、その他）で行をフィルタリングします。カテゴリーはロックキーのプレフィックスから導出されます。"
+    },
+    "status_tooltip": {
+      "ht": "",
+      "at": "ステータスでフィルタリングします。変更済み＝カスタム値を設定したもの。拡張済み＝Smart Citizen の拡張パイプラインによって生成されたもの（艦船ステータス、ミッション報酬など）。未変更＝デフォルトのテキストのみ。新規＝キーが拡張または user.ini にのみ存在し、ベースファイルにはないもの。"
+    },
+    "hide_unmodified_tooltip": {
+      "ht": "",
+      "at": "カスタム値を設定した行のみを表示します。ステータスフィルターの「変更済み」オプションと同じですが、単独で切り替えられます。"
+    },
+    "favorites_only_tooltip": {
+      "ht": "",
+      "at": "お気に入りとしてスターを付けた行のみを表示します。お気に入りには設定可能なプレフィックスが名前の先頭に追加され、ゲーム内リストの上位に並びます。"
+    },
+    "bp_titles_only_tooltip": {
+      "ht": "",
+      "at": "[BP] / [BP?] ブループリントタグが付いたミッションタイトルのみを表示します。"
+    },
+    "bp_descs_only_tooltip": {
+      "ht": "",
+      "at": "POTENTIAL BLUEPRINTS セクションを含むミッション説明のみを表示します。"
+    },
+    "group_sort_tooltip": {
+      "ht": "",
+      "at": "同じエンティティのタイトルと説明をまとめてソートします。"
+    },
+    "clear_filters_tooltip": {
+      "ht": "",
+      "at": "すべてのフィルター（カテゴリー、ステータス、検索、列ごとのボックス、チェックボックス）をリセットし、テーブル全体を表示します。"
+    },
+    "copy_filtered_tooltip": {
+      "ht": "",
+      "at": "表示中のフィルター結果の行をすべてクリップボードにコピーします（タブ区切り）。"
+    }
+  },
+  "strings_tab": {
+    "col_category": {
+      "ht": "",
+      "at": "カテゴリー"
+    },
+    "col_key": {
+      "ht": "",
+      "at": "キー"
+    },
+    "col_default_value": {
+      "ht": "",
+      "at": "デフォルト値"
+    },
+    "col_current_value": {
+      "ht": "",
+      "at": "現在の値"
+    },
+    "col_star": {
+      "ht": "",
+      "at": "★"
+    },
+    "col_order": {
+      "ht": "",
+      "at": "#"
+    },
+    "col_custom_value": {
+      "ht": "",
+      "at": "カスタム値"
+    },
+    "col_status": {
+      "ht": "",
+      "at": "ステータス"
+    },
+    "col_owned": {
+      "ht": "",
+      "at": "所有済み"
+    },
+    "no_data": {
+      "ht": "",
+      "at": "データが読み込まれていません"
+    },
+    "preview_placeholder": {
+      "ht": "",
+      "at": "行を選択すると、レンダリングされたテキストをプレビューできます。"
+    },
+    "context_underline": {
+      "ht": "",
+      "at": "下線"
+    },
+    "context_highlight": {
+      "ht": "",
+      "at": "ハイライト"
+    },
+    "editor_underline_tooltip": {
+      "ht": "",
+      "at": "選択したテキストに下線を引きます（<EM3>...</EM3> で囲みます）。"
+    },
+    "editor_highlight_tooltip": {
+      "ht": "",
+      "at": "選択したテキストを色付きで強調表示します（<EM4>...</EM4> で囲みます）。"
+    },
+    "column_filter_tooltip": {
+      "ht": "",
+      "at": "{column} 列をフィルタリングします。複数の列にまたがるフィルターは AND で結合されます。"
+    },
+    "column_filter_placeholder": {
+      "ht": "",
+      "at": "{column} をフィルター…"
+    }
+  },
+  "config": {
+    "title": {
+      "ht": "",
+      "at": "設定"
+    },
+    "instructions": {
+      "ht": "",
+      "at": "Star Citizen のインストールパスを設定し、Data.p4k からベースローカライズを抽出し、外部 INI ファイルをインポートして文字列をカスタマイズします。"
+    },
+    "tools_group": {
+      "ht": "",
+      "at": "ツール"
+    },
+    "tools_desc": {
+      "ht": "",
+      "at": "外部 INI ファイルをインポートして、カスタム文字列を user.ini にマージします。キーは base.ini と照合して検証され、競合は対話的に解決されます。"
+    },
+    "import_ini_btn": {
+      "ht": "",
+      "at": "INI をインポート..."
+    },
+    "reset_user_ini_btn": {
+      "ht": "",
+      "at": "user.ini をリセット..."
+    },
+    "restore_user_ini_btn": {
+      "ht": "",
+      "at": "user.ini を復元..."
+    },
+    "preview_apply_btn": {
+      "ht": "",
+      "at": "適用をプレビュー"
+    },
+    "check_updates_btn": {
+      "ht": "",
+      "at": "アップデートを確認"
+    },
+    "appearance_group": {
+      "ht": "",
+      "at": "外観"
+    },
+    "theme_label": {
+      "ht": "",
+      "at": "テーマ："
+    },
+    "theme_default": {
+      "ht": "",
+      "at": "デフォルト"
+    },
+    "theme_light": {
+      "ht": "",
+      "at": "ライト"
+    },
+    "theme_dark": {
+      "ht": "",
+      "at": "ダーク"
+    },
+    "theme_odw": {
+      "ht": "",
+      "at": "ODW"
+    },
+    "star_citizen_group": {
+      "ht": "",
+      "at": "Star Citizen"
+    },
+    "installation_label": {
+      "ht": "",
+      "at": "インストール"
+    },
+    "installation_desc": {
+      "ht": "",
+      "at": "Star Citizen のインストールルート（LIVE、PTU、EPTU、HOTFIX、TECH-PREVIEW を含むディレクトリ）へのパス。"
+    },
+    "browse_btn": {
+      "ht": "",
+      "at": "参照..."
+    },
+    "channel_label": {
+      "ht": "",
+      "at": "チャンネル："
+    },
+    "language_label": {
+      "ht": "",
+      "at": "言語："
+    },
+    "map_language_btn": {
+      "ht": "",
+      "at": "言語ファイルをマッピング"
+    },
+    "map_language_title": {
+      "ht": "",
+      "at": "言語ファイルをマッピング"
+    },
+    "map_language_desc": {
+      "ht": "",
+      "at": "各言語の global.ini への URL を設定します。その言語に切り替えると、Smart Citizen はそれをダウンロードし、英語の Data.p4k 抽出の代わりにベース文字列として使用します。ダウンロードは言語ごとにキャッシュされ、変更があったときにのみ再取得されます。フィールドを空欄のままにすると、バンドルされたデフォルト（ある場合）が使用されます。"
+    },
+    "base_localization_label": {
+      "ht": "",
+      "at": "ベースローカライズ"
+    },
+    "base_localization_desc": {
+      "ht": "",
+      "at": "インストール済みの Data.p4k から global.ini を抽出し、インストール中のバージョンに常に一致する標準のゲーム文字列を取得します。"
+    },
+    "extract_btn": {
+      "ht": "",
+      "at": "Data.p4k から抽出"
+    },
+    "data_group": {
+      "ht": "",
+      "at": "Smart Citizen データ"
+    },
+    "data_desc": {
+      "ht": "",
+      "at": "user.ini、ソースキャッシュ、拡張 INI、バックアップを保存するフォルダーです。キャッシュのクリーンアップに失敗する場合は、OneDrive と同期される Documents の外に移動してください。DataForge XML キャッシュには下に独自のパスがあります。約 1.4 GB あるため、デフォルトでは自動的に OneDrive の外に保持されます。"
+    },
+    "app_data_label": {
+      "ht": "",
+      "at": "アプリデータフォルダー："
+    },
+    "dataforge_cache_label": {
+      "ht": "",
+      "at": "DataForge キャッシュフォルダー："
+    },
+    "reset_btn": {
+      "ht": "",
+      "at": "リセット"
+    },
+    "p4k_group": {
+      "ht": "",
+      "at": "ベースローカライズ（P4K 抽出）"
+    },
+    "p4k_desc": {
+      "ht": "",
+      "at": "インストール済みの Data.p4k から global.ini を抽出し、インストール中のバージョンに常に一致する標準のゲーム文字列を取得します。"
+    },
+    "p4k_status_found_with_base": {
+      "ht": "",
+      "at": "Data.p4k が見つかりました  |  base.ini の最終更新：{date}"
+    },
+    "p4k_status_found_no_base": {
+      "ht": "",
+      "at": "Data.p4k が見つかりました  |  base.ini はまだ抽出されていません"
+    },
+    "p4k_status_not_found": {
+      "ht": "",
+      "at": "Data.p4k が見つかりません：{path}"
+    },
+    "p4k_status_no_path": {
+      "ht": "",
+      "at": "ゲームのインストールパスが設定されていません"
+    },
+    "select_sc_root": {
+      "ht": "",
+      "at": "Star Citizen のインストールルートを選択"
+    },
+    "select_data_folder": {
+      "ht": "",
+      "at": "Smart Citizen データフォルダーを選択"
+    },
+    "select_cache_folder": {
+      "ht": "",
+      "at": "DataForge キャッシュフォルダーを選択"
+    },
+    "migrate_data_title": {
+      "ht": "",
+      "at": "データを移動しますか？"
+    },
+    "migrate_data_body": {
+      "ht": "",
+      "at": "既存の Smart Citizen データ（オーバーライド、バックアップ、キャッシュされた文字列）を\n\n{old_dir}\n\nから新しいフォルダー\n\n{new_dir}\n\nに移動しますか？\n\n新しいフォルダーにすでにあるファイルは保持されます。移動後、古いフォルダーはクリーンアップされます。"
+    },
+    "migrate_data_done_title": {
+      "ht": "",
+      "at": "データを移動しました"
+    },
+    "migrate_data_done_body": {
+      "ht": "",
+      "at": "{count} 個のファイルを新しいデータフォルダーに移動しました。"
+    },
+    "migrate_data_failed_title": {
+      "ht": "",
+      "at": "移行に失敗しました"
+    },
+    "migrate_data_failed_body": {
+      "ht": "",
+      "at": "データを移行できませんでした：\n{error}"
+    },
+    "channel_not_installed_title": {
+      "ht": "",
+      "at": "チャンネルがインストールされていません"
+    },
+    "channel_not_installed_body": {
+      "ht": "",
+      "at": "{channel} は現在のルートにインストールされていません。RSI ランチャーからインストールするか、別のチャンネルを選択してください。"
+    },
+    "invalid_data_folder_title": {
+      "ht": "",
+      "at": "無効なデータフォルダー"
+    },
+    "invalid_cache_folder_title": {
+      "ht": "",
+      "at": "無効なキャッシュフォルダー"
+    },
+    "dataforge_cache_changed_title": {
+      "ht": "",
+      "at": "DataForge キャッシュパスが変更されました"
+    },
+    "dataforge_cache_changed_body": {
+      "ht": "",
+      "at": "DataForge キャッシュパスを変更するには、Data.p4k から再抽出する必要があります。\n\n再抽出の完了後、以前のキャッシュをどうしますか？"
+    },
+    "re_extract_delete_old": {
+      "ht": "",
+      "at": "再抽出して古いものを削除"
+    },
+    "re_extract_keep_old": {
+      "ht": "",
+      "at": "再抽出して古いものを保持"
+    },
+    "preview_title": {
+      "ht": "",
+      "at": "適用プレビュー"
+    },
+    "preview_header": {
+      "ht": "",
+      "at": "適用プレビュー\n\nマージ順序（上から下）：\n"
+    },
+    "preview_total": {
+      "ht": "",
+      "at": "\nキー総数：{count:,}\nステータス内訳：\n"
+    },
+    "no_sources_warning": {
+      "ht": "",
+      "at": "マージ可能なソースがありません。"
+    },
+    "include_new_tooltip": {
+      "ht": "",
+      "at": "チェックすると、DataForge XML から発見された項目（ステータス「新規」）のうち、テキストが空でないものが、適用される global.ini に含まれます。"
+    },
+    "import_ini_tooltip": {
+      "ht": "",
+      "at": "外部の .ini をオーバーライドに取り込みます。競合解決ダイアログで、キーごとに、現在の値を保持・インポート値を使用・追記・先頭に追加・カスタム値の指定のいずれかを選べます。"
+    },
+    "reset_user_ini_tooltip": {
+      "ht": "",
+      "at": "アクティブなチャンネルのカスタム文字列オーバーライドをすべて削除します。元のファイルの隣にタイムスタンプ付きのバックアップが保存されるため、復元できます。"
+    },
+    "restore_user_ini_tooltip": {
+      "ht": "",
+      "at": "自動スナップショットからカスタム文字列オーバーライドを復元します。Smart Citizen は user.ini の直近の状態をいくつか保持しているため、誤った編集を元に戻したり、ファイルが空になった後に復旧したりできます。"
+    },
+    "preview_apply_tooltip": {
+      "ht": "",
+      "at": "「拡張を適用」で書き込まれる内容のドライラン概要です。ソースごとのキー数（拡張はカテゴリー別に内訳表示）と、変更済み / 拡張済み / 未変更 / 新規 のステータス集計を表示します。「拡張を適用」をクリックするまで、ゲームには何も書き込まれません。"
+    },
+    "check_updates_tooltip": {
+      "ht": "",
+      "at": "GitHub で新しい Smart Citizen リリースを確認します。"
+    },
+    "theme_tooltip": {
+      "ht": "",
+      "at": "アプリのテーマを切り替えます。メインウィンドウ、ツールバー、タブ、ヘルプパネル全体に即座に反映されます。"
+    },
+    "disable_tutorial_tooltip": {
+      "ht": "",
+      "at": "チェックすると、新しいバージョンでガイドツアーが自動起動しなくなります。ツールバーのチュートリアルボタンは引き続き機能します。"
+    },
+    "game_path_tooltip": {
+      "ht": "",
+      "at": "Star Citizen のインストールルート — LIVE/、PTU/、EPTU/、HOTFIX/、TECH-PREVIEW/ を含むディレクトリです。インストール時に自動検出されます。ゲームが別の場所にある場合は編集してください。下の「チャンネル」ドロップダウンで、アプリが読み書きする対象を選択します。"
+    },
+    "browse_game_tooltip": {
+      "ht": "",
+      "at": "フォルダーブラウザーで Star Citizen のインストールルートを選択します。"
+    },
+    "channel_tooltip": {
+      "ht": "",
+      "at": "Data.p4k を読み込み、global.ini を書き込む対象の Star Citizen チャンネルです。インストールルートに Data.p4k がないチャンネルは無効になります。チャンネルを切り替えると、新しいチャンネルのデータに対して文字列がすぐに再読み込みされます。"
+    },
+    "channel_not_installed_tooltip": {
+      "ht": "",
+      "at": "{channel} はインストールされていません — {path} に Data.p4k がありません"
+    },
+    "language_tooltip": {
+      "ht": "",
+      "at": "ゲームに適用する言語です。翻訳に存在しないキーは自動的に英語にフォールバックします。"
+    },
+    "map_language_tooltip": {
+      "ht": "",
+      "at": "各言語の global.ini への URL を設定します。その言語に切り替えると、Smart Citizen はそれをダウンロードし、英語の Data.p4k 抽出の代わりにベース文字列として使用します。"
+    },
+    "data_dir_tooltip": {
+      "ht": "",
+      "at": "Smart Citizen のアプリデータルートです。各チャンネルはこのディレクトリ内に独自のサブフォルダーを持ちます。空欄のままにするか「リセット」をクリックすると、Documents\\Smart Citizen が使用されます。"
+    },
+    "browse_data_tooltip": {
+      "ht": "",
+      "at": "フォルダーブラウザーで Smart Citizen データフォルダーを選択します。"
+    },
+    "reset_data_tooltip": {
+      "ht": "",
+      "at": "カスタムデータフォルダーをクリアし、Documents\\Smart Citizen を使用します。"
+    },
+    "cache_dir_tooltip": {
+      "ht": "",
+      "at": "抽出された DataForge XML ツリー（約 1.4 GB）のベースフォルダーです。各チャンネルはこの下に {base}\\{channel}\\cache\\dataforge\\ としてネストされます。OneDrive の外に保つため、既定では %LOCALAPPDATA%\\Smart Citizen になります。パスを変更すると再抽出が実行されます。"
+    },
+    "browse_cache_tooltip": {
+      "ht": "",
+      "at": "フォルダーブラウザーで DataForge キャッシュのベースフォルダーを選択します。"
+    },
+    "reset_cache_tooltip": {
+      "ht": "",
+      "at": "カスタムキャッシュフォルダーをクリアし、プラットフォームのデフォルトを使用します。"
+    },
+    "extract_tooltip": {
+      "ht": "",
+      "at": "インストール済みの Data.p4k から、標準ローカライズ（base.ini）と DataForge エンティティ XML を展開します。Star Citizen のパッチごとに実行してください。抽出が完了すると、文字列は自動的にテーブルに再読み込みされます。"
+    }
+  },
+  "enhancements": {
+    "title": {
+      "ht": "",
+      "at": "拡張"
+    },
+    "desc": {
+      "ht": "",
+      "at": "ベースのローカライズデータを拡張するオプション機能です。拡張ジェネレーターのカテゴリー切り替え、ゲーム内艦船リスト用のお気に入りプレフィックス、そしてコンポーネント・ミサイル・艦船武器の角括弧付き名称タグをカスタマイズするタグビルダーが含まれます。"
+    },
+    "enhancements_group": {
+      "ht": "",
+      "at": "ローカライズ拡張"
+    },
+    "enhancements_desc": {
+      "ht": "",
+      "at": "含める拡張カテゴリーを選択します。変更を保存するには「適用」をクリックします。拡張はインストール済みの Data.p4k から生成されます。"
+    },
+    "cat_desc_ships": {
+      "ht": "",
+      "at": "艦船の性能、ロードアウト、乗員データ"
+    },
+    "cat_desc_ship_items": {
+      "ht": "",
+      "at": "コンポーネントのクラス／サイズ／グレードの注釈と統計"
+    },
+    "cat_desc_gear": {
+      "ht": "",
+      "at": "FPS 武器の戦闘ステータス"
+    },
+    "cat_desc_missions": {
+      "ht": "",
+      "at": "ミッションの XP 報酬とブループリントドロップ"
+    },
+    "cat_desc_commodities": {
+      "ht": "",
+      "at": "クラフトのレシピと材料の使用"
+    },
+    "cat_desc_journal": {
+      "ht": "",
+      "at": "鉱物ごとのクラフトデータを収録した採掘コンペンディウム"
+    },
+    "cat_desc_medical_consumables": {
+      "ht": "",
+      "at": "CureLife 医療ペンの平易な効果の要約"
+    },
+    "apply_btn": {
+      "ht": "",
+      "at": "適用"
+    },
+    "generate_btn": {
+      "ht": "",
+      "at": "拡張を生成"
+    },
+    "favorites_group": {
+      "ht": "",
+      "at": "お気に入り"
+    },
+    "favorites_desc": {
+      "ht": "",
+      "at": "生成された艦船リストで、スターを付けた艦船名の先頭に設定可能なプレフィックスが追加され、ゲーム内の艦船選択の上位に並びます。"
+    },
+    "sort_prefix_label": {
+      "ht": "",
+      "at": "ソートプレフィックス："
+    },
+    "tag_builder_group": {
+      "ht": "",
+      "at": "タグビルダー"
+    },
+    "tag_builder_desc": {
+      "ht": "",
+      "at": "コンポーネント、ミサイル、艦船武器の角括弧付き名称タグをカスタマイズします。変更は「タグの変更を保存」をクリックし、「拡張を生成」を再実行した後に反映されます。"
+    },
+    "preview_label": {
+      "ht": "",
+      "at": "プレビュー："
+    },
+    "annotate_mission_descs_cb": {
+      "ht": "",
+      "at": "ミッション説明内のコンポーネントに注釈を付ける"
+    },
+    "apply_tag_changes_btn": {
+      "ht": "",
+      "at": "タグの変更を保存"
+    },
+    "reset_defaults_btn": {
+      "ht": "",
+      "at": "デフォルトにリセット"
+    },
+    "edit_mapping_btn": {
+      "ht": "",
+      "at": "マッピングを編集..."
+    },
+    "blueprints_group": {
+      "ht": "",
+      "at": "ブループリント"
+    },
+    "blueprints_desc": {
+      "ht": "",
+      "at": "すでに所有しているブループリントをマークします。所有済みのアイテムには、ミッションの潜在的なブループリント報酬に表示される場所すべてで [Owned] タグが付くため、追う価値のあるものが一目でわかります。左側でアイテムを選択し、矢印を使って所有リストに移動します。"
+    },
+    "blueprints_empty_note": {
+      "ht": "",
+      "at": "このリストを埋めるには、まずミッション拡張を生成してください。ブループリントはミッション報酬データから取得されます。"
+    },
+    "blueprints_search_placeholder": {
+      "ht": "",
+      "at": "ブループリントを名前で検索…"
+    },
+    "blueprints_show_tags_checkbox": {
+      "ht": "",
+      "at": "ブループリント名にタグを表示"
+    },
+    "blueprints_mission_label": {
+      "ht": "",
+      "at": "ミッション："
+    },
+    "blueprints_facet_any": {
+      "ht": "",
+      "at": "すべて"
+    },
+    "blueprints_facet_type": {
+      "ht": "",
+      "at": "タイプ："
+    },
+    "blueprints_facet_class": {
+      "ht": "",
+      "at": "クラス："
+    },
+    "blueprints_facet_size": {
+      "ht": "",
+      "at": "サイズ："
+    },
+    "blueprints_facet_grade": {
+      "ht": "",
+      "at": "グレード："
+    },
+    "blueprints_filter_note": {
+      "ht": "",
+      "at": "「タイプ」はすべてをコンポーネント、FPS 武器、アーマー、その他に分類します。クラス、サイズ、グレードは艦船コンポーネントにのみ適用されます。"
+    },
+    "blueprints_tooltip_missions": {
+      "ht": "",
+      "at": "ミッション：{missions}"
+    },
+    "blueprints_available_label": {
+      "ht": "",
+      "at": "利用可能なブループリント"
+    },
+    "blueprints_owned_label": {
+      "ht": "",
+      "at": "所有済みブループリント"
+    },
+    "blueprints_add_tooltip": {
+      "ht": "",
+      "at": "選択したブループリントを所有済みとしてマークします"
+    },
+    "blueprints_remove_tooltip": {
+      "ht": "",
+      "at": "選択したブループリントを所有済みから削除します"
+    },
+    "bp_scan_title": {
+      "ht": "",
+      "at": "BP スキャン"
+    },
+    "bp_scan_starting": {
+      "ht": "",
+      "at": "Star Citizen のログから受け取ったブループリントをスキャンしています…"
+    },
+    "bp_scan_progress": {
+      "ht": "",
+      "at": "{file} をスキャンしています…"
+    },
+    "bp_scan_finishing": {
+      "ht": "",
+      "at": "仕上げ中…"
+    },
+    "bp_scan_no_path": {
+      "ht": "",
+      "at": "Star Citizen のインストールパスが設定されていないため、スキャンするログがありません。先に Config タブでゲームフォルダーを設定してください。"
+    },
+    "bp_scan_none": {
+      "ht": "",
+      "at": "前回のスキャン以降、新しいブループリントは見つかりませんでした。"
+    },
+    "bp_scan_summary": {
+      "ht": "",
+      "at": "{count} 個のブループリントを所有リストに追加しました。\n\nそのうち {visible} 個は現在のブループリントリストにすぐ表示されます。残りは、そのアイテムが次にミッションのブループリント報酬に現れたときに自動的に [Owned] と表示されます。"
+    },
+    "mission_field_ace_tooltip": {
+      "ht": "",
+      "at": "ミッションがエースパイロットを出現させるときに、ミッション詳細本文に「エースパイロット：はい」の行を表示します。[ACE] タイトルタグは「一般タグ」の下にある別の切り替えです。次回の「拡張を生成」で反映されます。"
+    },
+    "mission_field_default_tooltip": {
+      "ht": "",
+      "at": "生成されるミッション本文に {label} の行を表示します。次回の「拡張を生成」で反映されます。"
+    },
+    "stats_prepend_tooltip": {
+      "ht": "",
+      "at": "生成されたステータスブロックを、メーカー／PR 説明の下ではなく上に配置します（艦船、コンポーネント、武器）。次回の「拡張を生成」で反映されます。"
+    },
+    "standardize_ship_names_tooltip": {
+      "ht": "",
+      "at": "エグゼクティブハンガー（PYX）および Wikelo（WIK）の艦船バリアントを、標準のプレッジストア版と区別できるように接尾辞付きの名前に変更します（例：「Anvil F8C Lightning PYX」）。次回の「拡張を生成」で反映されます。"
+    },
+    "apply_categories_tooltip": {
+      "ht": "",
+      "at": "カテゴリーの選択を保存します。チェックを外したカテゴリーは無効になります。"
+    },
+    "generate_enabled_tooltip": {
+      "ht": "",
+      "at": "ゲームの Data.p4k から拡張ローカライズファイルを生成します。\nDataForge データがまだキャッシュされていない場合は自動的に抽出されます\n（初回の実行は数分かかります。以降の実行は高速です）。"
+    },
+    "generate_disabled_tooltip": {
+      "ht": "",
+      "at": "すでに最新です — 生成される出力に影響する項目（カテゴリー、ミッションフィールド、ステータス／名称オプション、タグビルダー）は前回の実行以降変更されていません。"
+    },
+    "favorite_prefix_tooltip": {
+      "ht": "",
+      "at": "お気に入りの艦船名の先頭に追加され、ゲーム内の艦船リストの上位に並ぶ文字です。変更後に「プレフィックスを適用」をクリックすると、既存のお気に入りすべてが更新されます。"
+    },
+    "rep_xp_label_tooltip": {
+      "ht": "",
+      "at": "ランク名のないミッション用のラベル（例：「Rep: +100 XP」）"
+    },
+    "header_em_tooltip": {
+      "ht": "",
+      "at": "セクションヘッダーのスタイル：下線（EM3）または青文字（EM4）"
+    },
+    "prefix_enabled_tooltip": {
+      "ht": "",
+      "at": "選択したプレフィックスを保存し、既存のお気に入りすべてがそれを使うように更新します"
+    },
+    "prefix_disabled_tooltip": {
+      "ht": "",
+      "at": "すでに適用済みです — 選択したプレフィックスは現在のお気に入りと一致しています。"
+    },
+    "annotate_mission_descs_tooltip": {
+      "ht": "",
+      "at": "チェックすると、ミッション説明の POTENTIAL BLUEPRINTS リスト内のコンポーネント名に、設定した [CLASS-Sx-grade] タグが追加されます。ミッション本文をすっきりさせつつ、他の場所の実際のコンポーネント名にはタグを残したい場合はチェックを外してください。"
+    },
+    "reset_tag_tooltip": {
+      "ht": "",
+      "at": "すべてのカテゴリー（コンポーネント／ミサイル／艦船武器）について、デフォルトのパターン、マッピング、並び順を復元します。「タグの変更を保存」または「拡張を生成」をクリックするまで、保存も再生成もされません。"
+    },
+    "tag_enabled_tooltip": {
+      "ht": "",
+      "at": "コンポーネント／ミサイル／艦船武器のタグ設定を保存し、拡張ジェネレーターを再実行します。新しいタグは次回の「拡張を適用」後にゲーム内に表示されます。"
+    },
+    "tag_disabled_tooltip": {
+      "ht": "",
+      "at": "すでに保存済みです — 前回の保存以降、タグビルダーの変更はありません。"
+    },
+    "generating_enhancements_tooltip": {
+      "ht": "",
+      "at": "拡張を生成しています…"
+    },
+    "extracting_dataforge_tooltip": {
+      "ht": "",
+      "at": "Data.p4k から DataForge を抽出しています…"
+    }
+  },
+  "blueprint_tracker": {
+    "title": {
+      "ht": "",
+      "at": "ブループリントトラッカー"
+    },
+    "scan_logs_btn": {
+      "ht": "",
+      "at": "ログから所有ブループリントをスキャン"
+    },
+    "scan_logs_tooltip": {
+      "ht": "",
+      "at": "Star Citizen のログファイル（Game.log および logbackups）で「Received Blueprint」報酬通知をスキャンし、自動的に所有済みとしてマークします。"
+    },
+    "apply_owned_tag_btn": {
+      "ht": "",
+      "at": "所有タグを適用"
+    },
+    "apply_owned_tag_tooltip": {
+      "ht": "",
+      "at": "文字列テーブルのブループリント名の [Owned] タグを、現在の所有リストに合わせて更新します。"
+    },
+    "apply_owned_tag_tooltip_disabled": {
+      "ht": "",
+      "at": "すでに最新です — 前回の適用以降、所有リストは変更されていません。"
+    }
+  },
+  "log": {
+    "min_level_label": {
+      "ht": "",
+      "at": "最小レベル："
+    },
+    "auto_scroll_check": {
+      "ht": "",
+      "at": "自動スクロール"
+    },
+    "clear_btn": {
+      "ht": "",
+      "at": "クリア"
+    },
+    "export_btn": {
+      "ht": "",
+      "at": "ファイルにエクスポート…"
+    },
+    "export_title": {
+      "ht": "",
+      "at": "ログをエクスポート"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "エクスポートに失敗しました"
+    },
+    "lines_label": {
+      "ht": "",
+      "at": "{count} 行"
+    },
+    "min_level_tooltip": {
+      "ht": "",
+      "at": "表示する最小の重大度です。選択したレベル未満のエントリーは非表示になります（DEBUG < INFO < WARNING < ERROR）。"
+    },
+    "auto_scroll_tooltip": {
+      "ht": "",
+      "at": "新しいログエントリーが届くたびに自動的にスクロールします。古い行を確認する間ビューを固定するにはオフにしてください。"
+    },
+    "clear_tooltip": {
+      "ht": "",
+      "at": "画面上のログバッファをクリアします。ディスク上のセッションログファイルには影響しません。"
+    },
+    "export_tooltip": {
+      "ht": "",
+      "at": "現在のログバッファを .log ファイルに保存します — バグ報告を提出する際に便利です。"
+    }
+  },
+  "import_dialog": {
+    "title": {
+      "ht": "",
+      "at": "インポートの競合"
+    },
+    "conflicts_group": {
+      "ht": "",
+      "at": "競合（{count} キー）"
+    },
+    "keep_all_btn": {
+      "ht": "",
+      "at": "すべて現在の値を保持"
+    },
+    "import_all_btn": {
+      "ht": "",
+      "at": "すべてインポート"
+    },
+    "col_key": {
+      "ht": "",
+      "at": "キー"
+    },
+    "col_current_value": {
+      "ht": "",
+      "at": "現在の値"
+    },
+    "col_imported_value": {
+      "ht": "",
+      "at": "インポートされた値"
+    },
+    "col_resolution": {
+      "ht": "",
+      "at": "解決方法"
+    },
+    "resolution_keep": {
+      "ht": "",
+      "at": "現在の値を保持"
+    },
+    "resolution_use": {
+      "ht": "",
+      "at": "インポート値を使用"
+    },
+    "resolution_append": {
+      "ht": "",
+      "at": "インポート値を追記"
+    },
+    "resolution_prepend": {
+      "ht": "",
+      "at": "インポート値を先頭に追加"
+    },
+    "resolution_custom": {
+      "ht": "",
+      "at": "カスタム..."
+    },
+    "custom_value_title": {
+      "ht": "",
+      "at": "カスタム値"
+    },
+    "custom_value_prompt": {
+      "ht": "",
+      "at": "キーのカスタム値を入力してください：\n{key}"
+    },
+    "auto_add_summary": {
+      "ht": "",
+      "at": "{count} 個のキーが自動的に追加されます。"
+    },
+    "excluded_summary": {
+      "ht": "",
+      "at": "{count} 個のキーが除外されました（base.ini に存在しません）。"
+    },
+    "keep_all_tooltip": {
+      "ht": "",
+      "at": "すべての競合を、既存の値を保持しインポートされた値を破棄する形で解決します。"
+    },
+    "import_all_tooltip": {
+      "ht": "",
+      "at": "すべての競合を、インポートされた値を採用し既存の値を上書きする形で解決します。"
+    }
+  },
+  "coach": {
+    "back_btn": {
+      "ht": "",
+      "at": "戻る"
+    },
+    "next_btn": {
+      "ht": "",
+      "at": "次へ"
+    },
+    "skip_btn": {
+      "ht": "",
+      "at": "スキップ"
+    },
+    "finish_btn": {
+      "ht": "",
+      "at": "完了"
+    },
+    "step_counter": {
+      "ht": "",
+      "at": "ステップ {current} / {total}"
+    }
+  },
+  "tag_mapping_dialog": {
+    "hint": {
+      "ht": "",
+      "at": "各生の値が Short／Medium／Long の長さでどう表示されるかを編集します。タグビルダーの要素のスタイルドロップダウンで、どの長さを使うかを選びます。"
+    },
+    "reset_btn": {
+      "ht": "",
+      "at": "デフォルトにリセット"
+    },
+    "col_value": {
+      "ht": "",
+      "at": "値"
+    },
+    "col_short": {
+      "ht": "",
+      "at": "Short"
+    },
+    "col_medium": {
+      "ht": "",
+      "at": "Medium"
+    },
+    "col_long": {
+      "ht": "",
+      "at": "Long"
+    },
+    "reset_tooltip": {
+      "ht": "",
+      "at": "このマッピングテーブルのすべてのセルを、Smart Citizen の組み込みデフォルトに復元します。"
+    }
+  },
+  "dialogs": {
+    "warning_title": {
+      "ht": "",
+      "at": "警告"
+    },
+    "error_title": {
+      "ht": "",
+      "at": "エラー"
+    },
+    "success_title": {
+      "ht": "",
+      "at": "成功"
+    },
+    "no_file_loaded": {
+      "ht": "",
+      "at": "先にファイルを読み込んでください"
+    },
+    "no_game_path": {
+      "ht": "",
+      "at": "Config タブでゲームのインストールパスを設定してください"
+    },
+    "missing_sources_title": {
+      "ht": "",
+      "at": "ソースがありません"
+    },
+    "missing_sources_body": {
+      "ht": "",
+      "at": "以下の有効なソースを読み込めませんでした：\n\n  {names}\n\nそれらのカスタマイズは、適用されるファイルに含まれません。\n\nこのまま適用しますか？"
+    },
+    "apply_status": {
+      "ht": "",
+      "at": "ゲームに適用しました | ユーザー編集 {user_count} 件 | 拡張 {enhancement_count} 件"
+    },
+    "apply_failed_status": {
+      "ht": "",
+      "at": "適用に失敗しました — 検証エラー"
+    },
+    "validation_failed_title": {
+      "ht": "",
+      "at": "検証に失敗しました"
+    },
+    "validation_failed_body": {
+      "ht": "",
+      "at": "書き込まれたファイルは検証に失敗し、削除されました。\n\n{msg}{restore_note}"
+    },
+    "nothing_to_clear_title": {
+      "ht": "",
+      "at": "クリアするものがありません"
+    },
+    "nothing_to_clear_body": {
+      "ht": "",
+      "at": "ゲームのローカライズディレクトリにカスタム global.ini が見つかりません。\nゲームはすでにバニラのテキストを使用しています。"
+    },
+    "clear_localization_title": {
+      "ht": "",
+      "at": "ローカライズをクリア"
+    },
+    "clear_localization_body": {
+      "ht": "",
+      "at": "次の場所からカスタム global.ini を削除します：\n{loc_dir}\n\nゲームはデフォルト（バニラ）のローカライズテキストに戻ります。\n\nオーバーライドはアプリ内に保持され、いつでも再適用できます。\n\n続行しますか？"
+    },
+    "clear_localization_done_title": {
+      "ht": "",
+      "at": "完了"
+    },
+    "clear_localization_done_body": {
+      "ht": "",
+      "at": "カスタムローカライズを削除しました。\nゲームはデフォルトのテキストを使用します。\n\nオーバーライドとステータス説明を再適用するには、「拡張を適用」をクリックしてください。"
+    },
+    "clear_localization_status": {
+      "ht": "",
+      "at": "ローカライズをクリアしました — ゲームはバニラのテキストに戻りました"
+    },
+    "cache_empty_title": {
+      "ht": "",
+      "at": "キャッシュは空です"
+    },
+    "cache_empty_body": {
+      "ht": "",
+      "at": "キャッシュディレクトリはすでに空です。"
+    },
+    "clear_cache_title": {
+      "ht": "",
+      "at": "キャッシュをクリア"
+    },
+    "dataforge_cache_title": {
+      "ht": "",
+      "at": "DataForge キャッシュをクリアしますか？"
+    },
+    "cache_cleared_title": {
+      "ht": "",
+      "at": "キャッシュをクリアしました"
+    },
+    "dir_not_found_title": {
+      "ht": "",
+      "at": "ディレクトリが見つかりません"
+    },
+    "nothing_to_export_title": {
+      "ht": "",
+      "at": "エクスポートするものがありません"
+    },
+    "nothing_to_export_body": {
+      "ht": "",
+      "at": "ゲームのローカライズディレクトリに、適用済みの global.ini が見つかりませんでした。\n\n先に「拡張を適用」をクリックしてカスタマイズを書き込んでから、エクスポートして共有用にパッケージしてください。"
+    },
+    "export_loc_pack_title": {
+      "ht": "",
+      "at": "ロックパックをエクスポート"
+    },
+    "export_complete_title": {
+      "ht": "",
+      "at": "エクスポート完了"
+    },
+    "export_complete_body": {
+      "ht": "",
+      "at": "ロックパックを次の場所に書き出しました：\n{out_path}\n\nチャンネル：{channel}\nソースサイズ：{source_size:,} バイト\nZip サイズ：{zip_size:,} バイト"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "エクスポートに失敗しました"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "ロックパックの zip を書き出せませんでした：\n{error}"
+    },
+    "update_available_title": {
+      "ht": "",
+      "at": "Smart Citizen — アップデートがあります"
+    },
+    "update_available_body": {
+      "ht": "",
+      "at": "新しいバージョンが利用可能です：v{latest}\n現在のバージョンは v{current} です。"
+    },
+    "update_open_release": {
+      "ht": "",
+      "at": "リリースページを開く"
+    },
+    "update_later": {
+      "ht": "",
+      "at": "後で"
+    },
+    "update_now": {
+      "ht": "",
+      "at": "今すぐ更新"
+    },
+    "update_auto_note": {
+      "ht": "",
+      "at": "Smart Citizen は終了してアップデートをインストールし、自動的に再起動します。最初に Windows が許可を求めます。"
+    },
+    "update_download_title": {
+      "ht": "",
+      "at": "アップデートをダウンロード中"
+    },
+    "update_download_label": {
+      "ht": "",
+      "at": "Smart Citizen v{latest} をダウンロードしています..."
+    },
+    "update_download_failed_title": {
+      "ht": "",
+      "at": "アップデートのダウンロードに失敗しました"
+    },
+    "update_download_failed_body": {
+      "ht": "",
+      "at": "アップデートをダウンロードできませんでした：\n\n{message}\n\nリリースページから手動でダウンロードできます。"
+    },
+    "update_launch_failed_title": {
+      "ht": "",
+      "at": "アップデートが開始されませんでした"
+    },
+    "update_launch_failed_body": {
+      "ht": "",
+      "at": "アップデートインストーラーが起動しませんでした（Windows の許可が拒否されたか、起動に失敗しました）。\n\n後で自分で実行できます：\n{path}\n\nSmart Citizen は当面、現在のバージョンで動作を続けます。"
+    },
+    "up_to_date_title": {
+      "ht": "",
+      "at": "Smart Citizen — 最新です"
+    },
+    "up_to_date_body": {
+      "ht": "",
+      "at": "最新のバージョン（v{current}）を使用しています。"
+    },
+    "update_check_failed_title": {
+      "ht": "",
+      "at": "Smart Citizen — アップデートの確認に失敗しました"
+    },
+    "update_check_failed_body": {
+      "ht": "",
+      "at": "アップデートを確認できませんでした：\n\n{message}"
+    },
+    "nothing_to_reset_title": {
+      "ht": "",
+      "at": "リセットするものがありません"
+    },
+    "nothing_to_reset_body": {
+      "ht": "",
+      "at": "{channel} チャンネルの user.ini はありません — すでに標準値です。\n\n確認したパス：\n{path}"
+    },
+    "reset_user_ini_title": {
+      "ht": "",
+      "at": "user.ini をリセットしますか？"
+    },
+    "reset_failed_title": {
+      "ht": "",
+      "at": "リセットに失敗しました"
+    },
+    "reset_failed_body": {
+      "ht": "",
+      "at": "user.ini をリセットできませんでした：\n\n{error}\n\nファイルはそのまま残っています。ファイルを開いている可能性のある他のアプリケーション（テキストエディター、同期クライアント）を閉じて、もう一度お試しください。"
+    },
+    "no_sources_body": {
+      "ht": "",
+      "at": "ソースが設定されていません。Config タブでデータソースを設定してください。"
+    },
+    "merge_failed": {
+      "ht": "",
+      "at": "マージに失敗しました"
+    },
+    "merging_sources": {
+      "ht": "",
+      "at": "ソースをマージしています..."
+    },
+    "language_changed_status": {
+      "ht": "",
+      "at": "言語を {language} に変更しました — ソースを再読み込みしています…"
+    },
+    "language_downloading": {
+      "ht": "",
+      "at": "{language} のローカライズをダウンロードしています…"
+    },
+    "language_no_url": {
+      "ht": "",
+      "at": "{language} のダウンロード URL が設定されていません。英語のベースを表示します。「言語ファイルをマッピング」で設定してください。"
+    },
+    "language_download_failed": {
+      "ht": "",
+      "at": "{language} のローカライズをダウンロードできず、キャッシュされたコピーも見つかりませんでした。代わりに英語のベースを表示します。「言語ファイルをマッピング」の URL と接続を確認して、もう一度お試しください。"
+    },
+    "language_generating_enhancements": {
+      "ht": "",
+      "at": "DataForge から {language} の拡張を生成しています…"
+    },
+    "file_not_found_title": {
+      "ht": "",
+      "at": "ファイルが見つかりません"
+    },
+    "file_not_found_body": {
+      "ht": "",
+      "at": "ファイルが存在しません：\n{path}"
+    },
+    "empty_file_title": {
+      "ht": "",
+      "at": "空のファイル"
+    },
+    "empty_file_body": {
+      "ht": "",
+      "at": "インポートされたファイルには、有効な key=value エントリーが含まれていません。"
+    },
+    "copy_filtered_title": {
+      "ht": "",
+      "at": "フィルター結果をコピー"
+    },
+    "copy_filtered_empty": {
+      "ht": "",
+      "at": "コピーする行がありません。"
+    },
+    "copy_filtered_done": {
+      "ht": "",
+      "at": "{count} 行をクリップボードにコピーしました。"
+    },
+    "copy_error_title": {
+      "ht": "",
+      "at": "コピーエラー"
+    },
+    "copy_error_body": {
+      "ht": "",
+      "at": "クリップボードへのコピーに失敗しました：{error}"
+    },
+    "unapplied_changes_title": {
+      "ht": "",
+      "at": "未適用の変更"
+    },
+    "unapplied_changes_body": {
+      "ht": "",
+      "at": "まだゲームに適用されていない変更があります（「拡張を適用」ボタンが赤いままです）。\n\n今すぐ適用しますか、それとも適用せずに終了しますか？"
+    },
+    "unapplied_changes_apply_now": {
+      "ht": "",
+      "at": "今すぐ適用"
+    },
+    "unapplied_changes_exit": {
+      "ht": "",
+      "at": "適用せずに終了"
+    },
+    "browse_ini_tooltip": {
+      "ht": "",
+      "at": "インポートするローカルの .ini ファイルを選択します。"
+    },
+    "generate_now_tooltip": {
+      "ht": "",
+      "at": "DataForge 抽出 + 拡張パイプラインを今すぐ実行します。初回は数分かかります。"
+    },
+    "skip_generate_tooltip": {
+      "ht": "",
+      "at": "拡張を生成せずに続行します。後で Enhancements タブから実行できます。"
+    }
+  },
+  "progress": {
+    "reading_sources": {
+      "ht": "",
+      "at": "ソースファイルを読み込んでいます..."
+    },
+    "creating_entries": {
+      "ht": "",
+      "at": "StringEntry オブジェクトを作成しています..."
+    },
+    "computing_sort_keys": {
+      "ht": "",
+      "at": "ソートキーを計算しています..."
+    },
+    "ready": {
+      "ht": "",
+      "at": "準備完了"
+    },
+    "applying_patches": {
+      "ht": "",
+      "at": "DataForge パッチを適用しています…"
+    },
+    "loading_generator": {
+      "ht": "",
+      "at": "拡張ジェネレーターを読み込んでいます..."
+    },
+    "generating_enhancements": {
+      "ht": "",
+      "at": "拡張を生成しています（初回実行時は数分かかることがあります）..."
+    },
+    "unp4k_launch": {
+      "ht": "",
+      "at": "unp4k を起動しています — 少し時間がかかることがあります..."
+    },
+    "unp4k_launch_short": {
+      "ht": "",
+      "at": "unp4k を起動しています…"
+    },
+    "copy_global": {
+      "ht": "",
+      "at": "抽出した global.ini をキャッシュにコピーしています..."
+    },
+    "copy_global_short": {
+      "ht": "",
+      "at": "抽出した global.ini をコピーしています…"
+    },
+    "extract_dcb": {
+      "ht": "",
+      "at": "Data.p4k から Game2.dcb を抽出しています…"
+    },
+    "unforge": {
+      "ht": "",
+      "at": "DataForge データベースを変換しています — 数分かかります…"
+    },
+    "unforge_short": {
+      "ht": "",
+      "at": "DataForge データベースを変換しています…"
+    },
+    "caching_entities": {
+      "ht": "",
+      "at": "エンティティファイルをキャッシュしています…"
+    },
+    "snapshot_diff": {
+      "ht": "",
+      "at": "差分用にキャッシュのスナップショットを作成しています…"
+    }
+  },
+  "status_bar": {
+    "no_strings_loaded": {
+      "ht": "",
+      "at": "文字列が読み込まれていません：先に Config タブで Data.p4k から抽出してください"
+    },
+    "update_checking": {
+      "ht": "",
+      "at": "確認中…"
+    },
+    "update_available": {
+      "ht": "",
+      "at": "v{version} が利用可能"
+    },
+    "update_up_to_date": {
+      "ht": "",
+      "at": "最新です（v{version}）"
+    },
+    "update_check_failed": {
+      "ht": "",
+      "at": "確認に失敗しました"
+    },
+    "update_indicator_available": {
+      "ht": "",
+      "at": "v{current}・アップデートあり"
+    },
+    "update_indicator_up_to_date": {
+      "ht": "",
+      "at": "v{current}・最新"
+    },
+    "update_indicator_failed": {
+      "ht": "",
+      "at": "v{current}・確認失敗"
+    },
+    "open_release_page_tooltip": {
+      "ht": "",
+      "at": "v{version} のリリースページを開く"
+    }
+  },
+  "tutorial": {
+    "welcome": {
+      "title": {
+        "ht": "",
+        "at": "Smart Citizen へようこそ"
+      },
+      "description": {
+        "ht": "",
+        "at": "このクイックツアーでは、文字列をカスタマイズし、その結果を Star Citizen に適用するという中心的なワークフローを紹介します。これらの手順の多くは自動的に実行されますが、必要に応じて手動でも行えます。いつでもスキップできます。"
+      }
+    },
+    "extract": {
+      "title": {
+        "ht": "",
+        "at": "1. Data.p4k から抽出"
+      },
+      "description": {
+        "ht": "",
+        "at": "「抽出」をクリックすると、インストール済みのゲームの標準ローカライズファイルが展開されます。パッチによって現在のファイルが古くなった場合は実行を促されますが、そうでなくてもいつでも手動で実行できます。抽出が完了すると、文字列は自動的にテーブルに再読み込みされます。"
+      }
+    },
+    "enhancements": {
+      "title": {
+        "ht": "",
+        "at": "2. 拡張"
+      },
+      "description": {
+        "ht": "",
+        "at": "任意ですが推奨されます：Enhancements タブでは、艦船、コンポーネント、武器、ミッションのブループリント／報酬、商品クラフトのステータスオーバーレイを切り替えられます。「拡張を生成」は、抽出したデータからそれらのオーバーレイを作り出すパイプラインを実行します。続く数ステップでは、このタブの各セクションを順に説明します。"
+      }
+    },
+    "enh_categories": {
+      "title": {
+        "ht": "",
+        "at": "3. 拡張：カテゴリー"
+      },
+      "description": {
+        "ht": "",
+        "at": "「生成」時にどの拡張カテゴリーを実行するかを切り替えます。艦船、コンポーネント、艦船武器、FPS 武器、ミッション、ミッション報酬、商品クラフト、医療消耗品を、それぞれ独立して有効にできます。"
+      }
+    },
+    "enh_favorites": {
+      "title": {
+        "ht": "",
+        "at": "4. 拡張：お気に入り"
+      },
+      "description": {
+        "ht": "",
+        "at": "お気に入りにした艦船名の先頭に付けるプレフィックス文字を選びます。これにより、ゲーム内 ASOP ターミナルの上位に並びます。デフォルトは * です。"
+      }
+    },
+    "enh_mission_labels": {
+      "title": {
+        "ht": "",
+        "at": "5. 拡張：ミッションラベル"
+      },
+      "description": {
+        "ht": "",
+        "at": "セクションヘッダー（MISSION DETAILS / POTENTIAL BLUEPRINTS / ITEM REWARDS / BLUEPRINT DATA）、特定の評判ランクを持たないミッションに表示される XP ラベル（デフォルトは Rep）、そしてヘッダーの強調タグ（EM3 = 下線、EM4 = 色）をカスタマイズします。"
+      }
+    },
+    "enh_tag_builder": {
+      "title": {
+        "ht": "",
+        "at": "6. 拡張：タグビルダー"
+      },
+      "description": {
+        "ht": "",
+        "at": "コンポーネント、ミサイル、艦船武器、商品に追加される角括弧付きの名称タグを組み立てます。▲/▼ で要素を並べ替え、チェックを外して除外し、省略の長さを変更し、区切り文字と括弧を選び、あるいはタグを名前の前ではなく後ろに配置できます。"
+      }
+    },
+    "blueprint_tracker": {
+      "title": {
+        "ht": "",
+        "at": "7. ブループリントトラッカー"
+      },
+      "description": {
+        "ht": "",
+        "at": "所有しているブループリントをマークします。左のリストを名前やミッションで検索するか、コンポーネントのタイプ、クラス、サイズ、グレードで絞り込み、矢印を使って所有リストにアイテムを移動します。所有済みのブループリントは、ミッションの潜在的な報酬に表示される場所すべてで [Owned] タグが付くため、追う価値のあるものが一目でわかります。"
+      }
+    },
+    "edit": {
+      "title": {
+        "ht": "",
+        "at": "8. 文字列を編集"
+      },
+      "description": {
+        "ht": "",
+        "at": "各行は 1 つのローカライズレコードです。Custom Value 列のセルをダブルクリックして編集します — 変更は自動保存されます。★ 列は艦船をお気に入りとしてマークし、ASOP の上位に並べます。"
+      }
+    },
+    "filter_row": {
+      "title": {
+        "ht": "",
+        "at": "9. 列でフィルター"
+      },
+      "description": {
+        "ht": "",
+        "at": "列ヘッダーの下にある検索ボックスの行が、入力に応じてテーブルをフィルタリングします。各ボックスはそれぞれの列（Key、Default Value、Current Value、Custom Value）に対応し、複数の列にまたがるフィルターは AND で結合されます。ボックス内の × をクリックするとクリアできます。"
+      }
+    },
+    "editor": {
+      "title": {
+        "ht": "",
+        "at": "10. エディターペイン"
+      },
+      "description": {
+        "ht": "",
+        "at": "長い文字列の場合は「エディター」をクリックすると、より広い編集キャンバスがサイドにドッキングします。ペインは選択した行に追従します。選択したテキストを右クリックすると、下線／ハイライトの強調ができます。タイトルバーをドラッグすると、ドッキングを解除して独立したウィンドウにできます。"
+      }
+    },
+    "preview": {
+      "title": {
+        "ht": "",
+        "at": "11. プレビューペイン"
+      },
+      "description": {
+        "ht": "",
+        "at": "行を選択するたびに、右側のこのペインにその現在の値のレンダリング済みテキストが表示されます。"
+      }
+    },
+    "apply": {
+      "title": {
+        "ht": "",
+        "at": "12. 拡張を適用"
+      },
+      "description": {
+        "ht": "",
+        "at": "「適用」はマージされた結果をゲームの global.ini に書き込みます。最初に現在の global.ini のタイムスタンプ付きバックアップが作成されます（最大 5 個まで保持され、「バックアップを復元」から復元できます）。"
+      }
+    },
+    "cfg_appearance": {
+      "title": {
+        "ht": "",
+        "at": "13. Config：外観"
+      },
+      "description": {
+        "ht": "",
+        "at": "アプリのテーマ（Default / Light / Dark / ODW）を選び、任意で新バージョン時の自動ツアーを無効にできます。"
+      }
+    },
+    "cfg_sc_install": {
+      "title": {
+        "ht": "",
+        "at": "14. Config：Star Citizen のインストール"
+      },
+      "description": {
+        "ht": "",
+        "at": "Star Citizen のインストールルート（LIVE、PTU、EPTU などを含むディレクトリ）へのパスです。インストール時に自動検出されます。ゲームが別の場所にある場合はここで編集してください。「チャンネル」ドロップダウンでアプリが読み書きするチャンネルを選び、「言語」ドロップダウンでアプリの UI とゲーム文字列の両方を切り替えます。"
+      }
+    },
+    "cfg_data_folder": {
+      "title": {
+        "ht": "",
+        "at": "15. Config：Smart Citizen データ"
+      },
+      "description": {
+        "ht": "",
+        "at": "user.ini、キャッシュ、DataForge 抽出、生成された拡張 INI、バックアップが保存される場所です。デフォルトは Documents\\Smart Citizen です。抽出やキャッシュのクリーンアップが遅い場合は OneDrive の外に移動してください。"
+      }
+    },
+    "cfg_p4k_extraction": {
+      "title": {
+        "ht": "",
+        "at": "16. Config：ベースローカライズ"
+      },
+      "description": {
+        "ht": "",
+        "at": "「Data.p4k から抽出」ボタンはここにあります。これはベース文字列と拡張データの唯一のソースです — ゲームのパッチ後に再実行して更新してください。"
+      }
+    },
+    "cfg_tools": {
+      "title": {
+        "ht": "",
+        "at": "17. Config：ツール"
+      },
+      "description": {
+        "ht": "",
+        "at": "競合解決ダイアログを介して外部 INI をオーバーライドにインポートするか、アクティブなチャンネルの user.ini をリセットできます（クリア前に自動的にバックアップされます）。"
+      }
+    },
+    "help": {
+      "title": {
+        "ht": "",
+        "at": "18. ヘルプとフィードバック"
+      },
+      "description": {
+        "ht": "",
+        "at": "「ヘルプ」ボタンを押すと、完全なガイド、既知の問題の一覧、Smart Citizen の Discord チャンネルへのフィードバックリンクを備えたサイドパネルが開きます。始めるのに必要なことはこれで全部です — 幸運を、シチズン。"
+      }
+    }
+  }
+}

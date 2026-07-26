@@ -17,11 +17,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from src.utils.tag_builder import (  # noqa: E402
+    CATEGORIES,
     DEFAULT_TAG_CONFIGS,
     ElementSpec,
     TagConfig,
     default_config,
     render_tag,
+    tag_config_fingerprint,
 )
 
 pytestmark = pytest.mark.unit
@@ -354,3 +356,68 @@ class TestCommodityLabelElement:
         cfg = default_config("commodities")
         cfg.enclosing = "round"
         assert render_tag(cfg, {"label": "Crafting"}) == "(CF)"
+
+
+# ── Config fingerprint (Save Tag Changes per-channel freshness, #292/#296 sibling) ──
+
+class TestTagConfigFingerprint:
+    """tag_config_fingerprint must be a stable, sensitive digest: identical
+    config -> identical hash regardless of dict order, and any tag-affecting
+    change -> a different hash. This is what lets a channel's INIs be stamped
+    with the config they were built from so the Save Tag Changes button can do
+    a real freshness check on channel switch instead of always lighting up."""
+
+    def _all(self):
+        return {c: default_config(c) for c in CATEGORIES}
+
+    def test_deterministic(self):
+        cfgs = self._all()
+        assert tag_config_fingerprint(cfgs, True) == tag_config_fingerprint(cfgs, True)
+
+    def test_is_twelve_hex_chars(self):
+        fp = tag_config_fingerprint(self._all(), True)
+        assert len(fp) == 12
+        int(fp, 16)  # raises if not hex
+
+    def test_dict_order_independent(self):
+        cfgs = self._all()
+        reordered = {c: cfgs[c] for c in reversed(list(CATEGORIES))}
+        assert tag_config_fingerprint(reordered, True) == tag_config_fingerprint(cfgs, True)
+
+    def test_annotate_toggle_changes_hash(self):
+        cfgs = self._all()
+        assert tag_config_fingerprint(cfgs, True) != tag_config_fingerprint(cfgs, False)
+
+    def test_config_edit_changes_hash(self):
+        cfgs = self._all()
+        baseline = tag_config_fingerprint(cfgs, True)
+        edited = dict(cfgs)
+        comp = default_config("components")
+        comp.separator = "pipe" if comp.separator != "pipe" else "hyphen"
+        edited["components"] = comp
+        assert tag_config_fingerprint(edited, True) != baseline
+
+    def test_element_reorder_changes_hash(self):
+        # elements is an ordered list — reordering is a real, visible change.
+        cfgs = self._all()
+        baseline = tag_config_fingerprint(cfgs, True)
+        comp = default_config("components")
+        if len(comp.elements) >= 2:
+            comp.elements[0], comp.elements[1] = comp.elements[1], comp.elements[0]
+            edited = dict(cfgs)
+            edited["components"] = comp
+            assert tag_config_fingerprint(edited, True) != baseline
+
+    def test_equivalent_frozenset_order_same_hash(self):
+        # abbreviated_phrases is a frozenset — insertion order must not matter,
+        # since to_dict() sorts it. Two configs built with different insertion
+        # orders of the same phrases must fingerprint identically.
+        a = default_config("mission_titles")
+        b = default_config("mission_titles")
+        a.abbreviated_phrases = frozenset({"rank", "delivery"})
+        b.abbreviated_phrases = frozenset({"delivery", "rank"})
+        cfgs_a = {c: default_config(c) for c in CATEGORIES}
+        cfgs_b = {c: default_config(c) for c in CATEGORIES}
+        cfgs_a["mission_titles"] = a
+        cfgs_b["mission_titles"] = b
+        assert tag_config_fingerprint(cfgs_a, True) == tag_config_fingerprint(cfgs_b, True)

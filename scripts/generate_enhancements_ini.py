@@ -149,19 +149,59 @@ OUTPUT_DIR = APP_CACHE_DIR
 
 # ── INI helpers ───────────────────────────────────────────────────────────────
 
+# Deletion table for counting high (non-ASCII) bytes at C speed: translating
+# with this removes every byte >= 0x80, so the length delta is the count.
+_HIGH_BYTES = bytes(range(0x80, 0x100))
+
+
+def _read_ini_text(path: Path) -> str:
+    """Read an INI file's text, tolerating non-UTF-8 content (#251).
+
+    Mirror of src/parser/ini_parser._read_ini_text — duplicated so this
+    script stays stdlib+lxml-only for standalone runs (same shape as the
+    existing parse_ini/parse_ini_file parallelism); see that copy for the
+    full failure-shape rationale. In short: a strict decode crashed the
+    whole enhancements run on one corrupt byte (#251). A few corrupt bytes
+    in an otherwise-UTF-8 file get UTF-8 errors="replace" (a cp1252 decode
+    would mojibake every legitimate multi-byte character); a genuinely
+    ANSI/cp1252 file gets a cp1252 decode (a UTF-8 replace-decode would
+    destroy every high byte). Discriminated by whether the UTF-8
+    replacement count tracks the file's high-byte count.
+    """
+    raw = path.read_bytes()
+    try:
+        return raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        pass
+    body = raw[3:] if raw.startswith(b"\xef\xbb\xbf") else raw
+    utf8_replaced = body.decode("utf-8", errors="replace")
+    bad = utf8_replaced.count("�")
+    high = len(body) - len(body.translate(None, _HIGH_BYTES))
+    if bad * 2 <= high:
+        logger.warning(
+            f"{path} is UTF-8 with {bad} corrupt byte(s) "
+            f"(of {high} non-ASCII); replaced with U+FFFD"
+        )
+        return utf8_replaced
+    logger.warning(f"{path} is not UTF-8 (looks ANSI); decoding as Windows-1252")
+    return body.decode("cp1252", errors="replace")
+
+
 def parse_ini(path: Path) -> dict[str, str]:
     result = {}
-    with open(path, encoding="utf-8-sig") as f:
-        for line in f:
-            line = line.rstrip("\r\n")
-            if not line.strip() or line.strip().startswith(";"):
-                continue
-            if "=" not in line:
-                continue
-            k, _, v = line.partition("=")
-            lookup_key = k.strip().split(",")[0].strip()
-            if lookup_key:
-                result[lookup_key] = v.strip()
+    # split('\n') + rstrip('\r'), NOT str.splitlines(): splitlines also
+    # breaks on U+2028/U+0085 etc., which a loc value could legitimately
+    # contain — file iteration never split on those and neither do we.
+    for line in _read_ini_text(path).split("\n"):
+        line = line.rstrip("\r")
+        if not line.strip() or line.strip().startswith(";"):
+            continue
+        if "=" not in line:
+            continue
+        k, _, v = line.partition("=")
+        lookup_key = k.strip().split(",")[0].strip()
+        if lookup_key:
+            result[lookup_key] = v.strip()
     return result
 
 
@@ -310,7 +350,9 @@ def _dataforge_cache_key(forge_dir: Path) -> str:
     if stamp.exists():
         try:
             return stamp.read_text(encoding="utf-8").strip()
-        except OSError:
+        except (OSError, ValueError):
+            # ValueError: a corrupt stamp raises UnicodeDecodeError (#251
+            # bug class) — fall through to the records-dir heuristic.
             pass
     records = forge_dir / "raw" / "libs" / "foundry" / "records"
     if records.exists():
@@ -2753,13 +2795,15 @@ def _rep_reward_line(field_name: str, amount_str: str, rep_xp_label: str, track:
     """Render one reputation-reward line for a MISSION DETAILS body.
 
     *field_name* is the rank / standing name when known (e.g. ``"Neutral"``),
-    otherwise ``""``. *amount_str* is the pre-formatted signed amount, e.g.
-    ``"+500"``, ``"+500–4,000"``, or ``"-100"``. The configured reputation
-    label (``rep_xp_label``, default ``"Rep"``) becomes the field name when no
-    rank is known, and the trailing unit otherwise; it is never doubled. The
-    literal ``"XP"`` is never emitted: the label is the single source of the
-    unit word, so renaming it (Enhancements tab) flows through every mission
-    body (issue #102).
+    otherwise ``""``. *amount_str* is the pre-formatted amount, e.g. ``"500"``,
+    ``"500–4,000"``, or ``"-100"``. A leading ``"+"`` is deliberately never
+    added for a reward gain (issue #319: it read as confusing rather than
+    informative next to a plain number), while a penalty still shows its own
+    ``"-"`` sign. The configured reputation label (``rep_xp_label``, default
+    ``"Rep"``) becomes the field name when no rank is known, and the trailing
+    unit otherwise; it is never doubled. The literal ``"XP"`` is never
+    emitted: the label is the single source of the unit word, so renaming it
+    (Enhancements tab) flows through every mission body (issue #102).
 
     *track* is the reputation TRACK a faction's rank belongs to (e.g.
     "Security" vs the generic Contractor/Standing track — some factions have
@@ -2767,7 +2811,7 @@ def _rep_reward_line(field_name: str, amount_str: str, rep_xp_label: str, track:
     after the unit so a shared field name/label is never ambiguous about
     which track it feeds. Suppressed when it's identical to *field_name*
     (some ranks are named the same as their own track, e.g. Contractor rank 2
-    of the Contractor track — "Contractor: +200 Rep (Contractor)" would just
+    of the Contractor track, "Contractor: 200 Rep (Contractor)" would just
     repeat itself with no new information).
     """
     suffix = f" ({track})" if track and track != field_name else ""
@@ -2829,7 +2873,7 @@ def enhancements_mission(root: ET.Element, reputation_lookup: dict[str, int] | N
 
         total_rep_xp = _extract_mission_xp(root, reputation_lookup)
         if total_rep_xp > 0 and _show("reputation"):
-            lines.append(f"<EM4>{rep_xp_label}:</EM4> +{total_rep_xp:,}")
+            lines.append(f"<EM4>{rep_xp_label}:</EM4> {total_rep_xp:,}")
 
         # Extract spawn/wave counts — bucketed Hostiles / Friendlies /
         # Objectives / Unknown rather than the pre-1.4.1 single-tally
@@ -2949,6 +2993,28 @@ def _merge_blueprint_pool(
             existing_items.append(item)
 
 
+# Fuel nozzles hit the filename-fallback tier (#281): their entityClass UUID
+# doesn't resolve in entity_names, and entity_names_by_filename also misses
+# for reasons CIG's own data doesn't make obvious, so every fuel nozzle
+# reward fell all the way through to _name_from_blueprint_filename's
+# title-cased slug -- visible in-game as "Nozzle Fuelgiver Grin Nozzlefast"
+# etc. in a mission's POTENTIAL BLUEPRINTS list instead of the real
+# manufacturer name. Confirmed via a live "URGENT REFUEL REQUEST" mission
+# body listing all 8 variants this way. Keyed by the exact fallback string
+# this function produces (title-cased, space-separated) so it's a pure
+# post-processing correction with no effect on any other blueprint type.
+_BLUEPRINT_FILENAME_FALLBACK_ALIASES = {
+    "Nozzle Fuelgiver Grin Nozzlefast": "Norfield",
+    "Nozzle Fuelgiver Grin Nozzlesecure": "Marlin",
+    "Nozzle Fuelgiver Grin Nozzleveryfast": "Lindstrom",
+    "Nozzle Fuelgiver Grin Nozzleverysecure": "Harkin",
+    "Nozzle Fuelgiver Misc Nozzlestandard": "RN-7s",
+    "Nozzle Fuelgiver Shin Nozzleexpensivefast": "Bendix",
+    "Nozzle Fuelgiver Shin Nozzleexpensivesecure": "Torrez",
+    "Nozzle Fuelgiver Shin Nozzlemostexpensive": "Ezra",
+}
+
+
 def _name_from_blueprint_filename(bp_xml: Path) -> str:
     """Best-effort fallback display name from a blueprint XML's filename.
 
@@ -2960,7 +3026,7 @@ def _name_from_blueprint_filename(bp_xml: Path) -> str:
 
     Examples:
         bp_craft_nozzle_fuelgiver_grin_nozzlefast.xml
-            → "Nozzle Fuelgiver Grin Nozzlefast"
+            → "Norfield" (known alias — see _BLUEPRINT_FILENAME_FALLBACK_ALIASES)
         bp_craft_salvage_modifier_scraper_large.xml
             → "Salvage Modifier Scraper Large"
         bp_rewards_eckhartsecuritykillnpcboss.xml
@@ -2974,7 +3040,8 @@ def _name_from_blueprint_filename(bp_xml: Path) -> str:
             stem = stem[len(prefix):]
             break
     # Replace separators with spaces and title-case.
-    return stem.replace("_", " ").replace("-", " ").title()
+    fallback = stem.replace("_", " ").replace("-", " ").title()
+    return _BLUEPRINT_FILENAME_FALLBACK_ALIASES.get(fallback, fallback)
 
 
 def build_blueprint_pool_lookup(
@@ -6173,14 +6240,14 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
             if _show("reputation"):
                 if len(nonzero_tiers) == 1:
                     sxp, fxp, rn, rt = nonzero_tiers[0]
-                    details_lines.append(_rep_reward_line(rn, f"+{sxp:,}", rep_xp_label, rt))
+                    details_lines.append(_rep_reward_line(rn, f"{sxp:,}", rep_xp_label, rt))
                     if fxp < 0:
                         details_lines.append(
                             _rep_reward_line("Failure Penalty", f"{fxp:,}", rep_xp_label)
                         )
                 elif len(nonzero_tiers) > 1:
                     for i, (sxp, fxp, rn, rt) in enumerate(sorted(nonzero_tiers, key=lambda t: t[0]), 1):
-                        line = _rep_reward_line(rn if rn else f"Tier {i}", f"+{sxp:,}", rep_xp_label, rt)
+                        line = _rep_reward_line(rn if rn else f"Tier {i}", f"{sxp:,}", rep_xp_label, rt)
                         if fxp < 0:
                             line += f" (Failure: {fxp:,})"
                         details_lines.append(line)
