@@ -35,6 +35,22 @@
     "defaults_hint": {
       "ht": "",
       "at": "Verwendet deine aktuellen Einstellungen (dieselben, die auch die erweiterte Ansicht zeigt).\nDer erste Durchlauf kann einige Minuten dauern, während DataForge extrahiert wird."
+    },
+    "set_game_folder_title": {
+      "ht": "",
+      "at": "Spieleordner festlegen"
+    },
+    "set_game_folder_body": {
+      "ht": "",
+      "at": "Smart Citizen muss wissen, wo Star Citizen installiert ist, bevor Änderungen angewendet werden können.\n\nWechsel in den erweiterten Modus, damit du den Spieleordner im Konfig-Tab festlegen kannst."
+    },
+    "apply_enhancements_confirm_title": {
+      "ht": "",
+      "at": "Erweiterungen anwenden"
+    },
+    "apply_enhancements_confirm_body": {
+      "ht": "",
+      "at": "Dadurch werden die neuesten Erweiterungen mit deinen aktuellen Einstellungen erzeugt und auf die global.ini deines Spiels angewendet. Zuerst wird ein Backup mit Zeitstempel erstellt.\n\nDer erste Durchlauf kann einige Minuten dauern, während DataForge extrahiert wird. Fortfahren?"
     }
   },
   "tabs": {
@@ -69,6 +85,18 @@
     "legal": {
       "ht": "",
       "at": "Rechtliches"
+    },
+    "about_load_failed": {
+      "ht": "",
+      "at": "Info-Informationen konnten nicht geladen werden."
+    },
+    "faq_load_failed": {
+      "ht": "",
+      "at": "FAQ konnte nicht geladen werden."
+    },
+    "legal_load_failed": {
+      "ht": "",
+      "at": "Rechtliche Informationen konnten nicht geladen werden."
     }
   },
   "toolbar": {
@@ -175,6 +203,18 @@
     "apply_disabled_tooltip": {
       "ht": "",
       "at": "Bereits angewendet: Es hat sich seit dem letzten „Auf Spiel anwenden“ nichts geändert."
+    },
+    "feedback_fallback_text": {
+      "ht": "",
+      "at": "Feedback, Fehler & Feature-Abstimmung"
+    },
+    "paypal_fallback_text": {
+      "ht": "",
+      "at": "Über PayPal spenden"
+    },
+    "venmo_fallback_text": {
+      "ht": "",
+      "at": "Venmo"
     }
   },
   "filters": {
@@ -339,6 +379,66 @@
     "column_filter_placeholder": {
       "ht": "",
       "at": "{column} filtern…"
+    },
+    "editor_dock_title": {
+      "ht": "",
+      "at": "String-Editor"
+    },
+    "no_row_selected": {
+      "ht": "",
+      "at": "(keine Zeile ausgewählt)"
+    },
+    "editor_underline_btn": {
+      "ht": "",
+      "at": "Unterstreichen"
+    },
+    "editor_highlight_btn": {
+      "ht": "",
+      "at": "Hervorheben"
+    },
+    "editor_placeholder": {
+      "ht": "",
+      "at": "Wähle eine Zeile in der String-Editor-Tabelle aus, um hier ihren benutzerdefinierten Wert zu bearbeiten."
+    },
+    "context_copy_cell": {
+      "ht": "",
+      "at": "Zelle kopieren"
+    },
+    "context_copy_key": {
+      "ht": "",
+      "at": "Schlüssel kopieren"
+    },
+    "context_edit": {
+      "ht": "",
+      "at": "Bearbeiten"
+    },
+    "context_reset_to_original": {
+      "ht": "",
+      "at": "Auf Original zurücksetzen"
+    },
+    "context_copy_all_filtered": {
+      "ht": "",
+      "at": "Alle gefilterten kopieren"
+    },
+    "context_remove_favorite": {
+      "ht": "",
+      "at": "★ Aus Favoriten entfernen"
+    },
+    "context_add_favorite": {
+      "ht": "",
+      "at": "★ Zu Favoriten hinzufügen"
+    },
+    "showing_count": {
+      "ht": "",
+      "at": "{shown} von {total} Strings werden angezeigt"
+    },
+    "copied_key": {
+      "ht": "",
+      "at": "Kopiert: {loc_key}"
+    },
+    "pyperclip_missing": {
+      "ht": "",
+      "at": "pyperclip ist nicht installiert"
     }
   },
   "config": {
@@ -661,6 +761,46 @@
     "extract_tooltip": {
       "ht": "",
       "at": "Entpackt die Standard-Lokalisierung (base.ini) sowie die DataForge-Entitäts-XMLs aus deiner installierten Data.p4k. Nach jedem Star-Citizen-Patch ausführen — die Strings werden nach Abschluss der Extraktion automatisch in die Tabelle neu geladen."
+    },
+    "include_new_cb": {
+      "ht": "",
+      "at": "Entdeckte Elemente einbeziehen"
+    },
+    "disable_tutorial_cb": {
+      "ht": "",
+      "at": "Tutorial deaktivieren"
+    },
+    "invalid_data_folder_body": {
+      "ht": "",
+      "at": "Der ausgewählte Datenordner ist eine Datei, kein Verzeichnis:\n{path}"
+    },
+    "onedrive_folder_title": {
+      "ht": "",
+      "at": "Datenordner befindet sich in OneDrive"
+    },
+    "onedrive_folder_body": {
+      "ht": "",
+      "at": "Dieser Ordner befindet sich in OneDrive:\n\n{path}\n\nOneDrive kann diese Dateien synchronisieren und sogar leeren, was schon zu Datenverlust geführt hat. Ein lokaler Ordner außerhalb von OneDrive wird dringend empfohlen.\n\nDiesen OneDrive-Ordner trotzdem verwenden?"
+    },
+    "dataforge_cache_old_new": {
+      "ht": "",
+      "at": "Alt: {old}\nNeu: {new}"
+    },
+    "channel_not_installed_hint": {
+      "ht": "",
+      "at": "⚠ {channel} ist unter diesem Stammverzeichnis nicht installiert — wähle einen anderen Kanal"
+    },
+    "preview_merge_failed": {
+      "ht": "",
+      "at": "Vorschau der Zusammenführung fehlgeschlagen: {error}"
+    },
+    "game_path_placeholder": {
+      "ht": "",
+      "at": "C:\\Program Files\\Roberts Space Industries\\StarCitizen"
+    },
+    "language_source_placeholder": {
+      "ht": "",
+      "at": "https://…/global.ini"
     }
   },
   "enhancements": {
@@ -923,6 +1063,246 @@
     "extracting_dataforge_tooltip": {
       "ht": "",
       "at": "DataForge wird aus Data.p4k extrahiert…"
+    },
+    "tag_move_up_tooltip": {
+      "ht": "",
+      "at": "Dieses Element nach oben verschieben"
+    },
+    "tag_move_down_tooltip": {
+      "ht": "",
+      "at": "Dieses Element nach unten verschieben"
+    },
+    "tag_untick_exclude_tooltip": {
+      "ht": "",
+      "at": "Deaktivieren, um dieses Element vom Tag auszuschließen"
+    },
+    "tag_edit_mapping_row_btn": {
+      "ht": "",
+      "at": "Zuordnung bearbeiten…"
+    },
+    "tag_mapping_tooltip_ordinance": {
+      "ht": "",
+      "at": "Bearbeite den Kurz-/Mittel-/Lang-Text für jeden Zielverfolgungstyp (z. B. Infrarot → I / IR / Infrarot)."
+    },
+    "tag_mapping_tooltip_damage": {
+      "ht": "",
+      "at": "Bearbeite den Kurz-/Mittel-/Lang-Text für jeden Schadenstyp (z. B. Energie → E / EN / Energie)."
+    },
+    "tag_mapping_tooltip_type": {
+      "ht": "",
+      "at": "Bearbeite den Kurz-/Mittel-/Lang-Text für jeden Komponententyp (z. B. Schildgenerator → SH / SHLD / Schild)."
+    },
+    "tag_mapping_tooltip_label": {
+      "ht": "",
+      "at": "Bearbeite den Kurz-/Mittel-/Lang-Text für die Crafting-Beschriftung (z. B. Crafting → CF / Craft / Crafting)."
+    },
+    "tag_mapping_tooltip_collection": {
+      "ht": "",
+      "at": "Bearbeite den Kurz-/Mittel-/Lang-Text für die Sammlungsbeschriftung (z. B. Sammlung → Sam / Sammel / Sammlung)."
+    },
+    "tag_mapping_tooltip_default": {
+      "ht": "",
+      "at": "Bearbeite den Kurz-/Mittel-/Lang-Text für jede Klasse (z. B. Militär → M / MIL / Militär)."
+    },
+    "mission_detail_fields_heading": {
+      "ht": "",
+      "at": "Missionsdetailfelder:"
+    },
+    "mission_field_mission_type": {
+      "ht": "",
+      "at": "Missionstyp"
+    },
+    "mission_field_difficulty": {
+      "ht": "",
+      "at": "Schwierigkeit"
+    },
+    "mission_field_hostiles": {
+      "ht": "",
+      "at": "Feindkräfte"
+    },
+    "mission_field_reputation": {
+      "ht": "",
+      "at": "Ruf"
+    },
+    "mission_field_blueprints": {
+      "ht": "",
+      "at": "Baupläne"
+    },
+    "mission_field_ace_pilot": {
+      "ht": "",
+      "at": "Ass-Pilot"
+    },
+    "mission_detail_fields_note": {
+      "ht": "",
+      "at": "Nicht angehakte Felder werden aus den Missionsbeschreibungen weggelassen. Wird beim nächsten „Erweiterungen erzeugen“ angewendet."
+    },
+    "stats_prepend_cb": {
+      "ht": "",
+      "at": "Statistiken über der Beschreibung anzeigen"
+    },
+    "standardize_ship_names_cb": {
+      "ht": "",
+      "at": "Erwerbbare Schiffsnamen vereinheitlichen"
+    },
+    "mission_labels_group": {
+      "ht": "",
+      "at": "Missionsbeschriftungen"
+    },
+    "mission_label_details": {
+      "ht": "",
+      "at": "Details:"
+    },
+    "mission_label_blueprints": {
+      "ht": "",
+      "at": "Baupläne:"
+    },
+    "mission_label_item_rewards": {
+      "ht": "",
+      "at": "Gegenstandsbelohnungen:"
+    },
+    "mission_label_blueprint_data": {
+      "ht": "",
+      "at": "Bauplandaten:"
+    },
+    "mission_label_xp": {
+      "ht": "",
+      "at": "XP-Beschriftung:"
+    },
+    "mission_label_header_style": {
+      "ht": "",
+      "at": "Überschriftenstil:"
+    },
+    "em_label_underline": {
+      "ht": "",
+      "at": "Unterstrichen"
+    },
+    "em_label_blue_text": {
+      "ht": "",
+      "at": "Blauer Text"
+    },
+    "forge_status_not_extracted": {
+      "ht": "",
+      "at": "DataForge: noch nicht extrahiert — klicke auf „Erweiterungen erzeugen“, um zu beginnen"
+    },
+    "forge_status_outdated": {
+      "ht": "",
+      "at": "DataForge: Cache veraltet — klicke auf „Erweiterungen erzeugen“, um neu zu extrahieren und zu aktualisieren"
+    },
+    "forge_status_up_to_date": {
+      "ht": "",
+      "at": "DataForge: Cache aktuell ✓"
+    },
+    "tag_separator_label": {
+      "ht": "",
+      "at": "Trennzeichen:"
+    },
+    "tag_enclosing_label": {
+      "ht": "",
+      "at": "Umschließung:"
+    },
+    "tag_placement_label": {
+      "ht": "",
+      "at": "Platzierung:"
+    },
+    "tag_craft_usage_separator_label": {
+      "ht": "",
+      "at": "Craft-Nutzung-Trennzeichen:"
+    },
+    "mt_hauling_group": {
+      "ht": "",
+      "at": "Frachtmissionen"
+    },
+    "mt_enable_route_cb": {
+      "ht": "",
+      "at": "Route zu Frachtmissionstiteln hinzufügen"
+    },
+    "mt_standardize_cb": {
+      "ht": "",
+      "at": "Frachtmissionsnamen vereinheitlichen (z. B. „Mittlerer Frachttransport“ für jedes Unternehmen, statt „Große Lieferung“ / „Transport – kleiner Maßstab“)"
+    },
+    "mt_route_hint": {
+      "ht": "",
+      "at": "Das Spiel füllt die tatsächlichen Abhol- und Zielorte aus, sobald die Mission angenommen wird."
+    },
+    "mt_route_arrow_label": {
+      "ht": "",
+      "at": "Routenpfeil:"
+    },
+    "mt_title_separator_label": {
+      "ht": "",
+      "at": "Titeltrennzeichen:"
+    },
+    "mt_rank_separator_label": {
+      "ht": "",
+      "at": "Rangtrennzeichen:"
+    },
+    "mt_location_detail_label": {
+      "ht": "",
+      "at": "Ortsdetail:"
+    },
+    "mt_shorten_titles_cb": {
+      "ht": "",
+      "at": "Originaltitel kürzen (Kürzt Standardphrasen, z. B. „Lokale Lieferroute“ → „Route“)"
+    },
+    "mt_shorten_sizes_cb": {
+      "ht": "",
+      "at": "Frachtgrößen kürzen (Kürzt Frachtgrößen ab, z. B. „Extra klein“ → „XS“)"
+    },
+    "mt_underline_direct_cb": {
+      "ht": "",
+      "at": "„Direkt“ unterstreichen (Hebt „Direct“-Transporte im Spiel hervor)"
+    },
+    "mt_general_tags_group": {
+      "ht": "",
+      "at": "Allgemeine Tags"
+    },
+    "mt_general_tags_hint": {
+      "ht": "",
+      "at": "Diese Tags nur im Missionstitel ein- oder ausblenden"
+    },
+    "mt_tag_rep_cb": {
+      "ht": "",
+      "at": "Ruf-Tag (fügt „[500 REP]“ hinzu)"
+    },
+    "mt_tag_blueprint_cb": {
+      "ht": "",
+      "at": "BP-Tag (fügt „[BP]“ / „[BP?]“ hinzu)"
+    },
+    "mt_tag_ace_cb": {
+      "ht": "",
+      "at": "ACE-Tag (fügt „[ACE]“ / „[ACE?]“ hinzu)"
+    },
+    "mt_tag_rep_track_cb": {
+      "ht": "",
+      "at": "Ruf-Track-Tag (fügt „(Security)“ / „(Contractor)“ zum Ruf-Tag hinzu)"
+    },
+    "mt_scanning_group": {
+      "ht": "",
+      "at": "Scan-/Abbaumissionen"
+    },
+    "mt_scanning_hint": {
+      "ht": "",
+      "at": "Recco Battaglias Scan-/Abbaumissionen zielen auf bestimmte abbaubare Erze ab und zeigen den Ressourcensignatur-Wert jedes Erzes im Missionstitel."
+    },
+    "mt_tag_rs_cb": {
+      "ht": "",
+      "at": "Ressourcensignatur-Tags (RS) anzeigen"
+    },
+    "mt_preview_route_off": {
+      "ht": "",
+      "at": "Vorschau:  {display} [50 REP]  (Route aus)"
+    },
+    "mt_preview_route_on": {
+      "ht": "",
+      "at": "Vorschau:  {display} [50 REP]"
+    },
+    "tag_preview": {
+      "ht": "",
+      "at": "Vorschau:  {content}"
+    },
+    "tag_preview_no_tag": {
+      "ht": "",
+      "at": "Vorschau:  {name}   (kein Tag — jedes Element ist leer oder deaktiviert)"
     }
   },
   "blueprint_tracker": {
@@ -949,6 +1329,10 @@
     "apply_owned_tag_tooltip_disabled": {
       "ht": "",
       "at": "Bereits aktuell — deine Besessen-Liste hat sich seit der letzten Anwendung nicht geändert."
+    },
+    "owned_tags_refreshed": {
+      "ht": "",
+      "at": "[Owned]-Tags wurden aktualisiert, um deiner aktuellen Besitzliste zu entsprechen."
     }
   },
   "log": {
@@ -1056,7 +1440,7 @@
     },
     "custom_value_prompt": {
       "ht": "",
-      "at": "Benutzerdefinierten Wert für Schlüssel eingeben:\n{key}"
+      "at": "Benutzerdefinierten Wert für Schlüssel eingeben:\n{loc_key}"
     },
     "auto_add_summary": {
       "ht": "",
@@ -1431,6 +1815,38 @@
     "skip_generate_tooltip": {
       "ht": "",
       "at": "Fortfahren, ohne Erweiterungen zu erstellen. Du kannst dies später im Erweiterungen-Tab ausführen."
+    },
+    "crash_error_title": {
+      "ht": "",
+      "at": "Smart Citizen — Fehler"
+    },
+    "show_log_btn": {
+      "ht": "",
+      "at": "Log anzeigen"
+    },
+    "dismiss_btn": {
+      "ht": "",
+      "at": "Verwerfen"
+    },
+    "suppressed_errors_suffix": {
+      "ht": "",
+      "at": "\n\n(+{count} weitere Fehler unterdrückt — Details im Log-Tab)"
+    },
+    "failed_to_delete_global_ini": {
+      "ht": "",
+      "at": "global.ini konnte nicht gelöscht werden: {error}"
+    },
+    "failed_to_merge_sources": {
+      "ht": "",
+      "at": "Quellen konnten nicht zusammengeführt werden: {error}"
+    },
+    "failed_to_load_sources": {
+      "ht": "",
+      "at": "Quellen konnten nicht geladen werden: {error}"
+    },
+    "app_title": {
+      "ht": "",
+      "at": "Smart Citizen"
     }
   },
   "progress": {
@@ -1497,6 +1913,30 @@
     "snapshot_diff": {
       "ht": "",
       "at": "Cache-Momentaufnahme für Vergleich wird erstellt…"
+    },
+    "syncing_sources": {
+      "ht": "",
+      "at": "Quellen werden synchronisiert..."
+    },
+    "starting_up_title": {
+      "ht": "",
+      "at": "Wird gestartet"
+    },
+    "enhancements_label": {
+      "ht": "",
+      "at": "Erweiterte Lokalisierungen werden aus DataForge erzeugt…\n\nDies kann beim ersten Durchlauf einige Minuten dauern."
+    },
+    "generating_enhancements_title": {
+      "ht": "",
+      "at": "Erweiterungen werden erzeugt"
+    },
+    "reloading_with_enhancements": {
+      "ht": "",
+      "at": "Strings werden mit aktualisierten Erweiterungen neu geladen…"
+    },
+    "reloading_after_user_ini_restore": {
+      "ht": "",
+      "at": "{channel} wird nach Wiederherstellung der user.ini neu geladen..."
     }
   },
   "status_bar": {
@@ -1535,6 +1975,442 @@
     "open_release_page_tooltip": {
       "ht": "",
       "at": "Release-Seite für v{version} öffnen"
+    },
+    "downloading_ini": {
+      "ht": "",
+      "at": "INI-Datei wird heruntergeladen..."
+    },
+    "starting_up": {
+      "ht": "",
+      "at": "Wird gestartet — Quellen werden synchronisiert..."
+    },
+    "generating_enhancements_background": {
+      "ht": "",
+      "at": "Erweiterungen werden im Hintergrund erzeugt…"
+    },
+    "enhancements_generated_applying": {
+      "ht": "",
+      "at": "Erweiterungen erzeugt — wird auf das Spiel angewendet…"
+    },
+    "enhancements_generated_reloading": {
+      "ht": "",
+      "at": "Erweiterungen erzeugt — Einträge werden neu geladen…"
+    },
+    "enhancement_generation_failed": {
+      "ht": "",
+      "at": "Erzeugung der Erweiterungen fehlgeschlagen — Details im Log-Tab"
+    },
+    "user_ini_reset": {
+      "ht": "",
+      "at": "user.ini für {channel} zurückgesetzt (Backup erstellt)"
+    },
+    "user_ini_restored": {
+      "ht": "",
+      "at": "user.ini für {channel} wiederhergestellt"
+    },
+    "channel_indicator": {
+      "ht": "",
+      "at": "Kanal: {channel}"
+    },
+    "channel_switched_extracting": {
+      "ht": "",
+      "at": "Zu {channel} gewechselt — Data.p4k wird extrahiert…"
+    },
+    "channel_switched_reloading": {
+      "ht": "",
+      "at": "Zu {channel} gewechselt — Quellen werden neu geladen…"
+    },
+    "data_folder_changed_extracting": {
+      "ht": "",
+      "at": "Datenordner geändert zu {data_dir} — Data.p4k wird extrahiert…"
+    },
+    "data_folder_changed_reloading": {
+      "ht": "",
+      "at": "Datenordner geändert zu {data_dir} — Quellen werden neu geladen…"
+    },
+    "cache_folder_changed": {
+      "ht": "",
+      "at": "DataForge-Cache-Ordner geändert — wird erneut aus Data.p4k extrahiert…"
+    },
+    "syncing_source": {
+      "ht": "",
+      "at": "{source_name} wird synchronisiert..."
+    },
+    "source_updated": {
+      "ht": "",
+      "at": "aktualisiert ↑"
+    },
+    "source_offline": {
+      "ht": "",
+      "at": "(offline?)"
+    },
+    "entry_count": {
+      "ht": "",
+      "at": "{count} Einträge"
+    },
+    "override_count_suffix": {
+      "ht": "",
+      "at": " | {count} Überschreibungen"
+    },
+    "manifest_missing": {
+      "ht": "",
+      "at": "SC {channel} (Manifest fehlt)"
+    }
+  },
+  "import_flow": {
+    "source_dialog_title": {
+      "ht": "",
+      "at": "INI-Datei importieren"
+    },
+    "source_dialog_label": {
+      "ht": "",
+      "at": "Gib einen lokalen Dateipfad oder eine URL ein:"
+    },
+    "source_dialog_placeholder": {
+      "ht": "",
+      "at": "C:\\pfad\\zur\\datei.ini oder https://example.com/file.ini"
+    },
+    "browse_btn": {
+      "ht": "",
+      "at": "Durchsuchen..."
+    },
+    "select_ini_file_title": {
+      "ht": "",
+      "at": "INI-Datei auswählen"
+    },
+    "ini_file_filter": {
+      "ht": "",
+      "at": "INI-Dateien (*.ini);;Alle Dateien (*)"
+    },
+    "download_error_title": {
+      "ht": "",
+      "at": "Download-Fehler"
+    },
+    "download_error_body": {
+      "ht": "",
+      "at": "Herunterladen fehlgeschlagen:\n{source}\n\n{error}"
+    },
+    "no_base_data_title": {
+      "ht": "",
+      "at": "Keine Basisdaten"
+    },
+    "no_base_data_body": {
+      "ht": "",
+      "at": "Basis-INI noch nicht geladen. Zuerst aus Data.p4k extrahieren."
+    },
+    "no_valid_keys_title": {
+      "ht": "",
+      "at": "Keine gültigen Schlüssel"
+    },
+    "no_valid_keys_body": {
+      "ht": "",
+      "at": "Keiner der {count} importierten Schlüssel existiert in base.ini.\nAlle Schlüssel wurden ausgeschlossen."
+    },
+    "nothing_to_import_title": {
+      "ht": "",
+      "at": "Nichts zu importieren"
+    },
+    "nothing_to_import_body": {
+      "ht": "",
+      "at": "Alle importierten Schlüssel existieren bereits mit denselben Werten in user.ini."
+    },
+    "confirm_title": {
+      "ht": "",
+      "at": "INI importieren"
+    },
+    "confirm_body": {
+      "ht": "",
+      "at": "{new_count} neue Schlüssel werden zu user.ini hinzugefügt.\n{excluded_count} Schlüssel ausgeschlossen (nicht in base.ini).\n\nFortfahren?"
+    },
+    "reload_status": {
+      "ht": "",
+      "at": "Wird mit importierten Daten neu geladen..."
+    },
+    "complete_title": {
+      "ht": "",
+      "at": "Import abgeschlossen"
+    },
+    "complete_body": {
+      "ht": "",
+      "at": "Import erfolgreich.\n\n  Hinzugefügt: {added} Schlüssel\n  Konflikte gelöst: {resolved} Schlüssel\n  Ausgeschlossen: {excluded} Schlüssel"
+    },
+    "error_title": {
+      "ht": "",
+      "at": "Importfehler"
+    },
+    "error_body": {
+      "ht": "",
+      "at": "INI-Datei konnte nicht importiert werden:\n{error}"
+    }
+  },
+  "restore_backup": {
+    "select_file_title": {
+      "ht": "",
+      "at": "Backup-Datei zum Wiederherstellen auswählen"
+    },
+    "file_filter": {
+      "ht": "",
+      "at": "Backup-Dateien (*.bak_*);;INI-Dateien (*.ini);;Alle Dateien (*)"
+    },
+    "success_body": {
+      "ht": "",
+      "at": "Backup wiederhergestellt von:\n{name}"
+    },
+    "error_body": {
+      "ht": "",
+      "at": "Backup konnte nicht wiederhergestellt werden: {error}"
+    }
+  },
+  "onedrive": {
+    "warning_title": {
+      "ht": "",
+      "at": "Deine Smart-Citizen-Daten liegen in OneDrive"
+    },
+    "warning_body": {
+      "ht": "",
+      "at": "Smart Citizen speichert deine Bearbeitungen (user.ini), den Quellen-Cache und Backups in:\n\n{data_dir}\n\nDieser Ordner befindet sich in OneDrive. OneDrive kann diese Dateien synchronisieren und sogar leeren, was schon zu Datenverlust geführt hat. Das Verschieben deiner Daten in einen lokalen Ordner außerhalb von OneDrive vermeidet das.\n\nDorthin verschieben:\n{local} ?"
+    },
+    "move_btn": {
+      "ht": "",
+      "at": "In einen lokalen Ordner verschieben"
+    },
+    "keep_here_btn": {
+      "ht": "",
+      "at": "Hier belassen"
+    },
+    "dont_warn_again": {
+      "ht": "",
+      "at": "Nicht erneut warnen"
+    }
+  },
+  "user_ini_reset": {
+    "backup_note": {
+      "ht": "",
+      "at": "\n\nBackup gespeichert unter:\n{path}"
+    },
+    "complete_title": {
+      "ht": "",
+      "at": "user.ini zurückgesetzt"
+    },
+    "complete_body": {
+      "ht": "",
+      "at": "Alle benutzerdefinierten Überschreibungen für den Kanal {channel} wurden gelöscht.{backup_note}"
+    }
+  },
+  "restore_user_ini": {
+    "no_snapshots_title": {
+      "ht": "",
+      "at": "Noch keine Schnappschüsse"
+    },
+    "no_snapshots_body": {
+      "ht": "",
+      "at": "Smart Citizen hat noch keine automatischen user.ini-Schnappschüsse für den Kanal {channel}. Ein Schnappschuss wird bei jeder Änderung deiner Überschreibungen gespeichert, daher erscheinen Wiederherstellungspunkte erst, nachdem du Bearbeitungen vorgenommen und gespeichert hast."
+    },
+    "snapshot_label": {
+      "ht": "",
+      "at": "{when}  —  {lines} Überschreibungen, {size_kb} KB"
+    },
+    "picker_title": {
+      "ht": "",
+      "at": "user.ini wiederherstellen"
+    },
+    "picker_label": {
+      "ht": "",
+      "at": "Wähle einen Schnappschuss zum Wiederherstellen für den Kanal {channel}.\nDeine aktuelle user.ini wird zuerst als Schnappschuss gesichert, das ist also umkehrbar."
+    },
+    "restore_failed_title": {
+      "ht": "",
+      "at": "Wiederherstellung fehlgeschlagen"
+    },
+    "restore_failed_body": {
+      "ht": "",
+      "at": "Smart Citizen konnte den Schnappschuss nicht wiederherstellen:\n\n{error_type}: {error}"
+    },
+    "restored_title": {
+      "ht": "",
+      "at": "user.ini wiederhergestellt"
+    },
+    "restored_body": {
+      "ht": "",
+      "at": "Deine Überschreibungen für den Kanal {channel} wurden wiederhergestellt von:\n{name}\n\nFühre „Erweiterungen anwenden“ aus, um die wiederhergestellten Überschreibungen ins Spiel zu übertragen."
+    }
+  },
+  "extract": {
+    "path_required_title": {
+      "ht": "",
+      "at": "Star-Citizen-Pfad erforderlich"
+    },
+    "path_required_body": {
+      "ht": "",
+      "at": "Es ist kein Star-Citizen-Installationspfad konfiguriert und es wurden keine zwischengespeicherten Lokalisierungsdaten gefunden.\n\nBitte lege deinen Star-Citizen-Installationspfad im Konfig-Tab fest und klicke dann auf Extrahieren, um die Lokalisierungsstrings deines Spiels zu laden."
+    },
+    "p4k_prompt_title": {
+      "ht": "",
+      "at": "Aus Data.p4k extrahieren"
+    },
+    "p4k_prompt_base_missing": {
+      "ht": "",
+      "at": "Keine Basis-Lokalisierungsdatei im Cache gefunden.\n\nJetzt global.ini aus Data.p4k extrahieren?\n(Erforderlich, um Lokalisierungsstrings zu laden und anzuzeigen.)"
+    },
+    "p4k_prompt_p4k_newer": {
+      "ht": "",
+      "at": "Data.p4k ist neuer als deine zwischengespeicherte base.ini.\n\nJetzt global.ini aus Data.p4k extrahieren?\n(Dies liefert dir Standardstrings, die genau zu deiner installierten Spielversion passen.)"
+    },
+    "dataforge_outdated_title": {
+      "ht": "",
+      "at": "DataForge-Cache veraltet"
+    },
+    "dataforge_outdated_body": {
+      "ht": "",
+      "at": "Dein DataForge-Entity-Cache ist älter als die aktuelle Data.p4k.\n\nDataForge jetzt neu extrahieren und Erweiterungen neu erzeugen?\n\nDies dauert einige Minuten und läuft im Hintergrund — du kannst währenddessen weiter Strings bearbeiten. Überspringe dies für jetzt, wenn du nicht warten möchtest; du kannst dies jederzeit über den Erweiterungen-Tab auslösen."
+    },
+    "generate_dialog_title": {
+      "ht": "",
+      "at": "Erweiterungen erzeugen"
+    },
+    "category_singular": {
+      "ht": "",
+      "at": "kategorie fehlt."
+    },
+    "category_plural": {
+      "ht": "",
+      "at": "kategorien fehlen."
+    },
+    "missing_categories_body": {
+      "ht": "",
+      "at": "{count} Erweiterungs{noun}\nWähle aus, welche erzeugt werden sollen.\nDu kannst dies später im Erweiterungen-Tab ändern."
+    },
+    "missing_category_label": {
+      "ht": "",
+      "at": "{label}  (fehlt)"
+    },
+    "dataforge_auto_extract_note": {
+      "ht": "",
+      "at": "DataForge-Daten werden automatisch extrahiert, falls noch nicht zwischengespeichert.\nDer erste Durchlauf dauert einige Minuten."
+    },
+    "generate_btn": {
+      "ht": "",
+      "at": "Erzeugen"
+    },
+    "skip_btn": {
+      "ht": "",
+      "at": "Überspringen"
+    },
+    "dataforge_extracting_background": {
+      "ht": "",
+      "at": "DataForge wird im Hintergrund extrahiert — dies dauert mehrere Minuten…"
+    },
+    "dataforge_extracting_label": {
+      "ht": "",
+      "at": "DataForge wird aus Data.p4k extrahiert — dies dauert mehrere Minuten…"
+    },
+    "dataforge_extraction_title": {
+      "ht": "",
+      "at": "DataForge-Extraktion"
+    },
+    "dataforge_extraction_error_title": {
+      "ht": "",
+      "at": "DataForge-Extraktionsfehler"
+    },
+    "dataforge_extraction_error_body": {
+      "ht": "",
+      "at": "DataForge-Extraktion fehlgeschlagen:\n\n{message}\n\nDetails im Log-Tab."
+    },
+    "dataforge_extracted_generating": {
+      "ht": "",
+      "at": "DataForge extrahiert — Erweiterungen werden erzeugt…"
+    },
+    "dataforge_extraction_failed": {
+      "ht": "",
+      "at": "DataForge-Extraktion fehlgeschlagen — Details im Log-Tab"
+    },
+    "p4k_extracting_label": {
+      "ht": "",
+      "at": "global.ini wird aus Data.p4k extrahiert..."
+    },
+    "p4k_extraction_title": {
+      "ht": "",
+      "at": "P4K-Extraktion"
+    },
+    "extraction_error_title": {
+      "ht": "",
+      "at": "Extraktionsfehler"
+    }
+  },
+  "apply": {
+    "cannot_save_edits_title": {
+      "ht": "",
+      "at": "Deine Bearbeitungen können nicht gespeichert werden"
+    },
+    "cannot_save_edits_body": {
+      "ht": "",
+      "at": "Smart Citizen konnte deine Bearbeitungen nicht schreiben nach:\n\n  {path}\n\n{error_type}: {error}\n\nDie Spieldatei wurde NICHT verändert. Häufige Ursachen:\n  • Antivirus / Windows-Ordnerzugriffssteuerung blockiert Schreibzugriffe im Spielordner\n  • Die Datei user.ini ist in einem anderen Programm geöffnet\n  • Das Laufwerk ist schreibgeschützt oder voll\n\nBehebe das zugrunde liegende Problem und wende erneut an."
+    },
+    "applied_body": {
+      "ht": "",
+      "at": "Angewendet auf {target_path}\n\n  Benutzerbearbeitungen: {user_count}\n\n{enhancement_block}"
+    },
+    "failed_body": {
+      "ht": "",
+      "at": "Anwenden auf das Spiel fehlgeschlagen: {error}"
+    }
+  },
+  "test_plan": {
+    "intro": {
+      "ht": "",
+      "at": "Arbeite jeden Punkt in diesem Build durch und hake ihn ab, sobald du ihn überprüft hast. Dein Fortschritt wird automatisch gespeichert. Wenn du fertig bist, nutze Bericht kopieren oder Absenden, um dein Ergebnis zu teilen."
+    },
+    "tester_label": {
+      "ht": "",
+      "at": "Tester:"
+    },
+    "tester_placeholder": {
+      "ht": "",
+      "at": "Dein Name oder Kürzel"
+    },
+    "submit_btn": {
+      "ht": "",
+      "at": "An Discord senden"
+    },
+    "no_webhook_tooltip": {
+      "ht": "",
+      "at": "Kein Discord-Webhook konfiguriert. Setze die Umgebungsvariable {env_var} (oder die Einstellung test_plan/webhook_url), um das Absenden zu aktivieren. Nutze in der Zwischenzeit Bericht kopieren."
+    },
+    "copy_report_btn": {
+      "ht": "",
+      "at": "Bericht kopieren"
+    },
+    "reset_btn": {
+      "ht": "",
+      "at": "Zurücksetzen"
+    },
+    "notes_label": {
+      "ht": "",
+      "at": "Zusätzliches Feedback (optional):"
+    },
+    "notes_placeholder": {
+      "ht": "",
+      "at": "Beschreibe Fehler, Überraschungen oder Vorschläge..."
+    },
+    "copied_status": {
+      "ht": "",
+      "at": "Bericht in die Zwischenablage kopiert."
+    },
+    "copy_failed_status": {
+      "ht": "",
+      "at": "Bericht konnte nicht in die Zwischenablage kopiert werden."
+    },
+    "reset_status": {
+      "ht": "",
+      "at": "Checkliste zurückgesetzt."
+    },
+    "no_webhook_status": {
+      "ht": "",
+      "at": "Kein Discord-Webhook konfiguriert."
+    },
+    "sending_status": {
+      "ht": "",
+      "at": "Bericht wird an Discord gesendet..."
     }
   },
   "tutorial": {
