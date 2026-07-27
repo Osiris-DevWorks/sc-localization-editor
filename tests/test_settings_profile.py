@@ -188,6 +188,29 @@ class TestValidation:
         p = read_profile_zip(out)
         assert p.overrides == {"LIVE": "good=1\n"}
 
+    def test_dot_dot_channel_segment_rejected(self, tmp_path):
+        """A bare ".." channel segment has no "/" to trip the old guard, but
+        would resolve get_channel_user_ini_path() outside the data root."""
+        out = tmp_path / "x.zip"
+        with zipfile.ZipFile(out, "w") as zf:
+            zf.writestr(MANIFEST_NAME, json.dumps({"app": "SmartCitizen", "schema_version": 1}))
+            zf.writestr("overrides/../user.ini", "evil=1\n")
+            zf.writestr("overrides/./user.ini", "evil=1\n")
+            zf.writestr("overrides/LIVE/user.ini", "good=1\n")
+        p = read_profile_zip(out)
+        assert p.overrides == {"LIVE": "good=1\n"}
+
+    def test_backslash_channel_segment_rejected(self, tmp_path):
+        """A backslash segment has no forward slash either, but is a real
+        path separator on Windows, where get_channel_user_ini_path() runs."""
+        out = tmp_path / "x.zip"
+        with zipfile.ZipFile(out, "w") as zf:
+            zf.writestr(MANIFEST_NAME, json.dumps({"app": "SmartCitizen", "schema_version": 1}))
+            zf.writestr("overrides/..\\evil/user.ini", "evil=1\n")
+            zf.writestr("overrides/LIVE/user.ini", "good=1\n")
+        p = read_profile_zip(out)
+        assert p.overrides == {"LIVE": "good=1\n"}
+
 
 class TestDefaultFilename:
     def test_format(self):

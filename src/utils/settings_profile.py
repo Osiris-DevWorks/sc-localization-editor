@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import zipfile
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -221,9 +222,19 @@ def read_profile_zip(zip_path) -> ProfileContents:
             if not name.startswith(prefix) or not name.endswith("/user.ini"):
                 continue
             channel = name[len(prefix):-len("/user.ini")]
-            # Only accept a single, non-empty path segment as the channel
-            # (guards against a maliciously nested zip entry).
-            if not channel or "/" in channel:
+            # Only accept a single, non-empty, non-traversal path segment as
+            # the channel. A zip is untrusted input; a channel of ".."  or
+            # a backslash segment would otherwise let write_channel_user_ini
+            # (called by the importer with this value) land outside the
+            # data root on Windows, since only "/" was ever rejected here.
+            if (
+                not channel
+                or channel in (".", "..")
+                or "/" in channel
+                or "\\" in channel
+                or os.sep in channel
+                or (os.altsep and os.altsep in channel)
+            ):
                 continue
             try:
                 overrides[channel] = zf.read(name).decode("utf-8")

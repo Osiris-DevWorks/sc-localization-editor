@@ -96,11 +96,15 @@ Open the **More** menu and choose **Export INI…** to bundle the currently appl
 
 Use **Reset user.ini** in the **Config** tab to wipe all of your personal edits for the active channel. A confirmation prompt makes sure it isn't a mis-click, and an automatic backup of the current `user.ini` is taken into `<data folder>\<channel>\backups\` first — so a reset is recoverable if you change your mind.
 
-## 13. After Game Updates
+## 13. Export / Import Settings
+
+Use **Export Settings** and **Import Settings** in the **Config** tab to move your whole Smart Citizen setup between PCs, or back it up before a fresh install. Export bundles your app settings and every channel's `user.ini` overrides into one small zip; secrets and machine-specific paths (your Star Citizen install path, window geometry) are left out. Import layers that backup over your current settings and replaces `user.ini` for the channels it contains — your current `user.ini` files are snapshotted first via **Restore user.ini**, so an import is reversible. Smart Citizen restarts after an import to load the new settings, then offers to regenerate and apply your enhancements.
+
+## 14. After Game Updates
 
 When Star Citizen updates, your edits are preserved in `<data folder>\<channel>\user.ini`. Re-run **Extract from Data.p4k** to pull fresh stock strings from the patched game — the table reloads automatically and your customizations re-apply on top.
 
-## 14. Switch Languages
+## 15. Switch Languages
 
 Pick a language from the **Language** dropdown in the **Config** tab (next to Channel). Switching changes both the app's interface and the game strings in the table:
 
@@ -114,7 +118,7 @@ Applying writes to the matching language folder in your game install and sets `g
 
 Want to help translate? Translation status per language is tracked in `languages/TRANSLATIONS.md` in the repo, and we would much rather ship your words than a machine's. Reach out on the Discord.
 
-## 15. App Updates
+## 16. App Updates
 
 Smart Citizen checks for a new version every time it starts. When one is available, the release notes appear in a scrollable window with two choices:
 

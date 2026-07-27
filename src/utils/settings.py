@@ -2887,8 +2887,6 @@ class AppSettings:
         a warning rather than poisoning the whole export — the known binary
         keys (window geometry/state) are already excluded by the filter.
         """
-        import json as _json
-
         backend = AppSettings.settings()
         if hasattr(backend, "allKeys"):
             keys = list(backend.allKeys())
@@ -2901,7 +2899,7 @@ class AppSettings:
             if AppSettings.is_profile_excluded_key(key, value):
                 continue
             try:
-                _json.dumps(value)
+                json.dumps(value)
             except (TypeError, ValueError):
                 logger.warning(
                     "Export Settings: skipping non-serialisable value for key "
