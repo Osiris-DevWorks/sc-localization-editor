@@ -131,6 +131,96 @@ _TYPE_LABELS = {
     "BOMB": "Bomb",
 }
 
+# Blueprints that exist in-game but were never advertised via a mission's
+# POTENTIAL BLUEPRINTS text (#267) -- CIG announced these purely on their own
+# website/socials for a limited-time event, so there's no loc-string source to
+# scan them out of. Keyed by the bare item name a "Received Blueprint: ..."
+# log line or a bullet would carry (no component tag). Extend this tuple for
+# any future item reported missing the same way.
+_MANUAL_MISSION_LABEL = "Limited time event reward"
+MANUAL_BLUEPRINT_ITEMS: tuple[tuple[str, str], ...] = (
+    # XenoThreat "Purgatory Camo" armor sets
+    ("Chiron Arms Purgatory Camo", _TYPE_ARMOR),
+    ("Chiron Backpack Purgatory Camo", _TYPE_ARMOR),
+    ("Chiron Core Purgatory Camo", _TYPE_ARMOR),
+    ("Chiron Helmet Purgatory Camo", _TYPE_ARMOR),
+    ("Chiron Legs Purgatory Camo", _TYPE_ARMOR),
+    ("Testudo Arms Purgatory Camo", _TYPE_ARMOR),
+    ("Testudo Backpack Purgatory Camo", _TYPE_ARMOR),
+    ("Testudo Core Purgatory Camo", _TYPE_ARMOR),
+    ("Testudo Helmet Purgatory Camo", _TYPE_ARMOR),
+    ("Testudo Legs Purgatory Camo", _TYPE_ARMOR),
+    ("Monde Arms Purgatory Camo", _TYPE_ARMOR),
+    ("Monde Core Purgatory Camo", _TYPE_ARMOR),
+    ("Monde Helmet Purgatory Camo", _TYPE_ARMOR),
+    ("Monde Legs Purgatory Camo", _TYPE_ARMOR),
+    ("Warden Backpack Purgatory Camo", _TYPE_ARMOR),
+    # XenoThreat "Purgatory Camo" FPS weapons
+    ('Demeco "Purgatory Camo" LMG', _TYPE_FPS_WEAPON),
+    ('S71 "Purgatory Camo" Rifle', _TYPE_FPS_WEAPON),
+    ('BR-2 "Purgatory Camo" Shotgun', _TYPE_FPS_WEAPON),
+    # XenoThreat ship components
+    ("QuadraCell", _TYPE_LABELS["POWR"]),
+    ("QuadraCell MT", _TYPE_LABELS["POWR"]),
+    ("FR-66", _TYPE_LABELS["SHLD"]),
+    ("FR-76", _TYPE_LABELS["SHLD"]),
+    ("NDB-26 Repeater", _TYPE_SHIP_WEAPON),
+    ("NDB-28 Repeater", _TYPE_SHIP_WEAPON),
+    ("NDB-30 Repeater", _TYPE_SHIP_WEAPON),
+)
+
+
+def _key_slug(key: str) -> str:
+    """Title-case each underscore-separated segment of a loc key (after
+    dropping a trailing "_Name" segment, if present) and join with spaces
+    -- e.g. ``Nozzle_FuelGiver_GRIN_NozzleVeryFast_Name`` -> ``Nozzle
+    Fuelgiver Grin Nozzleveryfast``.
+
+    Reproduces a real CIG bug: some mission POTENTIAL BLUEPRINTS bullets
+    list this exact de-slugified KEY instead of the item's actual
+    localized name (confirmed via a live mission body reporting "Nozzle
+    Fuelgiver Grin Nozzleveryfast" as a blueprint reward -- the real item
+    is "Lindstrom", key ``Nozzle_FuelGiver_GRIN_NozzleVeryFast_Name``).
+    Deterministic and reversible, so rather than hardcoding aliases per
+    affected item, every bullet name that doesn't match a real item
+    directly is checked against this transform of every known Name key.
+    """
+    segments = key.split("_")
+    if segments and segments[-1].lower() == "name":
+        segments = segments[:-1]
+    return " ".join(seg.capitalize() for seg in segments)
+
+
+# Known one-off mismatches between a mission bullet's name and the item's
+# real localized display name that AREN'T explained by _key_slug's fallback
+# pattern -- just a mission author typing a short/informal name. Confirmed
+# via a live "Crew Hasn't Checked In" mining mission body listing "Helix" and
+# "Hofstede" as blueprint rewards; the real items are "S0 Helix" and "S00
+# Hofstede" (item_NameMining_Head_S00_<Name>_SCItem). All four "Mining Head"
+# variants share this exact bullet-uses-bare-manufacturer-name pattern
+# (confirmed via tests/fixtures/kraken_global_latest.ini: item_NameMining_
+# Head_S00_Arbor_SCItem=S0 Arbor, ..._Klein_SCItem=Lawson Mining Laser),
+# added preemptively rather than waiting for each to be individually
+# reported. Extend this dict for any other reported mismatch that isn't a
+# key-slug case.
+_BULLET_NAME_ALIASES: dict[str, str] = {
+    "Arbor": "S0 Arbor",
+    "Helix": "S0 Helix",
+    "Hofstede": "S00 Hofstede",
+    "Klein": "Lawson Mining Laser",
+    # Fuel nozzles (#266 follow-up): most manufacturer variants resolve
+    # generically via _key_slug (their real key genuinely follows
+    # Nozzle_FuelGiver_<MFR>_Nozzle<Variant>_Name), but these three still
+    # showed up ungarbled/untagged after that fix -- their real underlying
+    # key must not match that exact pattern. Confirmed via a live Blueprint
+    # Tracker screenshot listing all three as separate untagged entries
+    # while their siblings (Marlin, Lindstrom, Bendix, Torrez, Ezra) had
+    # already resolved correctly.
+    "Nozzle Fuelgiver Grin Nozzlefast": "Norfield",
+    "Nozzle Fuelgiver Grin Nozzleverysecure": "Harkin",
+    "Nozzle Fuelgiver Misc Nozzlestandard": "RN-7s",
+}
+
 # Extra Name-key conventions for #266's bare-type components, which don't
 # follow the item_Name<code> / vehicle_Name prefix every other component
 # uses. Fuel nozzles ship under two different manufacturer-specific
