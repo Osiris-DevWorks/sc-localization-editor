@@ -801,6 +801,30 @@
     "language_source_placeholder": {
       "ht": "",
       "at": "https://…/global.ini"
+    },
+    "backup_group": {
+      "ht": "",
+      "at": "Copia de seguridad de ajustes"
+    },
+    "backup_desc": {
+      "ht": "",
+      "at": "Guarda todos tus ajustes (preferencias, configuraciones de etiquetas, tu carpeta de Star Citizen y tus modificaciones de texto personalizadas para cada canal) en un pequeno archivo de copia de seguridad. Importalo en un PC nuevo, tras descomprimir una version portable nueva, o para deshacer una mala configuracion. Las copias de seguridad funcionan entre versiones de Smart Citizen. Las cachés del juego no se incluyen; se reconstruyen automaticamente desde tus archivos de juego."
+    },
+    "export_settings_btn": {
+      "ht": "",
+      "at": "Exportar ajustes..."
+    },
+    "export_settings_tooltip": {
+      "ht": "",
+      "at": "Guarda tus preferencias, carpeta de Star Citizen y modificaciones de texto personalizadas en un pequeno zip de copia de seguridad (unos pocos KB). Guardalo donde quieras (nube, USB) e importalo mas tarde, en cualquier version de Smart Citizen, para restaurar tus ajustes."
+    },
+    "import_settings_btn": {
+      "ht": "",
+      "at": "Importar ajustes..."
+    },
+    "import_settings_tooltip": {
+      "ht": "",
+      "at": "Restaura un zip de copia de seguridad de ajustes creado por cualquier version de Smart Citizen. Tus archivos user.ini actuales se respaldan primero, tu carpeta de Star Citizen se restaura (o se detecta automaticamente si la ruta de la copia no esta en este PC), y Smart Citizen se reinicia con los ajustes importados."
     }
   },
   "enhancements": {
@@ -2055,6 +2079,10 @@
     "manifest_missing": {
       "ht": "",
       "at": "SC {channel} (falta el manifiesto)"
+    },
+    "settings_exported": {
+      "ht": "",
+      "at": "Copia de seguridad de ajustes exportada"
     }
   },
   "import_flow": {
@@ -2603,6 +2631,120 @@
         "ht": "",
         "at": "El botón Ayuda abre un panel lateral con la guía completa, una lista de problemas conocidos y un enlace de comentarios al canal de Discord de Smart Citizen. Eso es todo lo que necesitas para empezar. ¡Buena suerte, ciudadano!"
       }
+    }
+  },
+  "settings_backup": {
+    "export_dialog_title": {
+      "ht": "",
+      "at": "Exportar copia de seguridad de ajustes"
+    },
+    "export_done_title": {
+      "ht": "",
+      "at": "Ajustes exportados"
+    },
+    "export_done_body": {
+      "ht": "",
+      "at": "Tus ajustes se guardaron en:\n{path}\n\nIncluye: {n_settings} ajustes y modificaciones de texto personalizadas para: {channels}.\n\nGuarda este archivo donde quieras, es pequeno. Usa Importar ajustes para restaurarlo en un PC nuevo o tras pasar a una nueva version portable."
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "Error al exportar"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "No se pudo escribir el zip de copia de seguridad.\n\n{error_type}: {error}"
+    },
+    "import_dialog_title": {
+      "ht": "",
+      "at": "Importar copia de seguridad de ajustes"
+    },
+    "import_confirm_title": {
+      "ht": "",
+      "at": "¿Importar estos ajustes?"
+    },
+    "import_confirm_body": {
+      "ht": "",
+      "at": "Copia de seguridad creada con Smart Citizen v{version} el {when}.\n\nContiene {n_settings} ajustes y modificaciones de texto para: {channels}.\n\nImportar superpone esto sobre tus ajustes actuales y reemplaza user.ini para los canales listados (tus archivos user.ini actuales se respaldan primero, asi que es reversible mediante Restablecer user.ini). ¿Continuar?"
+    },
+    "import_done_title": {
+      "ht": "",
+      "at": "Ajustes importados"
+    },
+    "import_done_body_detected": {
+      "ht": "",
+      "at": "Se importaron {applied} ajustes y modificaciones de texto para: {channels}.\n\nLa carpeta de Star Citizen de la copia no esta en este PC, asi que se detecto automaticamente en su lugar:\n{root}\n\nSmart Citizen necesita reiniciarse para cargar tus ajustes importados. Tras el reinicio, ofrecera regenerar y aplicar tus mejoras."
+    },
+    "import_done_body_no_install": {
+      "ht": "",
+      "at": "Se importaron {applied} ajustes y modificaciones de texto para: {channels}.\n\nNo se encontro ninguna instalacion de Star Citizen en este PC; configurala en la pestaña Configuracion tras el reinicio.\n\nSmart Citizen necesita reiniciarse para cargar tus ajustes importados."
+    },
+    "import_done_body_restored": {
+      "ht": "",
+      "at": "Se importaron {applied} ajustes y modificaciones de texto para: {channels}.\n\nTu carpeta de Star Citizen se restauro desde la copia de seguridad:\n{root}\n\nSmart Citizen necesita reiniciarse para cargar tus ajustes importados. Tras el reinicio, ofrecera regenerar y aplicar tus mejoras."
+    },
+    "import_failed_title": {
+      "ht": "",
+      "at": "Error al importar"
+    },
+    "import_failed_body": {
+      "ht": "",
+      "at": "No se pudieron escribir las modificaciones importadas.\n\n{error_type}: {error}\n\nNo se cambio ningun ajuste."
+    },
+    "import_invalid_title": {
+      "ht": "",
+      "at": "Esto no es una copia de seguridad de ajustes"
+    },
+    "import_invalid_body": {
+      "ht": "",
+      "at": "Este archivo no se pudo importar:\n\n{error}"
+    },
+    "no_channels": {
+      "ht": "",
+      "at": "ninguno"
+    },
+    "post_import_apply_title": {
+      "ht": "",
+      "at": "Casi listo: ¿aplicar a tu juego?"
+    },
+    "post_import_apply_body": {
+      "ht": "",
+      "at": "Tus ajustes estan importados. El ultimo paso es generar tus mejoras a partir de los archivos de juego de este PC y escribirlas en el juego.\n\nLas copias de seguridad guardan tus ajustes, no el texto de juego generado, asi que esto debe hacerse una vez en cada PC nuevo. Normalmente tarda unos minutos, un poco mas la primera vez, mientras se descomprimen tus archivos de juego.\n\nTambien puedes hacer esto mas tarde con el boton Aplicar mejoras."
+    },
+    "post_import_apply_now_btn": {
+      "ht": "",
+      "at": "Aplicar ahora"
+    },
+    "post_import_apply_later_btn": {
+      "ht": "",
+      "at": "Mas tarde"
+    },
+    "post_import_no_install_title": {
+      "ht": "",
+      "at": "Configura tu carpeta de Star Citizen"
+    },
+    "post_import_no_install_body": {
+      "ht": "",
+      "at": "Tus ajustes importados estan cargados, pero aun no hay ninguna instalacion de Star Citizen configurada. Configura la carpeta de instalacion en la pestaña Configuracion, y luego usa Aplicar mejoras para poner tus personalizaciones en el juego."
+    },
+    "relaunch_failed_title": {
+      "ht": "",
+      "at": "Error al reiniciar"
+    },
+    "relaunch_failed_body": {
+      "ht": "",
+      "at": "Smart Citizen no pudo reiniciarse. Por favor, inicialo de nuevo manualmente; tus ajustes importados se cargaran entonces."
+    },
+    "restart_now_btn": {
+      "ht": "",
+      "at": "Reiniciar ahora"
+    },
+    "restart_later_btn": {
+      "ht": "",
+      "at": "Reiniciar mas tarde"
+    },
+    "zip_filter": {
+      "ht": "",
+      "at": "Copia de seguridad de ajustes (*.zip)"
     }
   }
 }

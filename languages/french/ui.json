@@ -801,6 +801,30 @@
     "language_source_placeholder": {
       "ht": "",
       "at": "https://…/global.ini"
+    },
+    "backup_group": {
+      "ht": "",
+      "at": "Sauvegarde des parametres"
+    },
+    "backup_desc": {
+      "ht": "",
+      "at": "Enregistrez tous vos parametres (preferences, configurations d'etiquettes, votre dossier Star Citizen et vos modifications de texte personnalisees pour chaque canal) dans un seul petit fichier de sauvegarde. Importez-le sur un nouveau PC, apres une extraction portable fraiche, ou pour annuler une mauvaise configuration. Les sauvegardes fonctionnent entre les versions de Smart Citizen. Les caches du jeu ne sont pas inclus ; ils se reconstruisent automatiquement a partir de vos fichiers de jeu."
+    },
+    "export_settings_btn": {
+      "ht": "",
+      "at": "Exporter les parametres..."
+    },
+    "export_settings_tooltip": {
+      "ht": "",
+      "at": "Enregistrez vos preferences, votre dossier Star Citizen et vos modifications de texte personnalisees dans un petit fichier zip de sauvegarde (quelques Ko). Conservez-le n'importe ou (drive cloud, cle USB) et importez-le plus tard, sur n'importe quelle version de Smart Citizen, pour restaurer vos parametres."
+    },
+    "import_settings_btn": {
+      "ht": "",
+      "at": "Importer les parametres..."
+    },
+    "import_settings_tooltip": {
+      "ht": "",
+      "at": "Restaurez un fichier de sauvegarde des parametres cree par n'importe quelle version de Smart Citizen. Vos fichiers user.ini actuels sont d'abord photographies, votre dossier Star Citizen est restaure (ou detecte automatiquement si le chemin de la sauvegarde n'est pas sur ce PC), et Smart Citizen redemarre avec les parametres importes."
     }
   },
   "enhancements": {
@@ -2055,6 +2079,10 @@
     "manifest_missing": {
       "ht": "",
       "at": "SC {channel} (manifeste manquant)"
+    },
+    "settings_exported": {
+      "ht": "",
+      "at": "Sauvegarde des parametres exportee"
     }
   },
   "import_flow": {
@@ -2603,6 +2631,120 @@
         "ht": "",
         "at": "Marquez les plans que vous possédez. Cherchez dans la liste de gauche par nom ou par mission, ou affinez par Type, Classe, Taille et Grade de composant, puis utilisez les flèches pour déplacer des éléments vers votre liste de possédés. Les plans possédés reçoivent une étiquette [Owned] partout où ils apparaissent dans les récompenses potentielles d'une mission, pour voir d'un coup d'œil ce qui vaut la peine d'être chassé."
       }
+    }
+  },
+  "settings_backup": {
+    "export_dialog_title": {
+      "ht": "",
+      "at": "Exporter la sauvegarde des parametres"
+    },
+    "export_done_title": {
+      "ht": "",
+      "at": "Parametres exportes"
+    },
+    "export_done_body": {
+      "ht": "",
+      "at": "Vos parametres ont ete enregistres dans :\n{path}\n\nInclus : {n_settings} parametres et modifications de texte personnalisees pour : {channels}.\n\nConservez ce fichier n'importe ou, il est petit. Utilisez Importer les parametres pour le restaurer sur un nouveau PC ou apres etre passe a une nouvelle version portable."
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "Echec de l'exportation"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "Impossible d'ecrire le fichier zip de sauvegarde.\n\n{error_type} : {error}"
+    },
+    "import_dialog_title": {
+      "ht": "",
+      "at": "Importer la sauvegarde des parametres"
+    },
+    "import_confirm_title": {
+      "ht": "",
+      "at": "Importer ces parametres ?"
+    },
+    "import_confirm_body": {
+      "ht": "",
+      "at": "Sauvegarde creee avec Smart Citizen v{version} le {when}.\n\nElle contient {n_settings} parametres et modifications de texte pour : {channels}.\n\nL'importation superpose ces donnees a vos parametres actuels et remplace user.ini pour les canaux listes (vos fichiers user.ini actuels sont d'abord photographies, donc c'est reversible via Reinitialiser user.ini). Continuer ?"
+    },
+    "import_done_title": {
+      "ht": "",
+      "at": "Parametres importes"
+    },
+    "import_done_body_detected": {
+      "ht": "",
+      "at": "{applied} parametres et modifications de texte importes pour : {channels}.\n\nLe dossier Star Citizen de la sauvegarde n'est pas sur ce PC, il a donc ete detecte automatiquement a la place :\n{root}\n\nSmart Citizen doit redemarrer pour charger vos parametres importes. Apres le redemarrage, il proposera de regenerer et d'appliquer vos ameliorations."
+    },
+    "import_done_body_no_install": {
+      "ht": "",
+      "at": "{applied} parametres et modifications de texte importes pour : {channels}.\n\nAucune installation de Star Citizen n'a ete trouvee sur ce PC ; definissez-la dans l'onglet Configuration apres le redemarrage.\n\nSmart Citizen doit redemarrer pour charger vos parametres importes."
+    },
+    "import_done_body_restored": {
+      "ht": "",
+      "at": "{applied} parametres et modifications de texte importes pour : {channels}.\n\nVotre dossier Star Citizen a ete restaure depuis la sauvegarde :\n{root}\n\nSmart Citizen doit redemarrer pour charger vos parametres importes. Apres le redemarrage, il proposera de regenerer et d'appliquer vos ameliorations."
+    },
+    "import_failed_title": {
+      "ht": "",
+      "at": "Echec de l'importation"
+    },
+    "import_failed_body": {
+      "ht": "",
+      "at": "Impossible d'ecrire les modifications importees.\n\n{error_type} : {error}\n\nAucun parametre n'a ete modifie."
+    },
+    "import_invalid_title": {
+      "ht": "",
+      "at": "Ce n'est pas une sauvegarde de parametres"
+    },
+    "import_invalid_body": {
+      "ht": "",
+      "at": "Ce fichier n'a pas pu etre importe :\n\n{error}"
+    },
+    "no_channels": {
+      "ht": "",
+      "at": "aucun"
+    },
+    "post_import_apply_title": {
+      "ht": "",
+      "at": "Presque termine — appliquer a votre jeu ?"
+    },
+    "post_import_apply_body": {
+      "ht": "",
+      "at": "Vos parametres sont importes. La derniere etape consiste a construire vos ameliorations a partir des fichiers de jeu de ce PC et a les ecrire dans le jeu.\n\nLes sauvegardes stockent vos parametres, pas le texte de jeu genere, donc cela doit etre fait une fois sur chaque nouveau PC. Cela prend generalement quelques minutes, un peu plus longtemps la premiere fois, le temps que vos fichiers de jeu soient decompresses.\n\nVous pouvez aussi le faire plus tard avec le bouton Appliquer les ameliorations."
+    },
+    "post_import_apply_now_btn": {
+      "ht": "",
+      "at": "Appliquer maintenant"
+    },
+    "post_import_apply_later_btn": {
+      "ht": "",
+      "at": "Plus tard"
+    },
+    "post_import_no_install_title": {
+      "ht": "",
+      "at": "Definissez votre dossier Star Citizen"
+    },
+    "post_import_no_install_body": {
+      "ht": "",
+      "at": "Vos parametres importes sont charges, mais aucune installation de Star Citizen n'est encore configuree. Definissez le dossier d'installation dans l'onglet Configuration, puis utilisez Appliquer les ameliorations pour mettre vos personnalisations dans le jeu."
+    },
+    "relaunch_failed_title": {
+      "ht": "",
+      "at": "Echec du redemarrage"
+    },
+    "relaunch_failed_body": {
+      "ht": "",
+      "at": "Smart Citizen n'a pas pu se relancer. Veuillez le redemarrer manuellement ; vos parametres importes se chargeront alors."
+    },
+    "restart_now_btn": {
+      "ht": "",
+      "at": "Redemarrer maintenant"
+    },
+    "restart_later_btn": {
+      "ht": "",
+      "at": "Redemarrer plus tard"
+    },
+    "zip_filter": {
+      "ht": "",
+      "at": "Sauvegarde des parametres (*.zip)"
     }
   }
 }
