@@ -98,7 +98,7 @@ Use **Reset user.ini** in the **Config** tab to wipe all of your personal edits 
 
 ## 13. Export / Import Settings
 
-Use **Export Settings** and **Import Settings** in the **Config** tab to move your whole Smart Citizen setup between PCs, or back it up before a fresh install. Export bundles your app settings and every channel's `user.ini` overrides into one small zip; secrets and machine-specific paths (your Star Citizen install path, window geometry) are left out. Import layers that backup over your current settings and replaces `user.ini` for the channels it contains — your current `user.ini` files are snapshotted first via **Restore user.ini**, so an import is reversible. Smart Citizen restarts after an import to load the new settings, then offers to regenerate and apply your enhancements.
+Use **Export Settings** and **Import Settings** in the **Config** tab to move your whole Smart Citizen setup between PCs, or back it up before a fresh install. Export bundles your app settings and every channel's `user.ini` overrides into one small zip, including your Star Citizen install path; machine-specific paths that wouldn't make sense on another PC (your data folder, cache location, window geometry) are left out. Import layers that backup over your current settings and replaces `user.ini` for the channels it contains — your current `user.ini` files are snapshotted first via **Restore user.ini**, so an import is reversible. Your Star Citizen path is only kept if it still exists on the PC you're importing to; otherwise Smart Citizen auto-detects it instead. Smart Citizen restarts after an import to load the new settings, then offers to regenerate and apply your enhancements.
 
 ## 14. After Game Updates
 

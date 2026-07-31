@@ -417,7 +417,7 @@ class AppSettings:
         "base_global_path",
         "vehicles_path",
         "last_overrides_path",
-        "post_import/apply_pending",
+        POST_IMPORT_APPLY_PENDING,
     })
 
     # reconcile_imported_install_path() outcomes.
