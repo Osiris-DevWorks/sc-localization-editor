@@ -934,7 +934,7 @@
     },
     "blueprints_desc": {
       "ht": "",
-      "at": "Contrassegna i blueprint che possiedi già. Gli oggetti posseduti ricevono un tag [Posseduto] ovunque compaiano tra le potenziali ricompense blueprint di una missione, così puoi capire a colpo d'occhio cosa vale la pena inseguire. Seleziona gli oggetti a sinistra e usa le frecce per spostarli nella tua lista dei posseduti."
+      "at": "Contrassegna i blueprint che possiedi già. Gli oggetti posseduti ricevono un tag [Owned] ovunque compaiano tra le potenziali ricompense blueprint di una missione, così puoi capire a colpo d'occhio cosa vale la pena inseguire. Seleziona gli oggetti a sinistra e usa le frecce per spostarli nella tua lista dei posseduti."
     },
     "blueprints_empty_note": {
       "ht": "",
@@ -2663,7 +2663,7 @@
       },
       "description": {
         "ht": "",
-        "at": "Contrassegna i blueprint che possiedi. Cerca nell'elenco a sinistra per nome o missione, oppure restringilo per Tipo, Classe, Dimensione e Grado del componente, poi usa le frecce per spostare gli elementi nel tuo elenco posseduti. I blueprint posseduti ricevono un tag [Posseduto] ovunque compaiano tra le possibili ricompense di una missione, così puoi capire a colpo d'occhio cosa vale la pena inseguire."
+        "at": "Contrassegna i blueprint che possiedi. Cerca nell'elenco a sinistra per nome o missione, oppure restringilo per Tipo, Classe, Dimensione e Grado del componente, poi usa le frecce per spostare gli elementi nel tuo elenco posseduti. I blueprint posseduti ricevono un tag [Owned] ovunque compaiano tra le possibili ricompense di una missione, così puoi capire a colpo d'occhio cosa vale la pena inseguire."
       }
     },
     "edit": {
