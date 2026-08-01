@@ -6583,6 +6583,14 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         if _show_title_tag("blueprint"):
             if _all_have_bp and _all_bp_guaranteed and not _surviving_no_bp_cargo:
                 augmented_title += " <EM4>[BP]</EM4>"
+            # The "not _all_bp_guaranteed" half of this elif is redundant
+            # today: whenever _all_have_bp is True, every desc bucket has
+            # has_bp True too, so _has_dominant_no_bp_bucket is always False
+            # and _bp_partial is already unconditionally True -- it alone
+            # would catch this branch. Spelled out explicitly anyway rather
+            # than relying on that chain of implications, so this stays
+            # correct even if _bp_partial's dominant-bucket heuristic is
+            # ever reworked to no longer guarantee it.
             elif _bp_partial or (
                 _all_have_bp and (_surviving_no_bp_cargo or not _all_bp_guaranteed)
             ):
