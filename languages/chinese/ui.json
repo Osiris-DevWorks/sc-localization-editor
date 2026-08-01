@@ -809,6 +809,30 @@
     "language_source_placeholder": {
       "ht": "",
       "at": "https://…/global.ini"
+    },
+    "backup_desc": {
+      "ht": "",
+      "at": "将你的所有设置——偏好设置、标签配置、《星际公民》目录，以及每个频道的自定义字符串覆盖——保存到一个小型备份文件中。可在新电脑上、重新解压便携版后，或用于撤销错误配置时导入。备份可在不同 Smart Citizen 版本之间通用。游戏缓存不包含在内，它们会根据你的游戏文件自动重建。"
+    },
+    "backup_group": {
+      "ht": "",
+      "at": "设置备份"
+    },
+    "export_settings_btn": {
+      "ht": "",
+      "at": "导出设置…"
+    },
+    "export_settings_tooltip": {
+      "ht": "",
+      "at": "将你的偏好设置、《星际公民》目录和自定义字符串覆盖保存为一个小型备份压缩包（几 KB 大小）。可保存在任何地方——云盘、U 盘——之后在任意 Smart Citizen 版本上导入以恢复你的设置。"
+    },
+    "import_settings_btn": {
+      "ht": "",
+      "at": "导入设置…"
+    },
+    "import_settings_tooltip": {
+      "ht": "",
+      "at": "恢复由任意 Smart Citizen 版本创建的设置备份压缩包。系统会先为你当前的 user.ini 文件创建快照，然后恢复你的《星际公民》目录（如果备份中的路径在本机不存在，则会自动检测），最后 Smart Citizen 会以导入的设置重新启动。"
     }
   },
   "enhancements": {
@@ -1311,6 +1335,18 @@
     "tag_preview_no_tag": {
       "ht": "",
       "at": "预览：  {name}   （无标签 — 所有元素均为空或已禁用）"
+    },
+    "mission_field_resource_signatures": {
+      "ht": "",
+      "at": "资源信号"
+    },
+    "rs_ore_name_annotations_cb": {
+      "ht": "",
+      "at": "在矿石名称旁显示资源信号（RS）"
+    },
+    "rs_ore_name_annotations_tooltip": {
+      "ht": "",
+      "at": "将每种可开采矿石的基础资源信号附加到其显示名称后（例如“Aluminium (RS 4285)”），使其在游戏渲染该名称的所有位置都会显示——包括任务追踪器。与“任务详情字段”下的“资源信号”相互独立。将在下次生成增强内容时生效。"
     }
   },
   "blueprint_tracker": {
@@ -2063,6 +2099,10 @@
     "manifest_missing": {
       "ht": "",
       "at": "SC {channel}（缺少清单）"
+    },
+    "settings_exported": {
+      "ht": "",
+      "at": "设置备份已导出"
     }
   },
   "import_flow": {
@@ -2343,6 +2383,10 @@
     "extraction_error_title": {
       "ht": "",
       "at": "提取错误"
+    },
+    "p4k_locked": {
+      "ht": "",
+      "at": "《星际公民》目前似乎正在更新。它的游戏文件（Data.p4k）已被其他程序锁定，通常是 RSI 启动器正在下载或校验更新。\n\n请等待 RSI 启动器中的所有更新和校验完成后再试。"
     }
   },
   "apply": {
@@ -2611,6 +2655,120 @@
         "ht": "",
         "at": "“帮助”按钮会打开一个侧边面板，其中包含完整指南、已知问题列表，以及智慧公民 Discord 频道的反馈链接。到这里，你需要了解的一切就都齐了——祝你好运，公民。"
       }
+    }
+  },
+  "settings_backup": {
+    "export_dialog_title": {
+      "ht": "",
+      "at": "导出设置备份"
+    },
+    "export_done_body": {
+      "ht": "",
+      "at": "你的设置已保存至：\n{path}\n\n包含内容：{n_settings} 项设置，以及以下频道的自定义字符串覆盖：{channels}。\n\n此文件可保存在任何地方——体积很小。使用“导入设置”可在新电脑上或迁移到新便携版本后恢复。"
+    },
+    "export_done_title": {
+      "ht": "",
+      "at": "设置已导出"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "无法写入备份压缩包。\n\n{error_type}：{error}"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "导出失败"
+    },
+    "import_confirm_body": {
+      "ht": "",
+      "at": "此备份由 Smart Citizen v{version} 于 {when} 创建。\n\n包含 {n_settings} 项设置及以下频道的字符串覆盖：{channels}。\n\n导入将把这些内容叠加到你当前的设置上，并替换所列频道的 user.ini（系统会先为你当前的 user.ini 文件创建快照，因此可通过“恢复 user.ini”撤销）。是否继续？"
+    },
+    "import_confirm_title": {
+      "ht": "",
+      "at": "导入这些设置？"
+    },
+    "import_dialog_title": {
+      "ht": "",
+      "at": "导入设置备份"
+    },
+    "import_done_body_detected": {
+      "ht": "",
+      "at": "已导入 {applied} 项设置及以下频道的字符串覆盖：{channels}。\n\n备份中的《星际公民》目录在本机不存在，因此已自动检测为：\n{root}\n\nSmart Citizen 需要重启以加载你导入的设置。重启后，它将提示你重新生成并应用增强内容。"
+    },
+    "import_done_body_no_install": {
+      "ht": "",
+      "at": "已导入 {applied} 项设置及以下频道的字符串覆盖：{channels}。\n\n未在本机找到《星际公民》安装目录——请在重启后于“配置”标签页中设置。\n\nSmart Citizen 需要重启以加载你导入的设置。"
+    },
+    "import_done_body_restored": {
+      "ht": "",
+      "at": "已导入 {applied} 项设置及以下频道的字符串覆盖：{channels}。\n\n你的《星际公民》目录已从备份中恢复：\n{root}\n\nSmart Citizen 需要重启以加载你导入的设置。重启后，它将提示你重新生成并应用增强内容。"
+    },
+    "import_done_title": {
+      "ht": "",
+      "at": "设置已导入"
+    },
+    "import_failed_body": {
+      "ht": "",
+      "at": "无法写入导入的覆盖内容。\n\n{error_type}：{error}\n\n未对任何设置进行更改。"
+    },
+    "import_failed_title": {
+      "ht": "",
+      "at": "导入失败"
+    },
+    "import_invalid_body": {
+      "ht": "",
+      "at": "此文件无法导入：\n\n{error}"
+    },
+    "import_invalid_title": {
+      "ht": "",
+      "at": "不是设置备份文件"
+    },
+    "no_channels": {
+      "ht": "",
+      "at": "无"
+    },
+    "post_import_apply_body": {
+      "ht": "",
+      "at": "你的设置已导入。最后一步是根据本机的游戏文件生成增强内容并将其写入游戏。\n\n备份保存的是你的设置，而非生成的游戏文本，因此每台新电脑上都需要执行一次此操作。通常只需几分钟——首次执行时会稍长一些，因为需要解包你的游戏文件。\n\n你也可以稍后通过“应用增强内容”按钮来完成此操作。"
+    },
+    "post_import_apply_later_btn": {
+      "ht": "",
+      "at": "稍后"
+    },
+    "post_import_apply_now_btn": {
+      "ht": "",
+      "at": "立即应用"
+    },
+    "post_import_apply_title": {
+      "ht": "",
+      "at": "即将完成——应用到你的游戏？"
+    },
+    "post_import_no_install_body": {
+      "ht": "",
+      "at": "你导入的设置已加载，但尚未配置《星际公民》安装目录。请在“配置”标签页中设置安装目录，然后使用“应用增强内容”将你的自定义内容写入游戏。"
+    },
+    "post_import_no_install_title": {
+      "ht": "",
+      "at": "设置你的《星际公民》目录"
+    },
+    "relaunch_failed_body": {
+      "ht": "",
+      "at": "Smart Citizen 无法自行重启。请手动重新启动它——届时你导入的设置将会加载。"
+    },
+    "relaunch_failed_title": {
+      "ht": "",
+      "at": "重启失败"
+    },
+    "restart_later_btn": {
+      "ht": "",
+      "at": "稍后重启"
+    },
+    "restart_now_btn": {
+      "ht": "",
+      "at": "立即重启"
+    },
+    "zip_filter": {
+      "ht": "",
+      "at": "设置备份 (*.zip)"
     }
   }
 }

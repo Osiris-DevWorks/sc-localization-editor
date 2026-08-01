@@ -309,6 +309,14 @@
     "copy_filtered_tooltip": {
       "ht": "",
       "at": "Alle sichtbaren gefilterten Zeilen in die Zwischenablage kopieren (tabgetrennt)"
+    },
+    "ship_vehicle_names_only": {
+      "ht": "",
+      "at": "Nur Schiffs-/Fahrzeugnamen"
+    },
+    "ship_vehicle_names_only_tooltip": {
+      "ht": "",
+      "at": "Zeigt nur Zeilen mit Schiffs- und Fahrzeugnamen an und blendet alles andere aus, einschließlich Schiffsbeschreibungen und aller anderen Kategorien. Übrig bleiben genau die Zeilen, auf die Favoriten und die ASOP-Sortierreihenfolge angewendet werden."
     }
   },
   "strings_tab": {
@@ -801,6 +809,30 @@
     "language_source_placeholder": {
       "ht": "",
       "at": "https://…/global.ini"
+    },
+    "backup_desc": {
+      "ht": "",
+      "at": "Speichere alle deine Einstellungen — Präferenzen, Tag-Konfigurationen, deinen Star-Citizen-Ordner und deine benutzerdefinierten Text-Overrides für jeden Kanal — in einer einzigen kleinen Sicherungsdatei. Importiere sie auf einem neuen PC, nach dem Entpacken einer frischen portablen Version oder um eine Fehlkonfiguration rückgängig zu machen. Sicherungen funktionieren versionsübergreifend zwischen Smart-Citizen-Versionen. Spiel-Caches sind nicht enthalten; sie werden automatisch aus deinen Spieldateien neu erstellt."
+    },
+    "backup_group": {
+      "ht": "",
+      "at": "Einstellungssicherung"
+    },
+    "export_settings_btn": {
+      "ht": "",
+      "at": "Einstellungen exportieren…"
+    },
+    "export_settings_tooltip": {
+      "ht": "",
+      "at": "Speichert deine Präferenzen, deinen Star-Citizen-Ordner und deine benutzerdefinierten Text-Overrides in einer kleinen Sicherungs-ZIP-Datei (wenige KB). Bewahre sie überall auf — Cloud-Speicher, USB-Stick — und importiere sie später auf jeder beliebigen Smart-Citizen-Version, um deine Einstellungen wiederherzustellen."
+    },
+    "import_settings_btn": {
+      "ht": "",
+      "at": "Einstellungen importieren…"
+    },
+    "import_settings_tooltip": {
+      "ht": "",
+      "at": "Stellt ein von einer beliebigen Smart-Citizen-Version erstelltes Einstellungs-Backup-ZIP wieder her. Deine aktuellen user.ini-Dateien werden zuerst als Snapshot gesichert, dein Star-Citizen-Ordner wird wiederhergestellt (oder automatisch erkannt, falls der Pfad aus dem Backup auf diesem PC nicht existiert), und Smart Citizen startet mit den importierten Einstellungen neu."
     }
   },
   "enhancements": {
@@ -1303,6 +1335,18 @@
     "tag_preview_no_tag": {
       "ht": "",
       "at": "Vorschau:  {name}   (kein Tag — jedes Element ist leer oder deaktiviert)"
+    },
+    "mission_field_resource_signatures": {
+      "ht": "",
+      "at": "Ressourcensignaturen"
+    },
+    "rs_ore_name_annotations_cb": {
+      "ht": "",
+      "at": "Ressourcensignaturen (RS) neben Erznamen anzeigen"
+    },
+    "rs_ore_name_annotations_tooltip": {
+      "ht": "",
+      "at": "Hängt die Basis-Ressourcensignatur jedes abbaubaren Erzes an dessen Anzeigenamen an (z. B. „Aluminium (RS 4285)“), sodass sie überall erscheint, wo das Spiel diesen Namen anzeigt — einschließlich des Missions-Trackers. Unabhängig von den Ressourcensignaturen unter Missions-Detailfeldern. Wird beim nächsten Generieren von Verbesserungen wirksam."
     }
   },
   "blueprint_tracker": {
@@ -2055,6 +2099,10 @@
     "manifest_missing": {
       "ht": "",
       "at": "SC {channel} (Manifest fehlt)"
+    },
+    "settings_exported": {
+      "ht": "",
+      "at": "Einstellungssicherung exportiert"
     }
   },
   "import_flow": {
@@ -2335,6 +2383,10 @@
     "extraction_error_title": {
       "ht": "",
       "at": "Extraktionsfehler"
+    },
+    "p4k_locked": {
+      "ht": "",
+      "at": "Star Citizen scheint gerade zu aktualisieren. Die Spieldateien (Data.p4k) sind durch ein anderes Programm gesperrt, meist den RSI Launcher, der ein Update herunterlädt oder überprüft.\n\nWarte, bis alle Updates und Überprüfungen im RSI Launcher abgeschlossen sind, und versuche es dann erneut."
     }
   },
   "apply": {
@@ -2603,6 +2655,120 @@
         "ht": "",
         "at": "Der Hilfe-Knopf öffnet ein Seitenpanel mit der vollständigen Anleitung, einer Liste bekannter Probleme und einem Feedback-Link zum Smart-Citizen-Discord-Kanal. Das war alles, was du für den Einstieg brauchst — viel Erfolg, Citizen."
       }
+    }
+  },
+  "settings_backup": {
+    "export_dialog_title": {
+      "ht": "",
+      "at": "Einstellungssicherung exportieren"
+    },
+    "export_done_body": {
+      "ht": "",
+      "at": "Deine Einstellungen wurden gespeichert unter:\n{path}\n\nEnthalten: {n_settings} Einstellungen und benutzerdefinierte Text-Overrides für: {channels}.\n\nBewahre diese Datei überall auf — sie ist klein. Verwende „Einstellungen importieren“, um sie auf einem neuen PC oder nach dem Wechsel zu einer neuen portablen Version wiederherzustellen."
+    },
+    "export_done_title": {
+      "ht": "",
+      "at": "Einstellungen exportiert"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "Die Sicherungs-ZIP-Datei konnte nicht geschrieben werden.\n\n{error_type}: {error}"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "Export fehlgeschlagen"
+    },
+    "import_confirm_body": {
+      "ht": "",
+      "at": "Backup erstellt mit Smart Citizen v{version} am {when}.\n\nEs enthält {n_settings} Einstellungen und Text-Overrides für: {channels}.\n\nDas Importieren legt diese über deine aktuellen Einstellungen und ersetzt die user.ini für die aufgeführten Kanäle (deine aktuellen user.ini-Dateien werden zuerst als Snapshot gesichert, daher ist dies über „user.ini wiederherstellen“ rückgängig zu machen). Fortfahren?"
+    },
+    "import_confirm_title": {
+      "ht": "",
+      "at": "Diese Einstellungen importieren?"
+    },
+    "import_dialog_title": {
+      "ht": "",
+      "at": "Einstellungssicherung importieren"
+    },
+    "import_done_body_detected": {
+      "ht": "",
+      "at": "{applied} Einstellungen und Text-Overrides importiert für: {channels}.\n\nDer Star-Citizen-Ordner aus dem Backup existiert nicht auf diesem PC und wurde daher automatisch erkannt:\n{root}\n\nSmart Citizen muss neu starten, um deine importierten Einstellungen zu laden. Nach dem Neustart wird angeboten, deine Verbesserungen neu zu generieren und anzuwenden."
+    },
+    "import_done_body_no_install": {
+      "ht": "",
+      "at": "{applied} Einstellungen und Text-Overrides importiert für: {channels}.\n\nAuf diesem PC wurde keine Star-Citizen-Installation gefunden — lege sie nach dem Neustart im Tab „Konfiguration“ fest.\n\nSmart Citizen muss neu starten, um deine importierten Einstellungen zu laden."
+    },
+    "import_done_body_restored": {
+      "ht": "",
+      "at": "{applied} Einstellungen und Text-Overrides importiert für: {channels}.\n\nDein Star-Citizen-Ordner wurde aus dem Backup wiederhergestellt:\n{root}\n\nSmart Citizen muss neu starten, um deine importierten Einstellungen zu laden. Nach dem Neustart wird angeboten, deine Verbesserungen neu zu generieren und anzuwenden."
+    },
+    "import_done_title": {
+      "ht": "",
+      "at": "Einstellungen importiert"
+    },
+    "import_failed_body": {
+      "ht": "",
+      "at": "Die importierten Overrides konnten nicht geschrieben werden.\n\n{error_type}: {error}\n\nEs wurden keine Einstellungen geändert."
+    },
+    "import_failed_title": {
+      "ht": "",
+      "at": "Import fehlgeschlagen"
+    },
+    "import_invalid_body": {
+      "ht": "",
+      "at": "Diese Datei konnte nicht importiert werden:\n\n{error}"
+    },
+    "import_invalid_title": {
+      "ht": "",
+      "at": "Keine Einstellungssicherung"
+    },
+    "no_channels": {
+      "ht": "",
+      "at": "keine"
+    },
+    "post_import_apply_body": {
+      "ht": "",
+      "at": "Deine Einstellungen wurden importiert. Der letzte Schritt besteht darin, deine Verbesserungen aus den Spieldateien dieses PCs zu erstellen und in das Spiel zu schreiben.\n\nBackups speichern deine Einstellungen, nicht den generierten Spieltext, daher muss dies einmal auf jedem neuen PC erfolgen. Es dauert normalerweise nur wenige Minuten — beim ersten Mal etwas länger, während deine Spieldateien entpackt werden.\n\nDu kannst dies auch später mit der Schaltfläche „Verbesserungen anwenden“ erledigen."
+    },
+    "post_import_apply_later_btn": {
+      "ht": "",
+      "at": "Später"
+    },
+    "post_import_apply_now_btn": {
+      "ht": "",
+      "at": "Jetzt anwenden"
+    },
+    "post_import_apply_title": {
+      "ht": "",
+      "at": "Fast fertig — Auf dein Spiel anwenden?"
+    },
+    "post_import_no_install_body": {
+      "ht": "",
+      "at": "Deine importierten Einstellungen wurden geladen, aber es ist noch keine Star-Citizen-Installation konfiguriert. Lege den Installationsordner im Tab „Konfiguration“ fest und verwende dann „Verbesserungen anwenden“, um deine Anpassungen in das Spiel zu übernehmen."
+    },
+    "post_import_no_install_title": {
+      "ht": "",
+      "at": "Lege deinen Star-Citizen-Ordner fest"
+    },
+    "relaunch_failed_body": {
+      "ht": "",
+      "at": "Smart Citizen konnte sich nicht selbst neu starten. Bitte starte es manuell erneut — deine importierten Einstellungen werden dann geladen."
+    },
+    "relaunch_failed_title": {
+      "ht": "",
+      "at": "Neustart fehlgeschlagen"
+    },
+    "restart_later_btn": {
+      "ht": "",
+      "at": "Später neu starten"
+    },
+    "restart_now_btn": {
+      "ht": "",
+      "at": "Jetzt neu starten"
+    },
+    "zip_filter": {
+      "ht": "",
+      "at": "Einstellungssicherung (*.zip)"
     }
   }
 }

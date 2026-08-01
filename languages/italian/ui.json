@@ -809,6 +809,30 @@
     "language_source_placeholder": {
       "ht": "",
       "at": "https://…/global.ini"
+    },
+    "backup_desc": {
+      "ht": "",
+      "at": "Salva tutte le tue impostazioni — preferenze, configurazioni dei tag, la tua cartella di Star Citizen e le sostituzioni di stringhe personalizzate per ogni canale — in un unico piccolo file di backup. Importalo su un nuovo PC, dopo aver estratto una nuova versione portable, o per annullare una configurazione errata. I backup funzionano tra diverse versioni di Smart Citizen. Le cache di gioco non sono incluse; vengono ricostruite automaticamente dai file di gioco."
+    },
+    "backup_group": {
+      "ht": "",
+      "at": "Backup Impostazioni"
+    },
+    "export_settings_btn": {
+      "ht": "",
+      "at": "Esporta impostazioni..."
+    },
+    "export_settings_tooltip": {
+      "ht": "",
+      "at": "Salva le tue preferenze, la cartella di Star Citizen e le sostituzioni di stringhe personalizzate in un piccolo file zip di backup (pochi KB). Conservalo ovunque — cloud, chiavetta USB — e importalo in seguito, su qualsiasi versione di Smart Citizen, per ripristinare le tue impostazioni."
+    },
+    "import_settings_btn": {
+      "ht": "",
+      "at": "Importa impostazioni..."
+    },
+    "import_settings_tooltip": {
+      "ht": "",
+      "at": "Ripristina un file zip di backup delle impostazioni creato con qualsiasi versione di Smart Citizen. I tuoi file user.ini attuali vengono prima salvati come snapshot, la tua cartella di Star Citizen viene ripristinata (o rilevata automaticamente se il percorso del backup non esiste su questo PC), e Smart Citizen si riavvia con le impostazioni importate."
     }
   },
   "enhancements": {
@@ -1311,6 +1335,18 @@
     "tag_preview_no_tag": {
       "ht": "",
       "at": "Anteprima:  {name}   (nessun tag — ogni elemento è vuoto o disabilitato)"
+    },
+    "mission_field_resource_signatures": {
+      "ht": "",
+      "at": "Firme delle Risorse"
+    },
+    "rs_ore_name_annotations_cb": {
+      "ht": "",
+      "at": "Mostra le Firme delle Risorse (RS) accanto ai nomi dei minerali"
+    },
+    "rs_ore_name_annotations_tooltip": {
+      "ht": "",
+      "at": "Aggiunge la Firma delle Risorse di base di ogni minerale estraibile al suo nome visualizzato (es. \"Aluminium (RS 4285)\"), così da mostrarla ovunque il gioco visualizzi quel nome — incluso il tracker delle missioni. Indipendente dalle Firme delle Risorse in Campi Dettaglio Missione. Ha effetto al prossimo Genera Miglioramenti."
     }
   },
   "blueprint_tracker": {
@@ -2063,6 +2099,10 @@
     "manifest_missing": {
       "ht": "",
       "at": "SC {channel} (manifest mancante)"
+    },
+    "settings_exported": {
+      "ht": "",
+      "at": "Backup impostazioni esportato"
     }
   },
   "import_flow": {
@@ -2343,6 +2383,10 @@
     "extraction_error_title": {
       "ht": "",
       "at": "Errore di Estrazione"
+    },
+    "p4k_locked": {
+      "ht": "",
+      "at": "Sembra che Star Citizen si stia aggiornando in questo momento. I suoi file di gioco (Data.p4k) sono bloccati da un altro programma, solitamente l'RSI Launcher che sta scaricando o verificando un aggiornamento.\n\nAttendi che tutti gli aggiornamenti e le verifiche nell'RSI Launcher siano completati, poi riprova."
     }
   },
   "apply": {
@@ -2611,6 +2655,120 @@
         "ht": "",
         "at": "Il pulsante Guida apre un pannello laterale con la guida completa, un elenco dei problemi noti e un link di feedback al canale Discord di Smart Citizen. Questo è tutto ciò che ti serve per iniziare — buona fortuna, cittadino."
       }
+    }
+  },
+  "settings_backup": {
+    "export_dialog_title": {
+      "ht": "",
+      "at": "Esporta Backup Impostazioni"
+    },
+    "export_done_body": {
+      "ht": "",
+      "at": "Le tue impostazioni sono state salvate in:\n{path}\n\nIncluso: {n_settings} impostazioni e sostituzioni di stringhe personalizzate per: {channels}.\n\nConserva questo file ovunque — è piccolo. Usa Importa Impostazioni per ripristinarlo su un nuovo PC o dopo essere passato a una nuova versione portable."
+    },
+    "export_done_title": {
+      "ht": "",
+      "at": "Impostazioni Esportate"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "Impossibile scrivere il file zip di backup.\n\n{error_type}: {error}"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "Esportazione Non Riuscita"
+    },
+    "import_confirm_body": {
+      "ht": "",
+      "at": "Backup creato con Smart Citizen v{version} il {when}.\n\nContiene {n_settings} impostazioni e sostituzioni di stringhe per: {channels}.\n\nL'importazione sovrappone questi dati alle tue impostazioni attuali e sostituisce lo user.ini per i canali elencati (i tuoi file user.ini attuali vengono prima salvati come snapshot, quindi l'operazione è reversibile tramite Ripristina user.ini). Continuare?"
+    },
+    "import_confirm_title": {
+      "ht": "",
+      "at": "Importare queste impostazioni?"
+    },
+    "import_dialog_title": {
+      "ht": "",
+      "at": "Importa Backup Impostazioni"
+    },
+    "import_done_body_detected": {
+      "ht": "",
+      "at": "Importate {applied} impostazioni e sostituzioni di stringhe per: {channels}.\n\nLa cartella di Star Citizen del backup non esiste su questo PC, quindi è stata rilevata automaticamente:\n{root}\n\nSmart Citizen deve riavviarsi per caricare le impostazioni importate. Dopo il riavvio proporrà di rigenerare e applicare i tuoi miglioramenti."
+    },
+    "import_done_body_no_install": {
+      "ht": "",
+      "at": "Importate {applied} impostazioni e sostituzioni di stringhe per: {channels}.\n\nNessuna installazione di Star Citizen trovata su questo PC — impostala nella scheda Configurazione dopo il riavvio.\n\nSmart Citizen deve riavviarsi per caricare le impostazioni importate."
+    },
+    "import_done_body_restored": {
+      "ht": "",
+      "at": "Importate {applied} impostazioni e sostituzioni di stringhe per: {channels}.\n\nLa tua cartella di Star Citizen è stata ripristinata dal backup:\n{root}\n\nSmart Citizen deve riavviarsi per caricare le impostazioni importate. Dopo il riavvio proporrà di rigenerare e applicare i tuoi miglioramenti."
+    },
+    "import_done_title": {
+      "ht": "",
+      "at": "Impostazioni Importate"
+    },
+    "import_failed_body": {
+      "ht": "",
+      "at": "Impossibile scrivere le sostituzioni importate.\n\n{error_type}: {error}\n\nNessuna impostazione è stata modificata."
+    },
+    "import_failed_title": {
+      "ht": "",
+      "at": "Importazione Non Riuscita"
+    },
+    "import_invalid_body": {
+      "ht": "",
+      "at": "Questo file non può essere importato:\n\n{error}"
+    },
+    "import_invalid_title": {
+      "ht": "",
+      "at": "Non è un Backup delle Impostazioni"
+    },
+    "no_channels": {
+      "ht": "",
+      "at": "nessuno"
+    },
+    "post_import_apply_body": {
+      "ht": "",
+      "at": "Le tue impostazioni sono state importate. L'ultimo passaggio è generare i tuoi miglioramenti a partire dai file di gioco di questo PC e scriverli nel gioco.\n\nI backup memorizzano le tue impostazioni, non il testo di gioco generato, quindi questa operazione va eseguita una volta su ogni nuovo PC. Di solito richiede pochi minuti — un po' di più la prima volta, mentre i file di gioco vengono estratti.\n\nPuoi farlo anche più tardi con il pulsante Applica Miglioramenti."
+    },
+    "post_import_apply_later_btn": {
+      "ht": "",
+      "at": "Più tardi"
+    },
+    "post_import_apply_now_btn": {
+      "ht": "",
+      "at": "Applica Ora"
+    },
+    "post_import_apply_title": {
+      "ht": "",
+      "at": "Quasi Fatto — Applicare al Tuo Gioco?"
+    },
+    "post_import_no_install_body": {
+      "ht": "",
+      "at": "Le tue impostazioni importate sono state caricate, ma non è ancora configurata alcuna installazione di Star Citizen. Imposta la cartella di installazione nella scheda Configurazione, poi usa Applica Miglioramenti per inserire le tue personalizzazioni nel gioco."
+    },
+    "post_import_no_install_title": {
+      "ht": "",
+      "at": "Imposta la Tua Cartella di Star Citizen"
+    },
+    "relaunch_failed_body": {
+      "ht": "",
+      "at": "Smart Citizen non è riuscito a riavviarsi automaticamente. Avvialo di nuovo manualmente — le tue impostazioni importate verranno caricate a quel punto."
+    },
+    "relaunch_failed_title": {
+      "ht": "",
+      "at": "Riavvio Non Riuscito"
+    },
+    "restart_later_btn": {
+      "ht": "",
+      "at": "Riavvia Più Tardi"
+    },
+    "restart_now_btn": {
+      "ht": "",
+      "at": "Riavvia Ora"
+    },
+    "zip_filter": {
+      "ht": "",
+      "at": "Backup impostazioni (*.zip)"
     }
   }
 }
