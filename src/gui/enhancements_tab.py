@@ -979,6 +979,49 @@ class EnhancementsTab(QWidget):
             AppSettings.set_tag_annotate_mission_descs(annotate_cb.isChecked())
         logger.info("Tag Builder: saved configs for %s", ", ".join(pages))
 
+    def reload_tag_builder_from_settings(self) -> None:
+        """Re-read every Tag Builder page from settings, discarding UI state.
+
+        Import Settings rewrites the ``tag_builder/*`` keys underneath a tab
+        that was built at launch, so the on-screen pages still hold the
+        *pre-import* config. That stale state is not just cosmetic: the next
+        ``_persist_tag_builder_state()`` — reachable from Save Tag Changes,
+        Generate Enhancements, *and* Export Settings — would write it back
+        over everything the import just restored. Refreshing here keeps the
+        widgets and settings in agreement, so none of those paths can
+        resurrect the old config (and a user who picks "Restart Later" sees
+        their imported tags immediately).
+
+        Same shape as :meth:`revert_category_checkboxes`, which MainWindow
+        already calls to resync the category checkboxes from settings.
+        """
+        pages = getattr(self, "_tag_builder_pages", None)
+        if not pages:
+            return
+        for cat, page in pages.items():
+            page.apply_config(AppSettings.get_tag_config(cat))
+        annotate_cb = getattr(self, "_annotate_mission_descs_cb", None)
+        if annotate_cb is not None:
+            annotate_cb.blockSignals(True)
+            annotate_cb.setChecked(AppSettings.get_tag_annotate_mission_descs())
+            annotate_cb.blockSignals(False)
+        # apply_config emits config_changed per page, which lights the Save
+        # button — but nothing is actually unsaved here, so clear it.
+        self._set_tag_btn_dirty(False)
+        logger.info("Tag Builder: reloaded configs from settings for %s", ", ".join(pages))
+
+    def flush_pending_tag_edits(self) -> None:
+        """Persist on-screen Tag Builder edits *without* regenerating.
+
+        Same "what you see is what you save" contract as Generate
+        Enhancements (#215), for callers that need settings to match the UI
+        but must not kick off the pipeline. Export Settings uses this so a
+        backup captures the Tag Builder state the user is looking at, not
+        whatever was last committed via Save Tag Changes.
+        """
+        self._persist_tag_builder_state()
+        self._set_tag_btn_dirty(False)
+
     def _set_tag_btn_dirty(self, dirty: bool) -> None:
         """Single chokepoint for the button's enabled state, tooltip, and
         text color so none of the three can drift apart. Same enabled/
@@ -1816,9 +1859,33 @@ class _TagBuilderPage(QWidget):
     # ── Reset ────────────────────────────────────────────────────────────
 
     def _reset_to_defaults(self):
-        # Replace this page's config with a fresh default, rebuild the
-        # row list, resync separator/enclosing/placement combos + preview.
-        fresh = default_config(self.category)
+        """Reset-to-defaults button: swap in a fresh default config.
+
+        Thin wrapper over :meth:`apply_config` — ``reset_title_tags=True``
+        keeps the historical behaviour of *persisting* each General Tags
+        default (see the long comment in ``apply_config``).
+        """
+        self.apply_config(default_config(self.category), reset_title_tags=True)
+
+    def apply_config(self, cfg: TagConfig, *, reset_title_tags: bool = False):
+        """Adopt *cfg* as this page's config and resync every widget to it.
+
+        Two callers, two intents:
+
+        - **Reset to defaults** passes a fresh default config with
+          ``reset_title_tags=True``: General Tags are written back to their
+          per-field defaults *and persisted*, since Reset is an explicit
+          user action on that immediately-saved settings domain.
+        - **Import Settings** passes the freshly-imported saved config with
+          ``reset_title_tags=False``: the checkboxes are re-read from the
+          (already imported) settings and nothing is written back. Without
+          this refresh the page keeps the pre-import config in memory, and
+          the next Save Tag Changes / Generate / Export would write that
+          stale state straight over the imported one.
+        """
+        # Replace this page's config, rebuild the row list, resync
+        # separator/enclosing/placement combos + preview.
+        fresh = cfg
         self.config = fresh
         if self.category == "mission_titles":
             route_el = next((e for e in fresh.elements if e.kind == "route"), None)
@@ -1845,10 +1912,20 @@ class _TagBuilderPage(QWidget):
             # signal (a checkbox already at its default wouldn't fire it,
             # leaving a stale saved value if one had somehow drifted out of
             # sync).
+            _tt_saved = AppSettings.get_mission_title_tags()
             for field, box in self._title_tag_checkboxes.items():
-                default = AppSettings.get_mission_title_tag_default(field)
-                box.setChecked(default)
-                AppSettings.set_mission_title_tag(field, default)
+                if reset_title_tags:
+                    value = AppSettings.get_mission_title_tag_default(field)
+                else:
+                    # Import path: settings already hold the imported values;
+                    # just mirror them. Writing here would be a no-op at best
+                    # and could clobber at worst.
+                    value = _tt_saved.get(field, True)
+                box.blockSignals(True)
+                box.setChecked(value)
+                box.blockSignals(False)
+                if reset_title_tags:
+                    AppSettings.set_mission_title_tag(field, value)
             self._set_mt_controls_enabled(self._mt_enable.isChecked())
             self._refresh_preview()
             self.config_changed.emit()
