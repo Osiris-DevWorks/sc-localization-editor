@@ -29,6 +29,56 @@ P4K_SIZE_STAMP = ".p4k_size"
 # Detect once at import.
 _RMTREE_CB_KWARG = "onexc" if sys.version_info >= (3, 12) else "onerror"
 
+# The RSI Launcher holds an exclusive lock on Data.p4k while it downloads or
+# verifies a game update, so unp4k (which opens Data.p4k directly) dies with a
+# .NET IOException whose message contains "being used by another process"
+# (exit code 0xE0434352 = 3762504530, the generic managed-exception code — so
+# the message text, not the code, is the reliable signal). Detect it and give
+# the user a plain "your install is updating, wait and retry" hint instead of
+# a raw stack trace.
+_P4K_LOCKED_SIGNATURE = "being used by another process"
+
+
+class P4kLockedError(RuntimeError):
+    """Data.p4k is locked by another process (RSI Launcher updating/verifying).
+
+    A RuntimeError subclass, not a plain RuntimeError, so P4kExtractWorker /
+    DataForgeExtractWorker (workers.py) can tell this anticipated, already-
+    friendly-messaged condition apart from a genuinely unexpected extraction
+    failure — via isinstance(), not by re-sniffing the message text a second
+    time. Both workers' blanket ``except Exception`` handlers otherwise call
+    logger.exception() unconditionally, which independently satisfies
+    MainWindow's global ErrorDialogHandler (error_dialog.py, triggers on any
+    ERROR-level log record app-wide) — so downgrading only the log call
+    inside _raise_unp4k_failure wasn't enough; the worker's own logging needed
+    the same treatment, and needed a reliable way to recognize this case."""
+
+
+def _raise_unp4k_failure(returncode: int, output: str) -> None:
+    """Raise for a non-zero unp4k exit — P4kLockedError for a locked Data.p4k,
+    plain RuntimeError otherwise.
+
+    Upgrades the generic "exited with code N" message to a clear "Star Citizen
+    is updating, wait and retry" hint when the failure is Data.p4k being locked
+    by another process (the common case — the user launched an extract while
+    the RSI Launcher was patching). Always logs the raw output first so the Log
+    tab keeps the underlying technical detail even when the friendly message is
+    shown. Never returns — always raises.
+
+    Logged at WARNING, not ERROR, for the locked-file case specifically — see
+    P4kLockedError's docstring for why. Any OTHER unp4k failure still logs at
+    ERROR — those are genuinely unexpected and should still surface through
+    the generic handler."""
+    output = output or ""
+    if _P4K_LOCKED_SIGNATURE in output.lower():
+        logger.warning(
+            f"unp4k.exe exited with code {returncode} — Data.p4k is locked "
+            f"(game likely updating); output:\n{output[:2000]}"
+        )
+        raise P4kLockedError(tr("extract.p4k_locked"))
+    logger.error(f"unp4k.exe exited with code {returncode}; output:\n{output[:2000]}")
+    raise RuntimeError(f"unp4k.exe exited with code {returncode}.\n\n{output}")
+
 
 def robust_rmtree(path: Path, attempts: int = 6) -> None:
     """Delete *path* recursively, surviving transient Windows locks.
@@ -241,10 +291,7 @@ def extract_global_ini(
         )
 
         if result.returncode != 0:
-            logger.error(f"unp4k stderr: {result.stderr}")
-            raise RuntimeError(
-                f"unp4k.exe exited with code {result.returncode}.\n\n{result.stderr or result.stdout}"
-            )
+            _raise_unp4k_failure(result.returncode, result.stderr or result.stdout)
 
         extracted = Path(tmp_dir) / _GLOBAL_INI_RELATIVE
         if not extracted.exists():
@@ -329,7 +376,7 @@ def extract_dataforge(
             **_get_subprocess_kwargs()
         )
         if result.returncode != 0:
-            raise RuntimeError(f"unp4k.exe failed (code {result.returncode}):\n{result.stderr or result.stdout}")
+            _raise_unp4k_failure(result.returncode, result.stderr or result.stdout)
 
         # Explicit cleanup: ensure subprocess is fully released
         del result

@@ -9,6 +9,7 @@ Tests cover:
 """
 
 import pytest
+import logging
 import tempfile
 import os
 from pathlib import Path
@@ -19,10 +20,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from utils.pak_extractor import (
     DATAFORGE_KEEP_SUBPATHS,
+    P4kLockedError,
     _copy_filtered_records,
+    _raise_unp4k_failure,
     dataforge_cache_is_fresh,
     extract_dataforge,
 )
+from utils.i18n import set_language, tr
 
 
 class TestDataForgeCache:
@@ -589,3 +593,85 @@ class TestCopyFilteredRecords:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
+
+
+class TestUnp4kFailureMessage:
+    """_raise_unp4k_failure upgrades a locked-Data.p4k failure (RSI Launcher
+    updating) to a friendly hint, and otherwise preserves the raw output.
+
+    The lock manifests as a .NET IOException '...being used by another
+    process' with exit code 3762504530 (0xE0434352, the generic managed-
+    exception code — so the message text, not the code, is what we match on."""
+
+    _REAL_LOCK_STDERR = (
+        r"Unhandled exception. System.IO.IOException: The process cannot access "
+        r"the file 'E:\Games\...\StarCitizen\HOTFIX\Data.p4k' because it is "
+        "being used by another process.\n   at Microsoft.Win32.SafeHandles..."
+    )
+
+    def setup_method(self):
+        set_language("english")
+
+    def test_locked_file_raises_friendly_message(self):
+        with pytest.raises(P4kLockedError) as exc:
+            _raise_unp4k_failure(3762504530, self._REAL_LOCK_STDERR)
+        assert str(exc.value) == tr("extract.p4k_locked")
+        # The friendly text must not leak the raw stack trace.
+        assert "IOException" not in str(exc.value)
+        assert "System.IO" not in str(exc.value)
+
+    def test_locked_file_raises_the_typed_exception(self):
+        """Must be P4kLockedError specifically, not a plain RuntimeError —
+        the worker except blocks (workers.py) key off isinstance() to decide
+        whether to log at WARNING (this case) or ERROR (any other failure),
+        so the type distinction is what prevents the duplicate-dialog bug."""
+        with pytest.raises(P4kLockedError):
+            _raise_unp4k_failure(3762504530, self._REAL_LOCK_STDERR)
+
+    def test_detection_is_case_insensitive(self):
+        with pytest.raises(P4kLockedError) as exc:
+            _raise_unp4k_failure(1, "BEING USED BY ANOTHER PROCESS")
+        assert str(exc.value) == tr("extract.p4k_locked")
+
+    def test_other_failure_preserves_raw_output(self):
+        raw = "some other unp4k error: bad archive header"
+        with pytest.raises(RuntimeError) as exc:
+            _raise_unp4k_failure(2, raw)
+        msg = str(exc.value)
+        assert "exited with code 2" in msg
+        assert raw in msg
+        assert msg != tr("extract.p4k_locked")
+
+    def test_other_failure_is_not_the_locked_type(self):
+        """A genuine failure must NOT be P4kLockedError, or the worker would
+        wrongly log it at WARNING and skip the global error-dialog handler
+        for a real, unexpected problem."""
+        with pytest.raises(RuntimeError) as exc:
+            _raise_unp4k_failure(2, "some other unp4k error")
+        assert not isinstance(exc.value, P4kLockedError)
+
+    def test_locked_file_logs_at_warning_not_error(self, caplog):
+        """The locked-file case must log below ERROR: MainWindow's global
+        ErrorDialogHandler pops its own generic crash-style dialog for every
+        ERROR-level record anywhere in the app, which would duplicate the
+        friendly dialog this raises into with a second, raw-stack-trace
+        popup on top of it (the exact bug this regression-guards)."""
+        with caplog.at_level(logging.WARNING, logger="utils.pak_extractor"):
+            with pytest.raises(RuntimeError):
+                _raise_unp4k_failure(3762504530, self._REAL_LOCK_STDERR)
+        assert not any(r.levelno >= logging.ERROR for r in caplog.records)
+        assert any(r.levelno == logging.WARNING for r in caplog.records)
+
+    def test_other_failure_logs_at_error(self, caplog):
+        """A genuinely unexpected unp4k failure should still surface through
+        the global ErrorDialogHandler — only the well-understood locked-file
+        case is downgraded."""
+        with caplog.at_level(logging.WARNING, logger="utils.pak_extractor"):
+            with pytest.raises(RuntimeError):
+                _raise_unp4k_failure(2, "some other unp4k error")
+        assert any(r.levelno >= logging.ERROR for r in caplog.records)
+
+    def test_empty_output_does_not_crash(self):
+        with pytest.raises(RuntimeError) as exc:
+            _raise_unp4k_failure(-1, None)
+        assert "exited with code -1" in str(exc.value)

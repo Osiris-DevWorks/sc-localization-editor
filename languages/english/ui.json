@@ -2383,6 +2383,10 @@
     "extraction_error_title": {
       "ht": "Extraction Error",
       "at": ""
+    },
+    "p4k_locked": {
+      "ht": "Star Citizen appears to be updating right now. Its game files (Data.p4k) are locked by another program, usually the RSI Launcher downloading or verifying an update.\n\nWait until all updates and verification finish in the RSI Launcher, then try again.",
+      "at": ""
     }
   },
   "apply": {

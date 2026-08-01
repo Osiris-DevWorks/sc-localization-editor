@@ -2383,6 +2383,10 @@
     "extraction_error_title": {
       "ht": "",
       "at": "Erreur d'extraction"
+    },
+    "p4k_locked": {
+      "ht": "",
+      "at": ""
     }
   },
   "apply": {
