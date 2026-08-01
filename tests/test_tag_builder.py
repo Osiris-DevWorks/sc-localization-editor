@@ -332,16 +332,24 @@ class TestComponentTypeElement:
 # ── Commodity label element ─────────────────────────────────────────────────
 
 class TestCommodityLabelElement:
-    """render_tag with the ``label`` element kind for commodities."""
+    """render_tag with the ``label`` element kind for commodities.
+
+    default_config("commodities") ships every element disabled (#325), so
+    each test enables ``label`` explicitly -- this class exercises render
+    logic, independent of that default."""
 
     def test_label_short_crafting(self):
         cfg = default_config("commodities")
+        for el in cfg.elements:
+            if el.kind == "label":
+                el.enabled = True
         assert render_tag(cfg, {"label": "Crafting"}) == "[CF]"
 
     def test_label_med_crafting(self):
         cfg = default_config("commodities")
         for el in cfg.elements:
             if el.kind == "label":
+                el.enabled = True
                 el.style = "med"
         assert render_tag(cfg, {"label": "Crafting"}) == "[Craft]"
 
@@ -349,11 +357,15 @@ class TestCommodityLabelElement:
         cfg = default_config("commodities")
         for el in cfg.elements:
             if el.kind == "label":
+                el.enabled = True
                 el.style = "long"
         assert render_tag(cfg, {"label": "Crafting"}) == "[Crafting]"
 
     def test_label_round_enclosing(self):
         cfg = default_config("commodities")
+        for el in cfg.elements:
+            if el.kind == "label":
+                el.enabled = True
         cfg.enclosing = "round"
         assert render_tag(cfg, {"label": "Crafting"}) == "(CF)"
 

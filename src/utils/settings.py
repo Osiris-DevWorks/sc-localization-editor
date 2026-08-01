@@ -967,11 +967,11 @@ class AppSettings:
         """Insert element kinds added in a newer version that the stored config
         doesn't have yet (e.g. ``type`` added to components in 1.4.2, ``usage``
         added to commodities in 2.1). New elements inherit the default config's
-        enabled state (usually disabled so existing output is unchanged; the
-        commodity ``usage`` element is on by default, so upgraded users pick it
-        up too), and are inserted at their canonical position in
-        ``CATEGORY_ELEMENT_KINDS`` (not appended) so an element added in the
-        middle of the order — like ``usage`` between ``label`` and
+        enabled state (per-category, e.g. commodities' three elements are all
+        disabled by default as of #325, while components/missiles/ship_weapons
+        default their own elements enabled), and are inserted at their
+        canonical position in ``CATEGORY_ELEMENT_KINDS`` (not appended) so an
+        element added in the middle of the order — like ``usage`` between ``label`` and
         ``collection`` — renders in the right place for upgraded users too."""
         from src.utils.tag_builder import (
             CATEGORY_ELEMENT_KINDS, DEFAULT_TAG_CONFIGS, DEFAULT_KIND_MAPPINGS,

@@ -36,8 +36,14 @@ def gen_module():
 
 
 def _commodities_cfg(*, style="long", usage_sep="pipe"):
+    # default_config("commodities") ships every element disabled (#325);
+    # these tests exercise usage-element rendering alongside label/collection
+    # (e.g. "usage sits between CF and Collection"), so enable all three
+    # explicitly regardless of that default.
     cfg = default_config("commodities")
     for e in cfg.elements:
+        if e.kind in ("label", "collection"):
+            e.enabled = True
         if e.kind == "usage":
             e.enabled = True
             e.style = style
@@ -106,16 +112,20 @@ class TestUsageCap:
     def test_disabled_usage_element_is_ignored(self):
         cfg = default_config("commodities")
         for e in cfg.elements:
+            if e.kind == "label":
+                e.enabled = True
             if e.kind == "usage":
                 e.enabled = False
         out = render_tag(cfg, {"label": "Crafting", "usage": _usage("Quantum Drive")})
         assert out == "[CF]"
 
-    def test_usage_on_by_default(self):
+    def test_all_elements_off_by_default(self):
+        """#325: label/usage/collection all ship disabled -- users reported
+        garbled/unknown text from commodity tagging in-game, so a fresh
+        install now shows plain names until the user opts in per element."""
         cfg = default_config("commodities")
-        assert any(e.kind == "usage" and e.enabled for e in cfg.elements)
-        out = render_tag(cfg, {"label": "Crafting", "usage": _usage("Quantum Drive")})
-        assert out == "[CF|QDRV]"
+        assert all(not e.enabled for e in cfg.elements)
+        assert render_tag(cfg, {"label": "Crafting", "usage": _usage("Quantum Drive")}) == ""
 
 
 class TestUsageClassifier:

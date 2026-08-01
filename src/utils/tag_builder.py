@@ -726,13 +726,15 @@ DEFAULT_TAG_CONFIGS: dict[str, TagConfig] = {
     # as Collection-mission objectives. When an item is both, render_tag joins
     # them with the separator, e.g. "[CF|Collection]"; when only one flag
     # applies, the other's empty value is dropped so a single-flag item stays
-    # "[CF]" or "[Collection]" (#97). Crafting-only output is unchanged from
-    # the pre-1.5.0 single-label default.
+    # "[CF]" or "[Collection]" (#97). All three elements default off (#325):
+    # users reported garbled/unknown text from commodity tagging in-game, so
+    # a fresh install now shows plain commodity names until the user opts in
+    # from the Tag Builder, instead of tagging being on and surprising them.
     "commodities": TagConfig(
         elements=[
-            ElementSpec("label", True, "short"),        # CF
-            ElementSpec("usage", True, "long"),         # QDRV|SHLD… (on by default)
-            ElementSpec("collection", True, "long"),    # Collection
+            ElementSpec("label", False, "short"),        # CF
+            ElementSpec("usage", False, "long"),         # QDRV|SHLD…
+            ElementSpec("collection", False, "long"),    # Collection
         ],
         separator="pipe",
         enclosing="square",

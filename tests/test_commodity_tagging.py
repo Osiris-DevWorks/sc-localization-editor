@@ -45,17 +45,28 @@ def gen_module():
 
 # ── render_tag with the default commodities config ───────────────────────────
 
+def _enabled_commodities_config():
+    """default_config("commodities") ships with every element disabled
+    (#325) -- these tests exercise render_tag's join/drop logic, which is
+    independent of that default, so they build their own enabled copy."""
+    cfg = default_config("commodities")
+    return dc_replace(
+        cfg,
+        elements=[dc_replace(e, enabled=True) for e in cfg.elements],
+    )
+
+
 class TestRender:
     def test_crafting_only(self):
-        cfg = default_config("commodities")
+        cfg = _enabled_commodities_config()
         assert render_tag(cfg, {"label": "Crafting"}) == "[CF]"
 
     def test_collection_only(self):
-        cfg = default_config("commodities")
+        cfg = _enabled_commodities_config()
         assert render_tag(cfg, {"collection": "Collection"}) == "[Collection]"
 
     def test_both_join_with_pipe(self):
-        cfg = default_config("commodities")
+        cfg = _enabled_commodities_config()
         assert render_tag(cfg, {"label": "Crafting", "collection": "Collection"}) == "[CF|Collection]"
 
     def test_collection_short_medium_long(self):
@@ -72,7 +83,7 @@ class TestRender:
 
 class TestCommodityTagHelper:
     def test_flags(self, gen_module):
-        cfg = default_config("commodities")
+        cfg = _enabled_commodities_config()
         tag = gen_module._commodity_tag
         assert tag(cfg, crafting=True, collection=False) == "<EM4>[CF]</EM4>"
         assert tag(cfg, crafting=False, collection=True) == "<EM4>[Collection]</EM4>"
@@ -119,5 +130,9 @@ class TestMigration:
         kinds = {e.kind for e in cfg.elements}
         assert "collection" in kinds, "collection element should be backfilled"
         assert cfg.separator == "pipe", "separator 'none' should upgrade to 'pipe'"
-        # And the combined render now works for a both-flags item.
-        assert render_tag(cfg, {"label": "Crafting", "collection": "Collection"}) == "[CF|Collection]"
+        # Backfilled disabled (#325: commodity elements default off), so a
+        # both-flags item only renders the label the legacy config had
+        # explicitly enabled -- collection needs an opt-in first.
+        collection = next(e for e in cfg.elements if e.kind == "collection")
+        assert collection.enabled is False
+        assert render_tag(cfg, {"label": "Crafting", "collection": "Collection"}) == "[CF]"

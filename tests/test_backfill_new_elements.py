@@ -208,12 +208,13 @@ class TestBackfillCommoditiesUsageMidInsert:
             "usage must land between label and collection, not appended"
         )
 
-    def test_backfilled_usage_enabled_by_default(self, json_backend):
+    def test_backfilled_usage_matches_current_default(self, json_backend):
         _save_config(json_backend, "commodities", self._legacy_label_collection_cfg())
         loaded = AppSettings.get_tag_config("commodities")
 
         usage = next(e for e in loaded.elements if e.kind == "usage")
-        assert usage.enabled is True, (
-            "the commodity usage element ships on by default, so upgraded "
-            "users should pick it up enabled"
+        assert usage.enabled is False, (
+            "backfill inherits DEFAULT_TAG_CONFIGS' enabled state (#325: all "
+            "three commodity elements default off, so upgraded users don't "
+            "pick up a newly-added element enabled without opting in)"
         )

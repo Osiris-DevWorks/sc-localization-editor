@@ -166,7 +166,14 @@ class TestCommoditySeparatorNone:
     def test_deliberate_none_persists_after_migration(self, json_backend):
         # After the one-time upgrade has run, a fresh 'none' choice sticks.
         json_backend.setValue(self._MARKER, True)
-        AppSettings.set_tag_config("commodities", self._commodity_cfg("none"))
+        cfg = self._commodity_cfg("none")
+        # default_config("commodities") ships every element disabled (#325);
+        # enable label + collection explicitly to exercise the mashed-output
+        # render this test is actually about.
+        for el in cfg.elements:
+            if el.kind in ("label", "collection"):
+                el.enabled = True
+        AppSettings.set_tag_config("commodities", cfg)
         cfg = AppSettings.get_tag_config("commodities")
         assert cfg.separator == "none"
         assert render_tag(cfg, {"label": "CF", "collection": "Collection"}) == "[CFCollection]"
