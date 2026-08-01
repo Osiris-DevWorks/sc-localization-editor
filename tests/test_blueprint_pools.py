@@ -968,6 +968,12 @@ class TestCargoBpTitleDemotion:
         """Replica of the augment-loop BP-tag branch (generate_enhancements_ini)."""
         _bp_variants = [v[7] for v in variants]
         _all_have_bp = has_blueprints and all(_bp_variants)
+        # Battaglia repro: _all_have_bp only means every variant HAS a
+        # BlueprintRewards pool, not that its own chance (v[8]) is 1.0 -- a
+        # 100%-coverage-but-30%-chance mission must not read as guaranteed.
+        _all_bp_guaranteed = _all_have_bp and all(
+            v[8] >= 1.0 for v in variants if v[7]
+        )
         _any_variant_has_bp = any(_bp_variants)
         # Simplified partial detector: no dominant no-BP desc bucket. The real
         # loop weighs bucket share; for these single-bucket fixtures the result
@@ -977,9 +983,11 @@ class TestCargoBpTitleDemotion:
         _surviving_no_bp_cargo = bool(
             (pu_cargo_delivery_descs & pu_title_descs) - _cg_desc_keys
         )
-        if _all_have_bp and not _surviving_no_bp_cargo:
+        if _all_have_bp and _all_bp_guaranteed and not _surviving_no_bp_cargo:
             return "[BP]"
-        if _bp_partial or (_all_have_bp and _surviving_no_bp_cargo):
+        if _bp_partial or (
+            _all_have_bp and (_surviving_no_bp_cargo or not _all_bp_guaranteed)
+        ):
             return "[BP?]"
         return ""
 
@@ -1023,6 +1031,57 @@ class TestCargoBpTitleDemotion:
             pu_title_descs={"D_CG", "HaulCargo_AtoB_desc"},
         )
         assert tag == ""
+
+    @pytest.mark.regression
+    def test_full_coverage_with_partial_chance_demotes(self, gen_module):
+        """Battaglia repro: every variant has a BlueprintRewards pool
+        (_all_have_bp is True) but its own chance is 0.3, not 1.0 -- the
+        mission won't ALWAYS pay out, so the title must not read as the
+        guaranteed [BP]. Before the fix, _all_have_bp alone drove the tag
+        and this produced [BP] even though the mission DETAILS body (a
+        separate code path keying off the same v.bp_chance field) already
+        correctly said "30% chance", not "Guaranteed" -- the title and body
+        disagreed about the same mission."""
+        variants = [("Pyro", 500, 0, "D_CG", [], 0, 0, True, 0.3, "", "")]
+        tag = self._tag(
+            variants,
+            has_blueprints=True,
+            pu_cargo_delivery_descs=set(),
+            pu_title_descs={"D_CG"},
+        )
+        assert tag == "[BP?]"
+
+    @pytest.mark.regression
+    def test_full_coverage_full_chance_stays_full_bp(self, gen_module):
+        """Every variant has a pool AND every one is chance=1.0 -- genuinely
+        guaranteed, keep the unqualified [BP] (control case for the fix
+        above, confirms it didn't just always demote to [BP?])."""
+        variants = [("Pyro", 500, 0, "D_CG", [], 0, 0, True, 1.0, "", "")]
+        tag = self._tag(
+            variants,
+            has_blueprints=True,
+            pu_cargo_delivery_descs=set(),
+            pu_title_descs={"D_CG"},
+        )
+        assert tag == "[BP]"
+
+    @pytest.mark.regression
+    def test_mixed_chance_across_variants_demotes(self, gen_module):
+        """One variant is guaranteed (chance=1.0), another sharing the same
+        title is only 50/50 -- the title as a whole is still not a sure
+        thing, so it must demote to [BP?] rather than let the guaranteed
+        variant win."""
+        variants = [
+            ("Stanton", 500, 0, "D_CG_A", [], 0, 0, True, 1.0, "", ""),
+            ("Pyro", 500, 0, "D_CG_B", [], 0, 0, True, 0.5, "", ""),
+        ]
+        tag = self._tag(
+            variants,
+            has_blueprints=True,
+            pu_cargo_delivery_descs=set(),
+            pu_title_descs={"D_CG_A", "D_CG_B"},
+        )
+        assert tag == "[BP?]"
 
 
 class TestTypelessTagFilter:
