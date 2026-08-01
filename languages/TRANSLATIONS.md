@@ -124,6 +124,24 @@ them against the new source.
   `SC_LANGUAGE_IDS["japanese"] = "japanese_(japan)"`; installer
   `LanguageChoicePage` gained a Japanese option. Locked by
   `tests/test_japanese_activation.py`.
+- **2.3.0 cycle (2026-08-01, Claude Sonnet 5):** AI translation of `FAQ.md`
+  for **french**, **spanish**, and **portuguese_br** (#306). `docs/FAQ.md`
+  (#152) landed after these three languages' initial doc translation work
+  (the #248 backfill above covers `HELP.md`/`ABOUT.md`/`LEGAL.md` only), so
+  `get_localized_doc_path` had been silently falling back to the English FAQ
+  tab for all three ever since. italian and chinese both shipped a
+  translated `FAQ.md` from day one; this closes the gap for the three
+  languages that predate #152 (japanese also missed it, tracked and fixed
+  separately since it wasn't part of #306's original scope). Styled on each
+  file's existing
+  human `HELP.md`/`ABOUT.md` terminology (french: "Effacer la localisation"
+  / "Restaurer une sauvegarde"; spanish: "Limpiar localización" / "Restaurar
+  copia"; portuguese_br: "Limpar Localização" / "Restaurar Backup") and
+  register (french *vous*, spanish *tú*, portuguese_br *você*), matching
+  what the translated UI actually shows today. Flagged for review by the
+  language leads (Akwa/Ishikudeska for french, Nxzzin for portuguese_br,
+  Thord82 for spanish) per the policy below. Locked by
+  `tests/test_language_paths.py::TestIssue306FaqBackfill`.
 - **2.3.0 (2026-07-25, Claude Sonnet 5):** New language **german** added (#299).
   Full AI translation of all 376 UI keys plus the 19-step guided tour
   (`tutorial.*`), all `at`-only (`ht` empty). Translated `HELP.md`, `ABOUT.md`,
