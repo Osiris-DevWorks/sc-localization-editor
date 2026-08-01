@@ -451,10 +451,12 @@ DEFAULT_COMPONENT_TYPE_MAPPING: dict[str, tuple[str, str, str]] = {
     "Power Plant":      ("PW",  "POWR", "Power"),
     "Quantum Drive":    ("QD",  "QDRV", "Quantum"),
     "Radar":            ("RD",  "RADR", "Radar"),
-    # #266: components with no Class:/Size:/Grade: of their own -- the
-    # generator always forces this element on for them (see
-    # enhancements_bare_type_tags in generate_enhancements_ini.py), since
-    # otherwise they'd never get a tag at all while Type stays off by default.
+    # #266: components with no Class:/Size:/Grade: of their own, tagged via
+    # the Type-only fallback (see enhancements_bare_type_tags in
+    # generate_enhancements_ini.py) when the user has Type enabled. Same
+    # opt-in gate as every other entry here -- not force-shown just because
+    # they'd otherwise have no other tag; a user who leaves Type off simply
+    # gets these items bare, same as Shield Generator or Cooler.
     "Fuel Nozzle":      ("FN",  "FNoz", "Fuel Nozzle"),
     # #266: mining lasers live in ships/weapons/ (routed through
     # _ship_weapon_name_tag_factory) but aren't combat weapons -- no
