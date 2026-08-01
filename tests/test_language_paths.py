@@ -263,6 +263,42 @@ class TestIssue306FaqBackfill:
         )
 
 
+class TestJapaneseFaqBackfill:
+    """The #301 japanese language PR translated HELP.md/ABOUT.md/LEGAL.md but
+    missed FAQ.md (unlike italian/chinese, which both shipped it from day
+    one), so get_localized_doc_path was silently falling back to the
+    English FAQ for japanese too. Same bug class as #306, found while
+    testing that fix's portable build. Locks that the gap is closed."""
+
+    REPO = Path(__file__).resolve().parent.parent
+
+    def test_faq_exists_and_is_not_the_english_fallback(self):
+        faq_path = self.REPO / "languages" / "japanese" / "FAQ.md"
+        assert faq_path.exists(), "languages/japanese/FAQ.md is missing"
+        translated = faq_path.read_text(encoding="utf-8")
+        english = (self.REPO / "docs" / "FAQ.md").read_text(encoding="utf-8")
+        assert translated != english, "japanese FAQ.md is just the English source"
+
+    def test_faq_section_count_matches_english(self):
+        faq_path = self.REPO / "languages" / "japanese" / "FAQ.md"
+        headings = [
+            line
+            for line in faq_path.read_text(encoding="utf-8").splitlines()
+            if line.startswith("## ")
+        ]
+        english_headings = [
+            line
+            for line in (self.REPO / "docs" / "FAQ.md")
+            .read_text(encoding="utf-8")
+            .splitlines()
+            if line.startswith("## ")
+        ]
+        assert len(headings) == len(english_headings), (
+            f"japanese FAQ.md has {len(headings)} sections, "
+            f"English has {len(english_headings)}"
+        )
+
+
 class TestScLanguageId:
     def test_known_mapping(self):
         assert AppSettings.get_sc_language_id("portuguese_br") == "portuguese_(brazil)"

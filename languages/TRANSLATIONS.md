@@ -142,6 +142,15 @@ them against the new source.
   language leads (Akwa/Ishikudeska for french, Nxzzin for portuguese_br,
   Thord82 for spanish) per the policy below. Locked by
   `tests/test_language_paths.py::TestIssue306FaqBackfill`.
+- **2.3.0 cycle (2026-08-01, Claude Sonnet 5):** AI translation of `FAQ.md`
+  for **japanese**. The original #301 PR translated `HELP.md`/`ABOUT.md`/
+  `LEGAL.md` but missed `FAQ.md` (unlike italian and chinese, which both
+  shipped it from day one), so `get_localized_doc_path` was silently
+  falling back to the English FAQ tab. Found while portable-testing the
+  #306 fix above. Styled on the existing `HELP.md`/`ABOUT.md` terminology
+  (more menu, apply/restore/clear-localization action names) and register
+  (polite desu/masu form, matching the rest of the Japanese docs). Locked
+  by `tests/test_language_paths.py::TestJapaneseFaqBackfill`.
 - **2.3.0 (2026-07-25, Claude Sonnet 5):** New language **german** added (#299).
   Full AI translation of all 376 UI keys plus the 19-step guided tour
   (`tutorial.*`), all `at`-only (`ht` empty). Translated `HELP.md`, `ABOUT.md`,
