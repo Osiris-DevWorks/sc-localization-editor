@@ -232,17 +232,22 @@ _BULLET_NAME_ALIASES: dict[str, str] = {
     "Nozzle Fuelgiver Misc Nozzlestandard": "RN-7s",
 }
 
-# Fuel nozzle Name-key conventions (#266 follow-up): nozzles ship under two
-# different manufacturer-specific prefixes (MISC's item_fuelnozzle_* vs
-# Greycat/Shubin's Nozzle_FuelGiver_*), neither matching the item_Name /
-# vehicle_Name convention every other component uses. Without these, Pass 1
-# never recognised a nozzle's key as a Name entry at all, so the _key_slug
-# fallback and the explicit aliases above had nothing to resolve against --
-# the bullet stayed as a separate untagged/garbled entry instead of joining
-# the real item.
+# Extra Name-key conventions for #266's bare-type components, which don't
+# follow the item_Name<code> / vehicle_Name prefix every other component
+# uses. Fuel nozzles ship under two different manufacturer-specific
+# prefixes (MISC's item_fuelnozzle_* vs Greycat/Shubin's
+# Nozzle_FuelGiver_*); mining lasers share one prefix across all
+# manufacturers but carry no "_Name" marker at all -- the bare key IS the
+# name entry. Without these, the Blueprint Tracker's tagged_name fell back
+# to the untagged bare name for these items even though the String Editor
+# showed the real tag correctly (the enhancement generator's output was
+# fine — this module just never recognised the key as a Name entry).
+# Extend this alongside _BARE_TYPE_NAMES in generate_enhancements_ini.py
+# whenever a new bare-type category ships (fuel tank, mining module, ...).
 _EXTRA_NAME_KEY_PREFIXES = (
     "item_fuelnozzle_",
     "nozzle_fuelgiver_",
+    "item_mining_mininglaser_",
 )
 
 # The bracketed component tag, e.g. "[MIL-S3-B]" or the user-reconfigured
