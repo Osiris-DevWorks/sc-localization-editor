@@ -250,6 +250,14 @@
       "ht": "Esconder Inalterados",
       "at": "Esconder Inalterados"
     },
+    "ship_vehicle_names_only": {
+      "ht": "",
+      "at": "Somente Nomes de Naves e Veículos"
+    },
+    "ship_vehicle_names_only_tooltip": {
+      "ht": "",
+      "at": "Mostrar apenas as linhas de nomes de naves e veículos, ocultando todo o resto, incluindo as descrições de naves e todas as outras categorias. Deixa exatamente as linhas às quais se aplicam os favoritos e a ordenação do ASOP."
+    },
     "favorites_only": {
       "ht": "★ Apenas Favoritos",
       "at": "★ Apenas Favoritos"

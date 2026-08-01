@@ -14,7 +14,7 @@ from PyQt6.QtCore import QAbstractTableModel, QModelIndex, Qt, pyqtSlot
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QApplication
 
-from src.models.string_model import StringEntry
+from src.models.string_model import StringEntry, is_favoritable_ship
 from src.utils.i18n import tr
 from src.utils.owned_items import normalize_item_name
 from src.utils.ship_sort_prefix import get_order, set_order
@@ -164,7 +164,9 @@ def _make_sort_key(entries, default_values, sort_keys, col, grouped, favorite_pr
         # group is stable.
         def fav_key(idx):
             e = entries[idx]
-            is_fav = e.category == "Ships" and e.custom_value.startswith(favorite_prefix)
+            is_fav = is_favoritable_ship(e) and e.custom_value.startswith(
+                favorite_prefix
+            )
             return (0 if is_fav else 1, e.key.lower())
         return fav_key
     if col == COL_ORDER:
@@ -173,7 +175,10 @@ def _make_sort_key(entries, default_values, sort_keys, col, grouped, favorite_pr
         # tie-break by key so ordering within each group is stable.
         def order_key(idx):
             e = entries[idx]
-            order = get_order(e.custom_value, favorite_prefix) if e.category == "Ships" else ""
+            order = (
+                get_order(e.custom_value, favorite_prefix)
+                if is_favoritable_ship(e) else ""
+            )
             return (0 if order else 1, order, e.key.lower())
         return order_key
     # unknown — fall back to key
@@ -329,13 +334,13 @@ class StringTableModel(QAbstractTableModel):
             return base | Qt.ItemFlag.ItemIsEditable
         if col == COL_STAR:
             entry = self.entry_for_row(index.row())
-            if entry is not None and entry.category != "Ships":
+            if entry is not None and not is_favoritable_ship(entry):
                 return Qt.ItemFlag.ItemIsEnabled  # not selectable
         if col == COL_ORDER:
             entry = self.entry_for_row(index.row())
-            if entry is not None and entry.category == "Ships":
+            if entry is not None and is_favoritable_ship(entry):
                 return base | Qt.ItemFlag.ItemIsEditable
-            return Qt.ItemFlag.ItemIsEnabled  # non-ships: shown, not editable
+            return Qt.ItemFlag.ItemIsEnabled  # non-name rows: shown, not editable
         if col == COL_OWNED:
             # Read-only indicator: ownership is managed by the Blueprints
             # shuttle on the Enhancements tab, so the cell is never selectable
@@ -365,11 +370,11 @@ class StringTableModel(QAbstractTableModel):
             if col == COL_CURRENT:
                 return entry.original_value
             if col == COL_STAR:
-                if entry.category != "Ships":
+                if not is_favoritable_ship(entry):
                     return ""
                 return "\u2605" if entry.custom_value.startswith(prefix) else "\u2606"
             if col == COL_ORDER:
-                if entry.category != "Ships":
+                if not is_favoritable_ship(entry):
                     return ""
                 return get_order(entry.custom_value, prefix)
             if col == COL_CUSTOM:
@@ -397,13 +402,13 @@ class StringTableModel(QAbstractTableModel):
         # -- tooltips -------------------------------------------------------
         if role == Qt.ItemDataRole.ToolTipRole:
             if col == COL_STAR:
-                if entry.category == "Ships":
+                if is_favoritable_ship(entry):
                     if entry.custom_value.startswith(prefix):
                         return "Favorite \u2014 click to remove"
                     return "Click to mark as favorite"
                 return None
             if col == COL_ORDER:
-                if entry.category == "Ships":
+                if is_favoritable_ship(entry):
                     return "Sort order: click to pick a number for ASOP ordering"
                 return None
             if col == COL_OWNED:
@@ -416,7 +421,7 @@ class StringTableModel(QAbstractTableModel):
 
         # -- foreground colour ----------------------------------------------
         if role == Qt.ItemDataRole.ForegroundRole:
-            if col == COL_STAR and entry.category == "Ships":
+            if col == COL_STAR and is_favoritable_ship(entry):
                 return _FAV_GOLD if entry.custom_value.startswith(prefix) else _FAV_GREY
             if col == COL_OWNED and self._is_bp_item(entry):
                 return _OWNED_GOLD if self._owned_name(entry) in self._owned_items else _OWNED_GREY
@@ -426,7 +431,7 @@ class StringTableModel(QAbstractTableModel):
 
         # -- background colour (favorite rows) ------------------------------
         if role == Qt.ItemDataRole.BackgroundRole:
-            if entry.category == "Ships" and entry.custom_value.startswith(prefix):
+            if is_favoritable_ship(entry) and entry.custom_value.startswith(prefix):
                 return self._fav_bg
             return None
 
@@ -456,8 +461,8 @@ class StringTableModel(QAbstractTableModel):
                 return False
             entry.custom_value = new_text
             entry.status = "Modified" if new_text != entry.original_value else "Unmodified"
-        else:  # COL_ORDER — only Ships are editable here (enforced by flags()).
-            if entry.category != "Ships":
+        else:  # COL_ORDER: only ship name rows are editable here (enforced by flags()).
+            if not is_favoritable_ship(entry):
                 return False
             new_custom = set_order(
                 entry.custom_value,

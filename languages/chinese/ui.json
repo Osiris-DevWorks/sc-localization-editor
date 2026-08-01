@@ -250,6 +250,14 @@
       "ht": "",
       "at": "隐藏未修改项"
     },
+    "ship_vehicle_names_only": {
+      "ht": "",
+      "at": "仅显示飞船与载具名称"
+    },
+    "ship_vehicle_names_only_tooltip": {
+      "ht": "",
+      "at": "仅显示飞船和载具的名称行，隐藏其他所有内容，包括飞船描述以及所有其他分类。只保留收藏和 ASOP 排序实际适用的行。"
+    },
     "favorites_only": {
       "ht": "",
       "at": "★ 仅显示收藏"

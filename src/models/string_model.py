@@ -161,6 +161,55 @@ def _extract_category_impl(key: str) -> str:
     return "Other"
 
 
+def is_ship_name_key(key: str) -> bool:
+    """True if *key* is a ship/vehicle NAME entry, as opposed to a
+    description entry that merely shares the "Ships" category (#329).
+
+    The favorite-prefix + sort-order mechanism (ship_sort_prefix.py) only
+    means anything on the entry that becomes the ASOP terminal's display
+    name -- a description's custom_value is never read by that mechanism,
+    so marking one "favorite" edits text nothing in-game ever shows sorted
+    or starred, and only confuses the Ships category's favorites/sort UI.
+
+    Short-name variants deliberately count as names. The base game's own
+    ``vehicle_Name*_short`` keys never reach a StringEntry at all (they're
+    dropped in ini_parser's build loop), so in practice this only admits
+    Wikelo's ``*_VehicleNameShort`` rows -- which were already favouritable
+    before #329, since they carry the "Ships" category. Keeping them keeps
+    that behaviour unchanged; #329 was only ever about descriptions.
+    """
+    if not key:
+        return False
+    key_lower = key.lower()
+    if key_lower.startswith("vehicle_name"):
+        return True
+    # Wikelo ship mods (TheCollector_ShipMod_*_VehicleName /
+    # _VehicleNameShort) -- mirrors the category-extraction check above.
+    if key_lower.endswith(("_vehiclename", "_vehiclenameshort")):
+        return True
+    return False
+
+
+def is_favoritable_ship(entry) -> bool:
+    """True if *entry* is a row the favorite prefix and ASOP sort order
+    actually apply to: a Ships-category ship/vehicle NAME row (#329).
+
+    Both halves are load-bearing, so don't collapse this to a bare
+    ``is_ship_name_key(entry.key)``. StringEntry.category is not always
+    derived from the key -- ini_parser assigns it from the enhancement
+    file a generated key came from when one applies
+    (``enhancements_key_categories``), so the stored category, not the
+    key shape, is the authority on which bucket a row is displayed under.
+
+    Takes the whole entry rather than (category, key) so call sites read
+    as the question they're actually asking. Every star / sort-order
+    code path gates on this: column display, editability, tooltips,
+    colours, sort keys, the Favorites Only + Ship/Vehicle Names Only
+    filters, and the favorite toggle itself.
+    """
+    return entry.category == "Ships" and is_ship_name_key(entry.key)
+
+
 @dataclass
 class StringEntry:
     """Represents a localization string entry."""
