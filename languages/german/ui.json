@@ -934,7 +934,7 @@
     },
     "blueprints_desc": {
       "ht": "",
-      "at": "Markiere die Baupläne, die du bereits besitzt. Besessene Gegenstände erhalten ein [Besessen]-Tag, wo immer sie in den möglichen Bauplan-Belohnungen einer Mission erscheinen, damit du auf einen Blick siehst, was sich zu verfolgen lohnt. Wähle Gegenstände links aus und benutze die Pfeile, um sie in deine Besessen-Liste zu verschieben."
+      "at": "Markiere die Baupläne, die du bereits besitzt. Besessene Gegenstände erhalten ein [Owned]-Tag, wo immer sie in den möglichen Bauplan-Belohnungen einer Mission erscheinen, damit du auf einen Blick siehst, was sich zu verfolgen lohnt. Wähle Gegenstände links aus und benutze die Pfeile, um sie in deine Besessen-Liste zu verschieben."
     },
     "blueprints_empty_note": {
       "ht": "",
@@ -1364,7 +1364,7 @@
     },
     "apply_owned_tag_tooltip": {
       "ht": "",
-      "at": "Das [Besessen]-Tag bei Bauplan-Namen in der String-Tabelle aktualisieren, damit es deiner aktuellen Besessen-Liste entspricht."
+      "at": "Das [Owned]-Tag bei Bauplan-Namen in der String-Tabelle aktualisieren, damit es deiner aktuellen Besessen-Liste entspricht."
     },
     "apply_owned_tag_tooltip_disabled": {
       "ht": "",
@@ -2663,7 +2663,7 @@
       },
       "description": {
         "ht": "",
-        "at": "Markiere die Baupläne, die du besitzt. Durchsuche die linke Liste nach Name oder Mission, oder grenze sie nach Komponententyp, Klasse, Größe und Grad ein, und verschiebe dann mit den Pfeilen Gegenstände in deine Besessen-Liste. Besessene Baupläne erhalten ein [Besessen]-Tag, wo immer sie in den möglichen Belohnungen einer Mission erscheinen, damit du auf einen Blick siehst, was sich zu verfolgen lohnt."
+        "at": "Markiere die Baupläne, die du besitzt. Durchsuche die linke Liste nach Name oder Mission, oder grenze sie nach Komponententyp, Klasse, Größe und Grad ein, und verschiebe dann mit den Pfeilen Gegenstände in deine Besessen-Liste. Besessene Baupläne erhalten ein [Owned]-Tag, wo immer sie in den möglichen Belohnungen einer Mission erscheinen, damit du auf einen Blick siehst, was sich zu verfolgen lohnt."
       }
     },
     "edit": {
