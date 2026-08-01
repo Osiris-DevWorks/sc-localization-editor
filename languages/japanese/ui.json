@@ -809,6 +809,30 @@
     "language_source_placeholder": {
       "ht": "",
       "at": "https://…/global.ini"
+    },
+    "backup_desc": {
+      "ht": "",
+      "at": "設定（環境設定、タグ設定、Star Citizen フォルダ、各チャンネルのカスタム文字列上書き）をすべて 1 つの小さなバックアップファイルにまとめて保存します。新しい PC で、ポータブル版を展開し直した後、または誤った設定を元に戻すためにインポートできます。バックアップは Smart Citizen のバージョンをまたいで利用できます。ゲームキャッシュは含まれません。ゲームファイルから自動的に再構築されます。"
+    },
+    "backup_group": {
+      "ht": "",
+      "at": "設定バックアップ"
+    },
+    "export_settings_btn": {
+      "ht": "",
+      "at": "設定をエクスポート..."
+    },
+    "export_settings_tooltip": {
+      "ht": "",
+      "at": "環境設定、Star Citizen フォルダ、カスタム文字列上書きを小さなバックアップ zip（数 KB）に保存します。クラウドドライブや USB メモリなど、どこにでも保管でき、後で任意の Smart Citizen バージョンでインポートして設定を復元できます。"
+    },
+    "import_settings_btn": {
+      "ht": "",
+      "at": "設定をインポート..."
+    },
+    "import_settings_tooltip": {
+      "ht": "",
+      "at": "任意の Smart Citizen バージョンで作成された設定バックアップ zip を復元します。現在の user.ini ファイルはまずスナップショットとして保存され、Star Citizen フォルダが復元されます（バックアップのパスがこの PC に存在しない場合は自動検出されます）。その後 Smart Citizen はインポートした設定で再起動します。"
     }
   },
   "enhancements": {
@@ -1307,6 +1331,18 @@
     "tag_preview_no_tag": {
       "ht": "",
       "at": "プレビュー：  {name}   （タグなし — すべての要素が空か無効です）"
+    },
+    "mission_field_resource_signatures": {
+      "ht": "",
+      "at": "リソースシグネチャ"
+    },
+    "rs_ore_name_annotations_cb": {
+      "ht": "",
+      "at": "鉱石名の横にリソースシグネチャ（RS）を表示"
+    },
+    "rs_ore_name_annotations_tooltip": {
+      "ht": "",
+      "at": "採掘可能な各鉱石の基本リソースシグネチャをその表示名に付加します（例：「Aluminium (RS 4285)」）。これにより、ミッショントラッカーを含め、ゲームがその名前を表示するすべての場所に表示されます。ミッション詳細フィールドのリソースシグネチャとは独立しています。次回の「拡張機能を生成」時に反映されます。"
     }
   },
   "blueprint_tracker": {
@@ -2183,6 +2219,10 @@
     "manifest_missing": {
       "ht": "",
       "at": "SC {channel}（マニフェストがありません）"
+    },
+    "settings_exported": {
+      "ht": "",
+      "at": "設定バックアップをエクスポートしました"
     }
   },
   "import_flow": {
@@ -2463,6 +2503,10 @@
     "extraction_error_title": {
       "ht": "",
       "at": "抽出エラー"
+    },
+    "p4k_locked": {
+      "ht": "",
+      "at": "Star Citizen は現在アップデート中のようです。ゲームファイル（Data.p4k）が他のプログラム（通常は更新をダウンロードまたは検証している RSI Launcher）によってロックされています。\n\nRSI Launcher でのすべての更新と検証が完了するまで待ってから、もう一度お試しください。"
     }
   },
   "apply": {
@@ -2731,6 +2775,120 @@
         "ht": "",
         "at": "「ヘルプ」ボタンを押すと、完全なガイド、既知の問題の一覧、Smart Citizen の Discord チャンネルへのフィードバックリンクを備えたサイドパネルが開きます。始めるのに必要なことはこれで全部です — 幸運を、シチズン。"
       }
+    }
+  },
+  "settings_backup": {
+    "export_dialog_title": {
+      "ht": "",
+      "at": "設定バックアップをエクスポート"
+    },
+    "export_done_body": {
+      "ht": "",
+      "at": "設定は次の場所に保存されました：\n{path}\n\n含まれる内容：{n_settings} 件の設定、および次のチャンネルのカスタム文字列上書き：{channels}。\n\nこのファイルはサイズが小さいため、どこにでも保管できます。新しい PC で、または新しいポータブルバージョンに移行した後は、「設定をインポート」を使って復元してください。"
+    },
+    "export_done_title": {
+      "ht": "",
+      "at": "設定をエクスポートしました"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "バックアップ zip を書き込めませんでした。\n\n{error_type}：{error}"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "エクスポートに失敗しました"
+    },
+    "import_confirm_body": {
+      "ht": "",
+      "at": "このバックアップは Smart Citizen v{version} により {when} に作成されました。\n\n{n_settings} 件の設定、および次のチャンネルの文字列上書きが含まれています：{channels}。\n\nインポートすると、これらが現在の設定に重ねて適用され、記載されたチャンネルの user.ini が置き換えられます（現在の user.ini ファイルは先にスナップショットとして保存されるため、「user.ini を復元」で元に戻せます）。続行しますか？"
+    },
+    "import_confirm_title": {
+      "ht": "",
+      "at": "この設定をインポートしますか？"
+    },
+    "import_dialog_title": {
+      "ht": "",
+      "at": "設定バックアップをインポート"
+    },
+    "import_done_body_detected": {
+      "ht": "",
+      "at": "{applied} 件の設定、および次のチャンネルの文字列上書きをインポートしました：{channels}。\n\nバックアップの Star Citizen フォルダはこの PC に存在しないため、自動検出されました：\n{root}\n\nインポートした設定を読み込むには Smart Citizen の再起動が必要です。再起動後、拡張機能の再生成と適用を提案します。"
+    },
+    "import_done_body_no_install": {
+      "ht": "",
+      "at": "{applied} 件の設定、および次のチャンネルの文字列上書きをインポートしました：{channels}。\n\nこの PC に Star Citizen のインストールが見つかりませんでした。再起動後に「設定」タブで設定してください。\n\nインポートした設定を読み込むには Smart Citizen の再起動が必要です。"
+    },
+    "import_done_body_restored": {
+      "ht": "",
+      "at": "{applied} 件の設定、および次のチャンネルの文字列上書きをインポートしました：{channels}。\n\nStar Citizen フォルダはバックアップから復元されました：\n{root}\n\nインポートした設定を読み込むには Smart Citizen の再起動が必要です。再起動後、拡張機能の再生成と適用を提案します。"
+    },
+    "import_done_title": {
+      "ht": "",
+      "at": "設定をインポートしました"
+    },
+    "import_failed_body": {
+      "ht": "",
+      "at": "インポートした上書き内容を書き込めませんでした。\n\n{error_type}：{error}\n\n設定は変更されていません。"
+    },
+    "import_failed_title": {
+      "ht": "",
+      "at": "インポートに失敗しました"
+    },
+    "import_invalid_body": {
+      "ht": "",
+      "at": "このファイルはインポートできませんでした：\n\n{error}"
+    },
+    "import_invalid_title": {
+      "ht": "",
+      "at": "設定バックアップではありません"
+    },
+    "no_channels": {
+      "ht": "",
+      "at": "なし"
+    },
+    "post_import_apply_body": {
+      "ht": "",
+      "at": "設定のインポートが完了しました。最後のステップは、この PC のゲームファイルから拡張機能を作成し、ゲームに書き込むことです。\n\nバックアップには設定のみが保存され、生成されたゲームテキストは含まれないため、この作業は新しい PC ごとに一度行う必要があります。通常は数分で完了しますが、初回はゲームファイルの展開のため少し長くかかります。\n\nこの作業は後で「拡張機能を適用」ボタンから行うこともできます。"
+    },
+    "post_import_apply_later_btn": {
+      "ht": "",
+      "at": "後で"
+    },
+    "post_import_apply_now_btn": {
+      "ht": "",
+      "at": "今すぐ適用"
+    },
+    "post_import_apply_title": {
+      "ht": "",
+      "at": "あと少しです — ゲームに適用しますか？"
+    },
+    "post_import_no_install_body": {
+      "ht": "",
+      "at": "インポートした設定は読み込まれましたが、Star Citizen のインストールがまだ設定されていません。「設定」タブでインストールフォルダを設定してから、「拡張機能を適用」でカスタマイズをゲームに反映してください。"
+    },
+    "post_import_no_install_title": {
+      "ht": "",
+      "at": "Star Citizen フォルダを設定してください"
+    },
+    "relaunch_failed_body": {
+      "ht": "",
+      "at": "Smart Citizen を自動的に再起動できませんでした。手動で再度起動してください。その際にインポートした設定が読み込まれます。"
+    },
+    "relaunch_failed_title": {
+      "ht": "",
+      "at": "再起動に失敗しました"
+    },
+    "restart_later_btn": {
+      "ht": "",
+      "at": "後で再起動"
+    },
+    "restart_now_btn": {
+      "ht": "",
+      "at": "今すぐ再起動"
+    },
+    "zip_filter": {
+      "ht": "",
+      "at": "設定バックアップ (*.zip)"
     }
   }
 }
