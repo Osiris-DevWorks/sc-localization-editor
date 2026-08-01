@@ -1008,6 +1008,10 @@
       "ht": "",
       "at": "Renombrar las variantes de nave exec-hangar (PYX) y Wikelo (WIK) para incluir un sufijo que las distinga de la versión estándar de la tienda de pledge (p. ej. \"Anvil F8C Lightning PYX\"). Surte efecto en la próxima generación de mejoras."
     },
+    "rs_ore_name_annotations_tooltip": {
+      "ht": "",
+      "at": "Añade la Firma de Recurso base de cada mineral a su propio nombre mostrado (p. ej. «Aluminio (RS 4285)»), para que aparezca en todos los lugares donde el juego muestra ese nombre, incluido el rastreador de misiones. Independiente de Firmas de Recursos en Campos de Detalles de Misión. Surte efecto en la próxima generación de mejoras."
+    },
     "apply_categories_tooltip": {
       "ht": "",
       "at": "Guardar la selección de categorías. Las categorías sin marcar se desactivarán."
@@ -1132,6 +1136,10 @@
       "ht": "",
       "at": "Piloto Ace"
     },
+    "mission_field_resource_signatures": {
+      "ht": "",
+      "at": "Firmas de Recursos"
+    },
     "mission_detail_fields_note": {
       "ht": "",
       "at": "Los campos desmarcados se omiten de las descripciones de misión. Se aplica en el próximo «Generar mejoras»."
@@ -1143,6 +1151,10 @@
     "standardize_ship_names_cb": {
       "ht": "",
       "at": "Estandarizar los nombres de las naves obtenibles"
+    },
+    "rs_ore_name_annotations_cb": {
+      "ht": "",
+      "at": "Mostrar Firmas de Recursos (RS) junto a los nombres de minerales"
     },
     "mission_labels_group": {
       "ht": "",

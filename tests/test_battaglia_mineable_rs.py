@@ -45,17 +45,40 @@ def _resource_type_property(token: str, ore: str) -> str:
     )
 
 
-def _contract(title_key: str, *ore_tokens: tuple[str, str], tag: str = "CareerContract") -> str:
+def _contract(
+    title_key: str,
+    *ore_tokens: tuple[str, str],
+    tag: str = "CareerContract",
+    desc_key: str = "",
+    template: str = "",
+) -> str:
     props = "".join(_resource_type_property(token, ore) for token, ore in ore_tokens)
+    desc_param = (
+        f'<ContractStringParam param="Description" value="@{desc_key}" />' if desc_key else ""
+    )
+    tmpl_attr = f' template="{template}"' if template else ""
     return (
-        f'<{tag} debugName="X">'
+        f'<{tag} debugName="X"{tmpl_attr}>'
         '<paramOverrides><stringParamOverrides>'
         f'<ContractStringParam param="Title" value="@{title_key}" />'
+        f'{desc_param}'
         '</stringParamOverrides><propertyOverrides>'
         f'{props}'
         '</propertyOverrides></paramOverrides>'
         f'</{tag}>'
     )
+
+
+def _template_xml(ref: str, *, title_key: str = "", desc_key: str = "") -> str:
+    """A contracttemplates XML matching _build_template_lookup's expected
+    shape: root ``__ref`` plus ``LocID`` elements whose value carries
+    "_title"/"_desc" in the key."""
+    locs = ""
+    if title_key:
+        locs += f'<LocID value="@{title_key}" />'
+    if desc_key:
+        locs += f'<LocID value="@{desc_key}" />'
+    return f'<ContractTemplate __ref="{ref}">{locs}</ContractTemplate>'
 
 
 class TestBattagliaContractMineableOres:
@@ -123,7 +146,113 @@ class TestFormatRsTag:
         assert gen_module._format_rs_tag([]) == ""
 
 
+class TestRsValueSteps:
+    def test_curated_progression_ore(self, gen_module):
+        assert gen_module._rs_value_steps("ice") == (4300, 8600, 12900, 17200, 21500, 25800)
+        assert gen_module._rs_value_steps("savrillium") == (3200, 6400)
+
+    def test_falls_back_to_single_value_from_flat_table(self, gen_module):
+        # "agricium" has a MINEABLE_RS_VALUES entry but no curated
+        # progression yet, so it falls back to a one-value tuple, not empty.
+        assert gen_module._rs_value_steps("agricium") == (3885,)
+
+    def test_unknown_ore_yields_empty_tuple(self, gen_module):
+        assert gen_module._rs_value_steps("unobtainium") == ()
+
+
+class TestFormatRsDetailsLines:
+    def test_single_ore_breakdown(self, gen_module):
+        loc = {"mineabletype_primary_ice": "Ice"}
+        lines = gen_module._format_rs_details_lines(["ice"], loc)
+        assert lines == [
+            "<EM4>Resource Signatures:</EM4>",
+            "<EM4>Ice</EM4>: 4300 - 8600 - 12900 - 17200 - 21500 - 25800",
+        ]
+
+    def test_multi_ore_breakdown_preserves_order(self, gen_module):
+        loc = {
+            "mineabletype_primary_savrillium": "Savrillium",
+            "mineabletype_primary_ice": "Ice",
+        }
+        lines = gen_module._format_rs_details_lines(["savrillium", "ice"], loc)
+        assert lines == [
+            "<EM4>Resource Signatures:</EM4>",
+            "<EM4>Savrillium</EM4>: 3200 - 6400",
+            "<EM4>Ice</EM4>: 4300 - 8600 - 12900 - 17200 - 21500 - 25800",
+        ]
+
+    def test_falls_back_to_titlecase_when_loc_key_missing(self, gen_module):
+        lines = gen_module._format_rs_details_lines(["ice"], {})
+        assert lines[1].startswith("<EM4>Ice</EM4>:")
+
+    def test_unknown_ore_dropped_not_erroring(self, gen_module):
+        loc = {"mineabletype_primary_ice": "Ice"}
+        lines = gen_module._format_rs_details_lines(["ice", "unobtainium"], loc)
+        assert lines == [
+            "<EM4>Resource Signatures:</EM4>",
+            "<EM4>Ice</EM4>: 4300 - 8600 - 12900 - 17200 - 21500 - 25800",
+        ]
+
+    def test_all_unknown_yields_empty_list(self, gen_module):
+        assert gen_module._format_rs_details_lines(["unobtainium"], {}) == []
+
+    def test_empty_ore_list_yields_empty_list(self, gen_module):
+        assert gen_module._format_rs_details_lines([], {}) == []
+
+
+class TestBuildMineableRsNameOverrides:
+    """CIG's Battaglia Work Brief prose and the Primary Objectives HUD panel
+    both render an ore's name via a runtime ``~mission(MineableType)`` token
+    that resolves straight through ``mineabletype_primary_<ore>``, so the
+    literal ore name never appears as static desc text (real generated data
+    confirmed the desc string is literally
+    ``"...locate ~mission(Resources) ~mission(MineableType)..."``, so a
+    prior find-and-replace-the-literal-name approach could never match
+    anything). Overriding the name loc key itself is what actually makes RS
+    values show up in both places."""
+
+    def test_overrides_every_ore_with_a_known_value(self, gen_module):
+        loc = {
+            "mineabletype_primary_aluminium": "Aluminium",
+            "mineabletype_primary_ice": "Ice",
+        }
+        overrides = gen_module._build_mineable_rs_name_overrides(loc)
+        assert overrides == {
+            "mineabletype_primary_aluminium": "Aluminium (RS 4285)",
+            "mineabletype_primary_ice": "Ice (RS 4300)",
+        }
+
+    def test_ore_missing_from_loc_is_skipped(self, gen_module):
+        # loc doesn't have this ore's own display-name key at all (e.g. a
+        # base.ini variant missing it); nothing to override, no crash.
+        overrides = gen_module._build_mineable_rs_name_overrides({})
+        assert overrides == {}
+
+    def test_unrelated_loc_keys_left_out(self, gen_module):
+        loc = {
+            "mineabletype_primary_ice": "Ice",
+            "some_other_key": "Unrelated",
+        }
+        overrides = gen_module._build_mineable_rs_name_overrides(loc)
+        assert "some_other_key" not in overrides
+        assert overrides == {"mineabletype_primary_ice": "Ice (RS 4300)"}
+
+    def test_covers_all_curated_ores(self, gen_module):
+        loc = {
+            f"mineabletype_primary_{ore}": ore.title()
+            for ore in gen_module.MINEABLE_RS_VALUES
+        }
+        overrides = gen_module._build_mineable_rs_name_overrides(loc)
+        assert len(overrides) == len(gen_module.MINEABLE_RS_VALUES)
+        assert overrides["mineabletype_primary_savrillium"] == "Savrillium (RS 3200)"
+
+
 class TestBuildBattagliaMineableRsTags:
+    """Returns a ``(title_tags, desc_ores)`` pair. ``desc_ores`` is keyed by
+    desc_key -> raw ore list (order-preserved), which is what lets the real
+    generator build the mission's own DETAILS "Resource Signatures" via
+    ``_format_rs_details_lines``, not just the flattened title tag."""
+
     def test_builds_tag_for_scan_and_scanmine_titles(self, gen_module, tmp_path):
         contractgen_dir = tmp_path / "contractgenerator"
         contractgen_dir.mkdir()
@@ -136,11 +265,63 @@ class TestBuildBattagliaMineableRsTags:
             + '</contracts></ContractGeneratorHandler_Career>',
             encoding="utf-8",
         )
-        tags = gen_module._build_battaglia_mineable_rs_tags(contractgen_dir)
-        assert tags == {
+        title_tags, desc_ores = gen_module._build_battaglia_mineable_rs_tags(contractgen_dir)
+        assert title_tags == {
             "Battaglia_RPT_Scan_04_title": "[RS 3600/4300/3900]",
             "Battaglia_RPT_ScanMine_01_title": "[RS 4285/4270]",
         }
+        assert desc_ores == {}
+
+    def test_builds_desc_ores_alongside_title_tag(self, gen_module, tmp_path):
+        contractgen_dir = tmp_path / "contractgenerator"
+        contractgen_dir.mkdir()
+        (contractgen_dir / "battaglia_generator.xml").write_text(
+            '<ContractGeneratorHandler_Career><contracts>'
+            + _contract("Battaglia_RPT_Scan_04_title",
+                        ("ResourceType", "bexalite"), ("ResourceType2", "ice"), ("ResourceType3", "torite"),
+                        desc_key="Battaglia_RPT_Scan_04_desc")
+            + '</contracts></ContractGeneratorHandler_Career>',
+            encoding="utf-8",
+        )
+        title_tags, desc_ores = gen_module._build_battaglia_mineable_rs_tags(contractgen_dir)
+        assert title_tags == {"Battaglia_RPT_Scan_04_title": "[RS 3600/4300/3900]"}
+        assert desc_ores == {"Battaglia_RPT_Scan_04_desc": ["bexalite", "ice", "torite"]}
+
+    def test_no_desc_param_yields_empty_desc_ores(self, gen_module, tmp_path):
+        """A contract variant with no Description param (desc_key="") must
+        not show up in desc_ores under a bogus empty-string key."""
+        contractgen_dir = tmp_path / "contractgenerator"
+        contractgen_dir.mkdir()
+        (contractgen_dir / "battaglia_generator.xml").write_text(
+            '<ContractGeneratorHandler_Career><contracts>'
+            + _contract("Battaglia_RPT_Scan_01_title", ("ResourceType", "aluminium"))
+            + '</contracts></ContractGeneratorHandler_Career>',
+            encoding="utf-8",
+        )
+        _title_tags, desc_ores = gen_module._build_battaglia_mineable_rs_tags(contractgen_dir)
+        assert desc_ores == {}
+
+    def test_first_variant_wins_for_desc_key_shared_across_files(self, gen_module, tmp_path):
+        contractgen_dir = tmp_path / "contractgenerator"
+        contractgen_dir.mkdir()
+        (contractgen_dir / "a_stanton.xml").write_text(
+            '<ContractGeneratorHandler_Career><contracts>'
+            + _contract("Battaglia_RPT_Scan_06_title",
+                        ("ResourceType", "lindinium"), ("ResourceType2", "savrillium"),
+                        desc_key="Battaglia_RPT_Scan_06_desc")
+            + '</contracts></ContractGeneratorHandler_Career>',
+            encoding="utf-8",
+        )
+        (contractgen_dir / "b_pyro.xml").write_text(
+            '<ContractGeneratorHandler_Career><contracts>'
+            + _contract("Battaglia_RPT_Scan_06_title",
+                        ("ResourceType", "lindinium"), ("ResourceType2", "savrillium"),
+                        desc_key="Battaglia_RPT_Scan_06_desc")
+            + '</contracts></ContractGeneratorHandler_Career>',
+            encoding="utf-8",
+        )
+        _title_tags, desc_ores = gen_module._build_battaglia_mineable_rs_tags(contractgen_dir)
+        assert desc_ores == {"Battaglia_RPT_Scan_06_desc": ["lindinium", "savrillium"]}
 
     def test_ignores_non_battaglia_scan_titles(self, gen_module, tmp_path):
         """A mining-flavoured title from an unrelated contractor (or one of
@@ -155,8 +336,9 @@ class TestBuildBattagliaMineableRsTags:
             + '</contracts></ContractGeneratorHandler_Career>',
             encoding="utf-8",
         )
-        tags = gen_module._build_battaglia_mineable_rs_tags(contractgen_dir)
-        assert tags == {}
+        title_tags, desc_ores = gen_module._build_battaglia_mineable_rs_tags(contractgen_dir)
+        assert title_tags == {}
+        assert desc_ores == {}
 
     def test_intro_contract_wrapper_also_covered(self, gen_module, tmp_path):
         """Battaglia wraps its intro mission in a plain <Contract> tag under
@@ -169,8 +351,9 @@ class TestBuildBattagliaMineableRsTags:
             + '</introContracts></ContractGeneratorHandler_Career>',
             encoding="utf-8",
         )
-        tags = gen_module._build_battaglia_mineable_rs_tags(contractgen_dir)
-        assert tags == {"Battaglia_RPT_Scan_01_title": "[RS 4285]"}
+        title_tags, desc_ores = gen_module._build_battaglia_mineable_rs_tags(contractgen_dir)
+        assert title_tags == {"Battaglia_RPT_Scan_01_title": "[RS 4285]"}
+        assert desc_ores == {}
 
     def test_first_variant_wins_when_title_shared_across_files(self, gen_module, tmp_path):
         contractgen_dir = tmp_path / "contractgenerator"
@@ -187,9 +370,79 @@ class TestBuildBattagliaMineableRsTags:
             + '</contracts></ContractGeneratorHandler_Career>',
             encoding="utf-8",
         )
-        tags = gen_module._build_battaglia_mineable_rs_tags(contractgen_dir)
-        assert tags == {"Battaglia_RPT_Scan_06_title": "[RS 3400/3200]"}
+        title_tags, desc_ores = gen_module._build_battaglia_mineable_rs_tags(contractgen_dir)
+        assert title_tags == {"Battaglia_RPT_Scan_06_title": "[RS 3400/3200]"}
+        assert desc_ores == {}
 
     def test_missing_dir_returns_empty(self, gen_module, tmp_path):
-        tags = gen_module._build_battaglia_mineable_rs_tags(tmp_path / "does_not_exist")
-        assert tags == {}
+        title_tags, desc_ores = gen_module._build_battaglia_mineable_rs_tags(tmp_path / "does_not_exist")
+        assert title_tags == {}
+        assert desc_ores == {}
+
+    def test_desc_key_resolved_via_template_when_no_inline_desc_param(self, gen_module, tmp_path):
+        """Regression: some Battaglia scan/mining contracts carry no inline
+        Description ContractStringParam and inherit it from a shared body
+        template via the contract's "template" UUID (mirrors
+        scan_contract_generators' own fallback). Missing this meant desc_ores
+        stayed empty for every such contract even though its title_key
+        resolved fine, silently dropping both the DETAILS "Resource
+        Signatures:" block and the inline "(RS ####)" annotation."""
+        contractgen_dir = tmp_path / "contractgenerator"
+        contractgen_dir.mkdir()
+        (contractgen_dir / "battaglia_generator.xml").write_text(
+            '<ContractGeneratorHandler_Career><contracts>'
+            + _contract("Battaglia_RPT_Scan_04_title",
+                        ("ResourceType", "bexalite"), ("ResourceType2", "ice"),
+                        template="tpl-uuid-1")
+            + '</contracts></ContractGeneratorHandler_Career>',
+            encoding="utf-8",
+        )
+        templates_dir = tmp_path / "contracttemplates"
+        templates_dir.mkdir()
+        (templates_dir / "templates.xml").write_text(
+            # _build_template_lookup only registers a template ref when it
+            # resolves a title_key (see its `if title_key:` gate); the
+            # template's own title_key is otherwise unused here since the
+            # contract already has an inline Title param.
+            _template_xml("tpl-uuid-1", title_key="Battaglia_RPT_Scan_04_tmpl_title",
+                          desc_key="Battaglia_RPT_Scan_04_desc"),
+            encoding="utf-8",
+        )
+        _title_tags, desc_ores = gen_module._build_battaglia_mineable_rs_tags(contractgen_dir)
+        assert desc_ores == {"Battaglia_RPT_Scan_04_desc": ["bexalite", "ice"]}
+
+    def test_inline_desc_param_wins_over_template(self, gen_module, tmp_path):
+        """An inline Description param, when present, is authoritative; the
+        template fallback only kicks in when the contract has none."""
+        contractgen_dir = tmp_path / "contractgenerator"
+        contractgen_dir.mkdir()
+        (contractgen_dir / "battaglia_generator.xml").write_text(
+            '<ContractGeneratorHandler_Career><contracts>'
+            + _contract("Battaglia_RPT_Scan_04_title",
+                        ("ResourceType", "ice"),
+                        desc_key="Battaglia_RPT_Scan_04_inline_desc",
+                        template="tpl-uuid-1")
+            + '</contracts></ContractGeneratorHandler_Career>',
+            encoding="utf-8",
+        )
+        templates_dir = tmp_path / "contracttemplates"
+        templates_dir.mkdir()
+        (templates_dir / "templates.xml").write_text(
+            _template_xml("tpl-uuid-1", title_key="Battaglia_RPT_Scan_04_tmpl_title",
+                          desc_key="Battaglia_RPT_Scan_04_template_desc"),
+            encoding="utf-8",
+        )
+        _title_tags, desc_ores = gen_module._build_battaglia_mineable_rs_tags(contractgen_dir)
+        assert desc_ores == {"Battaglia_RPT_Scan_04_inline_desc": ["ice"]}
+
+    def test_no_template_and_no_inline_desc_yields_empty_desc_ores(self, gen_module, tmp_path):
+        contractgen_dir = tmp_path / "contractgenerator"
+        contractgen_dir.mkdir()
+        (contractgen_dir / "battaglia_generator.xml").write_text(
+            '<ContractGeneratorHandler_Career><contracts>'
+            + _contract("Battaglia_RPT_Scan_01_title", ("ResourceType", "aluminium"))
+            + '</contracts></ContractGeneratorHandler_Career>',
+            encoding="utf-8",
+        )
+        _title_tags, desc_ores = gen_module._build_battaglia_mineable_rs_tags(contractgen_dir)
+        assert desc_ores == {}

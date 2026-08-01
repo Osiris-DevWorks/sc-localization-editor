@@ -114,6 +114,16 @@ TEST_SECTIONS: list[dict] = [
             "Apply to Game, then find a refueling mission in-game: fuel nozzle names in POTENTIAL BLUEPRINTS read correctly (e.g. \"Norfield\"), not garbled text like \"Nozzle Fuelgiver Grin Nozzlefast\".",
         ],
     },
+    {
+        "title": "Resource Signature ore-name annotation + mission-details breakdown (#331)",
+        "items": [
+            "Enhancements Tab: the ore-name RS checkbox and the Mission Detail Field's Resource Signatures checkbox are independent, both on by default.",
+            "With the default settings, generate and check a mineable ore's Mining Compendium entry: its name reads e.g. \"Aluminium (RS 4285)\".",
+            "Same setting, then find a Recco Battaglia scan/mining mission: the Work Brief text and Primary Objectives panel also show the ore name with its RS value appended.",
+            "Same mission, MISSION DETAILS shows a per-ore RS value progression line too, e.g. \"Ice: 4300 - 8600 - ...\".",
+            "Turn both off and regenerate: neither the ore-name annotation nor the DETAILS breakdown appears; the mission-title [RS ####] tag (General Tags) is unaffected either way.",
+        ],
+    },
 ]
 
 

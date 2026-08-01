@@ -1008,6 +1008,10 @@
       "ht": "Rename exec-hangar (PYX) and Wikelo (WIK) ship variants to include a suffix that distinguishes them from the standard pledge-store version (e.g. \"Anvil F8C Lightning PYX\"). Takes effect on the next Generate Enhancements.",
       "at": ""
     },
+    "rs_ore_name_annotations_tooltip": {
+      "ht": "Append each mineable ore's base Resource Signature to its own display name (e.g. \"Aluminium (RS 4285)\"), so it shows up everywhere the game renders that name -- including the mission tracker. Independent of Resource Signatures under Mission Detail Fields. Takes effect on the next Generate Enhancements.",
+      "at": ""
+    },
     "apply_categories_tooltip": {
       "ht": "Save category selection. Unchecked categories will be disabled.",
       "at": ""
@@ -1132,6 +1136,10 @@
       "ht": "Ace Pilot",
       "at": ""
     },
+    "mission_field_resource_signatures": {
+      "ht": "Resource Signatures",
+      "at": ""
+    },
     "mission_detail_fields_note": {
       "ht": "Unchecked fields are left out of mission descriptions. Applies on the next Generate Enhancements.",
       "at": ""
@@ -1142,6 +1150,10 @@
     },
     "standardize_ship_names_cb": {
       "ht": "Standardize earnable ship names",
+      "at": ""
+    },
+    "rs_ore_name_annotations_cb": {
+      "ht": "Show Resource Signatures (RS) next to ore names",
       "at": ""
     },
     "mission_labels_group": {

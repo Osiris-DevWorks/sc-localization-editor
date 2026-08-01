@@ -268,6 +268,13 @@ class EnhancementsTab(QWidget):
             ("reputation",    "enhancements.mission_field_reputation"),
             ("blueprints",    "enhancements.mission_field_blueprints"),
             ("ace",           "enhancements.mission_field_ace_pilot"),
+            # #331: "Resource Signatures:" breakdown block in the DETAILS
+            # body for Recco Battaglia scan/mining contracts -- one line per
+            # targeted ore with its full RS value progression. Independent of
+            # the "Show Resource Signatures (RS) next to ore names" checkbox
+            # below (which annotates the ore's own display name instead of
+            # adding a body line).
+            ("resource_signatures", "enhancements.mission_field_resource_signatures"),
         ]
         self._mission_field_labels = [(f, tr(k)) for f, k in self._mission_field_keys]
         # 2.2.0: the [BP]/[ACE]/rep-xp mission-TITLE markers moved to their own
@@ -322,6 +329,26 @@ class EnhancementsTab(QWidget):
         )
         self._standardize_ship_names_check.toggled.connect(self._mark_enhancements_dirty)
         gl.addWidget(self._standardize_ship_names_check)
+
+        # #331: annotates every mineable ore's own display name with its base
+        # Resource Signature ("Aluminium (RS 4285)"), so the value shows up
+        # everywhere the game renders that name -- including the top-right
+        # mission tracker, which is the case users specifically asked for.
+        # Independent of "Resource Signatures" under Mission Detail Fields
+        # above (the DETAILS-body breakdown): that one adds a line to the
+        # mission body, this one patches the ore's own name at its source.
+        # Default on -- see AppSettings.RS_ORE_NAME_ANNOTATIONS for why.
+        self._rs_ore_name_annotations_check = QCheckBox(tr("enhancements.rs_ore_name_annotations_cb"))
+        self._rs_ore_name_annotations_check.setChecked(
+            AppSettings.get_rs_ore_name_annotations()
+        )
+        self._rs_ore_name_annotations_check.setStyleSheet("font-size: 11px;")
+        self._rs_ore_name_annotations_check.setToolTip(tr("enhancements.rs_ore_name_annotations_tooltip"))
+        self._rs_ore_name_annotations_check.toggled.connect(
+            lambda checked: AppSettings.set_rs_ore_name_annotations(checked)
+        )
+        self._rs_ore_name_annotations_check.toggled.connect(self._mark_enhancements_dirty)
+        gl.addWidget(self._rs_ore_name_annotations_check)
 
         btn_row = QHBoxLayout()
 
@@ -894,6 +921,8 @@ class EnhancementsTab(QWidget):
         self._stats_prepend_check.setToolTip(tr("enhancements.stats_prepend_tooltip"))
         self._standardize_ship_names_check.setText(tr("enhancements.standardize_ship_names_cb"))
         self._standardize_ship_names_check.setToolTip(tr("enhancements.standardize_ship_names_tooltip"))
+        self._rs_ore_name_annotations_check.setText(tr("enhancements.rs_ore_name_annotations_cb"))
+        self._rs_ore_name_annotations_check.setToolTip(tr("enhancements.rs_ore_name_annotations_tooltip"))
         self._favorites_group_box.setTitle(tr("enhancements.favorites_group"))
         self._favorites_desc_label.setText(tr("enhancements.favorites_desc"))
         self._sort_prefix_label.setText(tr("enhancements.sort_prefix_label"))

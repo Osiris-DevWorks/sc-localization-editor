@@ -1008,6 +1008,10 @@
       "ht": "",
       "at": "Renommer les variantes de vaisseau exec-hangar (PYX) et Wikelo (WIK) pour inclure un suffixe les distinguant de la version standard du magasin de pledge (ex. « Anvil F8C Lightning PYX »). Prend effet à la prochaine génération des enrichissements."
     },
+    "rs_ore_name_annotations_tooltip": {
+      "ht": "",
+      "at": "Ajoute la Signature de Ressource de base de chaque minerai à son propre nom affiché (ex. « Aluminium (RS 4285) »), afin qu'elle apparaisse partout où le jeu affiche ce nom -- y compris le suivi de mission. Indépendant de Signatures de Ressources sous Champs des détails de mission. Prend effet à la prochaine génération des enrichissements."
+    },
     "apply_categories_tooltip": {
       "ht": "",
       "at": "Enregistrer la sélection des catégories. Les catégories décochées seront désactivées."
@@ -1132,6 +1136,10 @@
       "ht": "",
       "at": "Pilote Ace"
     },
+    "mission_field_resource_signatures": {
+      "ht": "",
+      "at": "Signatures de Ressources"
+    },
     "mission_detail_fields_note": {
       "ht": "",
       "at": "Les champs décochés sont omis des descriptions de mission. Prend effet au prochain « Générer les enrichissements »."
@@ -1143,6 +1151,10 @@
     "standardize_ship_names_cb": {
       "ht": "",
       "at": "Uniformiser les noms des vaisseaux gagnables"
+    },
+    "rs_ore_name_annotations_cb": {
+      "ht": "",
+      "at": "Afficher les Signatures de Ressources (RS) à côté des noms de minerais"
     },
     "mission_labels_group": {
       "ht": "",

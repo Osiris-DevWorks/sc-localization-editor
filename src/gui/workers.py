@@ -300,6 +300,7 @@ class EnhancementsGeneratorWorker(QThread):
                  mission_title_tags: dict | None = None,
                  stats_prepend: bool = False,
                  standardize_earnable_ship_names: bool = False,
+                 rs_ore_name_annotations: bool = True,
                  language: str | None = None):
         super().__init__()
         self.categories = categories
@@ -312,6 +313,7 @@ class EnhancementsGeneratorWorker(QThread):
         self.mission_title_tags = mission_title_tags
         self.stats_prepend = stats_prepend
         self.standardize_earnable_ship_names = standardize_earnable_ship_names
+        self.rs_ore_name_annotations = rs_ore_name_annotations
         # Which language's base.ini to generate against. None resolves to the
         # selected language at run time. English uses the P4K base.ini in the
         # channel cache root; other languages use the downloaded per-language
@@ -409,6 +411,7 @@ class EnhancementsGeneratorWorker(QThread):
                      mission_title_tags=self.mission_title_tags,
                      stats_prepend=self.stats_prepend,
                      standardize_earnable_ship_names=self.standardize_earnable_ship_names,
+                     rs_ore_name_annotations=self.rs_ore_name_annotations,
                      english_base_ini_path=AppSettings.get_base_ini_path(
                          AppSettings.DEFAULT_LANGUAGE))
             logger.info("Enhancements generation worker: mod.main() completed successfully")

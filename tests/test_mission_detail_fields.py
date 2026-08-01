@@ -66,7 +66,7 @@ def test_unknown_key_ignored(isolated_settings):
 # ── Generator gating (replica of the _run_gen_missions DETAILS block) ───────
 
 def _render(fields: dict, *, difficulty=True, spawns=("Spawn: 3",),
-            tiers=1, has_bp=True) -> tuple[list[str], bool]:
+            tiers=1, has_bp=True, rs_lines=()) -> tuple[list[str], bool]:
     """Replica of the generator's per-field gating for the mission DETAILS
     body. Returns (detail_lines, blueprint_section_shown). `fields` maps
     field -> bool; missing defaults to on, exactly like ``_show`` in
@@ -75,7 +75,12 @@ def _render(fields: dict, *, difficulty=True, spawns=("Spawn: 3",),
     2.2.0: the mission-TITLE [BP]/[ACE]/rep-xp tags moved to their own
     independent settings group (AppSettings.get_mission_title_tags(), gated
     by ``_show_title_tag`` in the generator) — see test_mission_title_tags.py.
-    This replica now covers ONLY the body fields ``_show`` still gates."""
+    This replica now covers ONLY the body fields ``_show`` still gates,
+    including the standalone "resource_signatures" field that gates the
+    Battaglia "Resource Signatures:" breakdown (independent of the
+    mission-TITLE "rs" tag); see test_battaglia_mineable_rs.py for the
+    desc-keyed ore-list dict and _format_rs_details_lines in the real
+    generator that together produce ``rs_lines`` here."""
     def _show(f):
         return bool(fields.get(f, True))
 
@@ -84,6 +89,8 @@ def _render(fields: dict, *, difficulty=True, spawns=("Spawn: 3",),
         lines.append("Mission Type: Combat")
     if _show("difficulty") and difficulty:
         lines.append("Difficulty (1-7): 4")
+    if _show("resource_signatures") and rs_lines:
+        lines.extend(rs_lines)
     if _show("spawns"):
         lines.extend(spawns)
     if _show("reputation"):
@@ -127,3 +134,30 @@ def test_blueprints_off_omits_blueprint_section():
     lines, bp = _render({"blueprints": False})
     assert bp is False
     assert not any("Blueprint" in s for s in lines)
+
+
+# ── Battaglia "Resource Signatures" breakdown in the DETAILS body ───────────
+
+def test_rs_breakdown_included_when_present():
+    lines, _ = _render({}, rs_lines=[
+        "Resource Signatures:", "<EM4>Savrilium</EM4>: 3200 - 6400", "<EM4>Ice</EM4>: 4300 - 8600",
+    ])
+    assert "Resource Signatures:" in lines
+    assert "<EM4>Savrilium</EM4>: 3200 - 6400" in lines
+    assert "<EM4>Ice</EM4>: 4300 - 8600" in lines
+
+
+def test_rs_breakdown_omitted_when_no_match_for_this_mission():
+    # Most missions aren't Battaglia scan/mining contracts, so an empty
+    # rs_lines (no desc-key match) means nothing gets appended.
+    lines, _ = _render({}, rs_lines=[])
+    assert not any("Resource" in s for s in lines)
+
+
+def test_rs_breakdown_omitted_when_field_off():
+    # The "resource_signatures" mission-detail field is independent of the
+    # mission-TITLE "rs" General Tags toggle (test_mission_title_tags.py).
+    lines, _ = _render({"resource_signatures": False}, rs_lines=[
+        "Resource Signatures:", "<EM4>Ice</EM4>: 4300 - 8600",
+    ])
+    assert not any("Resource" in s for s in lines)

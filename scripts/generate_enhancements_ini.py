@@ -3305,6 +3305,93 @@ _MINING_COMPENDIUM_ORE_ALIASES = {
     "savrilium": "savrillium",
 }
 
+# Curated RS value PROGRESSIONS as scanned stack size scales (the in-game
+# Mining Compendium "signature strength" chart), for the mission-DETAILS
+# "Resource Signatures:" breakdown (#331) -- distinct from MINEABLE_RS_VALUES'
+# single flat number, which only feeds the mission-TITLE [RS ####] tag and the
+# ore-name annotation. Not every ore MINEABLE_RS_VALUES covers has a confirmed
+# progression yet; an ore missing here falls back to a single-value tuple (see
+# _rs_value_steps), so nothing regresses to no-value while more progressions
+# get curated.
+MINEABLE_RS_VALUE_STEPS: dict[str, tuple[int, ...]] = {
+    "savrillium": (3200, 6400),
+    "lindinium": (3400, 6800, 10200),
+    "bexalite": (3600, 7200, 10800, 14400),
+    "torite": (3900, 7800, 11700, 15600, 19500),
+    "iron": (4270, 8540, 12810, 17080, 21350, 25620),
+    "aluminium": (4285, 8570, 12855, 17140, 21425, 25710),
+    "ice": (4300, 8600, 12900, 17200, 21500, 25800),
+}
+
+
+def _rs_value_steps(ore: str) -> tuple[int, ...]:
+    """Full RS value progression for ``ore`` (see MINEABLE_RS_VALUE_STEPS),
+    falling back to a single-value tuple from MINEABLE_RS_VALUES when this
+    ore's stack progression isn't curated yet, or ``()`` when neither table
+    knows this ore at all."""
+    if ore in MINEABLE_RS_VALUE_STEPS:
+        return MINEABLE_RS_VALUE_STEPS[ore]
+    if ore in MINEABLE_RS_VALUES:
+        return (MINEABLE_RS_VALUES[ore],)
+    return ()
+
+
+def _format_rs_details_lines(ores: list[str], loc: dict) -> list[str]:
+    """Render the mission-DETAILS "Resource Signatures" breakdown for the
+    ores a Battaglia scan/mining contract targets: a header line followed by
+    one "<EM4>Ore</EM4>: v1 - v2 - ..." line per ore (only the ores this
+    specific contract asks for, in ResourceType/ResourceType2/ResourceType3
+    order), using each ore's full RS value progression. An ore with no known
+    value in either RS table is silently dropped (mirrors _format_rs_tag);
+    the whole block is omitted (``[]``) when none of the contract's ores
+    resolve. Gated by the "Show Resource Signatures" Mission Detail Fields
+    checkbox (#331), independent of the ore-name annotation toggle below."""
+    lines: list[str] = []
+    for ore in ores:
+        steps = _rs_value_steps(ore)
+        if not steps:
+            continue
+        label = loc.get(f"mineabletype_primary_{ore}", ore.title())
+        lines.append(f"<EM4>{label}</EM4>: {' - '.join(str(v) for v in steps)}")
+    if not lines:
+        return []
+    return ["<EM4>Resource Signatures:</EM4>"] + lines
+
+
+def _build_mineable_rs_name_overrides(loc: dict) -> dict[str, str]:
+    """Override every mineable ore's own ``mineabletype_primary_<ore>``
+    display-name loc key to append ``" (RS ####)"`` (the flat value from
+    MINEABLE_RS_VALUES). CIG's Battaglia Work Brief prose, the in-game Primary
+    Objectives panel, and the mission tracker in the top-right of the HUD all
+    render the ore name via a runtime ``~mission(MineableType)`` token that
+    resolves straight through this exact loc key -- the literal ore name
+    never appears as static text in any mission desc for us to
+    find-and-annotate (confirmed against real generated output: the desc
+    string is literally ``"...locate ~mission(Resources)
+    ~mission(MineableType)..."``). Patching the name at its source here is
+    what makes the RS value show up everywhere the game displays that ore's
+    name, not just the mission TITLE tag or the DETAILS "Resource
+    Signatures:" breakdown block.
+
+    Gated by its own "Show Resource Signatures (RS) next to ore names"
+    Localization Enhancements checkbox (#331), independent of the "Resource
+    Signatures" Mission Detail Fields checkbox above -- a user can show the
+    flat name annotation without the fuller DETAILS block, or vice versa.
+    Originally shipped bundled with the DETAILS block under one toggle, then
+    pulled entirely as "too broad an effect... for what it bought" (touches
+    every place the game renders that ore's name, not just Battaglia
+    missions); revived as its own independent toggle (default on) after
+    users asked for the mission-tracker case specifically (#331)."""
+    out: dict[str, str] = {}
+    for ore, value in MINEABLE_RS_VALUES.items():
+        key = f"mineabletype_primary_{ore}"
+        display = loc.get(key)
+        if not display:
+            continue
+        out[key] = f"{display} (RS {value})"
+    return out
+
+
 _BATTAGLIA_SCAN_TITLE_PREFIXES = ("Battaglia_RPT_Scan_", "Battaglia_RPT_ScanMine_")
 _RESOURCE_TYPE_TOKEN_RE = re.compile(r"ResourceType[0-9]*")
 
@@ -3351,15 +3438,38 @@ def _build_battaglia_mineable_rs_tags(
     contractgen_dir: Path,
     xml_path_index: dict | None = None,
     records_dir: Path | None = None,
-) -> dict[str, str]:
-    """Build ``title_key -> "[RS ####[/####...]]"`` for Recco Battaglia's
-    Scan/ScanMine mission titles (see :data:`MINEABLE_RS_VALUES`). Every
-    contract variant sharing a title targets the same ore set (confirmed
-    against the PTU 4.9 data), so the first variant found for a title wins.
+) -> tuple[dict[str, str], dict[str, list[str]]]:
+    """Build ``title_key -> "[RS ####[/####...]]"`` for the mission TITLE and
+    ``desc_key -> ["aluminium", "iron", ...]`` (raw ore keys, order-preserved)
+    for the mission DETAILS body, for Recco Battaglia's Scan/ScanMine mission
+    contracts (see :data:`MINEABLE_RS_VALUES`). Every contract variant
+    sharing a title (or a desc) targets the same ore set (confirmed against
+    the PTU 4.9 data), so the first variant found for either key wins.
+
+    The desc mapping is what lets the RS value(s) also land in the mission's
+    own DETAILS body (the "objective" text a player actually reads in the
+    Contract Manager) as a per-ore breakdown, not just the single flattened
+    title tag -- see ``_format_rs_details_lines``, which turns this raw ore
+    list into the actual "Resource Signatures:" block using each ore's full
+    value progression from :data:`MINEABLE_RS_VALUE_STEPS` (#331).
     """
-    tags: dict[str, str] = {}
+    title_tags: dict[str, str] = {}
+    desc_ores: dict[str, list[str]] = {}
     if not contractgen_dir.exists():
-        return tags
+        return title_tags, desc_ores
+
+    # Mirror scan_contract_generators' desc_key resolution: some Battaglia
+    # scan/mining contracts carry no inline Description ContractStringParam
+    # and inherit it from a shared body template instead (referenced by the
+    # contract's "template" UUID attribute). Skipping this fallback silently
+    # dropped every such contract's desc_key here, so neither the DETAILS
+    # "Resource Signatures:" block nor the inline "(RS ####)" annotation
+    # ever appeared even though the mission-TITLE tag (title_key is always
+    # inline for these contracts) worked fine.
+    templates_dir = contractgen_dir.parent / "contracttemplates"
+    template_lookup = _build_template_lookup(
+        templates_dir, xml_path_index=xml_path_index, records_dir=records_dir
+    )
 
     _files = (
         _index_rglob(xml_path_index, contractgen_dir, records_dir)
@@ -3376,13 +3486,30 @@ def _build_battaglia_mineable_rs_tags(
             if title_param is None:
                 continue
             title_key = title_param.get("value", "").lstrip("@")
-            if not title_key.startswith(_BATTAGLIA_SCAN_TITLE_PREFIXES) or title_key in tags:
+            if not title_key.startswith(_BATTAGLIA_SCAN_TITLE_PREFIXES):
                 continue
-            tag = _format_rs_tag(_battaglia_contract_mineable_ores(contract))
-            if tag:
-                tags[title_key] = tag
+            desc_param = contract.find(".//ContractStringParam[@param='Description']")
+            desc_key = desc_param.get("value", "").lstrip("@") if desc_param is not None else ""
+            if not desc_key:
+                tmpl_uuid = contract.get("template", "")
+                if tmpl_uuid and tmpl_uuid in template_lookup:
+                    _tmpl_title, tmpl_desc = template_lookup[tmpl_uuid]
+                    desc_key = tmpl_desc
+            if desc_key in _SENTINEL_LOC_KEYS:
+                desc_key = ""
+            need_title = title_key not in title_tags
+            need_desc = bool(desc_key) and desc_key not in desc_ores
+            if not need_title and not need_desc:
+                continue
+            ores = _battaglia_contract_mineable_ores(contract)
+            if need_title:
+                tag = _format_rs_tag(ores)
+                if tag:
+                    title_tags[title_key] = tag
+            if need_desc and any(_rs_value_steps(o) for o in ores):
+                desc_ores[desc_key] = ores
 
-    return tags
+    return title_tags, desc_ores
 
 
 # A standing rank's displayName loc key encodes its reputation TRACK as the
@@ -5880,6 +6007,13 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
 
     def _show(_field: str) -> bool:
         return bool(_mdf.get(_field, True))
+    # #331: independent Localization Enhancements toggle for the ore-name
+    # "(RS ####)" annotation -- NOT a mission-detail field (it isn't a body
+    # line, it patches the ore's own display name loc key), so it isn't
+    # gated through _mdf/_show like "resource_signatures" above. Default on,
+    # matching the fallback True the boolean fields above use when unset;
+    # see _build_mineable_rs_name_overrides for the feature's own history.
+    _rs_ore_name_annotations = bool(ctx.get("rs_ore_name_annotations", True))
     # 2.2.0 ("General Tags"): independent show/hide for the [BP]/[ACE]/rep-xp
     # markers appended to the mission TITLE, separate from the body fields
     # above. Missing/unknown keys default to True (prior, unsplit behaviour).
@@ -6005,7 +6139,7 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
     )
     logger.info(f"Processed {len(contractgen_missions)} contract generator mission variants")
 
-    battaglia_mineable_rs = _build_battaglia_mineable_rs_tags(
+    battaglia_mineable_rs, battaglia_mineable_rs_desc_ores = _build_battaglia_mineable_rs_tags(
         contractgen_dir, xml_path_index=xml_path_index, records_dir=records
     )
 
@@ -6232,6 +6366,10 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
                 details_lines.append(f"<EM4>Mission Type:</EM4> {', '.join(all_flags) if all_flags else 'Standard'}")
             if _show("difficulty") and all_difficulties:
                 details_lines.append(f"<EM4>Difficulty (1-7):</EM4> {all_difficulties[0]}")
+            if _show("resource_signatures"):
+                _rs_ores = battaglia_mineable_rs_desc_ores.get(desc_key)
+                if _rs_ores:
+                    details_lines.extend(_format_rs_details_lines(_rs_ores, loc))
             if _show("spawns"):
                 details_lines.extend(_format_spawn_lines(agg_spawns))
             if _show("ace") and bool(agg_spawns.get(SPAWN_HOSTILE, {}).get("Ace Pilots", 0)):
@@ -6499,6 +6637,9 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
         if keys:
             logger.info(f"  Skipped ({reason}): {len(keys)} — e.g. {', '.join(keys[:5])}")
 
+    if _rs_ore_name_annotations:
+        out.update(_build_mineable_rs_name_overrides(loc))
+
     return out
 
 
@@ -6536,6 +6677,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
          mission_title_tags: dict | None = None,
          stats_prepend: bool = False,
          standardize_earnable_ship_names: bool = False,
+         rs_ore_name_annotations: bool = True,
          english_base_ini_path: Path | None = None) -> None:
     import sys as sys_mod
     # Deferred import — the script is loaded by both the app worker (where
@@ -6859,6 +7001,7 @@ def main(base_ini_path: Path, forge_dir: Path | None = None,
         "mission_detail_fields": mission_detail_fields or {},
         "mission_title_tags": mission_title_tags or {},
         "stats_prepend":     bool(stats_prepend),
+        "rs_ore_name_annotations": bool(rs_ore_name_annotations),
     }
 
     gen_jobs: dict[str, Callable] = {}

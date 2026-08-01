@@ -4325,6 +4325,7 @@ class MainWindow(QMainWindow):
             mission_title_tags=AppSettings.get_mission_title_tags(),
             stats_prepend=AppSettings.get_stats_prepend(),
             standardize_earnable_ship_names=AppSettings.get_standardize_earnable_ship_names(),
+            rs_ore_name_annotations=AppSettings.get_rs_ore_name_annotations(),
             language=language,
         )
         self.enhancements_tab.set_operation_running(tr("enhancements.generating_enhancements_tooltip"))
