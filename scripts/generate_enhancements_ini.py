@@ -91,6 +91,23 @@ except ImportError:  # pragma: no cover — only triggers if src/ is removed
     def win_long_path(path):  # type: ignore[misc]
         return str(path)
 
+# Same deferred-import pattern again. blueprint_meta.py's Blueprint Tracker
+# needs this exact same bp_craft_/bp_rewards_/bp_ prefix-strip when a raw
+# blueprint filename shows up verbatim in mission text; sharing it here
+# instead of a second hand-maintained copy means the two can't drift out of
+# sync on which prefixes are known.
+try:
+    _gen_root = Path(__file__).parent.parent
+    if str(_gen_root) not in sys.path:
+        sys.path.insert(0, str(_gen_root))
+    from src.utils.blueprint_meta import strip_raw_blueprint_filename_prefix
+except ImportError:  # pragma: no cover — only triggers if src/ is removed
+    def strip_raw_blueprint_filename_prefix(stem):  # type: ignore[misc]
+        for prefix in ("bp_craft_", "bp_rewards_", "bp_"):
+            if stem.lower().startswith(prefix):
+                return stem[len(prefix):], True
+        return stem, False
+
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
@@ -3111,13 +3128,7 @@ def _name_from_blueprint_filename(bp_xml: Path) -> str:
         bp_rewards_eckhartsecuritykillnpcboss.xml
             → "Eckhartsecuritykillnpcboss"
     """
-    stem = bp_xml.stem
-    # Strip common prefixes — bp_craft_, bp_rewards_, bp_ — so the
-    # surfaced part is the descriptive tail.
-    for prefix in ("bp_craft_", "bp_rewards_", "bp_"):
-        if stem.startswith(prefix):
-            stem = stem[len(prefix):]
-            break
+    stem, _matched = strip_raw_blueprint_filename_prefix(bp_xml.stem)
     # Replace separators with spaces and title-case.
     fallback = stem.replace("_", " ").replace("-", " ").title()
     return _BLUEPRINT_FILENAME_FALLBACK_ALIASES.get(fallback, fallback)

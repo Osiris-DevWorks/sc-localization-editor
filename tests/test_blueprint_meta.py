@@ -512,6 +512,38 @@ class TestBulletNameMismatches:
         assert "Nozzle Fuelgiver Grin Nozzleverysecure" not in meta
         assert "Nozzle Fuelgiver Misc Nozzlestandard" not in meta
 
+    @pytest.mark.regression
+    def test_raw_blueprint_filename_bullet_resolves_via_alias(self):
+        """A different root cause than the key-slug bug above: some mission
+        text ships the raw blueprint XML filename stem verbatim rather than
+        a de-slugified loc key. Confirmed via the real "URGENT REFUEL
+        REQUEST" (UWC_Refueling_*) mission bodies in
+        tests/fixtures/kraken_global_latest.ini, which list
+        "bp_craft_nozzle_fuelgiver_grin_nozzleverysecure" (lowercase, with
+        the bp_craft_ prefix, plus the "(Fuel Nozzle)" category annotation)
+        instead of "Harkin" -- a shape _key_slug's title-cased-KEY transform
+        never produces, so it silently fell through to itself even though
+        the alias table already had the right answer."""
+        desc = (
+            "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>"
+            "\\n- bp_craft_nozzle_fuelgiver_grin_nozzlefast (Fuel Nozzle)"
+            "\\n- bp_craft_nozzle_fuelgiver_grin_nozzleverysecure (Fuel Nozzle)"
+            "\\n- bp_craft_nozzle_fuelgiver_misc_nozzlestandard (Fuel Nozzle)"
+        )
+        entries = [
+            _Entry("M_Desc_001", desc, "Missions"),
+            _Entry("item_fuelnozzle_GRIN_Fast_Name", "Norfield", "Ship Items"),
+            _Entry("item_fuelnozzle_GRIN_Safe_Name", "Harkin", "Ship Items"),
+            _Entry("item_fuelnozzle_MISC_Standard_Name", "RN-7s", "Ship Items"),
+        ]
+        meta = build_blueprint_metadata(entries)
+        assert meta["Norfield"].tagged_name == "Norfield"
+        assert meta["Harkin"].tagged_name == "Harkin"
+        assert meta["RN-7s"].tagged_name == "RN-7s"
+        assert "bp_craft_nozzle_fuelgiver_grin_nozzlefast" not in meta
+        assert "bp_craft_nozzle_fuelgiver_grin_nozzleverysecure" not in meta
+        assert "bp_craft_nozzle_fuelgiver_misc_nozzlestandard" not in meta
+
     def test_direct_match_is_not_overridden_by_alias_or_keyslug(self):
         """A bullet name that already matches a real item directly must
         win outright -- the alias/keyslug fallback only kicks in when the
