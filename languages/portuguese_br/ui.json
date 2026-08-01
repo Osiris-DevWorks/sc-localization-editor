@@ -1020,10 +1020,6 @@
       "ht": "",
       "at": "Nenhum blueprint novo encontrado desde o último escaneamento."
     },
-    "bp_scan_summary": {
-      "ht": "",
-      "at": "{count} blueprint(s) adicionado(s) à sua lista de adquiridos.\n\n{visible} já estão visíveis nas suas listas de blueprints atuais; os demais mostrarão [Owned] automaticamente sempre que o item aparecer nas recompensas de blueprint de uma missão."
-    },
     "mission_field_ace_tooltip": {
       "ht": "",
       "at": "Mostrar uma linha \"Ace Pilot: Yes\" no corpo dos detalhes da missão quando a missão gerar um piloto ás. A tag de título [ACE] é uma opção separada em Tags Gerais. Entra em vigor na próxima Geração de Aprimoramentos."
@@ -1362,6 +1358,22 @@
       "ht": "",
       "at": "Escaneia os arquivos de log do Star Citizen (Game.log e logbackups) em busca de notificações de recompensa \"Received Blueprint\" e marca esses blueprints automaticamente como adquiridos."
     },
+    "scan_other_channels_checkbox": {
+      "ht": "",
+      "at": "Também escanear LIVE/HOTFIX (o que não estiver ativo)"
+    },
+    "scan_other_channels_tooltip": {
+      "ht": "",
+      "at": "LIVE e HOTFIX compartilham o mesmo progresso de conta, então uma planta obtida em um aparece também nos registros do outro. Também escaneia o que não for seu canal ativo entre os dois, se estiver instalado. PTU, EPTU e TECH-PREVIEW são builds de teste separadas com progresso próprio e nunca são escaneadas."
+    },
+    "force_rescan_checkbox": {
+      "ht": "",
+      "at": "Reescanear todos os registros (ignorar a última verificação)"
+    },
+    "force_rescan_tooltip": {
+      "ht": "",
+      "at": "Normalmente uma verificação só lê eventos desde a última verificação, para continuar rápida. Marque isto se sua lista de itens possuídos parecer errada e você quiser reler cada registro do zero. Desmarca-se sozinha após a próxima verificação."
+    },
     "apply_owned_tag_btn": {
       "ht": "",
       "at": "Aplicar Tags [Owned]"
@@ -1377,6 +1389,114 @@
     "owned_tags_refreshed": {
       "ht": "",
       "at": "Tags [Owned] atualizadas para corresponder à sua lista de Adquiridos atual."
+    },
+    "export_owned_btn": {
+      "ht": "",
+      "at": "Exportar Blueprints Adquiridos…"
+    },
+    "export_owned_tooltip": {
+      "ht": "",
+      "at": "Salve sua lista de Adquiridos em um arquivo JSON ou CSV, para compartilhar seu progresso com outras ferramentas ou outra instalação do Smart Citizen."
+    },
+    "import_owned_btn": {
+      "ht": "",
+      "at": "Importar Blueprints Adquiridos…"
+    },
+    "import_owned_tooltip": {
+      "ht": "",
+      "at": "Adicione blueprints adquiridos de um arquivo JSON ou CSV (incluindo uma exportação do scmdb.net) à sua lista atual de Adquiridos. Nunca remove nada que já esteja marcado como adquirido."
+    },
+    "export_nothing_title": {
+      "ht": "",
+      "at": "Nada para exportar"
+    },
+    "export_nothing_body": {
+      "ht": "",
+      "at": "Sua lista de Adquiridos está vazia, então não há nada para exportar."
+    },
+    "export_dialog_title": {
+      "ht": "",
+      "at": "Exportar Blueprints Adquiridos"
+    },
+    "export_default_filename": {
+      "ht": "",
+      "at": "blueprints-adquiridos"
+    },
+    "export_json_filter": {
+      "ht": "",
+      "at": "Arquivos JSON (*.json)"
+    },
+    "export_csv_filter": {
+      "ht": "",
+      "at": "Arquivos CSV (*.csv)"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "Falha na exportação"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "Não foi possível gravar o arquivo.\n\n{error_type}: {error}"
+    },
+    "export_done_title": {
+      "ht": "",
+      "at": "Exportação concluída"
+    },
+    "export_done_singular": {
+      "ht": "",
+      "at": "1 blueprint adquirido exportado para:\n{path}"
+    },
+    "export_done_plural": {
+      "ht": "",
+      "at": "{count} blueprints adquiridos exportados para:\n{path}"
+    },
+    "import_dialog_title": {
+      "ht": "",
+      "at": "Importar Blueprints Adquiridos"
+    },
+    "import_file_filter": {
+      "ht": "",
+      "at": "Arquivos de exportação de blueprints (*.json *.csv)"
+    },
+    "import_invalid_title": {
+      "ht": "",
+      "at": "Falha na importação"
+    },
+    "import_invalid_body": {
+      "ht": "",
+      "at": "Não foi possível ler esse arquivo.\n\n{error}"
+    },
+    "import_nothing_matched_body": {
+      "ht": "",
+      "at": "Nenhum dos {count} blueprints desse arquivo é rastreado pelo Smart Citizen no momento, então nada foi importado."
+    },
+    "owned_added_singular": {
+      "ht": "",
+      "at": "1 blueprint adicionado à sua lista de Adquiridos. Ele mostrará a tag [Owned] em qualquer lugar que aparecer nas recompensas de blueprint de uma missão."
+    },
+    "owned_added_plural": {
+      "ht": "",
+      "at": "{count} blueprints adicionados à sua lista de Adquiridos. Eles mostrarão a tag [Owned] em qualquer lugar que aparecerem nas recompensas de blueprint de uma missão."
+    },
+    "import_skipped_note": {
+      "ht": "",
+      "at": "{skipped} outros do arquivo não são rastreados pelo Smart Citizen no momento e foram ignorados."
+    },
+    "show_skipped_btn": {
+      "ht": "",
+      "at": "Mostrar Blueprints Ignorados"
+    },
+    "hide_skipped_btn": {
+      "ht": "",
+      "at": "Ocultar Blueprints Ignorados"
+    },
+    "show_added_btn": {
+      "ht": "",
+      "at": "Mostrar Blueprints Adicionados"
+    },
+    "hide_added_btn": {
+      "ht": "",
+      "at": "Ocultar Blueprints Adicionados"
     }
   },
   "log": {

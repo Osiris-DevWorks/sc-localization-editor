@@ -19,7 +19,7 @@ from PyQt6.QtGui import QColor, QFont, QCursor, QPixmap, QIcon, QPalette
 from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QDesktopServices
 
-from src.gui.blueprint_tracker_tab import BlueprintTrackerTab
+from src.gui.blueprint_tracker_tab import BlueprintTrackerTab, _relabel_details_button
 from src.gui.coach_mark import CoachMarkStep, TutorialTour
 from src.gui.config_tab import ConfigTab
 from src.gui.error_dialog import ErrorDialogHandler, _ErrorDialogEmitter
@@ -120,6 +120,28 @@ _FRONTEND_VERSION_STAMP_RE = _re_mod.compile(
     r"(?:Localizations Enhanced (?:with|by)|Enhanced with <3 by)\s+Smart Citizen\s+v?[^\s|]+\s*$"
 )
 
+# #268: LIVE and HOTFIX share the same account/blueprint progression (HOTFIX
+# is a same-account emergency-patch channel), so a blueprint earned on one
+# shows up in the other's logs too. PTU/EPTU/TECH-PREVIEW are separate test
+# builds with their own progression -- never scanned regardless of the
+# "also scan other channels" checkbox.
+_LINKED_CHANNELS = frozenset({AppSettings.CHANNEL_LIVE, AppSettings.CHANNEL_HOTFIX})
+
+
+def _channels_to_scan(active_channel: str, other_enabled: bool, installed_channels) -> list:
+    """Which channels a "Scan Logs for Owned Blueprints" run should cover.
+
+    Always the active channel first. If *other_enabled*, and the active
+    channel is one of the linked pair, also includes whichever other linked
+    channel is actually installed (sorted, for a deterministic queue order).
+    Pure/Qt-free so it's directly testable -- see test_blueprint_scan_channels.py.
+    """
+    channels = [active_channel]
+    if other_enabled and active_channel in _LINKED_CHANNELS:
+        others = sorted((_LINKED_CHANNELS - {active_channel}) & set(installed_channels))
+        channels.extend(others)
+    return channels
+
 
 def _stamp_frontend_version(merged: dict) -> dict:
     """Append the Smart Citizen watermark to Frontend_PU_Version in place, on
@@ -188,6 +210,20 @@ def _stamp_journal_entries(merged: dict, stock: dict | None = None) -> dict:
 # "stock has empty string for this key" — the empty-string case is a
 # legitimate stock value that should still match an empty merged value.
 _SENTINEL_MISSING = object()
+
+
+def _blueprint_scan_since(force_rescan: bool, watermark):
+    """The effective watermark a "Scan Logs for Owned Blueprints" run should
+    pass to the scanner (#308).
+
+    A forced rescan (the Blueprint Tracker's "Rescan all logs" checkbox)
+    ignores any saved watermark and re-walks every log back to the
+    scanner's own March-2026 epoch floor -- for the rare case a user's
+    owned set drifted (e.g. an accidental unown) and a normal incremental
+    scan won't recover the missing blueprint. Pure/Qt-free so it's
+    directly testable -- see test_blueprint_force_rescan.py.
+    """
+    return None if force_rescan else watermark
 
 
 def _journal_stamp_for_entry(entry) -> str | None:
@@ -439,6 +475,17 @@ class MainWindow(QMainWindow):
         )
         self._bp_log_scan_worker = None
         self._bp_log_scan_progress = None
+        # #268/#308: multi-channel scan state. _bp_scan_queue holds channels
+        # not yet started (the current one is popped off before its worker
+        # starts); _bp_scan_channel is whichever channel the in-flight
+        # worker is scanning; _bp_scan_new_names accumulates every channel's
+        # newly-discovered names so only one combined summary/owned-set
+        # write happens once the whole queue drains; _bp_scan_force_rescan
+        # is the "Rescan all logs" checkbox state, read once per run.
+        self._bp_scan_queue = []
+        self._bp_scan_channel = None
+        self._bp_scan_new_names = set()
+        self._bp_scan_force_rescan = False
 
         self.log_tab = LogTab()
         self._log_tab_index = self.tabs.addTab(self.log_tab, tr("tabs.log"))
@@ -5213,17 +5260,27 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(tr("blueprint_tracker.owned_tags_refreshed"))
 
     def _run_blueprint_log_scan(self):
-        """Scan the active channel's SC logs for received-blueprint events and
-        fold them into the owned set. Launched by the Blueprint Tracker tab's
-        "BP Scan" button; runs in a background worker with a progress dialog.
+        """Scan SC logs for received-blueprint events and fold them into the
+        owned set. Launched by the Blueprint Tracker tab's "BP Scan" button;
+        runs in a background worker with a progress dialog.
 
-        Reads Game.log + logbackups/*.log from the active channel's install
-        dir for "Received Blueprint" reward notifications — the game's own
-        record of every blueprint the player has actually earned, independent
-        of whether it's shown up in a loaded mission's reward text yet. Only
-        events newer than the last scan's watermark are imported (#222), so
-        re-running the scan against a still-growing Game.log doesn't re-walk
-        the player's whole history every time.
+        Reads Game.log + logbackups/*.log for "Received Blueprint" reward
+        notifications — the game's own record of every blueprint the player
+        has actually earned, independent of whether it's shown up in a loaded
+        mission's reward text yet. Only events newer than the last scan's
+        watermark are imported (#222), so re-running the scan against a
+        still-growing Game.log doesn't re-walk the player's whole history
+        every time.
+
+        Always covers the active channel. If the Blueprint Tracker's "also
+        scan other channels" checkbox is on and the active channel is LIVE or
+        HOTFIX, also queues whichever of the two isn't active -- they share
+        the same account progression, so a blueprint earned on one shows up
+        in the other's logs too (#268). PTU/EPTU/TECH-PREVIEW are never
+        included; those are separate test builds with their own progression.
+        Each queued channel runs through the same single-channel worker in
+        turn; only one combined summary/owned-set write happens once every
+        queued channel has been scanned.
         """
         if self._bp_log_scan_worker is not None:
             return  # already scanning
@@ -5237,7 +5294,46 @@ class MainWindow(QMainWindow):
             )
             return
 
-        since = AppSettings.get_blueprint_log_watermark()
+        installed = AppSettings.get_available_channels()
+        other_enabled = AppSettings.get_scan_other_channels_enabled()
+        self._bp_scan_queue = _channels_to_scan(
+            AppSettings.get_active_channel(), other_enabled, installed
+        )
+        self._bp_scan_new_names = set()
+        # #308: "Rescan all logs" bypasses the saved watermark for every
+        # queued channel this run, re-walking each back to the scanner's
+        # epoch floor. Read once here (not inside the worker) so a scan
+        # already in flight isn't affected by the checkbox changing mid-scan.
+        self._bp_scan_force_rescan = self.blueprint_tracker_tab.is_force_rescan_checked()
+        self._start_next_blueprint_scan()
+
+    def _start_next_blueprint_scan(self):
+        """Pop the next queued channel and start its worker (#268).
+
+        Silently skips a queued channel with no valid install path (logged,
+        not surfaced as a dialog -- the active channel's own path was already
+        validated with a user-facing warning in _run_blueprint_log_scan;
+        this only guards the rarer case of a secondary channel whose install
+        turns out to be incomplete) and moves on to the next one. Finalizes
+        once the queue is empty.
+        """
+        if not self._bp_scan_queue:
+            self._finish_blueprint_scan_queue()
+            return
+
+        channel = self._bp_scan_queue.pop(0)
+        self._bp_scan_channel = channel
+
+        root = AppSettings.get_sc_install_root()
+        channel_path = str(Path(root) / channel) if root else ""
+        if not channel_path or not Path(channel_path).is_dir():
+            logger.warning(f"BP Scan: skipping {channel} -- no valid install path")
+            self._start_next_blueprint_scan()
+            return
+
+        since = _blueprint_scan_since(
+            self._bp_scan_force_rescan, AppSettings.get_blueprint_log_watermark(channel=channel)
+        )
         self._bp_log_scan_worker = BlueprintLogScanWorker(channel_path, since)
         self._bp_log_scan_progress = AnimatedProgressDialog(
             tr("enhancements.bp_scan_starting"),
@@ -5258,36 +5354,63 @@ class MainWindow(QMainWindow):
             self._bp_log_scan_progress = None
 
     def _on_blueprint_log_scan_finished(self, result):
-        """Fold a completed scan's names into the owned set and report.
+        """Fold one queued channel's scan result into the running total, then
+        either start the next queued channel or finalize (#268).
 
         Owns all owned-set / watermark mutation (the worker stays read-only),
         so every settings write happens on the main thread. ``result`` is a
         ``ScanResult`` or ``None`` when the scan errored (already surfaced via
-        ``_on_blueprint_log_scan_error``)."""
+        ``_on_blueprint_log_scan_error``) -- either way the queue still
+        advances, so one channel's failure doesn't abandon the rest.
+        """
         if self._bp_log_scan_progress is not None:
             self._bp_log_scan_progress.close()
             self._bp_log_scan_progress = None
         self._reap_worker(self._bp_log_scan_worker)
         self._bp_log_scan_worker = None
 
-        if result is None:
-            return
+        channel = self._bp_scan_channel
+        self._bp_scan_channel = None
 
-        from src.utils.owned_items import normalize_item_name
+        if result is not None:
+            from src.utils.owned_items import normalize_item_name
 
-        # Normalize raw log names to the shared owned-set identity; drop blanks.
-        scanned = {normalize_item_name(n) for n in result.names}
-        scanned.discard("")
+            # Normalize raw log names to the shared owned-set identity; drop blanks.
+            scanned = {normalize_item_name(n) for n in result.names}
+            scanned.discard("")
 
-        owned = AppSettings.get_owned_items()
-        new_names = sorted(scanned - owned)
+            owned = AppSettings.get_owned_items()
+            # Exclude names another queued channel already claimed this run,
+            # so a blueprint visible in both LIVE's and HOTFIX's logs isn't
+            # double-counted in the final summary.
+            new_this_channel = scanned - owned - self._bp_scan_new_names
+            self._bp_scan_new_names |= new_this_channel
 
-        # Advance the watermark even when nothing new was imported, so a
-        # growing Game.log's already-seen events aren't reparsed next time.
-        if result.latest_timestamp is not None:
-            prev = AppSettings.get_blueprint_log_watermark()
-            newest = result.latest_timestamp if prev is None else max(prev, result.latest_timestamp)
-            AppSettings.set_blueprint_log_watermark(newest)
+            # Advance this channel's own watermark even when nothing new was
+            # imported, so a growing Game.log's already-seen events aren't
+            # reparsed next time.
+            if result.latest_timestamp is not None:
+                prev = AppSettings.get_blueprint_log_watermark(channel=channel)
+                newest = (
+                    result.latest_timestamp if prev is None
+                    else max(prev, result.latest_timestamp)
+                )
+                AppSettings.set_blueprint_log_watermark(newest, channel=channel)
+
+        if self._bp_scan_queue:
+            self._start_next_blueprint_scan()
+        else:
+            self._finish_blueprint_scan_queue()
+
+    def _finish_blueprint_scan_queue(self):
+        """Write the combined owned-set change and show one summary dialog
+        covering every channel scanned this run (#268)."""
+        new_names = sorted(self._bp_scan_new_names)
+        self._bp_scan_new_names = set()
+        # #308: one-shot -- the checkbox is consumed by the whole queued run
+        # (every channel), whether it found anything new or errored, so it
+        # doesn't silently keep forcing a full rescan on every future click.
+        self.blueprint_tracker_tab.reset_force_rescan_checkbox()
 
         if not new_names:
             QMessageBox.information(
@@ -5297,6 +5420,7 @@ class MainWindow(QMainWindow):
             )
             return
 
+        owned = AppSettings.get_owned_items()
         AppSettings.set_owned_items(owned | set(new_names))
         self._recompute_owned()
         # _recompute_owned() just did the exact re-weave Apply Owned Tags
@@ -5305,20 +5429,20 @@ class MainWindow(QMainWindow):
         # the user its tags were applied.
         self.blueprint_tracker_tab.mark_owned_clean()
 
-        # How many of the newly-added names are visible right now (i.e. appear
-        # as a blueprint bullet in the currently-loaded data). The rest light up
-        # automatically whenever their item next appears in a blueprint list.
-        visible_now = len(set(new_names) & getattr(self, "_bp_item_names", set()))
-        summary = tr(
-            "enhancements.bp_scan_summary",
-            count=len(new_names),
-            visible=visible_now,
+        summary = (
+            tr("blueprint_tracker.owned_added_singular") if len(new_names) == 1
+            else tr("blueprint_tracker.owned_added_plural", count=len(new_names))
         )
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Icon.Information)
         box.setWindowTitle(tr("enhancements.bp_scan_title"))
         box.setText(summary)
         box.setDetailedText("\n".join(new_names))
+        _relabel_details_button(
+            box,
+            tr("blueprint_tracker.show_added_btn"),
+            tr("blueprint_tracker.hide_added_btn"),
+        )
         box.exec()
 
     def toggle_favorite(self, proxy_row: int):

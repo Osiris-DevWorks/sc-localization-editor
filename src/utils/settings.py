@@ -408,6 +408,14 @@ class AppSettings:
     # display; this only affects the app's own list, never the in-game
     # mission text, which always shows the tag regardless of this setting.
     BLUEPRINT_SHOW_TAGS = "blueprints/show_tags"
+    # #268: whether "Scan Logs for Owned Blueprints" also scans whichever of
+    # LIVE/HOTFIX isn't the active channel. Enabled by default -- most
+    # players with a HOTFIX-era account run both channels, and scanning the
+    # inactive one too is what makes the Owned set actually complete. Never
+    # covers PTU/EPTU/TECH-PREVIEW -- those are separate test builds with
+    # their own progression, not the same account/blueprint history as
+    # LIVE/HOTFIX.
+    BLUEPRINT_SCAN_OTHER_CHANNELS = "blueprints/scan_other_channels"
 
     # Set at Import Settings time so the NEXT launch can prompt "your imported
     # settings need enhancements regenerated + applied" once the app is fully
@@ -1189,14 +1197,22 @@ class AppSettings:
         return new_state
 
     @staticmethod
-    def _blueprint_watermark_key() -> str:
-        """Per-channel storage key for the BP Scan watermark (#222)."""
+    def _blueprint_watermark_key(channel: "str | None" = None) -> str:
+        """Per-channel storage key for the BP Scan watermark (#222).
+
+        *channel* targets a specific channel's watermark without needing to
+        flip ``active_channel`` (#268's multi-channel scan reads/writes
+        LIVE's and HOTFIX's watermarks independently in the same pass, and
+        switching active_channel mid-scan would trigger its own unrelated
+        side effects). Defaults to the active channel, unchanged from before.
+        """
         return (f"{AppSettings.BLUEPRINT_LOG_WATERMARK}/"
-                f"{AppSettings.get_active_channel()}")
+                f"{channel or AppSettings.get_active_channel()}")
 
     @staticmethod
-    def get_blueprint_log_watermark():
-        """Return the active channel's BP Scan watermark, or ``None`` (#222).
+    def get_blueprint_log_watermark(channel: "str | None" = None):
+        """Return *channel*'s (default: active channel) BP Scan watermark, or
+        ``None`` (#222).
 
         The watermark is the newest received-blueprint event a prior scan
         consumed. Returns a timezone-aware ``datetime`` (the stored ISO string
@@ -1205,7 +1221,7 @@ class AppSettings:
         """
         from datetime import datetime
         raw = AppSettings.settings().value(
-            AppSettings._blueprint_watermark_key(), "", type=str
+            AppSettings._blueprint_watermark_key(channel), "", type=str
         )
         if not raw:
             return None
@@ -1215,14 +1231,34 @@ class AppSettings:
             return None
 
     @staticmethod
-    def set_blueprint_log_watermark(when) -> None:
-        """Persist the active channel's BP Scan watermark (#222).
+    def set_blueprint_log_watermark(when, channel: "str | None" = None) -> None:
+        """Persist *channel*'s (default: active channel) BP Scan watermark (#222).
 
         *when* is a ``datetime`` (the scanner emits timezone-aware UTC); stored
         as its ISO-8601 string so it round-trips through both settings backends.
         """
         AppSettings.settings().setValue(
-            AppSettings._blueprint_watermark_key(), when.isoformat()
+            AppSettings._blueprint_watermark_key(channel), when.isoformat()
+        )
+        AppSettings.settings().sync()
+
+    @staticmethod
+    def get_scan_other_channels_enabled() -> bool:
+        """Whether "Scan Logs for Owned Blueprints" also scans whichever of
+        LIVE/HOTFIX isn't the active channel (#268). Default True — most
+        players with a HOTFIX-era account run both channels, and scanning
+        the inactive one too is what makes the Owned set actually complete;
+        opting in after the fact means missing blueprints already earned
+        there before the user thinks to enable it."""
+        return bool(AppSettings.settings().value(
+            AppSettings.BLUEPRINT_SCAN_OTHER_CHANNELS, True, type=bool
+        ))
+
+    @staticmethod
+    def set_scan_other_channels_enabled(enabled: bool) -> None:
+        """Persist the multi-channel BP Scan checkbox state (#268)."""
+        AppSettings.settings().setValue(
+            AppSettings.BLUEPRINT_SCAN_OTHER_CHANNELS, bool(enabled)
         )
         AppSettings.settings().sync()
 

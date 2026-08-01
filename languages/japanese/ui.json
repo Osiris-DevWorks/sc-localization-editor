@@ -996,10 +996,6 @@
       "ht": "",
       "at": "前回のスキャン以降、新しいブループリントは見つかりませんでした。"
     },
-    "bp_scan_summary": {
-      "ht": "",
-      "at": "{count} 個のブループリントを所有リストに追加しました。\n\nそのうち {visible} 個は現在のブループリントリストにすぐ表示されます。残りは、そのアイテムが次にミッションのブループリント報酬に現れたときに自動的に [Owned] と表示されます。"
-    },
     "mission_field_ace_tooltip": {
       "ht": "",
       "at": "ミッションがエースパイロットを出現させるときに、ミッション詳細本文に「エースパイロット：はい」の行を表示します。[ACE] タイトルタグは「一般タグ」の下にある別の切り替えです。次回の「拡張を生成」で反映されます。"
@@ -1326,6 +1322,22 @@
       "ht": "",
       "at": "Star Citizen のログファイル（Game.log および logbackups）で「Received Blueprint」報酬通知をスキャンし、自動的に所有済みとしてマークします。"
     },
+    "scan_other_channels_checkbox": {
+      "ht": "",
+      "at": "LIVE/HOTFIX も同時にスキャン（アクティブでない方）"
+    },
+    "scan_other_channels_tooltip": {
+      "ht": "",
+      "at": "LIVE と HOTFIX は同じアカウント進捗を共有しているため、一方で獲得したブループリントはもう一方のログにも表示されます。インストールされていれば、アクティブでない方のチャンネルも同時にスキャンします。PTU、EPTU、TECH-PREVIEW はそれぞれ独自の進捗を持つ別のテストビルドであり、スキャン対象には含まれません。"
+    },
+    "force_rescan_checkbox": {
+      "ht": "",
+      "at": "すべてのログを再スキャン（前回のスキャンを無視）"
+    },
+    "force_rescan_tooltip": {
+      "ht": "",
+      "at": "通常、スキャンは高速化のため前回のスキャン以降のイベントのみを読み込みます。所有リストが正しくないように見え、すべてのログを最初から読み直したい場合はこれをチェックしてください。次のスキャン後に自動的にチェックが外れます。"
+    },
     "apply_owned_tag_btn": {
       "ht": "",
       "at": "所有タグを適用"
@@ -1341,6 +1353,114 @@
     "owned_tags_refreshed": {
       "ht": "",
       "at": "[Owned] タグを現在の所有リストに合わせて更新しました。"
+    },
+    "export_owned_btn": {
+      "ht": "",
+      "at": "所有ブループリントをエクスポート…"
+    },
+    "export_owned_tooltip": {
+      "ht": "",
+      "at": "所有リストを JSON または CSV ファイルに保存し、他のツールや別の Smart Citizen インストールと進捗を共有できます。"
+    },
+    "import_owned_btn": {
+      "ht": "",
+      "at": "所有ブループリントをインポート…"
+    },
+    "import_owned_tooltip": {
+      "ht": "",
+      "at": "JSON または CSV ファイル（scmdb.net からのエクスポートを含む）から所有ブループリントを現在の所有リストに追加します。すでに所有としてマークされている項目が削除されることはありません。"
+    },
+    "export_nothing_title": {
+      "ht": "",
+      "at": "エクスポートする項目がありません"
+    },
+    "export_nothing_body": {
+      "ht": "",
+      "at": "所有リストが空のため、エクスポートする項目がありません。"
+    },
+    "export_dialog_title": {
+      "ht": "",
+      "at": "所有ブループリントをエクスポート"
+    },
+    "export_default_filename": {
+      "ht": "",
+      "at": "owned-blueprints"
+    },
+    "export_json_filter": {
+      "ht": "",
+      "at": "JSON ファイル (*.json)"
+    },
+    "export_csv_filter": {
+      "ht": "",
+      "at": "CSV ファイル (*.csv)"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "エクスポートに失敗しました"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "ファイルを書き込めませんでした。\n\n{error_type}: {error}"
+    },
+    "export_done_title": {
+      "ht": "",
+      "at": "エクスポート完了"
+    },
+    "export_done_singular": {
+      "ht": "",
+      "at": "所有ブループリント 1 件を次の場所にエクスポートしました：\n{path}"
+    },
+    "export_done_plural": {
+      "ht": "",
+      "at": "{count} 件の所有ブループリントを次の場所にエクスポートしました：\n{path}"
+    },
+    "import_dialog_title": {
+      "ht": "",
+      "at": "所有ブループリントをインポート"
+    },
+    "import_file_filter": {
+      "ht": "",
+      "at": "ブループリントエクスポートファイル (*.json *.csv)"
+    },
+    "import_invalid_title": {
+      "ht": "",
+      "at": "インポートに失敗しました"
+    },
+    "import_invalid_body": {
+      "ht": "",
+      "at": "そのファイルを読み込めませんでした。\n\n{error}"
+    },
+    "import_nothing_matched_body": {
+      "ht": "",
+      "at": "そのファイル内の {count} 件のブループリントはいずれも、現在 Smart Citizen で追跡されていないため、何もインポートされませんでした。"
+    },
+    "owned_added_singular": {
+      "ht": "",
+      "at": "1 件のブループリントを所有リストに追加しました。ミッションのブループリント報酬に表示される際は [Owned] タグが付きます。"
+    },
+    "owned_added_plural": {
+      "ht": "",
+      "at": "{count} 件のブループリントを所有リストに追加しました。ミッションのブループリント報酬に表示される際は [Owned] タグが付きます。"
+    },
+    "import_skipped_note": {
+      "ht": "",
+      "at": "ファイル内の他の {skipped} 件は現在 Smart Citizen で追跡されていないため、スキップされました。"
+    },
+    "show_skipped_btn": {
+      "ht": "",
+      "at": "スキップされたブループリントを表示"
+    },
+    "hide_skipped_btn": {
+      "ht": "",
+      "at": "スキップされたブループリントを非表示"
+    },
+    "show_added_btn": {
+      "ht": "",
+      "at": "追加されたブループリントを表示"
+    },
+    "hide_added_btn": {
+      "ht": "",
+      "at": "追加されたブループリントを非表示"
     }
   },
   "log": {

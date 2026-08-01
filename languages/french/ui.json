@@ -1020,10 +1020,6 @@
       "ht": "",
       "at": "Aucun nouveau plan trouvé depuis la dernière analyse."
     },
-    "bp_scan_summary": {
-      "ht": "",
-      "at": "{count} plan(s) ajouté(s) à votre liste de possédés.\n\n{visible} sont visibles dans vos listes de plans actuelles ; les autres afficheront [Owned] automatiquement dès que leur objet réapparaîtra dans les récompenses de plans d'une mission."
-    },
     "mission_field_ace_tooltip": {
       "ht": "",
       "at": "Afficher une ligne « Ace Pilot: Yes » dans le corps des détails de mission lorsque la mission fait apparaître un pilote as. L'étiquette de titre [ACE] est une option distincte sous Étiquettes générales. Prend effet à la prochaine génération des enrichissements."
@@ -1362,6 +1358,22 @@
       "ht": "",
       "at": "Analyse les fichiers journaux de Star Citizen (Game.log et logbackups) à la recherche des notifications de récompense « Received Blueprint » et marque automatiquement ces plans comme possédés."
     },
+    "scan_other_channels_checkbox": {
+      "ht": "",
+      "at": "Analyser aussi LIVE/HOTFIX (celui qui n'est pas actif)"
+    },
+    "scan_other_channels_tooltip": {
+      "ht": "",
+      "at": "LIVE et HOTFIX partagent la même progression de compte, donc un plan gagné sur l'un apparaît aussi dans les journaux de l'autre. Analyse aussi celui des deux qui n'est pas votre canal actif, s'il est installé. PTU, EPTU et TECH-PREVIEW sont des versions de test séparées avec leur propre progression et ne sont jamais analysées."
+    },
+    "force_rescan_checkbox": {
+      "ht": "",
+      "at": "Réanalyser tous les journaux (ignorer la dernière analyse)"
+    },
+    "force_rescan_tooltip": {
+      "ht": "",
+      "at": "Normalement, une analyse ne lit que les événements depuis votre dernière analyse pour rester rapide. Cochez cette case si votre liste de possédés semble incorrecte et que vous voulez relire chaque journal depuis le début. Se décoche automatiquement après l'analyse suivante."
+    },
     "apply_owned_tag_btn": {
       "ht": "",
       "at": "Appliquer les étiquettes [Owned]"
@@ -1377,6 +1389,114 @@
     "owned_tags_refreshed": {
       "ht": "",
       "at": "Étiquettes [Owned] actualisées selon votre liste de possédés actuelle."
+    },
+    "export_owned_btn": {
+      "ht": "",
+      "at": "Exporter les plans possédés…"
+    },
+    "export_owned_tooltip": {
+      "ht": "",
+      "at": "Enregistrez votre liste de plans possédés dans un fichier JSON ou CSV, pour partager votre progression avec d'autres outils ou une autre installation de Smart Citizen."
+    },
+    "import_owned_btn": {
+      "ht": "",
+      "at": "Importer des plans possédés…"
+    },
+    "import_owned_tooltip": {
+      "ht": "",
+      "at": "Ajoutez des plans possédés depuis un fichier JSON ou CSV (y compris un export scmdb.net) à votre liste actuelle de plans possédés. Ne retire jamais un élément déjà marqué comme possédé."
+    },
+    "export_nothing_title": {
+      "ht": "",
+      "at": "Rien à exporter"
+    },
+    "export_nothing_body": {
+      "ht": "",
+      "at": "Votre liste de plans possédés est vide, il n'y a donc rien à exporter."
+    },
+    "export_dialog_title": {
+      "ht": "",
+      "at": "Exporter les plans possédés"
+    },
+    "export_default_filename": {
+      "ht": "",
+      "at": "plans-possedes"
+    },
+    "export_json_filter": {
+      "ht": "",
+      "at": "Fichiers JSON (*.json)"
+    },
+    "export_csv_filter": {
+      "ht": "",
+      "at": "Fichiers CSV (*.csv)"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "Échec de l'export"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "Impossible d'écrire le fichier.\n\n{error_type} : {error}"
+    },
+    "export_done_title": {
+      "ht": "",
+      "at": "Export terminé"
+    },
+    "export_done_singular": {
+      "ht": "",
+      "at": "1 plan possédé exporté vers :\n{path}"
+    },
+    "export_done_plural": {
+      "ht": "",
+      "at": "{count} plans possédés exportés vers :\n{path}"
+    },
+    "import_dialog_title": {
+      "ht": "",
+      "at": "Importer des plans possédés"
+    },
+    "import_file_filter": {
+      "ht": "",
+      "at": "Fichiers d'export de plans (*.json *.csv)"
+    },
+    "import_invalid_title": {
+      "ht": "",
+      "at": "Échec de l'import"
+    },
+    "import_invalid_body": {
+      "ht": "",
+      "at": "Impossible de lire ce fichier.\n\n{error}"
+    },
+    "import_nothing_matched_body": {
+      "ht": "",
+      "at": "Aucun des {count} plans de ce fichier n'est actuellement suivi par Smart Citizen, donc rien n'a été importé."
+    },
+    "owned_added_singular": {
+      "ht": "",
+      "at": "1 plan ajouté à votre liste de possédés. Il affichera l'étiquette [Owned] partout où il apparaît dans les récompenses de plans d'une mission."
+    },
+    "owned_added_plural": {
+      "ht": "",
+      "at": "{count} plans ajoutés à votre liste de possédés. Ils afficheront l'étiquette [Owned] partout où ils apparaissent dans les récompenses de plans d'une mission."
+    },
+    "import_skipped_note": {
+      "ht": "",
+      "at": "{skipped} autres éléments du fichier ne sont pas actuellement suivis par Smart Citizen et ont été ignorés."
+    },
+    "show_skipped_btn": {
+      "ht": "",
+      "at": "Afficher les plans ignorés"
+    },
+    "hide_skipped_btn": {
+      "ht": "",
+      "at": "Masquer les plans ignorés"
+    },
+    "show_added_btn": {
+      "ht": "",
+      "at": "Afficher les plans ajoutés"
+    },
+    "hide_added_btn": {
+      "ht": "",
+      "at": "Masquer les plans ajoutés"
     }
   },
   "log": {

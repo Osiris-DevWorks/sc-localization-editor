@@ -326,6 +326,52 @@ class TestBlueprintWatermark:
         )
         assert AppSettings.get_blueprint_log_watermark() is None
 
+    def test_explicit_channel_param_isolated_from_active_channel(self, isolated_settings, monkeypatch):
+        """#268: a multi-channel scan targets LIVE's and HOTFIX's watermarks
+        by explicit channel name, without ever touching active_channel."""
+        from datetime import datetime, timezone
+        live = datetime(2026, 4, 1, tzinfo=timezone.utc)
+        hotfix = datetime(2026, 5, 1, tzinfo=timezone.utc)
+
+        # Active channel is something else entirely, so the no-arg (default)
+        # form reading "None" below proves these explicit writes never fell
+        # through to active_channel's own slot.
+        monkeypatch.setattr(AppSettings, "get_active_channel", staticmethod(lambda: "PTU"))
+
+        AppSettings.set_blueprint_log_watermark(live, channel="LIVE")
+        AppSettings.set_blueprint_log_watermark(hotfix, channel="HOTFIX")
+
+        assert AppSettings.get_blueprint_log_watermark(channel="LIVE") == live
+        assert AppSettings.get_blueprint_log_watermark(channel="HOTFIX") == hotfix
+        # Neither write touched the active (PTU) channel's own watermark.
+        assert AppSettings.get_blueprint_log_watermark() is None
+
+    def test_explicit_channel_param_matches_active_channel_default(self, isolated_settings, monkeypatch):
+        """Passing the active channel's own name explicitly must read/write
+        the exact same slot as the no-argument (default) form."""
+        from datetime import datetime, timezone
+        when = datetime(2026, 6, 1, tzinfo=timezone.utc)
+
+        monkeypatch.setattr(AppSettings, "get_active_channel", staticmethod(lambda: "LIVE"))
+        AppSettings.set_blueprint_log_watermark(when, channel="LIVE")
+        assert AppSettings.get_blueprint_log_watermark() == when
+
+
+class TestScanOtherChannelsSetting:
+    """#268: persistence for the "also scan LIVE/HOTFIX" checkbox."""
+
+    def test_default_enabled(self, isolated_settings):
+        """Defaults on: opting in after the fact would miss blueprints
+        already earned on the inactive channel before a user thinks to
+        enable it."""
+        assert AppSettings.get_scan_other_channels_enabled() is True
+
+    def test_roundtrip(self, isolated_settings):
+        AppSettings.set_scan_other_channels_enabled(False)
+        assert AppSettings.get_scan_other_channels_enabled() is False
+        AppSettings.set_scan_other_channels_enabled(True)
+        assert AppSettings.get_scan_other_channels_enabled() is True
+
 
 class TestModelOwnedColumn:
     def _model(self, qapp):

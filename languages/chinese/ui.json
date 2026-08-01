@@ -1020,10 +1020,6 @@
       "ht": "",
       "at": "自上次扫描以来没有发现新的蓝图。"
     },
-    "bp_scan_summary": {
-      "ht": "",
-      "at": "已将 {count} 个蓝图添加到你的已拥有列表。\n\n其中 {visible} 个目前可在你当前的蓝图列表中看到；其余的会在其物品下次出现在任务蓝图奖励中时自动显示 [已拥有]。"
-    },
     "mission_field_ace_tooltip": {
       "ht": "",
       "at": "当任务生成王牌飞行员时，在任务详情正文中显示“王牌飞行员：是”一行。[ACE] 标题标签是一个独立的开关，位于“通用标签”下。将在下次“生成增强内容”时生效。"
@@ -1362,6 +1358,22 @@
       "ht": "",
       "at": "扫描你的《星际公民》日志文件（Game.log 及 logbackups）以查找“已获得蓝图”奖励通知，并自动将其标记为已拥有。"
     },
+    "scan_other_channels_checkbox": {
+      "ht": "",
+      "at": "同时扫描 LIVE/HOTFIX（无论当前未激活的是哪一个）"
+    },
+    "scan_other_channels_tooltip": {
+      "ht": "",
+      "at": "LIVE 和 HOTFIX 共享相同的账号进度，因此在其中一个频道获得的蓝图也会出现在另一个频道的日志中。如果已安装，也会扫描这两个频道中当前非激活的那一个。PTU、EPTU 和 TECH-PREVIEW 是拥有各自独立进度的测试版本，永远不会被扫描。"
+    },
+    "force_rescan_checkbox": {
+      "ht": "",
+      "at": "重新扫描所有日志（忽略上次扫描）"
+    },
+    "force_rescan_tooltip": {
+      "ht": "",
+      "at": "通常扫描只会读取自上次扫描以来的事件，以保持速度。如果你的已拥有列表看起来不正确，且你想从头重新读取每个日志，请勾选此项。下次扫描后会自动取消勾选。"
+    },
     "apply_owned_tag_btn": {
       "ht": "",
       "at": "应用已拥有标签"
@@ -1377,6 +1389,114 @@
     "owned_tags_refreshed": {
       "ht": "",
       "at": "[Owned] 标签已刷新，与你当前的已拥有列表保持一致。"
+    },
+    "export_owned_btn": {
+      "ht": "",
+      "at": "导出已拥有蓝图…"
+    },
+    "export_owned_tooltip": {
+      "ht": "",
+      "at": "将你的已拥有列表保存为 JSON 或 CSV 文件，以便与其他工具或另一个 Smart Citizen 安装共享进度。"
+    },
+    "import_owned_btn": {
+      "ht": "",
+      "at": "导入已拥有蓝图…"
+    },
+    "import_owned_tooltip": {
+      "ht": "",
+      "at": "从 JSON 或 CSV 文件（包括 scmdb.net 导出的文件）中添加已拥有的蓝图到你当前的已拥有列表。绝不会移除任何已标记为拥有的项目。"
+    },
+    "export_nothing_title": {
+      "ht": "",
+      "at": "没有可导出的内容"
+    },
+    "export_nothing_body": {
+      "ht": "",
+      "at": "你的已拥有列表为空，因此没有可导出的内容。"
+    },
+    "export_dialog_title": {
+      "ht": "",
+      "at": "导出已拥有蓝图"
+    },
+    "export_default_filename": {
+      "ht": "",
+      "at": "owned-blueprints"
+    },
+    "export_json_filter": {
+      "ht": "",
+      "at": "JSON 文件 (*.json)"
+    },
+    "export_csv_filter": {
+      "ht": "",
+      "at": "CSV 文件 (*.csv)"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "导出失败"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "无法写入文件。\n\n{error_type}：{error}"
+    },
+    "export_done_title": {
+      "ht": "",
+      "at": "导出完成"
+    },
+    "export_done_singular": {
+      "ht": "",
+      "at": "已将 1 个已拥有蓝图导出至：\n{path}"
+    },
+    "export_done_plural": {
+      "ht": "",
+      "at": "已将 {count} 个已拥有蓝图导出至：\n{path}"
+    },
+    "import_dialog_title": {
+      "ht": "",
+      "at": "导入已拥有蓝图"
+    },
+    "import_file_filter": {
+      "ht": "",
+      "at": "蓝图导出文件 (*.json *.csv)"
+    },
+    "import_invalid_title": {
+      "ht": "",
+      "at": "导入失败"
+    },
+    "import_invalid_body": {
+      "ht": "",
+      "at": "无法读取该文件。\n\n{error}"
+    },
+    "import_nothing_matched_body": {
+      "ht": "",
+      "at": "该文件中的 {count} 个蓝图目前均未被 Smart Citizen 追踪，因此未导入任何内容。"
+    },
+    "owned_added_singular": {
+      "ht": "",
+      "at": "已将 1 个蓝图添加到你的已拥有列表。它会在任务蓝图奖励中出现的任何位置显示 [Owned] 标签。"
+    },
+    "owned_added_plural": {
+      "ht": "",
+      "at": "已将 {count} 个蓝图添加到你的已拥有列表。它们会在任务蓝图奖励中出现的任何位置显示 [Owned] 标签。"
+    },
+    "import_skipped_note": {
+      "ht": "",
+      "at": "文件中另有 {skipped} 个目前未被 Smart Citizen 追踪，已被跳过。"
+    },
+    "show_skipped_btn": {
+      "ht": "",
+      "at": "显示已跳过的蓝图"
+    },
+    "hide_skipped_btn": {
+      "ht": "",
+      "at": "隐藏已跳过的蓝图"
+    },
+    "show_added_btn": {
+      "ht": "",
+      "at": "显示已添加的蓝图"
+    },
+    "hide_added_btn": {
+      "ht": "",
+      "at": "隐藏已添加的蓝图"
     }
   },
   "log": {

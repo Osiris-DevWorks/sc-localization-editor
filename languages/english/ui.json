@@ -1020,10 +1020,6 @@
       "ht": "No new blueprints found since the last scan.",
       "at": ""
     },
-    "bp_scan_summary": {
-      "ht": "Added {count} blueprint(s) to your owned list.\n\n{visible} are visible in your current blueprint lists now; the rest will show [Owned] automatically whenever their item next appears in a mission's blueprint rewards.",
-      "at": ""
-    },
     "mission_field_ace_tooltip": {
       "ht": "Show an \"Ace Pilot: Yes\" line in the mission details body when the mission spawns an ace pilot. The [ACE] title tag is a separate toggle under General Tags. Takes effect on the next Generate Enhancements.",
       "at": ""
@@ -1362,6 +1358,22 @@
       "ht": "Scan your Star Citizen log files (Game.log and logbackups) for \"Received Blueprint\" reward notifications and automatically mark them as owned.",
       "at": ""
     },
+    "scan_other_channels_checkbox": {
+      "ht": "Also scan LIVE/HOTFIX (whichever isn't active)",
+      "at": ""
+    },
+    "scan_other_channels_tooltip": {
+      "ht": "LIVE and HOTFIX share the same account progression, so a blueprint earned on one shows up in the other's logs too. Also scans whichever of the two isn't your active channel, if it's installed. PTU, EPTU, and TECH-PREVIEW are separate test builds with their own progression and are never scanned.",
+      "at": ""
+    },
+    "force_rescan_checkbox": {
+      "ht": "Rescan all logs (ignore last scan)",
+      "at": ""
+    },
+    "force_rescan_tooltip": {
+      "ht": "Normally a scan only reads events since your last scan, so it stays fast. Check this if your Owned list looks wrong and you want to re-read every log from scratch instead. Unchecks itself after the next scan.",
+      "at": ""
+    },
     "apply_owned_tag_btn": {
       "ht": "Apply Owned Tags",
       "at": ""
@@ -1376,6 +1388,114 @@
     },
     "owned_tags_refreshed": {
       "ht": "[Owned] tags refreshed to match your current Owned list.",
+      "at": ""
+    },
+    "export_owned_btn": {
+      "ht": "Export Owned Blueprints…",
+      "at": ""
+    },
+    "export_owned_tooltip": {
+      "ht": "Save your Owned list to a JSON or CSV file, for sharing progress with other tools or another Smart Citizen install.",
+      "at": ""
+    },
+    "import_owned_btn": {
+      "ht": "Import Owned Blueprints…",
+      "at": ""
+    },
+    "import_owned_tooltip": {
+      "ht": "Add owned blueprints from a JSON or CSV file (including an scmdb.net export) to your current Owned list. Never removes anything already marked owned.",
+      "at": ""
+    },
+    "export_nothing_title": {
+      "ht": "Nothing to export",
+      "at": ""
+    },
+    "export_nothing_body": {
+      "ht": "Your Owned list is empty, so there's nothing to export.",
+      "at": ""
+    },
+    "export_dialog_title": {
+      "ht": "Export Owned Blueprints",
+      "at": ""
+    },
+    "export_default_filename": {
+      "ht": "owned-blueprints",
+      "at": ""
+    },
+    "export_json_filter": {
+      "ht": "JSON files (*.json)",
+      "at": ""
+    },
+    "export_csv_filter": {
+      "ht": "CSV files (*.csv)",
+      "at": ""
+    },
+    "export_failed_title": {
+      "ht": "Export failed",
+      "at": ""
+    },
+    "export_failed_body": {
+      "ht": "Could not write the file.\n\n{error_type}: {error}",
+      "at": ""
+    },
+    "export_done_title": {
+      "ht": "Export complete",
+      "at": ""
+    },
+    "export_done_singular": {
+      "ht": "Exported 1 owned blueprint to:\n{path}",
+      "at": ""
+    },
+    "export_done_plural": {
+      "ht": "Exported {count} owned blueprints to:\n{path}",
+      "at": ""
+    },
+    "import_dialog_title": {
+      "ht": "Import Owned Blueprints",
+      "at": ""
+    },
+    "import_file_filter": {
+      "ht": "Blueprint export files (*.json *.csv)",
+      "at": ""
+    },
+    "import_invalid_title": {
+      "ht": "Import failed",
+      "at": ""
+    },
+    "import_invalid_body": {
+      "ht": "Could not read that file.\n\n{error}",
+      "at": ""
+    },
+    "import_nothing_matched_body": {
+      "ht": "None of the {count} blueprints in that file are currently tracked by Smart Citizen, so nothing was imported.",
+      "at": ""
+    },
+    "owned_added_singular": {
+      "ht": "1 blueprint added to your Owned list. It'll show an [Owned] tag wherever it appears in a mission's blueprint rewards.",
+      "at": ""
+    },
+    "owned_added_plural": {
+      "ht": "{count} blueprints added to your Owned list. They'll show an [Owned] tag wherever they appear in a mission's blueprint rewards.",
+      "at": ""
+    },
+    "import_skipped_note": {
+      "ht": "{skipped} others in the file aren't currently tracked by Smart Citizen and were skipped.",
+      "at": ""
+    },
+    "show_skipped_btn": {
+      "ht": "Show Skipped Blueprints",
+      "at": ""
+    },
+    "hide_skipped_btn": {
+      "ht": "Hide Skipped Blueprints",
+      "at": ""
+    },
+    "show_added_btn": {
+      "ht": "Show Added Blueprints",
+      "at": ""
+    },
+    "hide_added_btn": {
+      "ht": "Hide Added Blueprints",
       "at": ""
     }
   },

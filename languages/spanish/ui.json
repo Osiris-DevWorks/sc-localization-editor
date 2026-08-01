@@ -1020,10 +1020,6 @@
       "ht": "",
       "at": "No se han encontrado blueprints nuevos desde el último escaneo."
     },
-    "bp_scan_summary": {
-      "ht": "",
-      "at": "Se han añadido {count} blueprint(s) a tu lista de adquiridos.\n\n{visible} ya son visibles en tus listas de blueprints actuales; el resto mostrará [Owned] automáticamente cuando su objeto vuelva a aparecer entre las recompensas de blueprint de una misión."
-    },
     "mission_field_ace_tooltip": {
       "ht": "",
       "at": "Mostrar una línea \"Ace Pilot: Yes\" en el cuerpo de detalles de la misión cuando la misión genere un piloto as. La etiqueta de título [ACE] es una opción independiente en Etiquetas generales. Surte efecto en la próxima generación de mejoras."
@@ -1362,6 +1358,22 @@
       "ht": "",
       "at": "Escanea los archivos de registro de Star Citizen (Game.log y logbackups) en busca de notificaciones de recompensa \"Received Blueprint\" y marca esos blueprints automáticamente como adquiridos."
     },
+    "scan_other_channels_checkbox": {
+      "ht": "",
+      "at": "Analizar también LIVE/HOTFIX (el que no esté activo)"
+    },
+    "scan_other_channels_tooltip": {
+      "ht": "",
+      "at": "LIVE y HOTFIX comparten el mismo progreso de cuenta, así que un plano obtenido en uno aparece también en los registros del otro. También analiza el que no sea tu canal activo de los dos, si está instalado. PTU, EPTU y TECH-PREVIEW son compilaciones de prueba independientes con su propio progreso y nunca se analizan."
+    },
+    "force_rescan_checkbox": {
+      "ht": "",
+      "at": "Reanalizar todos los registros (ignorar el último análisis)"
+    },
+    "force_rescan_tooltip": {
+      "ht": "",
+      "at": "Normalmente un análisis solo lee eventos desde tu último análisis, para seguir siendo rápido. Marca esto si tu lista de poseídos parece incorrecta y quieres releer cada registro desde cero. Se desmarca sola después del siguiente análisis."
+    },
     "apply_owned_tag_btn": {
       "ht": "",
       "at": "Aplicar etiquetas [Owned]"
@@ -1377,6 +1389,114 @@
     "owned_tags_refreshed": {
       "ht": "",
       "at": "Etiquetas [Owned] actualizadas para coincidir con tu lista de Adquiridos actual."
+    },
+    "export_owned_btn": {
+      "ht": "",
+      "at": "Exportar blueprints adquiridos…"
+    },
+    "export_owned_tooltip": {
+      "ht": "",
+      "at": "Guarda tu lista de adquiridos en un archivo JSON o CSV, para compartir tu progreso con otras herramientas o con otra instalación de Smart Citizen."
+    },
+    "import_owned_btn": {
+      "ht": "",
+      "at": "Importar blueprints adquiridos…"
+    },
+    "import_owned_tooltip": {
+      "ht": "",
+      "at": "Añade blueprints adquiridos desde un archivo JSON o CSV (incluida una exportación de scmdb.net) a tu lista actual de adquiridos. Nunca elimina nada que ya esté marcado como adquirido."
+    },
+    "export_nothing_title": {
+      "ht": "",
+      "at": "Nada que exportar"
+    },
+    "export_nothing_body": {
+      "ht": "",
+      "at": "Tu lista de adquiridos está vacía, así que no hay nada que exportar."
+    },
+    "export_dialog_title": {
+      "ht": "",
+      "at": "Exportar blueprints adquiridos"
+    },
+    "export_default_filename": {
+      "ht": "",
+      "at": "blueprints-adquiridos"
+    },
+    "export_json_filter": {
+      "ht": "",
+      "at": "Archivos JSON (*.json)"
+    },
+    "export_csv_filter": {
+      "ht": "",
+      "at": "Archivos CSV (*.csv)"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "Error al exportar"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "No se pudo escribir el archivo.\n\n{error_type}: {error}"
+    },
+    "export_done_title": {
+      "ht": "",
+      "at": "Exportación completa"
+    },
+    "export_done_singular": {
+      "ht": "",
+      "at": "Se exportó 1 blueprint adquirido a:\n{path}"
+    },
+    "export_done_plural": {
+      "ht": "",
+      "at": "Se exportaron {count} blueprints adquiridos a:\n{path}"
+    },
+    "import_dialog_title": {
+      "ht": "",
+      "at": "Importar blueprints adquiridos"
+    },
+    "import_file_filter": {
+      "ht": "",
+      "at": "Archivos de exportación de blueprints (*.json *.csv)"
+    },
+    "import_invalid_title": {
+      "ht": "",
+      "at": "Error al importar"
+    },
+    "import_invalid_body": {
+      "ht": "",
+      "at": "No se pudo leer ese archivo.\n\n{error}"
+    },
+    "import_nothing_matched_body": {
+      "ht": "",
+      "at": "Ninguno de los {count} blueprints de ese archivo está actualmente rastreado por Smart Citizen, así que no se importó nada."
+    },
+    "owned_added_singular": {
+      "ht": "",
+      "at": "1 blueprint añadido a tu lista de adquiridos. Mostrará la etiqueta [Owned] donde sea que aparezca entre las recompensas de blueprint de una misión."
+    },
+    "owned_added_plural": {
+      "ht": "",
+      "at": "{count} blueprints añadidos a tu lista de adquiridos. Mostrarán la etiqueta [Owned] donde sea que aparezcan entre las recompensas de blueprint de una misión."
+    },
+    "import_skipped_note": {
+      "ht": "",
+      "at": "{skipped} otros del archivo no están actualmente rastreados por Smart Citizen y se omitieron."
+    },
+    "show_skipped_btn": {
+      "ht": "",
+      "at": "Mostrar blueprints omitidos"
+    },
+    "hide_skipped_btn": {
+      "ht": "",
+      "at": "Ocultar blueprints omitidos"
+    },
+    "show_added_btn": {
+      "ht": "",
+      "at": "Mostrar blueprints añadidos"
+    },
+    "hide_added_btn": {
+      "ht": "",
+      "at": "Ocultar blueprints añadidos"
     }
   },
   "log": {

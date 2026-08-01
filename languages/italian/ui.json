@@ -1020,10 +1020,6 @@
       "ht": "",
       "at": "Nessun nuovo blueprint trovato dall'ultima scansione."
     },
-    "bp_scan_summary": {
-      "ht": "",
-      "at": "Aggiunti {count} blueprint alla tua lista dei posseduti.\n\n{visible} sono visibili ora nelle tue liste blueprint attuali; il resto mostrerà [Posseduto] automaticamente non appena il rispettivo oggetto comparirà di nuovo tra le ricompense blueprint di una missione."
-    },
     "mission_field_ace_tooltip": {
       "ht": "",
       "at": "Mostra una riga \"Pilota Asso: Sì\" nel corpo dei dettagli della missione quando questa genera un pilota asso. Il tag del titolo [ACE] è un interruttore separato sotto Tag Generali. Ha effetto al prossimo Genera Miglioramenti."
@@ -1362,6 +1358,22 @@
       "ht": "",
       "at": "Analizza i file di log di Star Citizen (Game.log e logbackups) alla ricerca delle notifiche di ricompensa \"Received Blueprint\" e li contrassegna automaticamente come posseduti."
     },
+    "scan_other_channels_checkbox": {
+      "ht": "",
+      "at": "Analizza anche LIVE/HOTFIX (quello non attivo)"
+    },
+    "scan_other_channels_tooltip": {
+      "ht": "",
+      "at": "LIVE e HOTFIX condividono la stessa progressione dell'account, quindi un blueprint ottenuto in uno appare anche nei log dell'altro. Analizza anche quello dei due che non è il tuo canale attivo, se installato. PTU, EPTU e TECH-PREVIEW sono build di test separate con una propria progressione e non vengono mai analizzate."
+    },
+    "force_rescan_checkbox": {
+      "ht": "",
+      "at": "Riesegui la scansione di tutti i log (ignora l'ultima scansione)"
+    },
+    "force_rescan_tooltip": {
+      "ht": "",
+      "at": "Normalmente una scansione legge solo gli eventi dall'ultima scansione, per rimanere veloce. Seleziona questa opzione se la tua lista dei posseduti sembra errata e vuoi rileggere ogni log da zero. Si deseleziona automaticamente dopo la scansione successiva."
+    },
     "apply_owned_tag_btn": {
       "ht": "",
       "at": "Applica tag posseduto"
@@ -1377,6 +1389,114 @@
     "owned_tags_refreshed": {
       "ht": "",
       "at": "I tag [Owned] sono stati aggiornati in base alla tua lista Posseduti attuale."
+    },
+    "export_owned_btn": {
+      "ht": "",
+      "at": "Esporta blueprint posseduti…"
+    },
+    "export_owned_tooltip": {
+      "ht": "",
+      "at": "Salva la tua lista Posseduti in un file JSON o CSV, per condividere i progressi con altri strumenti o un'altra installazione di Smart Citizen."
+    },
+    "import_owned_btn": {
+      "ht": "",
+      "at": "Importa blueprint posseduti…"
+    },
+    "import_owned_tooltip": {
+      "ht": "",
+      "at": "Aggiungi blueprint posseduti da un file JSON o CSV (inclusa un'esportazione da scmdb.net) alla tua lista Posseduti attuale. Non rimuove mai nulla già contrassegnato come posseduto."
+    },
+    "export_nothing_title": {
+      "ht": "",
+      "at": "Niente da esportare"
+    },
+    "export_nothing_body": {
+      "ht": "",
+      "at": "La tua lista Posseduti è vuota, quindi non c'è nulla da esportare."
+    },
+    "export_dialog_title": {
+      "ht": "",
+      "at": "Esporta blueprint posseduti"
+    },
+    "export_default_filename": {
+      "ht": "",
+      "at": "blueprint-posseduti"
+    },
+    "export_json_filter": {
+      "ht": "",
+      "at": "File JSON (*.json)"
+    },
+    "export_csv_filter": {
+      "ht": "",
+      "at": "File CSV (*.csv)"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "Esportazione non riuscita"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "Impossibile scrivere il file.\n\n{error_type}: {error}"
+    },
+    "export_done_title": {
+      "ht": "",
+      "at": "Esportazione completata"
+    },
+    "export_done_singular": {
+      "ht": "",
+      "at": "Esportato 1 blueprint posseduto in:\n{path}"
+    },
+    "export_done_plural": {
+      "ht": "",
+      "at": "Esportati {count} blueprint posseduti in:\n{path}"
+    },
+    "import_dialog_title": {
+      "ht": "",
+      "at": "Importa blueprint posseduti"
+    },
+    "import_file_filter": {
+      "ht": "",
+      "at": "File di esportazione blueprint (*.json *.csv)"
+    },
+    "import_invalid_title": {
+      "ht": "",
+      "at": "Importazione non riuscita"
+    },
+    "import_invalid_body": {
+      "ht": "",
+      "at": "Impossibile leggere questo file.\n\n{error}"
+    },
+    "import_nothing_matched_body": {
+      "ht": "",
+      "at": "Nessuno dei {count} blueprint in questo file è attualmente tracciato da Smart Citizen, quindi non è stato importato nulla."
+    },
+    "owned_added_singular": {
+      "ht": "",
+      "at": "1 blueprint aggiunto alla tua lista Posseduti. Mostrerà il tag [Owned] ovunque compaia tra le ricompense blueprint di una missione."
+    },
+    "owned_added_plural": {
+      "ht": "",
+      "at": "{count} blueprint aggiunti alla tua lista Posseduti. Mostreranno il tag [Owned] ovunque compaiano tra le ricompense blueprint di una missione."
+    },
+    "import_skipped_note": {
+      "ht": "",
+      "at": "{skipped} altri nel file non sono attualmente tracciati da Smart Citizen e sono stati ignorati."
+    },
+    "show_skipped_btn": {
+      "ht": "",
+      "at": "Mostra blueprint ignorati"
+    },
+    "hide_skipped_btn": {
+      "ht": "",
+      "at": "Nascondi blueprint ignorati"
+    },
+    "show_added_btn": {
+      "ht": "",
+      "at": "Mostra blueprint aggiunti"
+    },
+    "hide_added_btn": {
+      "ht": "",
+      "at": "Nascondi blueprint aggiunti"
     }
   },
   "log": {
