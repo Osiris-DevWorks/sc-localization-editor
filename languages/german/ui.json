@@ -1020,10 +1020,6 @@
       "ht": "",
       "at": "Seit dem letzten Scan wurden keine neuen Baupläne gefunden."
     },
-    "bp_scan_summary": {
-      "ht": "",
-      "at": "{count} Bauplan/Baupläne zu deiner Besessen-Liste hinzugefügt.\n\n{visible} sind jetzt in deinen aktuellen Bauplan-Listen sichtbar; die restlichen zeigen automatisch [Besessen], sobald ihr Gegenstand als Nächstes in den Bauplan-Belohnungen einer Mission erscheint."
-    },
     "mission_field_ace_tooltip": {
       "ht": "",
       "at": "Zeigt eine Zeile „Ass-Pilot: Ja“ im Missionsdetail-Text an, wenn die Mission einen Ass-Piloten erzeugt. Das [ACE]-Titel-Tag ist ein separater Umschalter unter Allgemeine Tags. Wirkt sich beim nächsten „Erweiterungen erstellen“ aus."
@@ -1377,6 +1373,130 @@
     "owned_tags_refreshed": {
       "ht": "",
       "at": "[Owned]-Tags wurden aktualisiert, um deiner aktuellen Besitzliste zu entsprechen."
+    },
+    "export_csv_filter": {
+      "ht": "",
+      "at": "CSV-Dateien (*.csv)"
+    },
+    "export_default_filename": {
+      "ht": "",
+      "at": "owned-blueprints"
+    },
+    "export_dialog_title": {
+      "ht": "",
+      "at": "Eigene Baupläne exportieren"
+    },
+    "export_done_plural": {
+      "ht": "",
+      "at": "{count} eigene Baupläne exportiert nach:\n{path}"
+    },
+    "export_done_singular": {
+      "ht": "",
+      "at": "1 eigener Bauplan exportiert nach:\n{path}"
+    },
+    "export_done_title": {
+      "ht": "",
+      "at": "Export abgeschlossen"
+    },
+    "export_failed_body": {
+      "ht": "",
+      "at": "Die Datei konnte nicht geschrieben werden.\n\n{error_type}: {error}"
+    },
+    "export_failed_title": {
+      "ht": "",
+      "at": "Export fehlgeschlagen"
+    },
+    "export_json_filter": {
+      "ht": "",
+      "at": "JSON-Dateien (*.json)"
+    },
+    "export_nothing_body": {
+      "ht": "",
+      "at": "Deine Liste eigener Baupläne ist leer, daher gibt es nichts zu exportieren."
+    },
+    "export_nothing_title": {
+      "ht": "",
+      "at": "Nichts zu exportieren"
+    },
+    "export_owned_btn": {
+      "ht": "",
+      "at": "Eigene Baupläne exportieren…"
+    },
+    "export_owned_tooltip": {
+      "ht": "",
+      "at": "Speichert deine Liste eigener Baupläne in einer JSON- oder CSV-Datei, um deinen Fortschritt mit anderen Tools oder einer weiteren Smart-Citizen-Installation zu teilen."
+    },
+    "force_rescan_checkbox": {
+      "ht": "",
+      "at": "Alle Logs erneut scannen (letzten Scan ignorieren)"
+    },
+    "force_rescan_tooltip": {
+      "ht": "",
+      "at": "Normalerweise liest ein Scan nur Ereignisse seit deinem letzten Scan, damit er schnell bleibt. Aktiviere dies, wenn deine Liste eigener Baupläne falsch aussieht und du stattdessen jedes Log von Grund auf neu einlesen möchtest. Wird nach dem nächsten Scan automatisch wieder deaktiviert."
+    },
+    "hide_added_btn": {
+      "ht": "",
+      "at": "Hinzugefügte Baupläne ausblenden"
+    },
+    "hide_skipped_btn": {
+      "ht": "",
+      "at": "Übersprungene Baupläne ausblenden"
+    },
+    "import_dialog_title": {
+      "ht": "",
+      "at": "Eigene Baupläne importieren"
+    },
+    "import_file_filter": {
+      "ht": "",
+      "at": "Bauplan-Exportdateien (*.json *.csv)"
+    },
+    "import_invalid_body": {
+      "ht": "",
+      "at": "Diese Datei konnte nicht gelesen werden.\n\n{error}"
+    },
+    "import_invalid_title": {
+      "ht": "",
+      "at": "Import fehlgeschlagen"
+    },
+    "import_nothing_matched_body": {
+      "ht": "",
+      "at": "Keiner der {count} Baupläne in dieser Datei wird derzeit von Smart Citizen erfasst, daher wurde nichts importiert."
+    },
+    "import_owned_btn": {
+      "ht": "",
+      "at": "Eigene Baupläne importieren…"
+    },
+    "import_owned_tooltip": {
+      "ht": "",
+      "at": "Fügt eigene Baupläne aus einer JSON- oder CSV-Datei (einschließlich eines scmdb.net-Exports) zu deiner aktuellen Liste eigener Baupläne hinzu. Entfernt niemals etwas, das bereits als eigen markiert ist."
+    },
+    "import_skipped_note": {
+      "ht": "",
+      "at": "{skipped} weitere Einträge in der Datei werden derzeit nicht von Smart Citizen erfasst und wurden übersprungen."
+    },
+    "owned_added_plural": {
+      "ht": "",
+      "at": "{count} Baupläne zu deiner Liste eigener Baupläne hinzugefügt. Sie zeigen überall, wo sie in den Bauplan-Belohnungen einer Mission erscheinen, die Markierung [Owned] an."
+    },
+    "owned_added_singular": {
+      "ht": "",
+      "at": "1 Bauplan zu deiner Liste eigener Baupläne hinzugefügt. Er zeigt überall, wo er in den Bauplan-Belohnungen einer Mission erscheint, die Markierung [Owned] an."
+    },
+    "scan_other_channels_checkbox": {
+      "ht": "",
+      "at": "Auch LIVE/HOTFIX scannen (den jeweils inaktiven)"
+    },
+    "scan_other_channels_tooltip": {
+      "ht": "",
+      "at": "LIVE und HOTFIX teilen sich denselben Kontofortschritt, daher erscheint ein in einem der beiden erhaltener Bauplan auch in den Logs des anderen. Scannt zusätzlich denjenigen der beiden, der nicht dein aktiver Kanal ist, falls installiert. PTU, EPTU und TECH-PREVIEW sind separate Testversionen mit eigenem Fortschritt und werden nie gescannt."
+    },
+    "show_added_btn": {
+      "ht": "",
+      "at": "Hinzugefügte Baupläne anzeigen"
+    },
+    "show_skipped_btn": {
+      "ht": "",
+      "at": "Übersprungene Baupläne anzeigen"
     }
   },
   "log": {
