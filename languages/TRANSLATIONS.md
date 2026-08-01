@@ -124,6 +124,15 @@ them against the new source.
   `SC_LANGUAGE_IDS["japanese"] = "japanese_(japan)"`; installer
   `LanguageChoicePage` gained a Japanese option. Locked by
   `tests/test_japanese_activation.py`.
+- **2.3.0 (2026-07-25, Claude Sonnet 5):** New language **german** added (#299).
+  Full AI translation of all 376 UI keys plus the 19-step guided tour
+  (`tutorial.*`), all `at`-only (`ht` empty). Translated `HELP.md`, `ABOUT.md`,
+  `LEGAL.md`, and `FAQ.md`. Base `global.ini` mapped to
+  rjcncpt/StarCitizen-Deutsch-INI (`live/global.ini`, the standard hybrid
+  translation, not the extended "Deutsch+" variant) in `sources.json`;
+  `SC_LANGUAGE_IDS["german"] = "german_(germany)"`; installer
+  `LanguageChoicePage` gained a German option. Locked by
+  `tests/test_german_activation.py`.
 
 - **2.2.0 pre-release (2026-07-15, Claude Fable 5):** AI backfill of the keys
   this cycle added in English only. french and portuguese_br each gained 43
@@ -192,3 +201,14 @@ them against the new source.
   Localization folder with `g_language = japanese_(japan)` (`SC_LANGUAGE_IDS`).
   A Japanese-speaking reviewer replacing the `at` strings with `ht` is the next
   step to promote it from AI-only to human-reviewed.
+- **german** — AI-translated by **Claude** (#299). No human translator yet, so
+  **every** key is `at`-only (`ht` empty) — the whole UI, the guided tour
+  (`tutorial.*`), and the `HELP.md` / `ABOUT.md` / `LEGAL.md` / `FAQ.md`
+  documents are awaiting human review (grep `"ht": ""` returns the entire
+  file by design). The base `global.ini` is sourced from
+  **rjcncpt/StarCitizen-Deutsch-INI** (`live/global.ini`), a community
+  translation project with its own launcher and Discord. German writes to
+  the game's `german_(germany)` Localization folder with
+  `g_language = german_(germany)` (`SC_LANGUAGE_IDS`). A German-speaking
+  reviewer replacing the `at` strings with `ht` is the next step to promote
+  it from AI-only to human-reviewed.
