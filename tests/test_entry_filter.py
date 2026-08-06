@@ -177,11 +177,12 @@ def test_favorites_marker_searchable_in_star_column():
 
 def _bp_entries():
     return [
-        _e("title_bp", original_value="Retrieve Cargo Haul <EM4>[BP]</EM4>"),
-        _e("title_bpq", original_value="Recoup Stolen Haul <EM4>[BP?]</EM4>"),
-        _e("desc_bp", original_value="POSTING...\n<EM4>POTENTIAL BLUEPRINTS</EM4>\n- Antium Core"),
-        _e("plain_title", original_value="Some Mission"),
-        _e("plain_desc", original_value="A description with no rewards section"),
+        _e("title_bp", category="Missions", original_value="Retrieve Cargo Haul <EM4>[BP]</EM4>"),
+        _e("title_bpq", category="Missions", original_value="Recoup Stolen Haul <EM4>[BP?]</EM4>"),
+        _e("desc_bp", category="Missions",
+           original_value="POSTING...\n<EM4>POTENTIAL BLUEPRINTS</EM4>\n- Antium Core"),
+        _e("plain_title", category="Missions", original_value="Some Mission"),
+        _e("plain_desc", category="Missions", original_value="A description with no rewards section"),
     ]
 
 
@@ -199,6 +200,18 @@ def test_bp_descs_only_keeps_potential_blueprints_bodies():
     assert result == [2]  # the POTENTIAL BLUEPRINTS body only
 
 
+def test_bp_descs_only_excludes_non_mission_colliding_header():
+    """#354: a commodity whose value happens to contain matching header
+    text (e.g. a renamed "Blueprint Data" header colliding with the
+    "blueprints" header) must not be picked up here either -- only
+    "Missions"-category entries qualify."""
+    e = [_e("items_commodities_iron_desc", category="Commodities",
+            original_value="Iron Ore.\n<EM3>POTENTIAL BLUEPRINTS</EM3>\n- Power Plants: 10 items")]
+    result = filter_entry_indices(e, {}, _no_filters(), "All", "All", False, False, "★",
+                                  bp_descs_only=True)
+    assert result == []
+
+
 def test_both_bp_flags_show_titles_or_descs():
     e = _bp_entries()
     result = filter_entry_indices(e, {}, _no_filters(), "All", "All", False, False, "★",
@@ -213,11 +226,11 @@ def test_bp_descs_only_recognises_multiple_blueprint_pools_header():
     follow-up) -- pre-fix, the "BP Descriptions" checkbox only recognised
     "POTENTIAL BLUEPRINTS" and silently excluded these mission bodies."""
     entries = [
-        _e("desc_pools", original_value=(
+        _e("desc_pools", category="Missions", original_value=(
             "POSTING...\n<EM4>MULTIPLE BLUEPRINT POOLS</EM4>"
             "\n<EM4>Pool 1</EM4>\n- Helix I Mining Laser (Mining Laser)"
         )),
-        _e("plain_desc", original_value="A description with no rewards section"),
+        _e("plain_desc", category="Missions", original_value="A description with no rewards section"),
     ]
     result = filter_entry_indices(entries, {}, _no_filters(), "All", "All", False, False, "★",
                                   bp_descs_only=True)

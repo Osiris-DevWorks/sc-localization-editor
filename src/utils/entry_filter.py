@@ -130,7 +130,13 @@ def filter_entry_indices(
         if bp_titles_only or bp_descs_only:
             val = entry.custom_value or entry.original_value
             is_bp_title = bp_titles_only and "[BP" in val
-            is_bp_desc = bp_descs_only and has_bp_section(val)
+            # #354: gated to Missions entries -- see blueprint_meta.py's
+            # matching gate for why (a commodity's independently-renameable
+            # "Blueprint Data" header can otherwise collide with this check).
+            is_bp_desc = (
+                bp_descs_only and entry.category == "Missions"
+                and has_bp_section(val)
+            )
             if not (is_bp_title or is_bp_desc):
                 continue
         if active_filter_fns:
