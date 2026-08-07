@@ -1728,8 +1728,9 @@ class MainWindow(QMainWindow):
             _owned = AppSettings.get_owned_items()
             if _owned:
                 from src.utils.owned_items import apply_owned_to_value
+                _bp_header = AppSettings.get_mission_headers().get("blueprints")
                 for _k, _v in list(merged_dict.items()):
-                    _nv = apply_owned_to_value(_v, _owned)
+                    _nv = apply_owned_to_value(_v, _owned, bp_header=_bp_header)
                     if _nv != _v:
                         merged_dict[_k] = _nv
 
@@ -4995,6 +4996,7 @@ class MainWindow(QMainWindow):
             bp_titles_only=self.bp_titles_check.isChecked(),
             bp_descs_only=self.bp_descs_check.isChecked(),
             ship_vehicle_names_only=self.ship_vehicle_names_only_check.isChecked(),
+            bp_header=AppSettings.get_mission_headers().get("blueprints"),
         )
 
     @timed
@@ -5283,7 +5285,8 @@ class MainWindow(QMainWindow):
         it runs on load — not on every owned-toggle (that path re-partitions
         the cached result)."""
         from src.utils.blueprint_meta import build_blueprint_metadata
-        self._blueprint_meta = build_blueprint_metadata(self.entries)
+        bp_header = AppSettings.get_mission_headers().get("blueprints")
+        self._blueprint_meta = build_blueprint_metadata(self.entries, bp_header=bp_header)
         self._bp_item_names = set(self._blueprint_meta)
 
     def _recompute_owned(self):
@@ -5293,9 +5296,10 @@ class MainWindow(QMainWindow):
         the tag. The eligible-name set + filter metadata are built separately by
         `_rebuild_blueprint_metadata` (cached, not rescanned here)."""
         from src.utils.owned_items import apply_owned_to_value
+        bp_header = AppSettings.get_mission_headers().get("blueprints")
         owned = AppSettings.get_owned_items()
         for e in self.entries:
-            new_val = apply_owned_to_value(e.original_value, owned)
+            new_val = apply_owned_to_value(e.original_value, owned, bp_header=bp_header)
             if new_val != e.original_value:
                 e.original_value = new_val
         self._model.set_owned_state(self._bp_item_names, owned)

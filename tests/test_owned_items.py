@@ -141,6 +141,48 @@ class TestExtract:
     def test_empty_value(self):
         assert extract_bp_item_names("") == set()
 
+    # -- #353: renamed "blueprints" mission header ---------------------------
+
+    def test_renamed_header_not_recognized_by_default(self):
+        """Regression guard: without bp_header, a renamed header is invisible
+        -- pins the pre-fix behavior so the fix below is a real change."""
+        renamed = _DESC.replace("POTENTIAL BLUEPRINTS", "MY LOOT")
+        assert extract_bp_item_names(renamed) == set()
+
+    def test_renamed_header_recognized_when_bp_header_passed(self):
+        renamed = _DESC.replace("POTENTIAL BLUEPRINTS", "MY LOOT")
+        names = extract_bp_item_names(renamed, bp_header="MY LOOT")
+        assert names == {"Antium Core", "Norfield", "Abrade Scraper Module"}
+
+    def test_bp_header_matching_is_case_insensitive(self):
+        renamed = _DESC.replace("POTENTIAL BLUEPRINTS", "my loot")
+        names = extract_bp_item_names(renamed, bp_header="My Loot")
+        assert names == {"Antium Core", "Norfield", "Abrade Scraper Module"}
+
+    def test_bp_header_still_recognizes_default_when_not_renamed(self):
+        """Passing bp_header must not stop the built-in default from still
+        working for missions that never got regenerated since the rename."""
+        names = extract_bp_item_names(_DESC, bp_header="MY LOOT")
+        assert names == {"Antium Core", "Norfield", "Abrade Scraper Module"}
+
+    def test_renamed_header_word_appearing_unwrapped_in_prose_is_not_a_false_positive(self):
+        """Real report: renaming the header to a short/common word ("stuff")
+        let it accidentally match an unrelated, unwrapped occurrence of that
+        same word elsewhere in the mission's own prose (a stray "- <name>"
+        bullet list), starting the scan window too early and sweeping
+        unrelated prose bullets ("Ed", "H", "Wallace", ...) into the item
+        set as if they were real blueprints. The header match must be
+        anchored to the actual <EM3>/<EM4> wrapper the generator always uses
+        (see _build_bp_header_re), not a bare substring search, so an
+        earlier unwrapped occurrence of the same text is correctly ignored.
+        """
+        desc = (
+            "Grab that stuff for me.\\n- Ed\\n- H\\n- Wallace"
+            "\\n\\n<EM3>stuff</EM3>\\n- Antium Core"
+        )
+        names = extract_bp_item_names(desc, bp_header="stuff")
+        assert names == {"Antium Core"}
+
     def test_excludes_prose_bullet_before_header_and_later_section_bullet(self):
         """A stray "- Stows" line in the mission's flavor-text prose (before
         the POTENTIAL BLUEPRINTS header) and a real bullet in a later ITEM
@@ -290,7 +332,7 @@ class TestApply:
         # #222: a bullet carrying a non-breaking space or a trailing component
         # tag still matches an owned entry stored in bare/plain form.
         nl = chr(92) + "n"
-        val = ("POTENTIAL BLUEPRINTS" + nl + "- Lynx" + chr(0xA0) + "Legs"
+        val = ("<EM3>POTENTIAL BLUEPRINTS</EM3>" + nl + "- Lynx" + chr(0xA0) + "Legs"
                + nl + "- Barbican [IND-S3-B]" + nl + "- Norfield")
         out = apply_owned_to_value(val, {"Lynx Legs", "Barbican"})
         assert out.count("<EM4>[Owned]</EM4>") == 2

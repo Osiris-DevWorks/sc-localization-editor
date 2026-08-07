@@ -297,6 +297,26 @@ def test_item_in_multiple_missions_unions_titles():
     assert meta["Balandin"].missions == frozenset({"First Job", "Second Job"})
 
 
+def test_renamed_blueprints_header_recognized_when_bp_header_passed():
+    """#353: a user-renamed "blueprints" mission header must still populate
+    the Blueprint Tracker when the actual configured header is passed
+    through -- without it, every mission using the renamed header was
+    silently unscanned, not just mis-tagged."""
+    desc = "x\\n<EM4>MY LOOT</EM4>\\n- Antium Core"
+    meta = build_blueprint_metadata(
+        [_Entry("M_Desc_001", desc, "Missions")], bp_header="MY LOOT"
+    )
+    assert "Antium Core" in meta
+
+
+def test_renamed_blueprints_header_not_recognized_without_bp_header():
+    """Regression guard: omitting bp_header must behave exactly like the
+    original hardcoded-default-only implementation."""
+    desc = "x\\n<EM4>MY LOOT</EM4>\\n- Antium Core"
+    meta = build_blueprint_metadata([_Entry("M_Desc_001", desc, "Missions")])
+    assert "Antium Core" not in meta
+
+
 def test_desc_without_title_yields_no_mission_but_keeps_item():
     desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Orphan Part"
     meta = build_blueprint_metadata([_Entry("Loose_Desc_001", desc, "Missions")])
