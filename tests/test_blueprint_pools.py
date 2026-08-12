@@ -442,14 +442,52 @@ class TestBlueprintBodyPartsRendering:
         }
         parts = gen_module._build_blueprint_body_parts(unique_fps)
         headers = [p.split("\\n", 1)[0] for p in parts]
+        # Alphabetical by label text ("Irradiated..." < "Yormandi...") --
+        # see test_override_order_is_independent_of_insertion_order below
+        # for why this must not depend on dict/scan order.
         assert headers == [
-            "<EM4>[Yormandi Eye's]</EM4>",
-            "<EM4>[Irradiated Valakkar Pearl's]</EM4>",
+            "<EM4>[Irradiated Valakkar Pearls]</EM4>",
+            "<EM4>[Yormandi Eyes]</EM4>",
         ]
         # The system-name prefix and item-based naming are fully replaced,
         # not appended to.
         assert "Rayari_ResourceGathering" not in "".join(headers)
         assert "Set" not in "".join(headers)
+
+    @pytest.mark.regression
+    def test_override_order_is_independent_of_insertion_order(self, gen_module):
+        """Both override pools share the identical (system, label) key
+        ("Rayari_ResourceGathering", ""), so before this fix their relative
+        order in the rendered body was decided by dict/insertion order --
+        which traces back to whichever contract XML the scanner happened to
+        reach first, making the section order non-deterministic across
+        regenerations. Sorting by header text as the tiebreak fixes that:
+        feeding the pools in the OPPOSITE insertion order must still
+        produce the same output order."""
+        yormandi_fp = (
+            "P8-AR Rifle", "P8-AR Rifle Magazine (15 Cap)",
+            "Palatino Arms", "Palatino Arms Moonfall",
+            "Palatino Core", "Palatino Core Moonfall",
+            "Palatino Helmet", "Palatino Helmet Moonfall",
+            "Palatino Legs", "Palatino Legs Moonfall",
+        )
+        irradiated_fp = (
+            'Prism "Bonedust" Laser Shotgun', 'Prism "Deep Sea" Laser Shotgun',
+            'Prism "Firesteel" Laser Shotgun', "Prism Laser Shotgun",
+            "Prism Laser Shotgun Battery (20 cap)", "Siebe Helmet",
+            "Stirling Exploration Suit",
+        )
+        keys = [("Rayari_ResourceGathering", "")]
+
+        forward = {yormandi_fp: keys, irradiated_fp: keys}
+        reversed_ = {irradiated_fp: keys, yormandi_fp: keys}
+
+        forward_headers = [p.split("\\n", 1)[0] for p in gen_module._build_blueprint_body_parts(forward)]
+        reversed_headers = [p.split("\\n", 1)[0] for p in gen_module._build_blueprint_body_parts(reversed_)]
+        assert forward_headers == reversed_headers == [
+            "<EM4>[Irradiated Valakkar Pearls]</EM4>",
+            "<EM4>[Yormandi Eyes]</EM4>",
+        ]
 
     def test_override_applies_even_as_the_only_pool(self, gen_module):
         """The override is keyed by item content, not by "is this
@@ -467,7 +505,7 @@ class TestBlueprintBodyPartsRendering:
         }
         parts = gen_module._build_blueprint_body_parts(unique_fps)
         assert parts == [
-            "<EM4>[Yormandi Eye's]</EM4>\\n"
+            "<EM4>[Yormandi Eyes]</EM4>\\n"
             "- P8-AR Rifle\\n- P8-AR Rifle Magazine (15 Cap)\\n"
             "- Palatino Arms\\n- Palatino Arms Moonfall\\n"
             "- Palatino Core\\n- Palatino Core Moonfall\\n"

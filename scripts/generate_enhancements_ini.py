@@ -3158,13 +3158,13 @@ _BLUEPRINT_POOL_LABEL_OVERRIDES: dict[frozenset, str] = {
         "Palatino Core", "Palatino Core Moonfall",
         "Palatino Helmet", "Palatino Helmet Moonfall",
         "Palatino Legs", "Palatino Legs Moonfall",
-    }): "Yormandi Eye's",
+    }): "Yormandi Eyes",
     frozenset({
         'Prism "Bonedust" Laser Shotgun', 'Prism "Deep Sea" Laser Shotgun',
         'Prism "Firesteel" Laser Shotgun', "Prism Laser Shotgun",
         "Prism Laser Shotgun Battery (20 cap)", "Siebe Helmet",
         "Stirling Exploration Suit",
-    }): "Irradiated Valakkar Pearl's",
+    }): "Irradiated Valakkar Pearls",
 }
 
 
@@ -3217,16 +3217,33 @@ def _build_blueprint_body_parts(unique_fps: dict) -> list[str]:
         return ["\\n".join(f"- {name}" for name in items)]
 
     header_entries = []
-    for fp, keys in sorted(unique_fps.items(), key=lambda kv: sorted(kv[1])):
+    for fp, keys in unique_fps.items():
         override = _BLUEPRINT_POOL_LABEL_OVERRIDES.get(frozenset(fp))
         if override is not None:
-            header_entries.append((override, fp))
+            header_entries.append((override, fp, keys))
             continue
         systems = sorted({s for s, _ in keys})
         labels = sorted({l for _, l in keys if l})
         sys_str = ", ".join(systems)
         header = f"{sys_str}, {', '.join(labels)}" if labels else sys_str
-        header_entries.append((header, fp))
+        header_entries.append((header, fp, keys))
+    # Sort by (system/label keys, header text, fingerprint): the keys
+    # dimension groups naturally-distinct sections (different system or
+    # rank label) in a stable order as before; the header-text tiebreak
+    # resolves ties where the header ALREADY differs -- e.g. two
+    # override-labeled pools sharing the same (system, label) because CIG
+    # reuses one description across every variant, see #360 -- by the
+    # label a maintainer actually gave the pool; and the fingerprint
+    # tiebreak (each pool's own item tuple, content-based and so already
+    # deterministic) covers the remaining case where the header ALSO ties
+    # (e.g. two same-system unlabeled pools before Pass 1 below has told
+    # them apart). Previously this whole ordering fell back to
+    # filesystem/dict-insertion order once system+label tied, which could
+    # vary e.g. the [Yormandi Eyes] vs [Irradiated Valakkar Pearls]
+    # section order across regenerations depending on which contract XML
+    # the scanner happened to reach first.
+    header_entries.sort(key=lambda entry: (sorted(entry[2]), entry[0], entry[1]))
+    header_entries = [(header, fp) for header, fp, _keys in header_entries]
     header_counts: dict[str, int] = {}
     for header, _fp in header_entries:
         header_counts[header] = header_counts.get(header, 0) + 1
