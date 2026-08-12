@@ -147,5 +147,3 @@ class TestRunGenMissionsTupleConsumers:
         assert v[7] is True
         assert v[10] == "Rookie"
         assert v[11] == "Security"
-
-

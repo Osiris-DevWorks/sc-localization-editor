@@ -106,12 +106,15 @@ class TestMultiSourcePoolMerge:
         per_system = mission_blueprints["adagio_mining_title"]
         assert "Stanton" in per_system, f"expected 'Stanton' system, got {list(per_system)}"
 
-        # mission_blueprints is now {title: {system: {pool_label: [items]}}}.
-        # No rank-tier names supplied here, so the items land under the
-        # empty-label bucket. The bug guarded against was the second pool's
-        # items being silently dropped — gather across all labels to assert
-        # both pools' items survived.
-        items = [it for items_list in per_system["Stanton"].values() for it in items_list]
+        # mission_blueprints is now {title: {system: {pool_key: (label, [items])}}},
+        # pool_key being a UUID or (since both pools here share the same
+        # contract and label) a combined tuple of the contract's pool UUIDs
+        # (#360). No rank-tier names supplied here, so both pools land under
+        # the empty label and — being from the SAME contract — merge into
+        # one entry, same as before the #360 fix. The bug originally guarded
+        # against here was the second pool's items being silently dropped —
+        # gather across all entries to assert both pools' items survived.
+        items = [it for _label, items_list in per_system["Stanton"].values() for it in items_list]
         assert "Pyro Pickaxe" in items
         assert "FPS Mining Helmet" in items
         assert "Norfield Power Plant" in items
@@ -146,9 +149,12 @@ class TestMultiSourcePoolMerge:
             contractgen_dir, reputation_lookup={},
             blueprint_pools=blueprint_pools, entity_names={},
         )
-        # Both pools share the empty-label bucket (no rank info supplied),
-        # so the merge+dedup happens within that bucket as before.
-        items = mission_blueprints["dupe_title"]["Stanton"][""]
+        # Both pools come from the SAME contract and share the empty label,
+        # so they merge into one entry keyed by their combined pool-UUID
+        # tuple (#360) — the merge+dedup happens within that entry as before.
+        per_system = mission_blueprints["dupe_title"]["Stanton"]
+        assert len(per_system) == 1, f"expected one merged entry, got {per_system}"
+        _label, items = next(iter(per_system.values()))
         assert items.count("Shared Item") == 1, (
             f"de-dup failed — 'Shared Item' appears {items.count('Shared Item')}× in {items}"
         )
@@ -176,8 +182,308 @@ class TestMultiSourcePoolMerge:
             blueprint_pools={"pool-only": ["Only Item"]},
             entity_names={},
         )
-        assert mission_blueprints["single_title"]["Stanton"][""] == ["Only Item"]
+        per_system = mission_blueprints["single_title"]["Stanton"]
+        assert len(per_system) == 1, f"expected one entry, got {per_system}"
+        label, items = next(iter(per_system.values()))
+        assert label == ""
+        assert items == ["Only Item"]
         assert mission_bp_chance["single_title"] == pytest.approx(0.5)
+
+
+class TestDistinctContractVariantsStaySeparate:
+    """Regression guard for #360: a Discord user reported a "Yormandi Eye"
+    collection mission's POTENTIAL BLUEPRINTS list showing Prism Shotgun
+    items mixed in with an unrelated Palatino-armor/P8-AR-rifle set, with
+    third-party trackers only ever showing the latter.
+
+    Root cause: CIG can generate the SAME mission title from multiple
+    distinct <Contract> variants (e.g. different randomized reward-pool
+    rolls), each with its own <BlueprintRewards> pool. Pre-fix,
+    ``_merge_blueprint_pool`` keyed only on (title, system, pool_label),
+    and non-rank-tiered pools all share the empty label — so two totally
+    unrelated variants' pools landed in the same bucket and got flattened
+    into one list with no way to tell them apart. The fix keys by the
+    pool's own identity instead, while still merging pools a single
+    contract legitimately awards together (see TestMultiSourcePoolMerge's
+    Adagio case) and still separating rank-tiered pools by label (see
+    TestPoolRankLabels)."""
+
+    @pytest.mark.regression
+    def test_two_contract_variants_same_title_stay_separate(self, gen_module, tmp_path):
+        """Two DIFFERENT <Contract> elements (distinct variants, as CIG's
+        contractgen produces for a randomized mission) sharing one title,
+        each with its own single non-rank-tiered pool, must NOT merge into
+        one list -- unlike TestMultiSourcePoolMerge's Adagio case, these
+        are two separate contracts, not one contract's simultaneous pools."""
+        contractgen_dir = tmp_path / "contractgenerator"
+        contractgen_dir.mkdir()
+        contract_xml = '''
+<ContractGeneratorHandler_List debugName="YormandiEye_Stanton">
+    <Contract debugName="YormandiEye_Stanton_VariantA">
+        <Title>
+            <ContractStringParam param="Title" value="@yormandi_eye_title"/>
+            <ContractStringParam param="Description" value="@yormandi_eye_desc"/>
+        </Title>
+        <BlueprintRewards blueprintPool="pool-palatino-p8ar" chance="1.0"/>
+    </Contract>
+    <Contract debugName="YormandiEye_Stanton_VariantB">
+        <Title>
+            <ContractStringParam param="Title" value="@yormandi_eye_title"/>
+            <ContractStringParam param="Description" value="@yormandi_eye_desc"/>
+        </Title>
+        <BlueprintRewards blueprintPool="pool-prism" chance="1.0"/>
+    </Contract>
+</ContractGeneratorHandler_List>
+'''
+        _write_contractgen_xml(contractgen_dir, "yormandi.xml", contract_xml)
+
+        blueprint_pools = {
+            "pool-palatino-p8ar": ["Palatino Arms", "Palatino Core", "P8-AR Rifle"],
+            "pool-prism": ['Prism "Irradiated" Laser Shotgun', "Prism Laser Shotgun Battery (20 cap)"],
+        }
+
+        _, mission_blueprints, _, _ = gen_module.scan_contract_generators(
+            contractgen_dir, reputation_lookup={},
+            blueprint_pools=blueprint_pools, entity_names={},
+        )
+
+        per_system = mission_blueprints["yormandi_eye_title"]["Stanton"]
+        assert len(per_system) == 2, (
+            f"expected the two variants' pools to stay as separate entries, "
+            f"got {len(per_system)}: {per_system}"
+        )
+        item_sets = [frozenset(items) for _label, items in per_system.values()]
+        assert frozenset(blueprint_pools["pool-palatino-p8ar"]) in item_sets
+        assert frozenset(blueprint_pools["pool-prism"]) in item_sets
+        # The bug's exact symptom: no single entry should contain items
+        # from BOTH pools.
+        for items_set in item_sets:
+            assert not (items_set & frozenset(blueprint_pools["pool-prism"])
+                        and items_set & frozenset(blueprint_pools["pool-palatino-p8ar"])), (
+                f"a Palatino/P8-AR item and a Prism item ended up in the same "
+                f"entry — pools were incorrectly merged: {items_set}"
+            )
+
+    def test_two_contract_variants_identical_pool_still_dedupes(self, gen_module, tmp_path):
+        """Two variants that happen to award the EXACT same pool (e.g. the
+        same reward set spawned under two debugName suffixes) should still
+        collapse into one entry, not double up -- the fix must not turn
+        legitimate re-encounters of the identical pool into duplicates."""
+        contractgen_dir = tmp_path / "contractgenerator"
+        contractgen_dir.mkdir()
+        contract_xml = '''
+<ContractGeneratorHandler_List debugName="SamePool_Stanton">
+    <Contract debugName="SamePool_Stanton_VariantA">
+        <Title>
+            <ContractStringParam param="Title" value="@samepool_title"/>
+            <ContractStringParam param="Description" value="@samepool_desc"/>
+        </Title>
+        <BlueprintRewards blueprintPool="pool-shared" chance="1.0"/>
+    </Contract>
+    <Contract debugName="SamePool_Stanton_VariantB">
+        <Title>
+            <ContractStringParam param="Title" value="@samepool_title"/>
+            <ContractStringParam param="Description" value="@samepool_desc"/>
+        </Title>
+        <BlueprintRewards blueprintPool="pool-shared" chance="1.0"/>
+    </Contract>
+</ContractGeneratorHandler_List>
+'''
+        _write_contractgen_xml(contractgen_dir, "samepool.xml", contract_xml)
+
+        _, mission_blueprints, _, _ = gen_module.scan_contract_generators(
+            contractgen_dir, reputation_lookup={},
+            blueprint_pools={"pool-shared": ["Shared Item A", "Shared Item B"]},
+            entity_names={},
+        )
+        per_system = mission_blueprints["samepool_title"]["Stanton"]
+        assert len(per_system) == 1, (
+            f"identical pool re-encountered across variants should dedupe "
+            f"into one entry, got {len(per_system)}: {per_system}"
+        )
+        _label, items = next(iter(per_system.values()))
+        assert items == ["Shared Item A", "Shared Item B"]
+
+
+class TestBlueprintBodyPartsRendering:
+    """Regression guard for the #360 follow-up: separating distinct pools
+    (TestDistinctContractVariantsStaySeparate above) fixed the merged-list
+    bug, but a live report showed the fix's OWN output looked broken for
+    Rayari research missions -- two sections both rendering the bare
+    ``<EM4>[Rayari_ResourceGathering]</EM4>`` header (same system, neither
+    pool rank-tiered so both labels are empty) sitting over two different
+    item lists, reading as a duplicate/bug rather than two distinct reward
+    sets. ``_build_blueprint_body_parts`` is the extracted, directly
+    testable form of the inline body-part renderer in _run_gen_missions."""
+
+    def test_single_pool_no_header(self, gen_module):
+        """An ordinary single-pool mission still renders as a bare bullet
+        list with no header -- the #360 fix must not add headers where
+        there was never more than one pool to begin with."""
+        unique_fps = {
+            ("Item A", "Item B"): [("Stanton", "")],
+        }
+        parts = gen_module._build_blueprint_body_parts(unique_fps)
+        assert parts == ["- Item A\\n- Item B"]
+
+    def test_single_pool_with_rank_label_still_headers(self, gen_module):
+        """A single rank-tiered pool keeps its header (pre-#360 shape)."""
+        unique_fps = {
+            ("Item A",): [("Stanton", "Rank 0–1")],
+        }
+        parts = gen_module._build_blueprint_body_parts(unique_fps)
+        assert parts == ["<EM4>[Stanton, Rank 0–1]</EM4>\\n- Item A"]
+
+    def test_distinct_rank_labels_get_their_own_untouched_headers(self, gen_module):
+        """Rank-tiered pools already have a distinguishing label, so the
+        collision-numbering must NOT kick in (Shubin case, TestPoolRankLabels)."""
+        unique_fps = {
+            ("Surveyor-Go",): [("Stanton", "Rank 0–1")],
+            ("FullSpec",):    [("Stanton", "Rank 4")],
+        }
+        parts = gen_module._build_blueprint_body_parts(unique_fps)
+        assert parts == [
+            "<EM4>[Stanton, Rank 0–1]</EM4>\\n- Surveyor-Go",
+            "<EM4>[Stanton, Rank 4]</EM4>\\n- FullSpec",
+        ]
+
+    @pytest.mark.regression
+    def test_colliding_headers_named_after_first_item(self, gen_module):
+        """The exact live-reported shape: two unlabeled pools in the same
+        system produce the same base header. A follow-up live report noted
+        that numbering them "Reward Set 1" / "Reward Set 2" fixed the
+        duplicate-header confusion but didn't tell a player what each set
+        actually contained -- so each collision is now named after its own
+        first item instead."""
+        unique_fps = {
+            ("P8-AR Rifle", "Palatino Arms"): [("Rayari_ResourceGathering", "")],
+            ('Prism "Bonedust" Laser Shotgun', "Siebe Helmet"): [("Rayari_ResourceGathering", "")],
+        }
+        parts = gen_module._build_blueprint_body_parts(unique_fps)
+        assert len(parts) == 2
+        headers = [p.split("\\n", 1)[0] for p in parts]
+        assert headers == [
+            "<EM4>[Rayari_ResourceGathering, P8-AR Rifle Set]</EM4>",
+            '<EM4>[Rayari_ResourceGathering, Prism "Bonedust" Laser Shotgun Set]</EM4>',
+        ]
+        assert headers[0] != headers[1], "colliding headers must be distinguishable"
+        # Each item list stays attached to its own header, in order.
+        assert "- P8-AR Rifle" in parts[0] and "- Palatino Arms" in parts[0]
+        assert '- Prism "Bonedust" Laser Shotgun' in parts[1] and "- Siebe Helmet" in parts[1]
+
+    def test_non_colliding_headers_get_no_extra_naming(self, gen_module):
+        """Two pools in DIFFERENT systems produce naturally distinct headers
+        -- no item-based suffix should be added since there's no collision."""
+        unique_fps = {
+            ("Item A",): [("Stanton", "")],
+            ("Item B",): [("Pyro", "")],
+        }
+        parts = gen_module._build_blueprint_body_parts(unique_fps)
+        headers = [p.split("\\n", 1)[0] for p in parts]
+        assert headers == ["<EM4>[Pyro]</EM4>", "<EM4>[Stanton]</EM4>"]
+
+    def test_three_way_collision_all_named(self, gen_module):
+        """Three colliding headers all get named after their first item,
+        not just the first repeat."""
+        unique_fps = {
+            ("A",): [("Stanton", "")],
+            ("B",): [("Stanton", "")],
+            ("C",): [("Stanton", "")],
+        }
+        parts = gen_module._build_blueprint_body_parts(unique_fps)
+        headers = [p.split("\\n", 1)[0] for p in parts]
+        assert headers == [
+            "<EM4>[Stanton, A Set]</EM4>",
+            "<EM4>[Stanton, B Set]</EM4>",
+            "<EM4>[Stanton, C Set]</EM4>",
+        ]
+
+    @pytest.mark.regression
+    def test_double_collision_falls_back_to_numeric_tiebreaker(self, gen_module):
+        """Edge case: two colliding pools that ALSO happen to share the same
+        first item name -- the item-based naming would collide right back
+        into the original bug, so a numeric suffix is the last-resort
+        tiebreaker to guarantee headers are always visually distinct."""
+        unique_fps = {
+            ("Shared Item", "Unique A"): [("Stanton", "")],
+            ("Shared Item", "Unique B"): [("Stanton", "")],
+        }
+        parts = gen_module._build_blueprint_body_parts(unique_fps)
+        headers = [p.split("\\n", 1)[0] for p in parts]
+        assert headers == [
+            "<EM4>[Stanton, Shared Item Set (1)]</EM4>",
+            "<EM4>[Stanton, Shared Item Set (2)]</EM4>",
+        ]
+        assert headers[0] != headers[1]
+
+    @pytest.mark.regression
+    def test_known_rayari_pools_use_manual_override_labels(self, gen_module):
+        """Final iteration on the #360 follow-up: per-mission scoping isn't
+        possible (CIG reuses one description across every "Additional
+        Resources For Research" variant, confirmed via SCMDB), so a manual
+        override table names each known pool after what it's actually for,
+        instead of an auto-derived "first item" label. Every instance of
+        this mission shows both sets regardless -- the point is a player
+        can recognize "this is the Yormandi Eye set" wherever it appears."""
+        unique_fps = {
+            (
+                "P8-AR Rifle", "P8-AR Rifle Magazine (15 Cap)",
+                "Palatino Arms", "Palatino Arms Moonfall",
+                "Palatino Core", "Palatino Core Moonfall",
+                "Palatino Helmet", "Palatino Helmet Moonfall",
+                "Palatino Legs", "Palatino Legs Moonfall",
+            ): [("Rayari_ResourceGathering", "")],
+            (
+                'Prism "Bonedust" Laser Shotgun', 'Prism "Deep Sea" Laser Shotgun',
+                'Prism "Firesteel" Laser Shotgun', "Prism Laser Shotgun",
+                "Prism Laser Shotgun Battery (20 cap)", "Siebe Helmet",
+                "Stirling Exploration Suit",
+            ): [("Rayari_ResourceGathering", "")],
+        }
+        parts = gen_module._build_blueprint_body_parts(unique_fps)
+        headers = [p.split("\\n", 1)[0] for p in parts]
+        assert headers == [
+            "<EM4>[Yormandi Eye's]</EM4>",
+            "<EM4>[Irradiated Valakkar Pearl's]</EM4>",
+        ]
+        # The system-name prefix and item-based naming are fully replaced,
+        # not appended to.
+        assert "Rayari_ResourceGathering" not in "".join(headers)
+        assert "Set" not in "".join(headers)
+
+    def test_override_applies_even_as_the_only_pool(self, gen_module):
+        """The override is keyed by item content, not by "is this
+        colliding with another pool" -- a mission where this exact set is
+        the ONLY pool should still get the override label, not render as a
+        bare unheaded list."""
+        unique_fps = {
+            (
+                "P8-AR Rifle", "P8-AR Rifle Magazine (15 Cap)",
+                "Palatino Arms", "Palatino Arms Moonfall",
+                "Palatino Core", "Palatino Core Moonfall",
+                "Palatino Helmet", "Palatino Helmet Moonfall",
+                "Palatino Legs", "Palatino Legs Moonfall",
+            ): [("Rayari_ResourceGathering", "")],
+        }
+        parts = gen_module._build_blueprint_body_parts(unique_fps)
+        assert parts == [
+            "<EM4>[Yormandi Eye's]</EM4>\\n"
+            "- P8-AR Rifle\\n- P8-AR Rifle Magazine (15 Cap)\\n"
+            "- Palatino Arms\\n- Palatino Arms Moonfall\\n"
+            "- Palatino Core\\n- Palatino Core Moonfall\\n"
+            "- Palatino Helmet\\n- Palatino Helmet Moonfall\\n"
+            "- Palatino Legs\\n- Palatino Legs Moonfall"
+        ]
+
+    def test_unrelated_pools_are_unaffected_by_overrides(self, gen_module):
+        """A pool whose item set doesn't match any override entry keeps the
+        existing automatic naming -- the override table is additive, not a
+        behavior change for everything else."""
+        unique_fps = {
+            ("Totally Unrelated Item",): [("Stanton", "")],
+        }
+        parts = gen_module._build_blueprint_body_parts(unique_fps)
+        assert parts == ["- Totally Unrelated Item"]
 
 
 class TestBlueprintNameTags:
@@ -840,11 +1146,14 @@ class TestPoolRankLabels:
         )
 
         per_system = mission_blueprints["shubin_title"]["Stanton"]
-        # Two distinct rank-label buckets, NOT merged into one.
-        assert "Rank 0–1" in per_system
-        assert "Rank 4" in per_system
-        assert per_system["Rank 0–1"] == ["Surveyor-Go [IND-S0-C]", "Lawson Mining Laser"]
-        assert per_system["Rank 4"] == ["FullSpec [IND-S2-A]", "Arbor MH2 Mining Laser"]
+        # Two distinct rank-label entries, NOT merged into one (each pool's
+        # own label differs, so the per-contract grouping keeps them apart
+        # even though both come from the same contract).
+        by_label = {label: items for label, items in per_system.values()}
+        assert "Rank 0–1" in by_label
+        assert "Rank 4" in by_label
+        assert by_label["Rank 0–1"] == ["Surveyor-Go [IND-S0-C]", "Lawson Mining Laser"]
+        assert by_label["Rank 4"] == ["FullSpec [IND-S2-A]", "Arbor MH2 Mining Laser"]
 
     def test_scan_falls_back_to_empty_label_when_pool_names_missing(self, gen_module, tmp_path):
         """When pool_names isn't supplied (or doesn't cover a pool UUID),
@@ -872,8 +1181,10 @@ class TestPoolRankLabels:
             # pool_names omitted → all pools resolve to empty label
         )
         per_system = mission_blueprints["nolabel_title"]["Stanton"]
-        assert list(per_system.keys()) == [""], f"expected empty-label-only, got {per_system}"
-        assert per_system[""] == ["Item A", "Item B"]
+        assert len(per_system) == 1, f"expected one entry, got {per_system}"
+        label, items = next(iter(per_system.values()))
+        assert label == "", f"expected empty label, got {per_system}"
+        assert items == ["Item A", "Item B"]
 
 
 class TestOrphanPuDescCleanup:
