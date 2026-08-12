@@ -25,6 +25,7 @@ Covers two changes shipped in 1.4.0:
 from __future__ import annotations
 
 import importlib.util
+import logging
 import sys
 from pathlib import Path
 
@@ -522,6 +523,59 @@ class TestBlueprintBodyPartsRendering:
         }
         parts = gen_module._build_blueprint_body_parts(unique_fps)
         assert parts == ["- Totally Unrelated Item"]
+
+    @pytest.mark.regression
+    def test_near_miss_pool_logs_drift_warning(self, gen_module, caplog):
+        """A pool missing just one item from a known override (e.g. CIG
+        dropped "Palatino Legs Moonfall" from the Yormandi Eyes set in a
+        patch) no longer matches exactly and silently reverts to
+        auto-generated naming -- but it should log a warning so a
+        maintainer notices the override table needs updating, instead of
+        the drift going unnoticed forever."""
+        drifted_items = (
+            "P8-AR Rifle", "P8-AR Rifle Magazine (15 Cap)",
+            "Palatino Arms", "Palatino Arms Moonfall",
+            "Palatino Core", "Palatino Core Moonfall",
+            "Palatino Helmet", "Palatino Helmet Moonfall",
+            "Palatino Legs",
+            # "Palatino Legs Moonfall" missing -- simulates CIG drift.
+        )
+        unique_fps = {drifted_items: [("Stanton", "")]}
+        with caplog.at_level(logging.WARNING, logger="generate_enhancements_ini_blueprint_test"):
+            parts = gen_module._build_blueprint_body_parts(unique_fps)
+        # Falls back to the ordinary bare-list rendering (no override match).
+        assert parts == ["- " + "\\n- ".join(drifted_items)]
+        assert any("Yormandi Eyes" in r.message for r in caplog.records), (
+            f"expected a drift warning mentioning the near-matched override, got: "
+            f"{[r.message for r in caplog.records]}"
+        )
+
+    def test_exact_match_does_not_log_drift_warning(self, gen_module, caplog):
+        """An exact override match takes the normal override path and must
+        not ALSO trigger the drift warning against itself."""
+        unique_fps = {
+            (
+                "P8-AR Rifle", "P8-AR Rifle Magazine (15 Cap)",
+                "Palatino Arms", "Palatino Arms Moonfall",
+                "Palatino Core", "Palatino Core Moonfall",
+                "Palatino Helmet", "Palatino Helmet Moonfall",
+                "Palatino Legs", "Palatino Legs Moonfall",
+            ): [("Stanton", "")],
+        }
+        with caplog.at_level(logging.WARNING, logger="generate_enhancements_ini_blueprint_test"):
+            gen_module._build_blueprint_body_parts(unique_fps)
+        assert caplog.records == []
+
+    def test_unrelated_pool_does_not_log_drift_warning(self, gen_module, caplog):
+        """A pool with low/no item overlap with any override must not warn
+        -- the threshold exists specifically to avoid noise on genuinely
+        unrelated pools."""
+        unique_fps = {
+            ("Totally Unrelated Item", "Another Unrelated Item"): [("Stanton", "")],
+        }
+        with caplog.at_level(logging.WARNING, logger="generate_enhancements_ini_blueprint_test"):
+            gen_module._build_blueprint_body_parts(unique_fps)
+        assert caplog.records == []
 
 
 class TestBlueprintNameTags:

@@ -3151,7 +3151,7 @@ def _merge_blueprint_pool(
 # plumbing is needed -- just what's already visible in the rendered list.
 # Add entries here as more ambiguous multi-pool missions are found; any
 # pool not listed keeps the automatic "first item" naming below.
-_BLUEPRINT_POOL_LABEL_OVERRIDES: dict[frozenset, str] = {
+_BLUEPRINT_POOL_LABEL_OVERRIDES: dict[frozenset[str], str] = {
     frozenset({
         "P8-AR Rifle", "P8-AR Rifle Magazine (15 Cap)",
         "Palatino Arms", "Palatino Arms Moonfall",
@@ -3166,6 +3166,42 @@ _BLUEPRINT_POOL_LABEL_OVERRIDES: dict[frozenset, str] = {
         "Stirling Exploration Suit",
     }): "Irradiated Valakkar Pearls",
 }
+
+# Overlap threshold (fraction of the smaller set) for _warn_if_near_override_miss
+# below -- deliberately conservative so unrelated pools that just happen to
+# share a couple of item names (e.g. a common battery/magazine) don't trigger
+# a false-positive warning on every generation run.
+_OVERRIDE_DRIFT_OVERLAP_THRESHOLD = 0.7
+
+
+def _warn_if_near_override_miss(fp_items: frozenset[str]) -> None:
+    """Log a warning if *fp_items* closely overlaps a known override's item
+    set without exactly matching it.
+
+    The override table (above) matches on exact item-set equality, so if
+    CIG adds, removes, or renames an item in a pool it's tracking, the
+    override silently stops applying with no error -- the section just
+    reverts to auto-generated naming. That's a reasonable failure mode for
+    an end user, but it leaves a maintainer with no signal that the table
+    needs updating. This is a cheap heuristic tripwire for exactly that:
+    if a pool shares most of its items with a known override but isn't an
+    exact match, it's very likely the SAME pool having drifted rather than
+    a coincidentally-similar unrelated one.
+    """
+    for override_items, label in _BLUEPRINT_POOL_LABEL_OVERRIDES.items():
+        if fp_items == override_items:
+            continue  # exact match -- handled by the normal override path
+        overlap = fp_items & override_items
+        if not overlap:
+            continue
+        smaller = min(len(fp_items), len(override_items))
+        if smaller and len(overlap) / smaller >= _OVERRIDE_DRIFT_OVERLAP_THRESHOLD:
+            logger.warning(
+                f"Blueprint pool {sorted(fp_items)} closely resembles the "
+                f"'{label}' override ({sorted(override_items)}) but isn't an "
+                f"exact match -- CIG may have changed this pool's items; "
+                f"check whether _BLUEPRINT_POOL_LABEL_OVERRIDES needs updating."
+            )
 
 
 def _build_blueprint_body_parts(unique_fps: dict) -> list[str]:
@@ -3209,6 +3245,7 @@ def _build_blueprint_body_parts(unique_fps: dict) -> list[str]:
         override = _BLUEPRINT_POOL_LABEL_OVERRIDES.get(frozenset(items))
         if override is not None:
             return [f"<EM4>[{override}]</EM4>\\n" + "\\n".join(f"- {name}" for name in items)]
+        _warn_if_near_override_miss(frozenset(items))
         only_labels = sorted({l for _, l in only_keys if l})
         if only_labels:
             only_systems = sorted({s for s, _ in only_keys})
@@ -3222,6 +3259,7 @@ def _build_blueprint_body_parts(unique_fps: dict) -> list[str]:
         if override is not None:
             header_entries.append((override, fp, keys))
             continue
+        _warn_if_near_override_miss(frozenset(fp))
         systems = sorted({s for s, _ in keys})
         labels = sorted({l for _, l in keys if l})
         sys_str = ", ".join(systems)
