@@ -160,6 +160,10 @@
       "ht": "",
       "at": "Zur einfachen Ansicht wechseln"
     },
+    "menu_reset_window_proportions": {
+      "ht": "",
+      "at": "Fensterproportionen zurücksetzen"
+    },
     "editor_tooltip": {
       "ht": "",
       "at": "Den andockbaren String-Editor umschalten — eine größere Fläche zum Bearbeiten des benutzerdefinierten Werts der ausgewählten Zeile"
@@ -183,6 +187,10 @@
     "switch_to_simple_tooltip": {
       "ht": "",
       "at": "Zur vereinfachten Ein-Klick-Ansicht wechseln."
+    },
+    "reset_window_proportions_tooltip": {
+      "ht": "",
+      "at": "Setzt Fenstergröße, Panel-Layout und die Spaltenbreiten des String-Editors auf die Standardwerte zurück."
     },
     "more_tooltip": {
       "ht": "",
@@ -2011,6 +2019,14 @@
     "app_title": {
       "ht": "",
       "at": "Smart Citizen"
+    },
+    "reset_proportions_title": {
+      "ht": "",
+      "at": "Fensterproportionen zurücksetzen"
+    },
+    "reset_proportions_body": {
+      "ht": "",
+      "at": "Fenstergröße, Panel-Layout und die Spaltenbreiten des String-Editors auf die Standardwerte zurücksetzen?\n\nIhre gespeicherten Größen gehen verloren. Einstellungen und Lokalisierungsdaten sind nicht betroffen."
     }
   },
   "progress": {
@@ -2223,6 +2239,10 @@
     "settings_exported": {
       "ht": "",
       "at": "Einstellungssicherung exportiert"
+    },
+    "window_proportions_reset": {
+      "ht": "",
+      "at": "Fensterproportionen auf Standardwerte zurückgesetzt."
     }
   },
   "import_flow": {

@@ -160,6 +160,10 @@
       "ht": "",
       "at": "Mudar para o Modo Simples"
     },
+    "menu_reset_window_proportions": {
+      "ht": "",
+      "at": "Redefinir proporções da janela"
+    },
     "editor_tooltip": {
       "ht": "",
       "at": "Alternar o Editor de Strings lateral, uma área maior para editar o valor personalizado da linha selecionada"
@@ -183,6 +187,10 @@
     "switch_to_simple_tooltip": {
       "ht": "",
       "at": "Mudar para a visualização simplificada de um botão."
+    },
+    "reset_window_proportions_tooltip": {
+      "ht": "",
+      "at": "Restaura o tamanho da janela, o layout dos painéis e a largura das colunas do editor de strings para os padrões."
     },
     "more_tooltip": {
       "ht": "",
@@ -2011,6 +2019,14 @@
     "app_title": {
       "ht": "",
       "at": "Smart Citizen"
+    },
+    "reset_proportions_title": {
+      "ht": "",
+      "at": "Redefinir proporções da janela"
+    },
+    "reset_proportions_body": {
+      "ht": "",
+      "at": "Redefinir o tamanho da janela, o layout dos painéis e a largura das colunas do editor de strings para os padrões?\n\nOs tamanhos salvos serão esquecidos. Suas configurações e dados de localização não são afetados."
     }
   },
   "progress": {
@@ -2223,6 +2239,10 @@
     "settings_exported": {
       "ht": "",
       "at": "Backup de configuracoes exportado"
+    },
+    "window_proportions_reset": {
+      "ht": "",
+      "at": "Proporções da janela redefinidas."
     }
   },
   "import_flow": {

@@ -160,6 +160,10 @@
       "ht": "",
       "at": "切换到简易模式"
     },
+    "menu_reset_window_proportions": {
+      "ht": "",
+      "at": "重置窗口比例"
+    },
     "editor_tooltip": {
       "ht": "",
       "at": "切换侧边停靠的字符串编辑器，用更大的编辑区域编辑所选行的自定义值"
@@ -183,6 +187,10 @@
     "switch_to_simple_tooltip": {
       "ht": "",
       "at": "切换到简化的单按钮视图。"
+    },
+    "reset_window_proportions_tooltip": {
+      "ht": "",
+      "at": "将窗口大小、面板布局和字符串编辑器的列宽恢复为默认值。"
     },
     "more_tooltip": {
       "ht": "",
@@ -2011,6 +2019,14 @@
     "app_title": {
       "ht": "",
       "at": "Smart Citizen"
+    },
+    "reset_proportions_title": {
+      "ht": "",
+      "at": "重置窗口比例"
+    },
+    "reset_proportions_body": {
+      "ht": "",
+      "at": "是否将窗口大小、面板布局和字符串编辑器的列宽恢复为默认值？\n\n已保存的尺寸将被清除。您的设置和本地化数据不会受到影响。"
     }
   },
   "progress": {
@@ -2223,6 +2239,10 @@
     "settings_exported": {
       "ht": "",
       "at": "设置备份已导出"
+    },
+    "window_proportions_reset": {
+      "ht": "",
+      "at": "窗口比例已恢复为默认值。"
     }
   },
   "import_flow": {

@@ -160,6 +160,10 @@
       "ht": "Switch to Simple Mode",
       "at": ""
     },
+    "menu_reset_window_proportions": {
+      "ht": "Reset Window Proportions",
+      "at": ""
+    },
     "editor_tooltip": {
       "ht": "Toggle the side-docked String Editor, a larger canvas for editing the selected row's custom value",
       "at": ""
@@ -182,6 +186,10 @@
     },
     "switch_to_simple_tooltip": {
       "ht": "Switch to the simplified one-button view.",
+      "at": ""
+    },
+    "reset_window_proportions_tooltip": {
+      "ht": "Restore the window size, panel layout and String Editor column widths to their defaults.",
       "at": ""
     },
     "more_tooltip": {
@@ -2011,6 +2019,14 @@
     "app_title": {
       "ht": "Smart Citizen",
       "at": ""
+    },
+    "reset_proportions_title": {
+      "ht": "Reset Window Proportions",
+      "at": ""
+    },
+    "reset_proportions_body": {
+      "ht": "Reset the window size, panel layout and String Editor column widths back to their defaults?\n\nYour saved sizes will be forgotten. Your settings and localization data are not affected.",
+      "at": ""
     }
   },
   "progress": {
@@ -2222,6 +2238,10 @@
     },
     "manifest_missing": {
       "ht": "SC {channel} (manifest missing)",
+      "at": ""
+    },
+    "window_proportions_reset": {
+      "ht": "Window proportions reset to defaults.",
       "at": ""
     }
   },

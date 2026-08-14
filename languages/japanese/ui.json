@@ -160,6 +160,10 @@
       "ht": "",
       "at": "シンプルモードに切り替え"
     },
+    "menu_reset_window_proportions": {
+      "ht": "",
+      "at": "ウィンドウの比率をリセット"
+    },
     "editor_tooltip": {
       "ht": "",
       "at": "サイドにドッキングする文字列エディターを切り替えます。選択した行のカスタム値をより広い領域で編集できます。"
@@ -183,6 +187,10 @@
     "switch_to_simple_tooltip": {
       "ht": "",
       "at": "簡略化されたワンボタンビューに切り替えます。"
+    },
+    "reset_window_proportions_tooltip": {
+      "ht": "",
+      "at": "ウィンドウサイズ、パネルのレイアウト、文字列エディターの列幅を既定値に戻します。"
     },
     "more_tooltip": {
       "ht": "",
@@ -2011,6 +2019,14 @@
     "app_title": {
       "ht": "",
       "at": "Smart Citizen"
+    },
+    "reset_proportions_title": {
+      "ht": "",
+      "at": "ウィンドウの比率をリセット"
+    },
+    "reset_proportions_body": {
+      "ht": "",
+      "at": "ウィンドウサイズ、パネルのレイアウト、文字列エディターの列幅を既定値に戻しますか？\n\n保存されたサイズは破棄されます。設定とローカライズデータには影響しません。"
     }
   },
   "progress": {
@@ -2223,6 +2239,10 @@
     "settings_exported": {
       "ht": "",
       "at": "設定バックアップをエクスポートしました"
+    },
+    "window_proportions_reset": {
+      "ht": "",
+      "at": "ウィンドウの比率を既定値に戻しました。"
     }
   },
   "import_flow": {
