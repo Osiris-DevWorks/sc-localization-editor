@@ -5,9 +5,15 @@ onto that item wherever it appears in a mission reward POTENTIAL BLUEPRINTS
 list. Keyed by item *display name* (issue #157 option a) because the GUI table
 never sees item UUIDs — it works purely from localization keys and values.
 
-Qt-free and settings-free so it can be unit-tested with plain strings. The
-transform is idempotent: it strips any existing ``[Owned]`` tags before
-re-applying, so it can run on every load and on every toggle without doubling.
+Qt-free and settings-free so it can be unit-tested with plain strings: the
+Tag Builder's enclosing style is per-category, user-configurable, live
+QSettings state, so it's never read here directly. Callers who need
+non-default-enclosing matching (#352) resolve the user's live Tag Builder
+config themselves (see ``enclosings_from_tag_configs`` below, which is the
+one place this module references ``tag_builder``'s plain data tables — not
+settings) and hand this module a plain ``enclosings`` tuple. The transform is
+idempotent: it strips any existing ``[Owned]`` tags before re-applying, so it
+can run on every load and on every toggle without doubling.
 
 Values use a literal ``\\n`` (backslash-n) line separator — the in-INI encoding
 the parser and game both read — so all matching here is on the two-character
@@ -17,6 +23,8 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from functools import lru_cache
+from typing import Sequence
 
 # The bullet line separator inside a stored INI value (literal backslash-n).
 _NL = "\\n"
@@ -29,15 +37,113 @@ _BULLET_RE = re.compile(re.escape(_NL) + r"- ([^\\]+)")
 _OWNED_TAG = " <EM4>[Owned]</EM4>"
 # Strip a previously-applied owned tag (with or without the leading space).
 _OWNED_STRIP_RE = re.compile(r"\s*<EM4>\[Owned\]</EM4>")
-# A leading bracketed component tag on a bullet name, e.g. "[Mil-S1-A] ".
-_LEADING_TAG_RE = re.compile(r"^\[[^\]]*\]\s*")
-# A trailing bracketed tag, e.g. "10-Series Greatsword Cannon [B-S2-A]". The
-# Tag Builder's placement setting is per-category and user-configurable
-# (prepend/append), so the same class/size/grade tag can land on either side
-# of the name depending on which category (components vs. ship_weapons vs.
-# missiles) it came from. Stripping both sides keeps matching independent of
-# that setting instead of only handling the default leading placement.
-_TRAILING_TAG_RE = re.compile(r"\s*\[[^\]]*\]\s*$")
+# Default (open, close) pairs to strip when a caller doesn't pass its own —
+# today's original hardcoded Square-only behavior, preserved exactly so every
+# existing caller that doesn't know about #352 is unaffected.
+_DEFAULT_ENCLOSINGS: tuple[tuple[str, str], ...] = (("[", "]"),)
+
+
+def strip_via_stock_diff(tagged: str, stock: str) -> "str | None":
+    """Recover the tag text by diffing *tagged* against *stock* -- the
+    item's known pre-Tag-Builder value for the same loc key -- rather than
+    guessing the tag/name boundary from *tagged* alone (#352). Authoritative,
+    not a heuristic: works for every enclosing style, including "None (space
+    only)", since it never has to examine the tag's own shape -- it only
+    needs to know what ISN'T the name.
+
+    Returns the leftover tag text (possibly ``""`` if *tagged* already equals
+    *stock*, i.e. not actually tagged), or ``None`` if *stock* isn't a prefix
+    or suffix of *tagged* (nothing to recover -- caller falls back to
+    bracket/heuristic stripping). Both sides are NFKC-folded and
+    whitespace-trimmed before comparing, matching normalize_item_name's own
+    folding, so a stray non-breaking space can't defeat the match.
+
+    Only usable where a caller actually knows the item's stock value for the
+    same key (build_blueprint_metadata's Pass 1, the Owned-star column) --
+    mission bullet text, the hardcoded MANUAL_BLUEPRINT_ITEMS names, SCMDB
+    imports, and Game.log-scanned names have no associated key, so they fall
+    back to :func:`_looks_like_none_style_tag_word` instead.
+    """
+    stock_n = unicodedata.normalize("NFKC", stock or "").strip()
+    if not stock_n:
+        return None
+    tagged_n = unicodedata.normalize("NFKC", tagged or "")
+    if tagged_n.strip() == stock_n:
+        return ""
+    if tagged_n.endswith(stock_n):
+        return tagged_n[: -len(stock_n)].strip()
+    if tagged_n.startswith(stock_n):
+        return tagged_n[len(stock_n):].strip()
+    return None
+
+
+# Conservative "does this look like a None-enclosing tag word" fallback for
+# contexts with no stock value to diff against (mission bullets, manual
+# items, SCMDB imports, Game.log names -- see strip_via_stock_diff's
+# docstring). Deliberately narrow: an earlier, looser version (any
+# multi-letter word not shaped like a size token) misfired on ordinary
+# multi-word real names -- "10-Series Greatsword Cannon" has a real,
+# hyphenated leading word ("10-Series") that a loose bare-digit size check
+# would misclassify as a tag. Requiring BOTH an embedded Tag-Builder
+# separator char (hyphen/underscore/dot/slash/pipe -- i.e. the tag's
+# elements are actually joined together, not just an ordinary word) AND a
+# strict "S"-prefixed size token or lone A-F grade letter inside it closes
+# that hole: "10-Series" has a separator but no "S<digits>"/lone-letter
+# sub-token, so it's correctly left alone, while "MIL-S1-A"/"E-S2" still
+# match. Still probabilistic -- it can miss a real tag (space-separated
+# elements, e.g. "Military S2 A", have no separator char to key off) or, in
+# principle, mis-strip an unlucky real name shaped exactly like a tag one
+# never occurred in testing but can't be ruled out entirely. Accepted
+# trade-off for contexts where the fully-reliable diff isn't available.
+_NONE_STYLE_SEPARATOR_CHARS = frozenset("-_./|")
+_NONE_STYLE_SIZE_RE = re.compile(r"^S\d{1,2}$", re.IGNORECASE)
+_NONE_STYLE_GRADE_RE = re.compile(r"^[A-F]$", re.IGNORECASE)
+# Every bracket char any ENCLOSINGS style renders with. A word wrapped in one
+# of these (e.g. "[Mil-S1-A]" when the caller's configured `enclosings` is
+# Round only, not Square) belongs to the bracket-based stripping logic, not
+# this heuristic -- without this guard, a bracketed tag from a style that's
+# simply not in the currently-active set would get incorrectly swept up here
+# instead of being left alone as intended.
+_BRACKET_CHARS = frozenset("[](){}<>")
+
+
+def _looks_like_none_style_tag_word(word: str) -> bool:
+    if not word or not any(ch in word for ch in _NONE_STYLE_SEPARATOR_CHARS):
+        return False
+    if word[0] in _BRACKET_CHARS or word[-1] in _BRACKET_CHARS:
+        return False
+    toks = [t for t in re.split(r"[^A-Za-z0-9]+", word) if t]
+    return any(_NONE_STYLE_SIZE_RE.match(t) or _NONE_STYLE_GRADE_RE.match(t) for t in toks)
+
+
+def find_none_style_tag_word(s: str) -> "tuple[str, str] | None":
+    """Find a leading or trailing "None (space only)" tag-shaped word in *s*.
+
+    Returns ``(tag_word, remainder)`` if found, else ``None``. Shared by
+    :func:`strip_none_style_tag_heuristic` (owned_items' own callers only
+    want the remainder, i.e. the bare name) and blueprint_meta.
+    parse_component_tag (wants the tag word itself, to classify class/size/
+    grade out of it) so both stay in sync with one matching rule -- see
+    :func:`_looks_like_none_style_tag_word` for that rule and its known
+    limitations.
+    """
+    parts = s.split(" ", 1)
+    if len(parts) == 2 and _looks_like_none_style_tag_word(parts[0]):
+        return parts[0], parts[1]
+    parts = s.rsplit(" ", 1)
+    if len(parts) == 2 and _looks_like_none_style_tag_word(parts[1]):
+        return parts[1], parts[0]
+    return None
+
+
+def strip_none_style_tag_heuristic(s: str) -> str:
+    """Best-effort leading/trailing tag-word strip for "None" enclosing when
+    no stock value is available to diff against -- see
+    :func:`find_none_style_tag_word`."""
+    found = find_none_style_tag_word(s)
+    return found[1] if found else s
+
+
 # Collapse any run of whitespace to a single space. Runs after NFKC folds a
 # non-breaking space (U+00A0, seen in log names like "Lynx\xa0Legs") into a
 # plain space, so the same item from a log and from loc data normalize alike.
@@ -121,6 +227,66 @@ _BP_HEADER_RE = re.compile(
 )
 
 
+@lru_cache(maxsize=16)
+def _build_tag_patterns(enclosings: tuple[tuple[str, str], ...]):
+    """Compiled (leading_re, trailing_re) for the given (open, close) pairs.
+
+    Matches a Tag Builder tag on either side of a name -- "[Mil-S1-A] Norfield"
+    (prepend) or "Norfield [Mil-S1-A]" (append), since the category's
+    placement setting can put it on either side (#352). ``enclosings`` must be
+    a tuple of 2-tuples (hashable, so this cache works) -- a plain caller-built
+    list will raise from deep inside lru_cache, a confusing place to debug, so
+    callers should always hand over a tuple. Returns (None, None) when no pair
+    has both a non-empty open and close (e.g. an empty tuple, or the "None
+    (space only)" style, which has no delimiter and so can never be reversed
+    by a regex -- a permanent limitation, not a bug to fix later).
+    """
+    alts = "|".join(
+        re.escape(o) + r"[^" + re.escape(c) + r"]*" + re.escape(c)
+        for o, c in enclosings if o and c
+    )
+    if not alts:
+        return None, None
+    return (
+        re.compile(r"^(?:" + alts + r")\s*"),
+        re.compile(r"\s*(?:" + alts + r")$"),
+    )
+
+
+def enclosings_from_tag_configs(
+    tag_configs: dict,
+    categories: tuple[str, ...] = ("components", "missiles", "ship_weapons"),
+) -> tuple[tuple[str, str], ...]:
+    """Reduce a ``{category: TagConfig}`` dict (from ``AppSettings.get_all_tag_
+    configs()``) to the deduplicated set of (open, close) enclosing pairs
+    actually in play, for callers who need to match a tag back off a name.
+
+    Only the 3 categories that ever tag an item/vehicle name appearing in a
+    POTENTIAL BLUEPRINTS bullet are considered by default -- ``commodities``
+    tags non-ownable trade goods and ``mission_titles`` tags mission title
+    text via a separate mechanism (see blueprint_meta._TITLE_TAG_RE); neither
+    is relevant to Blueprint Tracker matching.
+
+    Square is always included, regardless of what's actually configured:
+    enhancements.ini is a generated artifact that may still carry
+    yesterday's Square-tagged values if the user hasn't regenerated since
+    changing a setting, and Square never collides with a real Star Citizen
+    item name (unlike Round/Curly/Angle, which sometimes do) -- so keeping it
+    costs nothing and closes that transition-window gap.
+    """
+    from src.utils.tag_builder import _ENCLOSING_BY_KEY
+
+    pairs = {("[", "]")}
+    for cat in categories:
+        cfg = tag_configs.get(cat)
+        if cfg is None:
+            continue
+        o, c = _ENCLOSING_BY_KEY.get(cfg.enclosing, ("[", "]"))
+        if o and c:
+            pairs.add((o, c))
+    return tuple(sorted(pairs))
+
+
 def has_bp_section(value: str) -> bool:
     """True if *value* contains a recognised blueprint-section header.
 
@@ -186,19 +352,50 @@ def _bp_section_span(value: str):
     return start, end
 
 
-def normalize_item_name(name: str) -> str:
+def normalize_item_name(
+    name: str,
+    enclosings: "Sequence[tuple[str, str]] | None" = None,
+    stock: "str | None" = None,
+) -> str:
     """Reduce a bullet/name to a stable identity for matching.
 
     Applies, in order: NFKC unicode folding (so a non-breaking space becomes a
     plain space), removal of any ``[Owned]`` tag, removal of a leading *and* a
-    trailing bracketed component tag (``[Mil-S1-A] Norfield`` and
-    ``Norfield [Mil-S1-A]`` both reduce to the bare name), removal of a
-    trailing bullet-only category annotation (``Bendix (Fuel Nozzle)`` ->
-    ``Bendix``), whitespace collapse, and finally a BULLET_NAME_ALIASES
-    lookup that folds a known short bullet name onto the item's real display
-    name (``Hofstede`` -> ``S00 Hofstede``). Used for both the owned set and
-    bullet matching, so a tagged bullet, a log-imported name, and a bare item
-    row all resolve to one key.
+    trailing Tag Builder tag (``[Mil-S1-A] Norfield`` and ``Norfield
+    [Mil-S1-A]`` both reduce to the bare name), removal of a trailing
+    bullet-only category annotation (``Bendix (Fuel Nozzle)`` -> ``Bendix``),
+    whitespace collapse, and finally a BULLET_NAME_ALIASES lookup that folds a
+    known short bullet name onto the item's real display name (``Hofstede``
+    -> ``S00 Hofstede``). Used for both the owned set and bullet matching, so
+    a tagged bullet, a log-imported name, and a bare item row all resolve to
+    one key.
+
+    ``stock``, when given, is the item's known pre-Tag-Builder value for the
+    same loc key (#352) -- e.g. ``main_window.py``'s ``self.default_values``,
+    the un-enhanced English ``base.ini`` value. When present, it takes
+    priority over every other strip below via :func:`strip_via_stock_diff`:
+    diffing against a known value is authoritative (works for every enclosing
+    style, including "None (space only)", which has no delimiter char to
+    guess by) rather than a guess. Only pass this when the caller actually
+    has key context (build_blueprint_metadata's Pass 1, the Owned-star
+    column) -- bare strings with no associated key (mission bullets, manual
+    items, SCMDB imports, Game.log names) have nothing to diff against and
+    fall through to the enclosing/heuristic strips below.
+
+    ``enclosings`` is the set of (open, close) delimiter pairs to try
+    stripping, e.g. ``(("[", "]"), ("(", ")"))``. Defaults to Square only
+    (``[ ]``) when omitted, matching this function's original hardcoded
+    behavior exactly -- every caller that hasn't been taught about the Tag
+    Builder's configurable enclosing style is unaffected. This module stays
+    Qt-free/settings-free: it never reads the user's live Tag Builder config
+    itself. A caller that needs the real, currently-configured style resolves
+    it via ``enclosings_from_tag_configs(AppSettings.get_all_tag_configs())``
+    and passes the result down.
+
+    When neither ``stock`` nor a bracket match resolves anything, a
+    conservative fallback (:func:`_looks_like_none_style_tag_word`) tries to
+    strip a "None (space only)"-shaped leading/trailing word -- best-effort,
+    since there's no delimiter and no known value to confirm it against.
 
     The alias fold runs last, after the tag/annotation strips, so a decorated
     bullet (``[Mining Laser-S0] Hofstede``) reduces to the bare name first and
@@ -215,20 +412,38 @@ def normalize_item_name(name: str) -> str:
         return ""
     s = unicodedata.normalize("NFKC", name)
     s = _OWNED_STRIP_RE.sub("", s)
-    s = _LEADING_TAG_RE.sub("", s)
-    s = _TRAILING_TAG_RE.sub("", s)
+    if stock:
+        diff = strip_via_stock_diff(s, stock)
+        if diff is not None:
+            stock_s = unicodedata.normalize("NFKC", stock).strip()
+            stock_s = _WS_RE.sub(" ", stock_s).strip()
+            return BULLET_NAME_ALIASES.get(stock_s, stock_s)
+    leading_re, trailing_re = _build_tag_patterns(
+        tuple(enclosings) if enclosings is not None else _DEFAULT_ENCLOSINGS
+    )
+    if leading_re is not None:
+        s = leading_re.sub("", s)
+        s = trailing_re.sub("", s)
+    # Also try the "None (space only)" heuristic regardless of whether a
+    # bracket matched -- Square is always in the configured enclosings set
+    # (enclosings_from_tag_configs' safety baseline), so `leading_re is not
+    # None` is nearly always true and would otherwise skip this entirely.
+    s = strip_none_style_tag_heuristic(s)
     s = _TRAILING_CATEGORY_RE.sub("", s)
     s = _WS_RE.sub(" ", s).strip()
     return BULLET_NAME_ALIASES.get(s, s)
 
 
-def extract_bp_item_names(value: str) -> set[str]:
+def extract_bp_item_names(
+    value: str, enclosings: "Sequence[tuple[str, str]] | None" = None
+) -> set[str]:
     """Return the normalized item names in *value*'s POTENTIAL BLUEPRINTS list.
 
     Empty when the value has no such section. Scoped to just that section's
     span (see :func:`_bp_section_span`) so a stray prose bullet before the
     header or a real bullet in a later section (ITEM REWARDS, ...) isn't
-    picked up as a blueprint item.
+    picked up as a blueprint item. ``enclosings`` is forwarded to
+    :func:`normalize_item_name` -- see its docstring.
     """
     if not value:
         return set()
@@ -236,12 +451,14 @@ def extract_bp_item_names(value: str) -> set[str]:
     if span is None:
         return set()
     start, end = span
-    return {normalize_item_name(m.group(1))
+    return {normalize_item_name(m.group(1), enclosings)
             for m in _BULLET_RE.finditer(value, start, end)
-            if normalize_item_name(m.group(1))}
+            if normalize_item_name(m.group(1), enclosings)}
 
 
-def apply_owned_to_value(value: str, owned: set[str]) -> str:
+def apply_owned_to_value(
+    value: str, owned: set[str], enclosings: "Sequence[tuple[str, str]] | None" = None
+) -> str:
     """Return *value* with ``[Owned]`` on bullets whose item is in *owned*.
 
     Idempotent: any existing ``[Owned]`` tag is removed first, so the result is
@@ -250,7 +467,8 @@ def apply_owned_to_value(value: str, owned: set[str]) -> str:
     stripping stale owned tags, in case an item was just un-owned). Retagging
     is scoped to just that section's span (see :func:`_bp_section_span`) so a
     stray prose bullet before the header or a bullet in a later section can
-    never be mistaken for a blueprint item.
+    never be mistaken for a blueprint item. ``enclosings`` is forwarded to
+    :func:`normalize_item_name` -- see its docstring.
     """
     if not value:
         return value
@@ -265,7 +483,7 @@ def apply_owned_to_value(value: str, owned: set[str]) -> str:
 
     def _retag(m: re.Match) -> str:
         raw = m.group(1)
-        if normalize_item_name(raw) in owned:
+        if normalize_item_name(raw, enclosings) in owned:
             return f"{_NL}- {raw}{_OWNED_TAG}"
         return m.group(0)
 

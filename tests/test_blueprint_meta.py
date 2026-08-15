@@ -68,6 +68,61 @@ def test_parse_component_tag_leading_wins_when_both_present():
     assert parse_component_tag("[MIL-S3-B] Balandin [IND-S1-A]") == ("MIL", "S3", "B")
 
 
+# -- #352: configurable enclosing styles -------------------------------------
+
+def test_parse_component_tag_default_unchanged_from_hardcoded_square():
+    """Regression guard: omitting `enclosings` must behave exactly like the
+    original hardcoded Square-only implementation."""
+    assert parse_component_tag("[MIL-S3-B] Balandin") == ("MIL", "S3", "B")
+    assert parse_component_tag("Balandin [MIL-S3-B]") == ("MIL", "S3", "B")
+
+
+def test_parse_component_tag_round_enclosing():
+    assert parse_component_tag(
+        "(MIL-S3-B) Balandin", enclosings=(("(", ")"),)
+    ) == ("MIL", "S3", "B")
+
+
+def test_parse_component_tag_curly_and_angle_enclosings():
+    assert parse_component_tag(
+        "{IND-S1-A} Palisade", enclosings=(("{", "}"),)
+    ) == ("IND", "S1", "A")
+    assert parse_component_tag(
+        "Palisade <IND-S1-A>", enclosings=(("<", ">"),)
+    ) == ("IND", "S1", "A")
+
+
+def test_parse_component_tag_multi_alternative_capture_group_selects_correct_group():
+    """Regression test for a bug hit while building this fix: with one
+    capture group per enclosing alternative, `m.group(1)` only works for the
+    FIRST alternative -- every other alternative's group comes back None.
+    This must select whichever group actually matched, not always group 1."""
+    enclosings = (("[", "]"), ("(", ")"), ("{", "}"))
+    assert parse_component_tag("(MIL-S3-B) Balandin", enclosings=enclosings) == ("MIL", "S3", "B")
+    assert parse_component_tag("{IND-S1-A} Palisade", enclosings=enclosings) == ("IND", "S1", "A")
+
+
+def test_parse_component_tag_none_enclosing_via_stock_diff():
+    """A known stock value recovers a "None (space only)" tag's class/size/
+    grade authoritatively, no delimiter needed (#352)."""
+    assert parse_component_tag("MIL-S3-B Balandin", stock="Balandin") == ("MIL", "S3", "B")
+
+
+def test_parse_component_tag_none_enclosing_via_heuristic_without_stock():
+    """Without a stock value, the same conservative heuristic as
+    normalize_item_name's fallback still catches the common case."""
+    assert parse_component_tag("MIL-S3-B Balandin") == ("MIL", "S3", "B")
+
+
+def test_parse_component_tag_confirmed_untagged_stock_match_skips_heuristic():
+    """A stock match with an empty diff means "definitely not tagged" --
+    must not fall through to the heuristic and fabricate a false facet from
+    a stock name that coincidentally looks tag-shaped (regression: an
+    earlier version used a truthy check that treated "" the same as "no
+    match at all", letting this fall through)."""
+    assert parse_component_tag("Titan-S2 Reactor", stock="Titan-S2 Reactor") == (None, None, None)
+
+
 def test_size_from_key():
     assert size_from_key("item_NamePOWR_ACOM_S01_StarHeart") == "S1"
     assert size_from_key("item_NameQDRV_RSI_S02_Hemera") == "S2"
@@ -347,6 +402,37 @@ class TestManualBlueprintItems:
         assert qc.type == "Power Plant"
         assert (qc.cls, qc.size, qc.grade) == ("Military", "1", "A")
         assert qc.tagged_name == "[MIL-S1-A] QuadraCell"
+        assert qc.missions == frozenset({"Limited time event reward"})
+
+    def test_manual_item_picks_up_real_facets_under_non_square_enclosing(self):
+        """Direct regression test for #352: Round/Curly/Angle enclosing
+        styles left QuadraCell/QuadraCell MT/FR-66/FR-76 permanently
+        untagged because parse_component_tag/normalize_item_name only ever
+        understood Square brackets. With the actual configured enclosing
+        threaded through, the real tag/facets resolve correctly."""
+        entries = [_Entry("item_NamePOWR_XNTH_S01_QuadraCell", "(MIL-S1-A) QuadraCell", "Ship Items")]
+        meta = build_blueprint_metadata(entries, enclosings=(("(", ")"),))
+        qc = meta["QuadraCell"]
+        assert qc.type == "Power Plant"
+        assert (qc.cls, qc.size, qc.grade) == ("Military", "1", "A")
+        assert qc.tagged_name == "(MIL-S1-A) QuadraCell"
+        assert qc.missions == frozenset({"Limited time event reward"})
+
+    def test_manual_item_picks_up_real_facets_under_none_enclosing_via_stock(self):
+        """Direct regression test for #352's originally-unfixable case:
+        "None (space only)" enclosing left QuadraCell permanently untagged
+        even after Round/Curly/Angle were fixed, since there's no delimiter
+        to guess by. With the item's known stock (pre-tag) value passed
+        through as `default_values`, the diff-based recovery resolves the
+        real tag/facets authoritatively."""
+        entries = [_Entry("item_NamePOWR_XNTH_S01_QuadraCell", "MIL-S1-A QuadraCell", "Ship Items")]
+        meta = build_blueprint_metadata(
+            entries, default_values={"item_NamePOWR_XNTH_S01_QuadraCell": "QuadraCell"}
+        )
+        qc = meta["QuadraCell"]
+        assert qc.type == "Power Plant"
+        assert (qc.cls, qc.size, qc.grade) == ("Military", "1", "A")
+        assert qc.tagged_name == "MIL-S1-A QuadraCell"
         assert qc.missions == frozenset({"Limited time event reward"})
 
     def test_mission_derived_item_is_not_overwritten_by_manual_entry(self):

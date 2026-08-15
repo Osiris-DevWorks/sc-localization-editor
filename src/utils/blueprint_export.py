@@ -67,7 +67,9 @@ def export_owned_blueprints_csv(owned: "set[str]", blueprint_meta: dict) -> str:
     return buf.getvalue()
 
 
-def parse_import_names(path: "str | Path") -> "set[str]":
+def parse_import_names(
+    path: "str | Path", enclosings=None
+) -> "set[str]":
     """Return the normalized item names listed in a JSON or CSV import file.
 
     Accepts both our own export shape and a genuine SCMDB export (both key
@@ -77,17 +79,21 @@ def parse_import_names(path: "str | Path") -> "set[str]":
     valid UTF-8 -- plausible for a file saved from Excel on Windows, which
     defaults to cp1252/Latin-1) so the caller can show one clear error
     rather than a confusing traceback.
+
+    ``enclosings`` is forwarded to ``normalize_item_name`` (#352) -- the set
+    of (open, close) Tag Builder delimiter pairs to recognize. Defaults to
+    Square only when omitted, matching this function's original behavior.
     """
     path = Path(path)
     suffix = path.suffix.lower()
     if suffix == ".json":
-        return _parse_import_names_json(path)
+        return _parse_import_names_json(path, enclosings)
     if suffix == ".csv":
-        return _parse_import_names_csv(path)
+        return _parse_import_names_csv(path, enclosings)
     raise InvalidImportFileError(f"Unsupported file type: {suffix or '(none)'}")
 
 
-def _parse_import_names_json(path: Path) -> "set[str]":
+def _parse_import_names_json(path: Path, enclosings=None) -> "set[str]":
     try:
         with path.open("r", encoding="utf-8") as f:
             data = json.load(f)
@@ -100,13 +106,13 @@ def _parse_import_names_json(path: Path) -> "set[str]":
     for entry in blueprints:
         if not isinstance(entry, dict):
             continue
-        nm = normalize_item_name(str(entry.get("name") or ""))
+        nm = normalize_item_name(str(entry.get("name") or ""), enclosings)
         if nm:
             names.add(nm)
     return names
 
 
-def _parse_import_names_csv(path: Path) -> "set[str]":
+def _parse_import_names_csv(path: Path, enclosings=None) -> "set[str]":
     try:
         with path.open("r", encoding="utf-8-sig", newline="") as f:
             reader = csv.DictReader(f)
@@ -114,7 +120,7 @@ def _parse_import_names_csv(path: Path) -> "set[str]":
                 raise InvalidImportFileError('CSV file has no "name" column')
             names: set[str] = set()
             for row in reader:
-                nm = normalize_item_name(row.get("name") or "")
+                nm = normalize_item_name(row.get("name") or "", enclosings)
                 if nm:
                     names.add(nm)
     except (OSError, UnicodeDecodeError) as e:
@@ -123,7 +129,7 @@ def _parse_import_names_csv(path: Path) -> "set[str]":
 
 
 def match_import_names(
-    imported: "set[str]", known: "set[str]"
+    imported: "set[str]", known: "set[str]", enclosings=None
 ) -> "tuple[set[str], set[str]]":
     """Split *imported* into (matched, unmatched) against *known* item names.
 
@@ -143,10 +149,13 @@ def match_import_names(
     Owned set, which must stay keyed exactly as the Blueprint Tracker's own
     dict, or a subsequent blueprint_meta.get(name) lookup (e.g. in export)
     would silently miss.
+
+    ``enclosings`` is forwarded to ``normalize_item_name`` (#352), same
+    default as :func:`parse_import_names`.
     """
     known_by_normalized: dict = {}
     for name in known:
-        known_by_normalized.setdefault(normalize_item_name(name), name)
+        known_by_normalized.setdefault(normalize_item_name(name, enclosings), name)
     matched = {known_by_normalized[nm] for nm in imported if nm in known_by_normalized}
     unmatched = imported - known_by_normalized.keys()
     return matched, unmatched

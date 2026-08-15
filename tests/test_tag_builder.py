@@ -22,6 +22,7 @@ from src.utils.tag_builder import (  # noqa: E402
     ElementSpec,
     TagConfig,
     default_config,
+    join_tag,
     render_tag,
     tag_config_fingerprint,
 )
@@ -179,6 +180,22 @@ class TestSeparatorEnclosing:
     def test_round_enclosing(self):
         cfg = self._components_cfg(sep="hyphen", enc="round")
         assert render_tag(cfg, {"class": "Military", "size": "2", "grade": "A"}) == "(M-S2-A)"
+
+
+# ── join_tag: shared tag/name join helper (#352) ─────────────────────────────
+
+class TestJoinTag:
+    def test_prepend_places_tag_before_name(self):
+        assert join_tag("Norfield", "[MIL-S1-A]", "prepend") == "[MIL-S1-A] Norfield"
+
+    def test_append_places_tag_after_name(self):
+        assert join_tag("Norfield", "[MIL-S1-A]", "append") == "Norfield [MIL-S1-A]"
+
+    def test_empty_tag_returns_name_unchanged(self):
+        assert join_tag("Norfield", "", "prepend") == "Norfield"
+
+    def test_em4_wrapped_tag_joins_like_any_other(self):
+        assert join_tag("Titanium", "<EM4>[CF]</EM4>", "prepend") == "<EM4>[CF]</EM4> Titanium"
 
 
 # ── Regression: defaults match the pre-builder hardcoded format ──────────────
