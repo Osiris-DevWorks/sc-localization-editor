@@ -225,6 +225,36 @@ def test_english_output_does_not_vouch_for_another_language(
     assert tab._compute_initial_enhancements_dirty() is True
 
 
+def test_status_dots_and_generate_button_agree_on_a_non_english_language(
+        qapp, isolated_settings):
+    """The category dots sit directly beside the Generate Enhancements button,
+    so they have to answer the same question about the same directory.
+
+    Making only the button language-aware left the two contradicting each
+    other outright: with English enhancements generated and German selected,
+    every dot rendered green ("all present", read from the channel root where
+    English lives) while the button was simultaneously lit ("work to do",
+    correctly reading the empty per-language dir). Consistently wrong at least
+    agreed; half-fixed did not.
+    """
+    _seed_generated_output()                     # English, at the channel root
+    AppSettings.set_selected_language("german")   # ...which has nothing generated
+
+    tab = _new_tab()
+    tab.refresh_enhancements_status()
+    tab.refresh_enhancements_dirty_state()
+
+    green = sum(
+        "#4caf50" in dot.styleSheet()
+        for dot in tab._enhancements_status_labels.values()
+    )
+    assert green == 0, (
+        "dots report English's files while the button reports German's; "
+        "they must read the same directory"
+    )
+    assert tab._generate_enhancements_btn.isEnabled() is True
+
+
 def test_export_settings_keeps_the_button_lit_when_output_is_behind(
         qapp, isolated_settings):
     """flush_pending_tag_edits (Export Settings) persists on-screen edits

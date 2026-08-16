@@ -845,12 +845,22 @@ class EnhancementsTab(QWidget):
     # ── Status refresh ────────────────────────────────────────────────────────
 
     def refresh_enhancements_status(self):
-        """Update enhancement file status indicators and DataForge cache status."""
-        cache_dir = AppSettings.get_cache_dir()
+        """Update enhancement file status indicators and DataForge cache status.
+
+        Reads get_enhancements_dir() for the same reason
+        _compute_initial_enhancements_dirty does: the generator writes each
+        language's INIs to cache/lang/{language}, and only English collapses
+        onto the channel root. These dots sit directly beside the Generate
+        Enhancements button, so leaving them on get_cache_dir() while that
+        button reads the per-language dir let the two contradict each other
+        outright -- a German user with English enhancements generated saw
+        every category green AND the button lit, at the same time.
+        """
+        enh_dir = AppSettings.get_enhancements_dir()
         for key, dot in self._enhancements_status_labels.items():
             # Check all files controlled by this checkbox
             filenames = self._files_for_category(key)
-            all_present = all((cache_dir / fn).exists() for fn in filenames)
+            all_present = all((enh_dir / fn).exists() for fn in filenames)
             dot.setStyleSheet(f"color: {'#4caf50' if all_present else '#f44336'}; font-size: 12px;")
         self.refresh_forge_status()
 
