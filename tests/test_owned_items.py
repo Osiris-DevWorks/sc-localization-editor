@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from utils.owned_items import (  # noqa: E402
     BULLET_NAME_ALIASES,
+    NONE_STYLE_ENCLOSING,
     apply_owned_to_value,
     enclosings_from_tag_configs,
     extract_bp_item_names,
@@ -181,9 +182,41 @@ class TestNormalize:
     def test_none_enclosing_stripped_via_heuristic_without_stock(self):
         """Without a stock value, the conservative heuristic still catches
         the common case: a leading/trailing word with an embedded Tag
-        Builder separator char plus a size/grade-shaped sub-token."""
-        assert normalize_item_name("Mil-S1-A Norfield") == "Norfield"
-        assert normalize_item_name("Norfield Mil-S1-A") == "Norfield"
+        Builder separator char plus a size/grade-shaped sub-token.
+
+        Requires the None style to actually be among the configured
+        enclosings -- see test_none_style_heuristic_is_off_unless_configured
+        for why it is no longer unconditional.
+        """
+        none_cfg = (("[", "]"), NONE_STYLE_ENCLOSING)
+        assert normalize_item_name("Mil-S1-A Norfield", none_cfg) == "Norfield"
+        assert normalize_item_name("Norfield Mil-S1-A", none_cfg) == "Norfield"
+
+    def test_none_style_heuristic_is_off_unless_configured(self):
+        """The heuristic strips a word carrying a separator char plus an
+        S<digits>/lone-A-F token, and real item names can take that shape.
+        Running it for users who never selected None enclosing spent that
+        risk on people who got nothing back for it, so it is now gated on
+        the style actually being configured.
+
+        "F-4 Blaster" is the demonstration: realistic in shape (single-letter
+        designators are common), and reduced to "Blaster" by the ungated
+        version. Two names collapsing onto one key is a wrong [Owned] tag on
+        an item the user does not own.
+        """
+        assert normalize_item_name("F-4 Blaster") == "F-4 Blaster"
+        assert normalize_item_name("Mil-S1-A Norfield") == "Mil-S1-A Norfield"
+        # ...and still stripped for a user who did configure None style.
+        none_cfg = (("[", "]"), NONE_STYLE_ENCLOSING)
+        assert normalize_item_name("Mil-S1-A Norfield", none_cfg) == "Norfield"
+
+    def test_none_style_pair_does_not_break_bracket_matching(self):
+        """The delimiter-less pair rides along in the same tuple as the real
+        bracket pairs, so _build_tag_patterns has to skip it rather than
+        build a degenerate alternative from two empty strings."""
+        cfg = (("[", "]"), NONE_STYLE_ENCLOSING)
+        assert normalize_item_name("[Mil-S1-A] Norfield", cfg) == "Norfield"
+        assert normalize_item_name("Norfield [Mil-S1-A]", cfg) == "Norfield"
 
     def test_none_enclosing_without_separator_or_stock_is_unrecoverable(self):
         """A "None"-style tag whose elements are joined by a plain space

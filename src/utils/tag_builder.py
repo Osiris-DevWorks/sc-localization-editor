@@ -930,8 +930,15 @@ def render_tag(config: TagConfig, values: dict[str, str]) -> str:
 
 def join_tag(name: str, tag: str, placement: str) -> str:
     """Join a rendered *tag* to an item *name* with a single space, honoring
-    *placement* ("prepend" puts the tag before the name, anything else puts
-    it after). Returns *name* unchanged if *tag* is empty.
+    *placement*: only the exact value ``"append"`` puts the tag after the
+    name, and everything else (including an empty or unrecognized value)
+    prepends. Returns *name* unchanged if *tag* is empty.
+
+    Stated that way round deliberately, because it is the way the code reads
+    and the two are not interchangeable: describing it as '"prepend" puts the
+    tag first, anything else appends' would promise the opposite behaviour for
+    every value that is neither, and prepend is the default the Tag Builder
+    ships.
 
     Single source of truth for this join so the 4 call sites in
     generate_enhancements_ini.py (components/missiles/ship weapons/

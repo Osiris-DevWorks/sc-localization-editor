@@ -41,6 +41,13 @@ _OWNED_STRIP_RE = re.compile(r"\s*<EM4>\[Owned\]</EM4>")
 # today's original hardcoded Square-only behavior, preserved exactly so every
 # existing caller that doesn't know about #352 is unaffected.
 _DEFAULT_ENCLOSINGS: tuple[tuple[str, str], ...] = (("[", "]"),)
+# The Tag Builder's "None (space only)" style, which renders no delimiter at
+# all. It travels in an ``enclosings`` tuple like any other configured pair;
+# _build_tag_patterns has nothing to build from it and skips it, while
+# normalize_item_name reads its presence as "the space-only heuristic is worth
+# running here". Not in _DEFAULT_ENCLOSINGS, so a caller that hasn't resolved
+# the user's real config never pays for a style nobody asked for.
+NONE_STYLE_ENCLOSING: tuple[str, str] = ("", "")
 
 
 def strip_via_stock_diff(tagged: str, stock: str) -> "str | None":
@@ -282,8 +289,15 @@ def enclosings_from_tag_configs(
         if cfg is None:
             continue
         o, c = _ENCLOSING_BY_KEY.get(cfg.enclosing, ("[", "]"))
-        if o and c:
-            pairs.add((o, c))
+        # The "None (space only)" style is ("", "") -- a real configured
+        # enclosing with no delimiter, so it's reported like any other rather
+        # than dropped. _build_tag_patterns skips it (there's nothing to build
+        # a regex from) and normalize_item_name reads its presence as
+        # permission to run the space-only heuristic. Dropping it here is what
+        # made that heuristic unconditional: with no way to tell whether any
+        # category actually uses None, it had to run for everybody, so every
+        # user carried its mis-strip risk while only None users could benefit.
+        pairs.add((o, c))
     return tuple(sorted(pairs))
 
 
@@ -418,17 +432,25 @@ def normalize_item_name(
             stock_s = unicodedata.normalize("NFKC", stock).strip()
             stock_s = _WS_RE.sub(" ", stock_s).strip()
             return BULLET_NAME_ALIASES.get(stock_s, stock_s)
-    leading_re, trailing_re = _build_tag_patterns(
-        tuple(enclosings) if enclosings is not None else _DEFAULT_ENCLOSINGS
-    )
+    resolved = tuple(enclosings) if enclosings is not None else _DEFAULT_ENCLOSINGS
+    leading_re, trailing_re = _build_tag_patterns(resolved)
     if leading_re is not None:
         s = leading_re.sub("", s)
         s = trailing_re.sub("", s)
-    # Also try the "None (space only)" heuristic regardless of whether a
-    # bracket matched -- Square is always in the configured enclosings set
-    # (enclosings_from_tag_configs' safety baseline), so `leading_re is not
-    # None` is nearly always true and would otherwise skip this entirely.
-    s = strip_none_style_tag_heuristic(s)
+    # The "None (space only)" heuristic runs only when a category is actually
+    # configured that way -- enclosings_from_tag_configs reports that style as
+    # the delimiter-less ("", "") pair. It used to run unconditionally, which
+    # meant every user paid its risk for a feature only None users could use:
+    # it strips a leading/trailing word containing a separator char plus an
+    # "S<digits>" or lone A-F token, and real item names can take that shape
+    # ("F-4 Blaster" reduces to "Blaster"). No such name is known in today's
+    # data -- the real hyphenated names all carry 2-3 letter prefixes (FR-66,
+    # NDB-26 Repeater, RN-7s) and are safe -- but CIG adds items constantly,
+    # and two names colliding on one key is a wrong [Owned] tag on an item the
+    # user does not own. Gating keeps that exposure with the setting that
+    # needs it.
+    if NONE_STYLE_ENCLOSING in resolved:
+        s = strip_none_style_tag_heuristic(s)
     s = _TRAILING_CATEGORY_RE.sub("", s)
     s = _WS_RE.sub(" ", s).strip()
     return BULLET_NAME_ALIASES.get(s, s)
@@ -451,9 +473,14 @@ def extract_bp_item_names(
     if span is None:
         return set()
     start, end = span
-    return {normalize_item_name(m.group(1), enclosings)
-            for m in _BULLET_RE.finditer(value, start, end)
-            if normalize_item_name(m.group(1), enclosings)}
+    # Normalize once per bullet, not twice. The set comprehension used to call
+    # normalize_item_name in both the value and the condition; that was cheap
+    # when it was two regex subs, but it now walks up to four bracket
+    # alternatives, an lru_cache lookup and (when configured) the space-only
+    # heuristic, on every bullet of every mission in a full rescan.
+    names = (normalize_item_name(m.group(1), enclosings)
+             for m in _BULLET_RE.finditer(value, start, end))
+    return {n for n in names if n}
 
 
 def apply_owned_to_value(
