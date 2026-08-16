@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from src.models.string_model import (
+    CATEGORY_MISSIONS,
     _ARMOR_GEAR_WORDS,
     _FPS_WEAPON_WORDS,
     _SHIP_WEAPON_SIZE_RE,
@@ -508,7 +509,7 @@ def build_blueprint_metadata(entries) -> dict:
         # mission's blueprint reward list -- fabricating fake, unownable
         # "items" that show up identically in both Available and Owned
         # (reported as the tracker "stacking" components).
-        if cat == "Missions" and has_bp_section(val):
+        if cat == CATEGORY_MISSIONS and has_bp_section(val):
             dm = _DESC_KEY_RE.match(key)
             pair = _title_pair_key(dm.group("base"), dm.group("num")) if dm else None
             bp_descs.append((pair, val))

@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from src.models.string_model import StringEntry
+from src.models.string_model import CATEGORY_MISSIONS, StringEntry
 from src.merger.ini_merger import merge_sources_by_hierarchy
 from src.utils.ini_io import read_ini_text
 from src.utils.perf import timed
@@ -213,7 +213,7 @@ def load_source_files(
 
         # Determine category: source-based override first, then key-prefix fallback
         if source == 'contracts':
-            category = 'Missions'
+            category = CATEGORY_MISSIONS
         elif 'journal' in key.lower():
             category = 'Journal'
         elif enhancements_key_categories and key in enhancements_key_categories:

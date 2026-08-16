@@ -200,6 +200,33 @@ def test_bp_descs_only_keeps_potential_blueprints_bodies():
     assert result == [2]  # the POTENTIAL BLUEPRINTS body only
 
 
+def test_enhancement_label_matches_the_category_constant():
+    """#354's gate compares against CATEGORY_MISSIONS, but the parser can
+    assign a category from AppSettings.ENHANCEMENT_LABELS instead (a mission
+    entry sourced from mission_rewards_enhancements.ini takes that route, not
+    the key-prefix classifier). The two have to spell it identically or those
+    entries silently fail the gate and vanish from the Blueprint Tracker.
+
+    Documented on the constant; asserted here so it cannot drift quietly.
+    """
+    from src.models.string_model import CATEGORY_MISSIONS
+    from src.utils.settings import AppSettings
+
+    assert AppSettings.ENHANCEMENT_LABELS["missions"] == CATEGORY_MISSIONS
+
+
+def test_bp_titles_only_excludes_non_mission_entry():
+    """#354 symmetry: "[BP" only means "blueprint mission" on a mission title.
+    The desc half was gated when the bug was reported; leaving the title half
+    open would have let the same class of false positive through, and read as
+    a deliberate asymmetry to whoever touched this next."""
+    e = [_e("items_commodities_iron_desc", category="Commodities",
+            original_value="Iron Ore. Not a mission. <EM4>[BP]</EM4>")]
+    result = filter_entry_indices(e, {}, _no_filters(), "All", "All", False, False, "★",
+                                  bp_titles_only=True)
+    assert result == []
+
+
 def test_bp_descs_only_excludes_non_mission_colliding_header():
     """#354: a commodity whose value happens to contain matching header
     text (e.g. a renamed "Blueprint Data" header colliding with the
@@ -239,8 +266,11 @@ def test_bp_descs_only_recognises_multiple_blueprint_pools_header():
 
 def test_bp_filter_reads_custom_override_when_present():
     # A user override on a title row is what's shown, so the tag must be read
-    # from custom_value when set.
-    e = [_e("t", original_value="bare title", custom_value="Custom <EM4>[BP]</EM4>")]
+    # from custom_value when set. category="Missions" because #354 gates both
+    # bp_* checks on it; this test is about custom_value precedence, so it
+    # supplies the category rather than relying on the default.
+    e = [_e("t", category="Missions",
+            original_value="bare title", custom_value="Custom <EM4>[BP]</EM4>")]
     result = filter_entry_indices(e, {}, _no_filters(), "All", "All", False, False, "★",
                                   bp_titles_only=True)
     assert result == [0]

@@ -50,7 +50,9 @@ from src.gui.workers import (
     StartupSyncWorker,
 )
 from src.merger.ini_merger import merge_sources_by_hierarchy
-from src.models.string_model import StringEntry, is_favoritable_ship
+from src.models.string_model import (
+    CATEGORY_MISSIONS, StringEntry, is_favoritable_ship,
+)
 from src.parser.ini_parser import load_source_files, load_sources_from_settings, parse_ini_file
 from src.gui.update_dialog import UpdateDialog
 from src.utils.app_updater import AppUpdateCheckWorker, AppUpdateDownloadWorker
@@ -5008,7 +5010,7 @@ class MainWindow(QMainWindow):
         entry_categories = set(e.category for e in self.entries)
 
         # Always include standard categories, even if no entries exist for them yet
-        standard_categories = {"Ships", "Ship Items", "Missions", "Commodities", "Other"}
+        standard_categories = {"Ships", "Ship Items", CATEGORY_MISSIONS, "Commodities", "Other"}
         categories = sorted(standard_categories | entry_categories)
 
         self.category_combo.blockSignals(True)
