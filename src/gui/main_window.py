@@ -3925,6 +3925,16 @@ class MainWindow(QMainWindow):
         logger.info(f"MainWindow reacting to language change → {language}")
         self.retranslate_ui()
         self.statusBar().showMessage(tr("dialogs.language_changed_status", language=language))
+        # #363: both freshness buttons are per-language — enhancement INIs
+        # live in the language's own dir (get_enhancements_dir) and the tag
+        # config stamp sits beside them — but neither was recomputed here, so
+        # a switch left them showing the *previous* language's verdict. That
+        # is the same fault #273/#292 fixed for a channel switch, which
+        # _on_channel_changed handles with this identical pair of calls;
+        # language switching had simply never been wired up to match.
+        if hasattr(self, "enhancements_tab"):
+            self.enhancements_tab.refresh_enhancements_dirty_state()
+            self.enhancements_tab.refresh_tag_builder_dirty_state()
         # Point the `global` base source at this language's base.ini (English
         # = the P4K extraction; other languages = a downloaded global.ini),
         # downloading it first if needed, then reload. See #30.
@@ -4769,6 +4779,14 @@ class MainWindow(QMainWindow):
         self._enhancements_worker = None
         self.enhancements_tab.set_operation_idle(success)
         self.enhancements_tab.refresh_enhancements_status()
+        # #363: and the same for Save Tag Changes, which set_operation_idle
+        # doesn't cover. Both _apply_tag_builder and the Generate click
+        # handler clear that button the moment they *launch* a run, so a run
+        # that then fails left it grey over INIs the tag config never reached
+        # — the stamp is only written on success, so re-deriving from it here
+        # lights the button back up for a retry. On success the stamp matches
+        # what just generated and this leaves it grey, exactly as before.
+        self.enhancements_tab.refresh_tag_builder_dirty_state()
 
         if success:
             # #180: Simple-mode one-button flow continues into apply here.

@@ -506,12 +506,45 @@ class EnhancementsTab(QWidget):
         genuinely lack those tags); leave it grey when they already match. A
         missing stamp (channels generated before this feature, or never
         generated) reads as dirty, so the button stays clickable exactly as it
-        did before until the next generation records a stamp."""
+        did before until the next generation records a stamp.
+
+        #363 made this the single definition of "the generated INIs don't match
+        the tag config", called from every point that can invalidate them
+        (launch, an import, a finished run) rather than only a channel switch,
+        so it also gained the gate below: being stale requires there to be
+        something that *can* be stale. With no enhancement output on disk there
+        is nothing to be out of date, and Generate Enhancements is already
+        lit for the missing files, so lighting this one too would just put a
+        second red button in front of a new user who has done nothing wrong.
+        """
         if getattr(self, "_apply_tag_btn", None) is None:
+            return
+        if not self._enhancements_output_exists():
+            self._set_tag_btn_dirty(False)
             return
         stamp = AppSettings.get_tag_config_stamp()
         current = self._live_tag_config_fingerprint()
         self._set_tag_btn_dirty(not stamp or stamp != current)
+
+    def _enhancements_output_exists(self) -> bool:
+        """True if any enabled category has at least one generated INI on disk.
+
+        Deliberately "any", not "all": a partially generated set is still
+        output that a tag-config change can invalidate, and the missing half is
+        Generate Enhancements' business (_compute_initial_enhancements_dirty
+        lights it for exactly that). Guarded with getattr so it stays a safe
+        no-op if the enhancements group hasn't been built — setup_ui builds it
+        before the Tag Builder group, so in practice it always has.
+        """
+        checkboxes = getattr(self, "_enhancements_checkboxes", None)
+        if not checkboxes:
+            return False
+        cache_dir = AppSettings.get_cache_dir()
+        return any(
+            (cache_dir / fn).exists()
+            for key, cb in checkboxes.items() if cb.isChecked()
+            for fn in self._files_for_category(key)
+        )
 
     def _on_category_checkbox_changed(self):
         """Enable Apply button if any checkbox differs from saved settings."""
@@ -874,7 +907,16 @@ class EnhancementsTab(QWidget):
         self._apply_tag_btn = QPushButton(tr("enhancements.apply_tag_changes_btn"))
         self._apply_tag_btn.clicked.connect(self._apply_tag_builder)
         btn_row.addWidget(self._apply_tag_btn)
-        self._set_tag_btn_dirty(False)
+        # #363: derive the starting state rather than asserting clean. This
+        # was an unconditional _set_tag_btn_dirty(False), which made launch
+        # the one moment the freshness check never ran — it was wired only to
+        # the channel switch — so INIs that didn't match the tag config were
+        # invisible on startup behind two grey buttons. See the module
+        # docstring of tests/test_tag_config_staleness_startup.py for the
+        # reported symptom and why cycling the checkbox appeared to fix it.
+        # Safe here: the pages, the annotate checkbox and _apply_tag_btn are
+        # all built above, so the fingerprint comes from the live pages.
+        self.refresh_tag_builder_dirty_state()
 
         self._reset_tag_btn = QPushButton(tr("enhancements.reset_defaults_btn"))
         self._reset_tag_btn.setToolTip(tr("enhancements.reset_tag_tooltip"))
@@ -1006,8 +1048,14 @@ class EnhancementsTab(QWidget):
             annotate_cb.setChecked(AppSettings.get_tag_annotate_mission_descs())
             annotate_cb.blockSignals(False)
         # apply_config emits config_changed per page, which lights the Save
-        # button — but nothing is actually unsaved here, so clear it.
-        self._set_tag_btn_dirty(False)
+        # button — but nothing is actually *unsaved* here, so drop that
+        # signal. #363: re-derive rather than clearing outright, though. An
+        # import that changes the tag config leaves the generated INIs built
+        # from the pre-import one, and clearing unconditionally hid that the
+        # same way launch did: grey button, stale output, no way to tell.
+        # The pages now equal the persisted config, so this reports only
+        # genuine staleness and never the unsaved edits it's here to drop.
+        self.refresh_tag_builder_dirty_state()
         logger.info("Tag Builder: reloaded configs from settings for %s", ", ".join(pages))
 
     def flush_pending_tag_edits(self) -> None:
@@ -1020,7 +1068,14 @@ class EnhancementsTab(QWidget):
         whatever was last committed via Save Tag Changes.
         """
         self._persist_tag_builder_state()
-        self._set_tag_btn_dirty(False)
+        # #363: persisting is not regenerating. Clearing the button outright
+        # here threw away a correct "you still need to regenerate" signal the
+        # user had already been shown: edit the Tag Builder, click Export
+        # Settings, and the edits landed in settings while the INIs kept the
+        # old config — stale output behind a grey button, the same end state
+        # as the launch and import cases. Re-deriving keeps it lit for exactly
+        # as long as the output really is behind.
+        self.refresh_tag_builder_dirty_state()
 
     def _set_tag_btn_dirty(self, dirty: bool) -> None:
         """Single chokepoint for the button's enabled state, tooltip, and
