@@ -74,12 +74,16 @@ def _stamp_matching_current_config() -> None:
 
 def _seed_generated_output() -> None:
     """Put generated INIs on disk. The freshness check only reports staleness
-    when there is output that can actually be stale (#363), so a refresh over
-    an empty cache dir is unconditionally clean and would prove nothing."""
-    cache_dir = AppSettings.get_cache_dir()
-    cache_dir.mkdir(parents=True, exist_ok=True)
+    when there is output that can actually be stale (#363), so a refresh with
+    no output is unconditionally clean and would prove nothing.
+
+    get_enhancements_dir(), not get_cache_dir(): that is where the generator
+    writes and where the check looks (they differ for non-English languages).
+    """
+    enh_dir = AppSettings.get_enhancements_dir()
+    enh_dir.mkdir(parents=True, exist_ok=True)
     for filename in AppSettings.ENHANCEMENTS_FILES.values():
-        (cache_dir / filename).write_text("; generated\n", encoding="utf-8")
+        (enh_dir / filename).write_text("; generated\n", encoding="utf-8")
 
 
 def _import_custom_configs():

@@ -411,7 +411,17 @@ class EnhancementsTab(QWidget):
     def _compute_initial_enhancements_dirty(self) -> bool:
         """True if Generate Enhancements has work to do right now: the
         DataForge cache was never extracted or is stale vs. Data.p4k, or an
-        enabled category's output file doesn't exist yet."""
+        enabled category's output file doesn't exist yet.
+
+        Looks in get_enhancements_dir(), not get_cache_dir(). Those are the
+        same path for English, but every other language keeps its generated
+        INIs in cache/lang/{language} (get_enhancements_dir), which is where
+        the generator writes them (workers.py, enh_dir). Checking the channel
+        root instead answered for English no matter which language was
+        selected, so a language with nothing generated could report "nothing
+        to do" purely because English had been generated earlier. #363 made
+        that reachable on every language switch, which is what surfaced it.
+        """
         from src.utils.pak_extractor import P4K_MTIME_STAMP, dataforge_cache_is_fresh
         forge_dir = AppSettings.get_dataforge_cache_dir()
         p4k_path = AppSettings.get_p4k_path()
@@ -419,10 +429,10 @@ class EnhancementsTab(QWidget):
             return True
         if p4k_path.exists() and not dataforge_cache_is_fresh(p4k_path, forge_dir):
             return True
-        cache_dir = AppSettings.get_cache_dir()
+        enh_dir = AppSettings.get_enhancements_dir()
         for key, cb in self._enhancements_checkboxes.items():
             if cb.isChecked() and any(
-                not (cache_dir / fn).exists() for fn in self._files_for_category(key)
+                not (enh_dir / fn).exists() for fn in self._files_for_category(key)
             ):
                 return True
         return False
@@ -535,13 +545,20 @@ class EnhancementsTab(QWidget):
         lights it for exactly that). Guarded with getattr so it stays a safe
         no-op if the enhancements group hasn't been built — setup_ui builds it
         before the Tag Builder group, so in practice it always has.
+
+        Uses get_enhancements_dir() so it agrees with the stamp it gates: the
+        stamp lives in that same per-language dir, and for anything but
+        English it is cache/lang/{language}, not the channel root. Reading the
+        root here would have suppressed the whole freshness check for a
+        non-English user who had never generated English enhancements — no
+        files found, so "nothing can be stale", so the stamp never read.
         """
         checkboxes = getattr(self, "_enhancements_checkboxes", None)
         if not checkboxes:
             return False
-        cache_dir = AppSettings.get_cache_dir()
+        enh_dir = AppSettings.get_enhancements_dir()
         return any(
-            (cache_dir / fn).exists()
+            (enh_dir / fn).exists()
             for key, cb in checkboxes.items() if cb.isChecked()
             for fn in self._files_for_category(key)
         )

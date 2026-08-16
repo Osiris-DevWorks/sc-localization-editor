@@ -108,15 +108,21 @@ def _seed_generated_output() -> None:
     actually invalidate.
 
     Every check below needs this: being stale requires something that *can* be
-    stale, and with an empty cache dir the button stays grey by design (see
+    stale, and with no output the button stays grey by design (see
     test_no_generated_output_means_nothing_can_be_stale). Writes the whole
     ENHANCEMENTS_FILES set rather than picking the enabled ones, so the tests
     don't quietly depend on which categories default to on.
+
+    Writes into get_enhancements_dir(), which is where the generator puts them
+    and where the app looks. That is the same path as get_cache_dir() for
+    English and cache/lang/{language} for everything else, so seeding the
+    channel root instead would have made the non-English tests below pass for
+    the wrong reason.
     """
-    cache_dir = AppSettings.get_cache_dir()
-    cache_dir.mkdir(parents=True, exist_ok=True)
+    enh_dir = AppSettings.get_enhancements_dir()
+    enh_dir.mkdir(parents=True, exist_ok=True)
     for filename in AppSettings.ENHANCEMENTS_FILES.values():
-        (cache_dir / filename).write_text("; generated\n", encoding="utf-8")
+        (enh_dir / filename).write_text("; generated\n", encoding="utf-8")
 
 
 # ── The startup check ───────────────────────────────────────────────────────
@@ -172,6 +178,51 @@ def test_no_generated_output_means_nothing_can_be_stale(qapp, isolated_settings)
     """
     assert AppSettings.get_tag_config_stamp() == ""      # nothing generated
     assert _new_tab()._tag_dirty is False
+
+
+# ── Non-English languages ───────────────────────────────────────────────────
+#
+# get_enhancements_dir() is get_cache_dir() for English but
+# cache/lang/{language} for everything else, and the generator writes the INIs
+# (and the stamp beside them) into that per-language dir. Every check here
+# therefore has to use get_enhancements_dir(); reading the channel root answers
+# for English no matter which language is selected.
+#
+# These went unwritten first time round and the whole fix was inert for
+# non-English users as a result: the output-exists gate found nothing under the
+# channel root, concluded "nothing can be stale", and returned before ever
+# reading the stamp. Every other test in this file runs at English, where the
+# two paths coincide, so none of them could see it.
+
+def test_stale_stamp_lights_the_button_on_a_non_english_language(
+        qapp, isolated_settings):
+    AppSettings.set_selected_language("german")
+    assert AppSettings.get_enhancements_dir() != AppSettings.get_cache_dir(), (
+        "precondition: the per-language dir must differ from the channel root, "
+        "or this test collapses into the English case and proves nothing"
+    )
+    _seed_generated_output()
+    AppSettings.set_tag_config_stamp("built-from-some-older-config")
+
+    assert _new_tab()._tag_dirty is True
+
+
+def test_english_output_does_not_vouch_for_another_language(
+        qapp, isolated_settings):
+    """The precise failure: English enhancements exist, German ones do not.
+
+    Both the output-exists gate and the Generate Enhancements check used to
+    read the channel root, so English's files answered for German. The gate
+    said "there is output, so staleness is meaningful" and Generate said
+    "everything is present, nothing to do", neither of which is true of the
+    language actually selected.
+    """
+    _seed_generated_output()                    # English, at the channel root
+    AppSettings.set_selected_language("german")  # ...which has nothing generated
+
+    tab = _new_tab()
+    assert tab._enhancements_output_exists() is False
+    assert tab._compute_initial_enhancements_dirty() is True
 
 
 def test_export_settings_keeps_the_button_lit_when_output_is_behind(
