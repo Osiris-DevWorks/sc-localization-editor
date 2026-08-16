@@ -1728,7 +1728,7 @@ class MainWindow(QMainWindow):
             _owned = AppSettings.get_owned_items()
             if _owned:
                 from src.utils.owned_items import apply_owned_to_value
-                _bp_header = AppSettings.get_mission_headers().get("blueprints")
+                _bp_header = self._bp_header()
                 for _k, _v in list(merged_dict.items()):
                     _nv = apply_owned_to_value(_v, _owned, bp_header=_bp_header)
                     if _nv != _v:
@@ -4996,7 +4996,7 @@ class MainWindow(QMainWindow):
             bp_titles_only=self.bp_titles_check.isChecked(),
             bp_descs_only=self.bp_descs_check.isChecked(),
             ship_vehicle_names_only=self.ship_vehicle_names_only_check.isChecked(),
-            bp_header=AppSettings.get_mission_headers().get("blueprints"),
+            bp_header=self._bp_header(),
         )
 
     @timed
@@ -5278,6 +5278,24 @@ class MainWindow(QMainWindow):
         self.table.setCurrentIndex(custom_index)
         self.table.edit(custom_index)
 
+    def _bp_header(self) -> "str | None":
+        """The user's configured "blueprints" mission header, or None when it
+        has never been renamed (#353).
+
+        Every matcher that has to recognise a blueprint section needs this, and
+        all of them must agree: the metadata scan, the owned re-weave, the
+        String Editor's BP filter, and the Apply-to-Game write path. Reading it
+        through one accessor is what keeps a fifth caller from being added with
+        a different key by mistake.
+
+        Read fresh on every call rather than cached. The header is editable in
+        the Enhancements tab mid-session, so a cached copy would need
+        invalidating from that edit, and a stale one means the tracker quietly
+        stops matching the text the generator is now writing. The read is a
+        settings lookup on paths that already do far more work than that.
+        """
+        return AppSettings.get_mission_headers().get("blueprints")
+
     def _rebuild_blueprint_metadata(self):
         """#157 follow-up: scan loaded strings once to build the blueprint-item
         metadata (eligible names + per-item mission/type/class/size/grade) the
@@ -5285,7 +5303,7 @@ class MainWindow(QMainWindow):
         it runs on load — not on every owned-toggle (that path re-partitions
         the cached result)."""
         from src.utils.blueprint_meta import build_blueprint_metadata
-        bp_header = AppSettings.get_mission_headers().get("blueprints")
+        bp_header = self._bp_header()
         self._blueprint_meta = build_blueprint_metadata(self.entries, bp_header=bp_header)
         self._bp_item_names = set(self._blueprint_meta)
 
@@ -5296,7 +5314,7 @@ class MainWindow(QMainWindow):
         the tag. The eligible-name set + filter metadata are built separately by
         `_rebuild_blueprint_metadata` (cached, not rescanned here)."""
         from src.utils.owned_items import apply_owned_to_value
-        bp_header = AppSettings.get_mission_headers().get("blueprints")
+        bp_header = self._bp_header()
         owned = AppSettings.get_owned_items()
         for e in self.entries:
             new_val = apply_owned_to_value(e.original_value, owned, bp_header=bp_header)
