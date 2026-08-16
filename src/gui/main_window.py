@@ -4389,17 +4389,24 @@ class MainWindow(QMainWindow):
 
         Shows a category selection dialog on startup. If called again after P4K
         extraction and we already prompted, runs generation with saved selections.
+
+        Both paths below are per-language (#363). base.ini and the generated
+        INIs live under cache/lang/{language} for everything except English,
+        which alone collapses onto the channel root, so reading the root here
+        answered for English no matter which language was selected: a user on
+        German with English generated was never prompted to generate the
+        German set that did not exist.
         """
-        cache_dir = AppSettings.get_cache_dir()
-        if not (cache_dir / 'base.ini').exists():
+        if not AppSettings.get_base_ini_path().exists():
             return
         if self._enhancements_worker is not None or self._forge_worker is not None:
             return
 
         # Only check enabled categories
+        enh_dir = AppSettings.get_enhancements_dir()
         enabled = AppSettings.get_enabled_enhancement_categories()
         missing = [key for key in enabled
-                   if not (cache_dir / AppSettings.ENHANCEMENTS_FILES[key]).exists()]
+                   if not (enh_dir / AppSettings.ENHANCEMENTS_FILES[key]).exists()]
         if not missing:
             return
 

@@ -255,6 +255,62 @@ def test_status_dots_and_generate_button_agree_on_a_non_english_language(
     assert tab._generate_enhancements_btn.isEnabled() is True
 
 
+def test_category_toggle_renames_the_selected_language_not_english(
+        qapp, isolated_settings):
+    """_apply_category_changes MUTATES files, so reading the channel root did
+    more than answer the wrong question.
+
+    A user on German unticking a category renamed the ENGLISH INIs to
+    .disabled and back, while the German files the checkbox appears to control
+    were never touched: the toggle silently did nothing for them and quietly
+    vandalised English along the way.
+    """
+    english_dir = AppSettings.get_cache_dir()
+    _seed_generated_output()                      # English, at the channel root
+    AppSettings.set_selected_language("german")
+    _seed_generated_output()                      # ...and German, in its own dir
+    german_dir = AppSettings.get_enhancements_dir()
+    assert german_dir != english_dir
+
+    tab = _new_tab()
+    key = next(k for k, cb in tab._enhancements_checkboxes.items() if cb.isChecked())
+    filenames = tab._files_for_category(key)
+    tab._enhancements_checkboxes[key].setChecked(False)
+    tab._apply_category_changes()
+
+    for fn in filenames:
+        assert (german_dir / (fn + ".disabled")).exists(), f"{fn} not disabled for german"
+        assert not (german_dir / fn).exists()
+        assert (english_dir / fn).exists(), f"english {fn} must be untouched"
+        assert not (english_dir / (fn + ".disabled")).exists()
+
+
+def test_category_toggle_survives_a_stale_disabled_file(qapp, isolated_settings):
+    """Windows rename() fails when the target exists, and a stale .disabled is
+    reachable: anyone who hit the bug above has an orphaned one, and
+    regenerating recreates the active file beside it. The rename then raised,
+    got swallowed by the OSError handler, and the toggle appeared to do
+    nothing at all."""
+    _seed_generated_output()
+    enh_dir = AppSettings.get_enhancements_dir()
+
+    tab = _new_tab()
+    key = next(k for k, cb in tab._enhancements_checkboxes.items() if cb.isChecked())
+    filenames = tab._files_for_category(key)
+    for fn in filenames:                          # the orphan from the old bug
+        (enh_dir / (fn + ".disabled")).write_text("; stale\n", encoding="utf-8")
+
+    tab._enhancements_checkboxes[key].setChecked(False)
+    tab._apply_category_changes()
+
+    for fn in filenames:
+        assert not (enh_dir / fn).exists(), f"{fn} should have been disabled"
+        assert (enh_dir / (fn + ".disabled")).read_text(encoding="utf-8") != "; stale\n", (
+            "the stale orphan should have been replaced by the real file, "
+            "not left in place with the rename silently failing"
+        )
+
+
 def test_export_settings_keeps_the_button_lit_when_output_is_behind(
         qapp, isolated_settings):
     """flush_pending_tag_edits (Export Settings) persists on-screen edits

@@ -577,14 +577,28 @@ class EnhancementsTab(QWidget):
             now_enabled = cb.isChecked()
             AppSettings.set_enhancement_category_enabled(key, now_enabled)
 
-            cache_dir = AppSettings.get_cache_dir()
+            # Per-language, like every other enhancement-file path (#363).
+            # This one MUTATES files, so reading the channel root here did
+            # more than answer the wrong question: a user on a non-English
+            # language toggling a category renamed the ENGLISH INIs to
+            # .disabled and back, while their own language's files, the ones
+            # the checkbox appears to control, were never touched. The toggle
+            # silently did nothing for them and quietly vandalised English.
+            enh_dir = AppSettings.get_enhancements_dir()
             # Apply to all files mapped to this checkbox key
             for filename in self._files_for_category(key):
-                active_file = cache_dir / filename
-                disabled_file = cache_dir / (filename + ".disabled")
+                active_file = enh_dir / filename
+                disabled_file = enh_dir / (filename + ".disabled")
 
                 if not now_enabled and active_file.exists():
                     try:
+                        # Windows rename() fails when the target exists, and a
+                        # stale .disabled is reachable: anyone who hit the bug
+                        # above has an orphaned English .disabled, and
+                        # regenerating recreates the active file beside it.
+                        # Without this the next disable raises, gets logged,
+                        # and the toggle appears to do nothing.
+                        disabled_file.unlink(missing_ok=True)
                         active_file.rename(disabled_file)
                         logger.info(f"Disabled enhancement file: {filename}")
                     except OSError as e:
