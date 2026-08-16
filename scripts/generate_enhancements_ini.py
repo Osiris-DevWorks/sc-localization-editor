@@ -3151,6 +3151,17 @@ def _merge_blueprint_pool(
 # plumbing is needed -- just what's already visible in the rendered list.
 # Add entries here as more ambiguous multi-pool missions are found; any
 # pool not listed keeps the automatic "first item" naming below.
+#
+# ENGLISH ONLY, by construction, in both directions: the keys are English
+# display names, and the values are English labels a maintainer wrote. A
+# non-English run resolves item names from its own loc data, so the lookup
+# cannot match -- and even if it did, it would inject English text into a
+# translated mission body. _pool_label_override therefore skips the table
+# entirely on a non-English run and logs that it did, rather than silently
+# missing on every pool. Localizing the labels is separate, larger work;
+# keying on pool UUIDs would make the lookup language-invariant but costs
+# the "just paste what you see in the list" property that makes this table
+# maintainable, and would not fix the labels themselves.
 _BLUEPRINT_POOL_LABEL_OVERRIDES: dict[frozenset[str], str] = {
     frozenset({
         "P8-AR Rifle", "P8-AR Rifle Magazine (15 Cap)",
@@ -3172,6 +3183,39 @@ _BLUEPRINT_POOL_LABEL_OVERRIDES: dict[frozenset[str], str] = {
 # share a couple of item names (e.g. a common battery/magazine) don't trigger
 # a false-positive warning on every generation run.
 _OVERRIDE_DRIFT_OVERLAP_THRESHOLD = 0.7
+
+
+def _pool_label_override(items, allow_overrides: bool) -> "str | None":
+    """The manual label for this pool's exact item set, or None.
+
+    Single entry point for both call sites below so the override lookup and
+    its drift tripwire can't drift apart, and so the language gate is applied
+    in one place rather than remembered twice.
+
+    *allow_overrides* is False on a non-English run. The table is keyed on
+    English item display names, and a non-English run resolves those names
+    from its own language's loc data, so the lookup can never match: a German
+    user silently got the auto "first item" naming instead of "Yormandi Eyes"
+    with nothing to indicate the table had been consulted at all. The
+    tripwire couldn't report it either, since fully translated names share
+    zero items with the English set and so never reach the overlap
+    threshold -- the one signal designed to catch a stale table stays quiet
+    for exactly the case where it never had a chance. Skipping outright, and
+    saying so once in the log, is honest where a silent miss was not.
+
+    Note this is a real limitation, not a workaround: the labels themselves
+    ("Yormandi Eyes") are maintainer-authored English strings, so matching on
+    another language would still emit English text into a translated mission
+    body. Making these labels properly localizable is a separate piece of
+    work from making the lookup stop failing silently.
+    """
+    if not allow_overrides:
+        return None
+    key = frozenset(items)
+    override = _BLUEPRINT_POOL_LABEL_OVERRIDES.get(key)
+    if override is None:
+        _warn_if_near_override_miss(key)
+    return override
 
 
 def _warn_if_near_override_miss(fp_items: frozenset[str]) -> None:
@@ -3204,7 +3248,8 @@ def _warn_if_near_override_miss(fp_items: frozenset[str]) -> None:
             )
 
 
-def _build_blueprint_body_parts(unique_fps: dict) -> list[str]:
+def _build_blueprint_body_parts(unique_fps: dict,
+                                allow_overrides: bool = True) -> list[str]:
     """Render a mission's blueprint-pool fingerprints into POTENTIAL
     BLUEPRINTS body text blocks, one per distinct item set.
 
@@ -3242,10 +3287,9 @@ def _build_blueprint_body_parts(unique_fps: dict) -> list[str]:
     if len(unique_fps) == 1:
         items = list(next(iter(unique_fps)))
         only_keys = next(iter(unique_fps.values()))
-        override = _BLUEPRINT_POOL_LABEL_OVERRIDES.get(frozenset(items))
+        override = _pool_label_override(items, allow_overrides)
         if override is not None:
             return [f"<EM4>[{override}]</EM4>\\n" + "\\n".join(f"- {name}" for name in items)]
-        _warn_if_near_override_miss(frozenset(items))
         only_labels = sorted({l for _, l in only_keys if l})
         if only_labels:
             only_systems = sorted({s for s, _ in only_keys})
@@ -3255,11 +3299,10 @@ def _build_blueprint_body_parts(unique_fps: dict) -> list[str]:
 
     header_entries = []
     for fp, keys in unique_fps.items():
-        override = _BLUEPRINT_POOL_LABEL_OVERRIDES.get(frozenset(fp))
+        override = _pool_label_override(fp, allow_overrides)
         if override is not None:
             header_entries.append((override, fp, keys))
             continue
-        _warn_if_near_override_miss(frozenset(fp))
         systems = sorted({s for s, _ in keys})
         labels = sorted({l for _, l in keys if l})
         sys_str = ", ".join(systems)
@@ -6541,6 +6584,19 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
     records           = ctx["records"]
     forge_dir         = ctx["forge_dir"]
     loc               = ctx["loc"]
+    # Whether this run resolves item names in English. main() sets tag_loc to
+    # the English loc dict, which IS `loc` on an English run and a separately
+    # parsed English base.ini otherwise, so identity here is the language
+    # signal without threading a new ctx key. Gates the manual pool-label
+    # overrides, which are keyed on English display names and so can never
+    # match a translated run -- see _pool_label_override.
+    _overrides_ok     = ctx.get("tag_loc") is loc
+    if not _overrides_ok:
+        logger.info(
+            "Blueprint pool label overrides skipped: this run resolves item "
+            "names in a non-English language, and the override table is keyed "
+            "on English display names. Pools fall back to automatic naming."
+        )
     entity_names      = ctx["entity_names"]
     entity_names_by_filename = ctx.get("entity_names_by_filename", {})
     entity_name_tags  = ctx.get("entity_name_tags", {})
@@ -7012,7 +7068,7 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
                     for pool_label, items in by_pool.values():
                         fp = tuple(items)
                         unique_fps.setdefault(fp, []).append((sys_name, pool_label))
-                bp_body_parts = _build_blueprint_body_parts(unique_fps)
+                bp_body_parts = _build_blueprint_body_parts(unique_fps, _overrides_ok)
                 # Join regional sub-sections with a blank line between them
                 # (two `\n` literals = one empty line in CIG's renderer) so
                 # the eye can tell adjacent [Pyro RegionA] / [Pyro RegionB]

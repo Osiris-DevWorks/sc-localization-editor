@@ -455,6 +455,47 @@ class TestBlueprintBodyPartsRendering:
         assert "Rayari_ResourceGathering" not in "".join(headers)
         assert "Set" not in "".join(headers)
 
+    def test_overrides_are_skipped_on_a_non_english_run(self, gen_module):
+        """The table is keyed on English display names, so a run resolving
+        names in another language can never match it. It used to be consulted
+        anyway: every lookup missed, the labels silently reverted to automatic
+        naming, and the drift tripwire could not report it either, because
+        fully translated names share zero items with the English set and never
+        reach the overlap threshold. The one signal meant to catch a stale
+        table stayed quiet for exactly the case it never had a chance at.
+
+        Skipping explicitly is what makes that visible in the log instead.
+        """
+        unique_fps = {
+            (
+                "P8-AR Rifle", "P8-AR Rifle Magazine (15 Cap)",
+                "Palatino Arms", "Palatino Arms Moonfall",
+                "Palatino Core", "Palatino Core Moonfall",
+                "Palatino Helmet", "Palatino Helmet Moonfall",
+                "Palatino Legs", "Palatino Legs Moonfall",
+            ): [("Rayari_ResourceGathering", "")],
+        }
+        parts = gen_module._build_blueprint_body_parts(unique_fps, False)
+        assert "Yormandi Eyes" not in "".join(parts)
+        # ...and the items still render, just under automatic naming.
+        assert "P8-AR Rifle" in "".join(parts)
+
+        # Same input on an English run keeps the manual label.
+        parts_en = gen_module._build_blueprint_body_parts(unique_fps, True)
+        assert "Yormandi Eyes" in "".join(parts_en)
+
+    def test_non_english_run_does_not_log_a_drift_warning(self, gen_module, caplog):
+        """A translated pool is not drift, and reporting it as such would
+        train a maintainer to ignore the one warning that matters. The gate
+        has to skip the tripwire too, not just the lookup."""
+        import logging
+        translated = {
+            ("P8-AR Gewehr", "Palatino Arme", "Palatino Kern"): [("Rayari", "")],
+        }
+        with caplog.at_level(logging.WARNING):
+            gen_module._build_blueprint_body_parts(translated, False)
+        assert not [r for r in caplog.records if "override" in r.message.lower()]
+
     @pytest.mark.regression
     def test_override_order_is_independent_of_insertion_order(self, gen_module):
         """Both override pools share the identical (system, label) key
