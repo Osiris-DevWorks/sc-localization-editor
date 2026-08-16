@@ -154,7 +154,21 @@ def _build_bp_header_re(custom_header: "str | None"):
         if custom_header and custom_header.upper() not in {p.upper() for p in parts}:
             parts.append(custom_header)
     alt = "|".join(re.escape(p) for p in parts)
-    return re.compile(r"<EM([34])>\s*(?:" + alt + r")\s*</EM\1>", re.IGNORECASE)
+    # A trailing parenthesised qualifier is part of the header, not a
+    # different header. CIG ships several: "Potential Blueprints (Repeat
+    # Only)", "(BitZeros Only)", "(Nyx Only)", "(Pyro IV/V Area Only)", and
+    # "Multiple Blueprint Pools (Yormandi Eye Only)" -- 20 lines across the
+    # 292 header-bearing lines in tests/fixtures/kraken_global_latest.ini.
+    # Requiring the wrapper to hold *only* the header text dropped every one
+    # of them, which is the same "mission silently absent from the tracker"
+    # failure this function exists to fix, just for a different subset. The
+    # group stays optional and bounded to one parenthesised run, so it still
+    # rejects unrelated text: "<EM3>stuffed animals</EM3>" does not match a
+    # header renamed to "stuff".
+    return re.compile(
+        r"<EM([34])>\s*(?:" + alt + r")(?:\s*\([^)]*\))?\s*</EM\1>",
+        re.IGNORECASE,
+    )
 
 
 def has_bp_section(value: str, bp_header: "str | None" = None) -> bool:
