@@ -1,9 +1,9 @@
 """Settings management using QSettings."""
 import base64
+import datetime
 import json
 import logging
 import os
-import datetime
 import string
 from pathlib import Path
 
