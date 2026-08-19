@@ -312,6 +312,25 @@ def test_no_blueprint_entries_is_empty():
     assert set(meta) == {normalize_item_name(n) for n, _ in MANUAL_BLUEPRINT_ITEMS}
 
 
+def test_non_mission_entry_with_colliding_header_is_not_scanned():
+    """#354: the Blueprint Tracker "stacked" fake items like "Power Plants:
+    10 items" because a commodity's independently-renameable "Blueprint
+    Data" header can collide with the "blueprints" mission header, and
+    has_bp_section() ran on every entry's value unconditionally --
+    scanning a commodity's crafting-material-usage summary as if it were a
+    real mission's blueprint reward list. Only "Missions"-category entries
+    should ever be scanned this way."""
+    commodity_desc = (
+        "Iron Ore is a common metal.\\n<EM3>POTENTIAL BLUEPRINTS</EM3>"
+        "\\n- Power Plants: 10 items\\n- Quantum Drives: 3 items (S1-S3)"
+    )
+    meta = build_blueprint_metadata(
+        [_Entry("items_commodities_iron_desc", commodity_desc, "Commodities")]
+    )
+    assert "Power Plants: 10 items" not in meta
+    assert "Quantum Drives: 3 items (S1-S3)" not in meta
+
+
 class TestManualBlueprintItems:
     """#267: XenoThreat "Purgatory Camo" items were never advertised via any
     mission's POTENTIAL BLUEPRINTS text (CIG announced them on their own
