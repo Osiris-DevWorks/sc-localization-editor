@@ -496,7 +496,9 @@ class DataForgeExtractWorker(QThread):
         self._cache_dir = cache_dir
 
     def run(self):
-        from src.utils.pak_extractor import P4kLockedError, extract_dataforge
+        from src.utils.pak_extractor import (
+            DataForgeTimeoutError, P4kLockedError, extract_dataforge,
+        )
         from src.utils.dataforge_patcher import apply_patches
         try:
             extract_dataforge(
@@ -534,6 +536,15 @@ class DataForgeExtractWorker(QThread):
             # here would independently trigger the global ErrorDialogHandler
             # and duplicate the friendly dialog the `error` signal shows.
             logger.warning(f"DataForge extraction: Data.p4k locked, likely updating: {e}")
+            self.error.emit(str(e))
+            self.finished.emit(False)
+        except DataForgeTimeoutError as e:
+            # Same treatment as P4kLockedError above: _raise_unforge_timeout
+            # has already logged the DCB name, its size and unforge's partial
+            # output at WARNING, and the message is user-ready. Letting this
+            # fall through to the blanket handler would log at ERROR and pop
+            # the global ErrorDialogHandler on top of the friendly dialog.
+            logger.warning(f"DataForge extraction: unforge timed out: {e}")
             self.error.emit(str(e))
             self.finished.emit(False)
         except Exception as e:
