@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from src.models.string_model import (
+    CATEGORY_MISSIONS,
     _ARMOR_GEAR_WORDS,
     _FPS_WEAPON_WORDS,
     _SHIP_WEAPON_SIZE_RE,
@@ -505,7 +506,19 @@ def build_blueprint_metadata(
             titles[_title_pair_key(tm.group("base"), tm.group("num"))] = \
                 clean_mission_title(val)
 
-        if has_bp_section(val, bp_header):
+        # #354: gated to Missions entries only. A POTENTIAL BLUEPRINTS
+        # section only ever legitimately exists in a mission's Desc text --
+        # without this gate, has_bp_section runs on every entry's value
+        # unconditionally, so if a user's independently-configurable
+        # "Blueprint Data" mission-commodity header (settings.py's
+        # MISSION_HEADER_BLUEPRINT_DATA) happens to collide with the
+        # "blueprints" header text, a commodity's crafting-material-usage
+        # summary ("- Power Plants: 10 items", "- Quantum Drives: 3 items
+        # (S1-S3)", one per raw material) gets scanned as if it were a real
+        # mission's blueprint reward list -- fabricating fake, unownable
+        # "items" that show up identically in both Available and Owned
+        # (reported as the tracker "stacking" components).
+        if cat == CATEGORY_MISSIONS and has_bp_section(val, bp_header):
             dm = _DESC_KEY_RE.match(key)
             pair = _title_pair_key(dm.group("base"), dm.group("num")) if dm else None
             bp_descs.append((pair, val))

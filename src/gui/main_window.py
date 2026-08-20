@@ -50,7 +50,9 @@ from src.gui.workers import (
     StartupSyncWorker,
 )
 from src.merger.ini_merger import merge_sources_by_hierarchy
-from src.models.string_model import StringEntry, is_favoritable_ship
+from src.models.string_model import (
+    CATEGORY_MISSIONS, StringEntry, is_favoritable_ship,
+)
 from src.parser.ini_parser import load_source_files, load_sources_from_settings, parse_ini_file
 from src.gui.update_dialog import UpdateDialog
 from src.utils.app_updater import AppUpdateCheckWorker, AppUpdateDownloadWorker
@@ -3926,6 +3928,16 @@ class MainWindow(QMainWindow):
         logger.info(f"MainWindow reacting to language change → {language}")
         self.retranslate_ui()
         self.statusBar().showMessage(tr("dialogs.language_changed_status", language=language))
+        # #363: both freshness buttons are per-language — enhancement INIs
+        # live in the language's own dir (get_enhancements_dir) and the tag
+        # config stamp sits beside them — but neither was recomputed here, so
+        # a switch left them showing the *previous* language's verdict. That
+        # is the same fault #273/#292 fixed for a channel switch, which
+        # _on_channel_changed handles with this identical pair of calls;
+        # language switching had simply never been wired up to match.
+        if hasattr(self, "enhancements_tab"):
+            self.enhancements_tab.refresh_enhancements_dirty_state()
+            self.enhancements_tab.refresh_tag_builder_dirty_state()
         # Point the `global` base source at this language's base.ini (English
         # = the P4K extraction; other languages = a downloaded global.ini),
         # downloading it first if needed, then reload. See #30.
@@ -4380,17 +4392,24 @@ class MainWindow(QMainWindow):
 
         Shows a category selection dialog on startup. If called again after P4K
         extraction and we already prompted, runs generation with saved selections.
+
+        Both paths below are per-language (#363). base.ini and the generated
+        INIs live under cache/lang/{language} for everything except English,
+        which alone collapses onto the channel root, so reading the root here
+        answered for English no matter which language was selected: a user on
+        German with English generated was never prompted to generate the
+        German set that did not exist.
         """
-        cache_dir = AppSettings.get_cache_dir()
-        if not (cache_dir / 'base.ini').exists():
+        if not AppSettings.get_base_ini_path().exists():
             return
         if self._enhancements_worker is not None or self._forge_worker is not None:
             return
 
         # Only check enabled categories
+        enh_dir = AppSettings.get_enhancements_dir()
         enabled = AppSettings.get_enabled_enhancement_categories()
         missing = [key for key in enabled
-                   if not (cache_dir / AppSettings.ENHANCEMENTS_FILES[key]).exists()]
+                   if not (enh_dir / AppSettings.ENHANCEMENTS_FILES[key]).exists()]
         if not missing:
             return
 
@@ -4770,6 +4789,14 @@ class MainWindow(QMainWindow):
         self._enhancements_worker = None
         self.enhancements_tab.set_operation_idle(success)
         self.enhancements_tab.refresh_enhancements_status()
+        # #363: and the same for Save Tag Changes, which set_operation_idle
+        # doesn't cover. Both _apply_tag_builder and the Generate click
+        # handler clear that button the moment they *launch* a run, so a run
+        # that then fails left it grey over INIs the tag config never reached
+        # — the stamp is only written on success, so re-deriving from it here
+        # lights the button back up for a retry. On success the stamp matches
+        # what just generated and this leaves it grey, exactly as before.
+        self.enhancements_tab.refresh_tag_builder_dirty_state()
 
         if success:
             # #180: Simple-mode one-button flow continues into apply here.
@@ -5010,7 +5037,7 @@ class MainWindow(QMainWindow):
         entry_categories = set(e.category for e in self.entries)
 
         # Always include standard categories, even if no entries exist for them yet
-        standard_categories = {"Ships", "Ship Items", "Missions", "Commodities", "Other"}
+        standard_categories = {"Ships", "Ship Items", CATEGORY_MISSIONS, "Commodities", "Other"}
         categories = sorted(standard_categories | entry_categories)
 
         self.category_combo.blockSignals(True)
