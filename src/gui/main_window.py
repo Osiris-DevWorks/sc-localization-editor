@@ -5312,6 +5312,58 @@ class MainWindow(QMainWindow):
         from src.utils.blueprint_meta import build_blueprint_metadata
         self._blueprint_meta = build_blueprint_metadata(self.entries)
         self._bp_item_names = set(self._blueprint_meta)
+        self._repair_foreign_owned_names()
+
+    def _repair_foreign_owned_names(self) -> None:
+        """One-shot cleanup of owned entries left by another editor (#372).
+
+        The scan-time fix only helps the next scan. A user who already imported
+        foreign-formatted names has them sitting in the owned set, and
+        re-scanning re-reads the same old logs, so nothing they can do from the
+        UI clears it -- the reporter deleted every Smart Citizen folder and
+        reinstalled, and the broken names came straight back.
+
+        Runs after the catalogue is rebuilt, since that is what recovery
+        anchors on. Writes only when something actually changed, so the normal
+        case costs one set comparison and no settings write. An unrecoverable
+        name is left exactly as-is rather than dropped: it may be a real item
+        this install simply cannot see right now (a channel with different
+        enhancement categories generated, say), and silently deleting a user's
+        owned marks is worse than leaving one unmatched.
+        """
+        catalogue = self._bp_item_names
+        if not catalogue:
+            return
+        from src.utils.owned_items import resolve_against_catalogue
+
+        owned = AppSettings.get_owned_items()
+        unmatched = owned - catalogue
+        if not unmatched:
+            return
+
+        repaired, changed = set(owned), False
+        for nm in sorted(unmatched):
+            real = resolve_against_catalogue(nm, catalogue)
+            if real is None or real in repaired:
+                # Already-owned twin: drop the foreign duplicate rather than
+                # keep both pointing at one item.
+                if real is not None:
+                    repaired.discard(nm)
+                    changed = True
+                continue
+            logger.info(
+                f"Owned set: repaired {nm!r} -> {real!r} (left by another "
+                f"localization editor, #372)"
+            )
+            repaired.discard(nm)
+            repaired.add(real)
+            changed = True
+
+        if changed:
+            AppSettings.set_owned_items(repaired)
+            logger.info(
+                f"Owned set: {len(owned)} entries repaired to {len(repaired)} (#372)"
+            )
 
     def _recompute_owned(self):
         """#157: weave/strip [Owned] tags on blueprint-list bullets to match the
@@ -5456,11 +5508,38 @@ class MainWindow(QMainWindow):
         self._bp_scan_channel = None
 
         if result is not None:
-            from src.utils.owned_items import normalize_item_name
+            from src.utils.owned_items import (
+                normalize_item_name, resolve_against_catalogue,
+            )
 
             # Normalize raw log names to the shared owned-set identity; drop blanks.
             scanned = {normalize_item_name(n) for n in result.names}
             scanned.discard("")
+
+            # #372: Star Citizen logs whatever name it was DISPLAYING, so a
+            # player who previously ran a different localization editor has
+            # that tool's naming baked into their old logs forever. Those names
+            # match nothing here, so their blueprints silently never show as
+            # owned, and regenerating cannot help because the bad names are in
+            # the logs rather than in anything we write.
+            #
+            # Anything that already matches the catalogue is left alone; only
+            # otherwise-unusable names are put through recovery, which anchors
+            # on the real item list instead of on any one tool's format (see
+            # resolve_against_catalogue).
+            catalogue = self._bp_item_names or set()
+            if catalogue:
+                recovered = set()
+                for nm in sorted(scanned - catalogue):
+                    real = resolve_against_catalogue(nm, catalogue)
+                    if real is not None:
+                        logger.info(
+                            f"BP scan: recovered {real!r} from foreign-formatted "
+                            f"log name {nm!r} (#372)"
+                        )
+                        scanned.discard(nm)
+                        recovered.add(real)
+                scanned |= recovered
 
             owned = AppSettings.get_owned_items()
             # Exclude names another queued channel already claimed this run,

@@ -222,6 +222,71 @@ def normalize_item_name(name: str) -> str:
     return BULLET_NAME_ALIASES.get(s, s)
 
 
+# Characters that can sit between a foreign tool's tag and the real item name.
+# A recovered name must start right after one of these (or fill the whole
+# string), so a known item can never be matched mid-word: "Colossus" must not
+# resolve out of a hypothetical "MegaColossus".
+_FOREIGN_TAG_BOUNDARY = frozenset(" ]/-_)}>")
+
+
+def resolve_against_catalogue(
+    name: str, catalogue: "set[str]"
+) -> "str | None":
+    """Recover the real item a foreign-formatted *name* refers to, or None.
+
+    Star Citizen writes whatever name it was DISPLAYING into Game.log, so a
+    player who previously ran another localization editor has that tool's
+    naming permanently baked into their old logs. Smart Citizen then scans
+    those logs and stores names it can never match against its own item list.
+    Reported in #372: a user who had run StarStrings had owned entries reading
+    ``Ind/1/B Colossus`` while every other side of the app called the same item
+    ``Colossus``, so their blueprints never showed as owned. Deleting and
+    regenerating did not help, because the bad names are in the LOGS, not in
+    anything Smart Citizen writes.
+
+    Deliberately not a pattern-match against any particular tool's format.
+    Matching ``Ind/1/B`` would fix StarStrings and nothing else, and would need
+    extending for every editor anyone has ever used. Instead this anchors on
+    the one thing we know is true: *catalogue* is the set of real, normalized
+    item names built from the current localization data. If a scanned name ends
+    in a known real item name, on a word boundary, that is what it refers to,
+    whatever decoration precedes it. That works for any tool, including ones
+    that do not exist yet.
+
+    Suffix rather than prefix because these tools prepend their tag and leave
+    the real name at the end -- StarStrings does, and so does Smart Citizen's
+    own default placement.
+
+    Returns None when nothing matches, and also when two different catalogue
+    entries tie at the same length: a real ambiguity is worth leaving unowned
+    rather than guessing, since a wrong recovery silently marks an item the
+    player does not own. The longest match wins otherwise, so
+    ``Mil/1/B Fierell Cascade`` resolves to ``Fierell Cascade`` and not to the
+    equally-real but shorter ``Cascade``.
+
+    Callers pass names that already failed a direct catalogue lookup, so this
+    only ever runs on strings that are otherwise unusable.
+    """
+    n = normalize_item_name(name)
+    if not n:
+        return None
+    best: "list[str]" = []
+    for known in catalogue:
+        if not known or len(known) > len(n):
+            continue
+        if not n.endswith(known):
+            continue
+        if len(n) != len(known) and n[-len(known) - 1] not in _FOREIGN_TAG_BOUNDARY:
+            continue
+        if not best or len(known) > len(best[0]):
+            best = [known]
+        elif len(known) == len(best[0]):
+            best.append(known)
+    if len(best) != 1:
+        return None
+    return best[0]
+
+
 def extract_bp_item_names(value: str) -> set[str]:
     """Return the normalized item names in *value*'s POTENTIAL BLUEPRINTS list.
 
