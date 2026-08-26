@@ -68,6 +68,7 @@ _ARMOR_EXTRA_WORDS = (
 )
 from src.utils.owned_items import (
     BULLET_NAME_ALIASES,
+    NONE_STYLE_ENCLOSING,
     extract_bp_item_names,
     find_none_style_tag_word,
     has_bp_section,
@@ -402,10 +403,9 @@ def parse_component_tag(
         # through.
         if diff is not None:
             inner = diff
+    resolved = tuple(enclosings) if enclosings is not None else _DEFAULT_ENCLOSINGS
     if inner is None:
-        leading_re, trailing_re = _build_tag_patterns(
-            tuple(enclosings) if enclosings is not None else _DEFAULT_ENCLOSINGS
-        )
+        leading_re, trailing_re = _build_tag_patterns(resolved)
         if leading_re is not None:
             m = leading_re.match(value or "") or trailing_re.search(value or "")
             if m:
@@ -413,7 +413,16 @@ def parse_component_tag(
                 # different delimiter chars) — whichever one matched is the
                 # only non-None group.
                 inner = next((g for g in m.groups() if g is not None), None)
-    if inner is None:
+    # Gated exactly as normalize_item_name gates its own use of this
+    # heuristic. Ungated it fabricates facets from ordinary names that merely
+    # look tag-shaped: "250-E Laser Pointer" reads as size S250 grade E,
+    # "C-788 Cannon" as S788/C. A populated `stock` short-circuits it, so
+    # English installs are largely covered by accident, but `default_values`
+    # is English by design -- on a non-English install the diff never matches
+    # and every translated name reaches this. Facets only, so it cannot
+    # produce a false [Owned], but it silently poisons the Class/Size/Grade
+    # filters. Same defect the sibling had; it just did not reach here.
+    if inner is None and NONE_STYLE_ENCLOSING in resolved:
         found = find_none_style_tag_word(value or "")
         if found is not None:
             inner = found[0]

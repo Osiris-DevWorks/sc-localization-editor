@@ -25,7 +25,9 @@ from src.utils.blueprint_meta import (  # noqa: E402
     size_from_key,
     strip_size_prefix,
 )
-from src.utils.owned_items import normalize_item_name  # noqa: E402
+from src.utils.owned_items import (  # noqa: E402
+    NONE_STYLE_ENCLOSING, normalize_item_name,
+)
 
 pytestmark = [pytest.mark.unit, pytest.mark.regression]
 
@@ -109,9 +111,40 @@ def test_parse_component_tag_none_enclosing_via_stock_diff():
 
 
 def test_parse_component_tag_none_enclosing_via_heuristic_without_stock():
-    """Without a stock value, the same conservative heuristic as
-    normalize_item_name's fallback still catches the common case."""
-    assert parse_component_tag("MIL-S3-B Balandin") == ("MIL", "S3", "B")
+    """Without a stock value the same conservative heuristic as
+    normalize_item_name's fallback still catches the common case -- but only
+    when None enclosing is actually configured, which is the parity with that
+    sibling this test's docstring used to claim while asserting the opposite.
+    """
+    none_cfg = (("[", "]"), NONE_STYLE_ENCLOSING)
+    assert parse_component_tag("MIL-S3-B Balandin", none_cfg) == ("MIL", "S3", "B")
+
+
+def test_parse_component_tag_heuristic_is_off_unless_none_configured():
+    """Ungated, the heuristic invents facets from ordinary names that merely
+    look tag-shaped, because it cannot tell a real hyphenated designator from
+    a space-only tag.
+
+    A populated `stock` short-circuits it, so English installs are mostly
+    covered by accident. `default_values` is English by design, so on a
+    non-English install the diff never matches and every translated name
+    reaches this -- systematic, not incidental. Facets only, so no false
+    [Owned] tag, but the Class/Size/Grade filters quietly fill with values no
+    item actually has.
+    """
+    assert parse_component_tag("250-E Laser Pointer") == (None, None, None)
+    assert parse_component_tag("C-788 Cannon") == (None, None, None)
+    assert parse_component_tag("A-18 Shredder") == (None, None, None)
+    # ...and still works for a user who did configure None enclosing.
+    none_cfg = (("[", "]"), NONE_STYLE_ENCLOSING)
+    assert parse_component_tag("MIL-S3-B Balandin", none_cfg) == ("MIL", "S3", "B")
+
+
+def test_parse_component_tag_gate_holds_on_a_non_english_install():
+    """The systematic case: `stock` is English, the value is translated, so
+    the authoritative diff cannot match and the gate is all that stands
+    between a translated name and a fabricated facet."""
+    assert parse_component_tag("C-788 Canon", stock="C-788 Cannon") == (None, None, None)
 
 
 def test_parse_component_tag_confirmed_untagged_stock_match_skips_heuristic():
