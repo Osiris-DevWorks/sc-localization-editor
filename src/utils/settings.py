@@ -452,6 +452,12 @@ class AppSettings:
         "pending_cache_cleanup",
         "window_geometry",
         "window_state",
+        # Column widths are machine-local for the same reason window geometry
+        # is: they are measured against one screen. Exported and adopted
+        # verbatim, a wide-monitor layout arrives on a laptop with columns
+        # running off the edge, and HELP.md promises an export carries no
+        # machine-specific layout.
+        "string_column_widths",
         "base_global_path",
         "vehicles_path",
         "last_overrides_path",
