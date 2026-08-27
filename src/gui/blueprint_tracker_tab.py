@@ -136,6 +136,9 @@ class BlueprintTrackerTab(QWidget):
         # name -> BlueprintItem (or None for a bare name), set by MainWindow.
         # Owned state itself lives in AppSettings (single source of truth).
         self._blueprint_meta: dict = {}
+        # #372: every real item name this install knows about, wider than
+        # _blueprint_meta's keys -- see set_known_item_names.
+        self._known_item_names: set = set()
         # Gates the Apply Owned Tags button, same pattern as the
         # Enhancements tab's Generate Enhancements / Save Tag Changes:
         # disabled until the Owned set changes since the last apply.
@@ -430,6 +433,18 @@ class BlueprintTrackerTab(QWidget):
         self._populate_filter_combos()
         self._render_blueprint_lists()
 
+    def set_known_item_names(self, names) -> None:
+        """Receive the wider "every real item this install knows about" set
+        (#372) -- see ``blueprint_meta.known_item_names``. Deliberately not
+        the same as ``self._blueprint_meta``'s keys: that's scoped to items
+        currently eligible for the Owned star, which excludes anything CIG
+        has rotated out of every mission's reward pool this patch. Used only
+        to let Import Owned Blueprints recover a foreign-editor-decorated
+        name (#372); the narrower ``_blueprint_meta`` set still governs what
+        can actually be shown/marked owned.
+        """
+        self._known_item_names = set(names or ())
+
     def _facet_value(self, name: str, attr: str):
         """The value of one facet attribute for *name*, or None if unknown."""
         item = self._blueprint_meta.get(name)
@@ -716,7 +731,9 @@ class BlueprintTrackerTab(QWidget):
             )
             return
 
-        matched, unmatched = match_import_names(imported_names, set(self._blueprint_meta))
+        matched, unmatched = match_import_names(
+            imported_names, set(self._blueprint_meta), catalogue=self._known_item_names,
+        )
         skipped_list = "\n".join(sorted(unmatched, key=str.lower))
         if not matched:
             box = QMessageBox(self)

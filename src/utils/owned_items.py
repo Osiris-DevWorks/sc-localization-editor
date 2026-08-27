@@ -225,8 +225,10 @@ def normalize_item_name(name: str) -> str:
 # Characters that can sit between a foreign tool's tag and the real item name.
 # A recovered name must start right after one of these (or fill the whole
 # string), so a known item can never be matched mid-word: "Colossus" must not
-# resolve out of a hypothetical "MegaColossus".
-_FOREIGN_TAG_BOUNDARY = frozenset(" ]/-_)}>")
+# resolve out of a hypothetical "MegaColossus". Covers every separator seen in
+# the wild (space, StarStrings' "/", generic "-_)}>") plus "." and ":" for a
+# tool that hasn't been seen yet but uses either as its tag/name divider.
+_FOREIGN_TAG_BOUNDARY = frozenset(" ]/-_)}>.:")
 
 
 def resolve_against_catalogue(
@@ -257,34 +259,90 @@ def resolve_against_catalogue(
     the real name at the end -- StarStrings does, and so does Smart Citizen's
     own default placement.
 
-    Returns None when nothing matches, and also when two different catalogue
-    entries tie at the same length: a real ambiguity is worth leaving unowned
-    rather than guessing, since a wrong recovery silently marks an item the
-    player does not own. The longest match wins otherwise, so
+    Returns None when nothing in *catalogue* is a matching suffix. The longest
+    match wins when more than one catalogue entry qualifies, so
     ``Mil/1/B Fierell Cascade`` resolves to ``Fierell Cascade`` and not to the
-    equally-real but shorter ``Cascade``.
+    equally-real but shorter ``Cascade`` -- two catalogue entries can never
+    tie at the same length, since a fixed-length trailing slice of *n* has
+    exactly one possible value, so at most one member of a set can equal it.
 
     Callers pass names that already failed a direct catalogue lookup, so this
-    only ever runs on strings that are otherwise unusable.
+    only ever runs on strings that are otherwise unusable. *catalogue* should
+    be every real item name this install currently knows about (see
+    ``blueprint_meta.known_item_names``), not a narrower "eligible right now"
+    subset -- a name absent from *catalogue* only because it means "not a
+    known real item", never "known but temporarily unlisted", or a real
+    owned item can resolve into an unrelated shorter one and be lost. See
+    ``repair_foreign_owned_names``'s docstring for the incident this caused.
     """
     n = normalize_item_name(name)
     if not n:
         return None
-    best: "list[str]" = []
+    best: "str | None" = None
+    best_len = -1
     for known in catalogue:
-        if not known or len(known) > len(n):
+        if not known or len(known) > len(n) or len(known) <= best_len:
             continue
         if not n.endswith(known):
             continue
         if len(n) != len(known) and n[-len(known) - 1] not in _FOREIGN_TAG_BOUNDARY:
             continue
-        if not best or len(known) > len(best[0]):
-            best = [known]
-        elif len(known) == len(best[0]):
-            best.append(known)
-    if len(best) != 1:
-        return None
-    return best[0]
+        best, best_len = known, len(known)
+    return best
+
+
+def repair_foreign_owned_names(
+    owned: "set[str]", catalogue: "set[str]"
+) -> "tuple[set[str], dict[str, str | None]]":
+    """Recover/clean *owned* names left by another editor (#372) against
+    *catalogue*, returning ``(repaired, renamed)``.
+
+    Pure Qt-free/settings-free core of ``MainWindow._repair_foreign_owned_
+    names`` -- that method only owns the ``AppSettings`` read/write and the
+    one-shot-on-load timing; this owns the actual decision logic so it is
+    directly testable without Qt or a live settings backend.
+
+    ``renamed`` maps every *owned* entry that changed to what it became:
+    the recovered real name, or ``None`` when the entry was dropped outright
+    because the same real item was already separately present in *owned*
+    (a foreign-formatted duplicate of an already-correct entry). An empty
+    ``renamed`` means *owned* was already clean and the caller should skip
+    writing anything back.
+
+    ``catalogue`` MUST be every real item name currently known -- see
+    ``blueprint_meta.known_item_names`` -- not the narrower Blueprint
+    Tracker "eligible right now" set (``build_blueprint_metadata``'s keys).
+    That narrower set only contains names with an active mission reward or a
+    fixed manual entry, so any real item CIG has rotated out of every
+    mission's reward pool this patch -- an expected, recurring state, not a
+    rare one -- would read as "unmatched" against it. ``resolve_against_
+    catalogue`` would then be free to fold that unmatched-but-real name into
+    an unrelated shorter owned item's name and this function would discard it
+    as a "duplicate", permanently deleting a real ownership record with
+    nothing to show for it -- the exact class of silent data loss #372 itself
+    was filed over, reintroduced by this repair step under a different
+    trigger. Using the wider catalogue means a name is only ever "unmatched"
+    when it genuinely isn't a real item this install knows about, which is
+    the only case recovery should touch.
+    """
+    if not catalogue:
+        return set(owned), {}
+    unmatched = owned - catalogue
+    if not unmatched:
+        return set(owned), {}
+    repaired = set(owned)
+    renamed: "dict[str, str | None]" = {}
+    for nm in sorted(unmatched):
+        real = resolve_against_catalogue(nm, catalogue)
+        if real is None:
+            continue
+        repaired.discard(nm)
+        if real in repaired:
+            renamed[nm] = None
+        else:
+            repaired.add(real)
+            renamed[nm] = real
+    return repaired, renamed
 
 
 def extract_bp_item_names(value: str) -> set[str]:

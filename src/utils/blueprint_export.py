@@ -20,7 +20,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from src.utils.owned_items import normalize_item_name
+from src.utils.owned_items import normalize_item_name, resolve_against_catalogue
 
 _FORMAT_VERSION = 1
 
@@ -123,7 +123,7 @@ def _parse_import_names_csv(path: Path) -> "set[str]":
 
 
 def match_import_names(
-    imported: "set[str]", known: "set[str]"
+    imported: "set[str]", known: "set[str]", catalogue=None
 ) -> "tuple[set[str], set[str]]":
     """Split *imported* into (matched, unmatched) against *known* item names.
 
@@ -143,10 +143,32 @@ def match_import_names(
     Owned set, which must stay keyed exactly as the Blueprint Tracker's own
     dict, or a subsequent blueprint_meta.get(name) lookup (e.g. in export)
     would silently miss.
+
+    ``catalogue``, when given, is every real item name this install
+    currently knows about (see ``blueprint_meta.known_item_names``) -- used
+    to recover a foreign-editor-decorated import name (#372) the same way a
+    log scan or ``MainWindow._repair_foreign_owned_names`` would, e.g. an
+    exported owned set from before upgrading that still reads
+    ``"Ind/1/B Colossus"``. A name only counts as recovered when it resolves
+    into something *known* actually has right now -- if the resolved real
+    name isn't currently Blueprint-Tracker-eligible either (rotated out of
+    every mission's reward pool, say), there is nothing to mark it owned
+    against, so it correctly stays unmatched rather than being force-fit.
+    Omitting ``catalogue`` skips recovery entirely (the original behavior).
     """
     known_by_normalized: dict = {}
     for name in known:
         known_by_normalized.setdefault(normalize_item_name(name), name)
-    matched = {known_by_normalized[nm] for nm in imported if nm in known_by_normalized}
-    unmatched = imported - known_by_normalized.keys()
+    matched: set = set()
+    unmatched: set = set()
+    for nm in imported:
+        hit = known_by_normalized.get(nm)
+        if hit is None and catalogue:
+            real = resolve_against_catalogue(nm, catalogue)
+            if real is not None:
+                hit = known_by_normalized.get(real)
+        if hit is not None:
+            matched.add(hit)
+        else:
+            unmatched.add(nm)
     return matched, unmatched

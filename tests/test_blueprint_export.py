@@ -225,3 +225,36 @@ class TestMatchImportNames:
         )
         assert matched == {"[FN] Norfield"}
         assert unmatched == set()
+
+    def test_recovers_a_foreign_formatted_import_name_via_catalogue(self):
+        """#372: an owned set exported before upgrading can still carry a
+        foreign editor's decoration (e.g. StarStrings' "Ind/1/B Colossus").
+        Passing the wider known-item catalogue lets that recover the same
+        way a log scan would, as long as the recovered real name is also
+        currently Blueprint-Tracker-eligible (present in *known*)."""
+        matched, unmatched = match_import_names(
+            {"Ind/1/B Colossus"}, {"Colossus"}, catalogue={"Colossus"}
+        )
+        assert matched == {"Colossus"}
+        assert unmatched == set()
+
+    def test_recovered_name_not_currently_eligible_stays_unmatched(self):
+        """The recovered real name must ALSO be in *known* to count as
+        matched -- catalogue only proves it's a real item, not that the
+        Blueprint Tracker has anywhere to mark it owned right now (e.g. it
+        rotated out of every mission's current reward pool)."""
+        matched, unmatched = match_import_names(
+            {"Ind/1/B Colossus"}, set(), catalogue={"Colossus"}
+        )
+        assert matched == set()
+        assert unmatched == {"Ind/1/B Colossus"}
+
+    def test_omitting_catalogue_skips_recovery_entirely(self):
+        """No catalogue means the original exact-match-only behavior --
+        recovery is opt-in, not a silent behavior change for existing
+        callers that don't pass it."""
+        matched, unmatched = match_import_names(
+            {"Ind/1/B Colossus"}, {"Colossus"}
+        )
+        assert matched == set()
+        assert unmatched == {"Ind/1/B Colossus"}

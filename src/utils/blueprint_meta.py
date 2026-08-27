@@ -437,6 +437,39 @@ def _title_pair_key(base: str, num) -> tuple:
     return (base.lower(), num or "")
 
 
+def known_item_names(entries) -> "set[str]":
+    """Every real item/vehicle display name found in *entries*, normalized.
+
+    Deliberately broader than ``set(build_blueprint_metadata(entries))``:
+    that dict is scoped to names currently offered as a reward by some loaded
+    mission's POTENTIAL BLUEPRINTS list (plus the fixed ``MANUAL_BLUEPRINT_
+    ITEMS``), which excludes any real item CIG has rotated out of every
+    mission's reward pool this patch -- an expected, recurring state for a
+    long-owned item, not an edge case. Recovery (#372) must anchor against
+    this wider set instead: ``resolve_against_catalogue`` cannot tell "a
+    foreign tool's decoration on a known item" apart from "a different, real,
+    currently-unlisted item that happens to share a shorter real item's
+    name as a suffix" unless the catalogue it searches actually contains
+    every real name, not just the ones currently eligible for the tracker.
+    Using the narrower dict here reintroduced #372's own symptom under a new
+    trigger: an owned item absent from this patch's mission rewards would
+    read as "unmatched", and could then be silently folded into an unrelated,
+    shorter, currently-listed item's name and dropped as a "duplicate" --
+    permanently losing a real ownership record with nothing to show for it.
+    """
+    names: "set[str]" = set()
+    for e in entries:
+        key = getattr(e, "key", "") or ""
+        val = getattr(e, "original_value", "") or ""
+        kl = key.lower()
+        if (kl.startswith("item_name") or kl.startswith("vehicle_name")
+                or kl.startswith(_EXTRA_NAME_KEY_PREFIXES)):
+            nm = normalize_item_name(val)
+            if nm:
+                names.add(nm)
+    return names
+
+
 def build_blueprint_metadata(entries) -> dict:
     """Scan loaded strings once and return ``{name: BlueprintItem}``.
 
