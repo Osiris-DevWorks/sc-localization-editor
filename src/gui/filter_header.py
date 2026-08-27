@@ -72,6 +72,17 @@ class FilterHeaderView(QHeaderView):
         self._column_names = column_names
         self._skip_columns = skip_columns or set()
         self._filters: list[QLineEdit | None] = []
+        # True while a press that landed in the header-label strip is still
+        # held. The mouse overrides below consult it so an in-progress drag
+        # (column resize, or a sort press) keeps receiving move/release
+        # events after the pointer leaves that strip. See mouseMoveEvent.
+        self._forwarding_mouse = False
+        # Last non-zero height of the header's label strip. QHeaderView's own
+        # sizeHint collapses to 0 during transient layout passes (a model
+        # reset is one), and everything here that splits the header into
+        # "labels on top, filter row below" needs a sane value at those
+        # moments -- see _label_row_height.
+        self._label_height_cache = 0
         self._debounce = QTimer()
         self._debounce.setSingleShot(True)
         self._debounce.setInterval(300)
@@ -94,6 +105,25 @@ class FilterHeaderView(QHeaderView):
             self._filters.append(editor)
 
         self._refresh_editor_styles()
+
+        # Keep the editors glued to their columns during a horizontal scroll.
+        # _position_editors() already subtracts offset(), but it only ran from
+        # updateGeometries(), and QHeaderView.setOffset is a non-virtual slot
+        # so scrolling never reached it: measured at full scroll, column 1 sat
+        # at x=-1115 while its editor stayed at x=118. Unreachable while every
+        # text column was Stretch (the table never overflowed); making columns
+        # user-resizable is exactly what makes it reachable.
+        self._view = parent
+        self._scroll_bar = None
+        self._sync_scroll_connection()
+
+        # Same problem one step closer to home: dragging a column divider
+        # resizes the section but updateGeometries() doesn't necessarily run,
+        # so the editor kept its old width and left-edge while the column
+        # moved out from under it (measured: section w=420 against editor
+        # w=79). Repositioning on every section resize is what makes each
+        # filter box stay exactly as wide as the column it filters.
+        self.sectionResized.connect(lambda *_a: self._position_editors())
 
     # ------------------------------------------------------------------
     # Public API
@@ -139,7 +169,11 @@ class FilterHeaderView(QHeaderView):
         # a near-zero rect, and that paint stuck until a full re-layout — which
         # for users meant restarting the app to get header text back. Force the
         # full base_h here; Qt clips on its own if rect is genuinely smaller.
-        base_h = super().sizeHint().height()
+        # _label_row_height, not a raw sizeHint read: that value itself
+        # collapses to 0 during the same transient passes, which would put
+        # the label back in a zero-height rect — the exact failure this
+        # clamp exists to prevent.
+        base_h = self._label_row_height()
         top_rect = QRect(rect.x(), rect.y(), rect.width(), base_h)
         super().paintSection(painter, top_rect, logicalIndex)
 
@@ -150,7 +184,7 @@ class FilterHeaderView(QHeaderView):
         # skipped-column gaps (Category / ★ / Status) still get the tint so the
         # row is unmistakably a filter area.
         super().paintEvent(event)
-        label_h = super().sizeHint().height()
+        label_h = self._label_row_height()
         band = QRect(0, label_h, self.width(), self.FILTER_ROW_HEIGHT)
         painter = QPainter(self)
         tint = self.palette().color(QPalette.ColorRole.Highlight)
@@ -166,13 +200,17 @@ class FilterHeaderView(QHeaderView):
         super().updateGeometries()
         # Reserve space below the header labels for the filter row
         self.setViewportMargins(0, 0, 0, self.FILTER_ROW_HEIGHT)
+        self._sync_scroll_connection()
         self._position_editors()
 
     def _position_editors(self):
         """Align each QLineEdit to its column's current geometry."""
-        # Editors sit just below the painted header labels.
-        # With viewport margins, the base sizeHint gives the label-only height.
-        y = super().sizeHint().height()
+        # Editors sit just below the painted header labels. _label_row_height
+        # rather than a raw sizeHint read: that collapses to 0 mid-reset and
+        # would stack the editors on top of the labels.
+        y = self._label_row_height()
+        if y <= 0:
+            return          # header hasn't reported a real height yet
         for i, editor in enumerate(self._filters):
             if editor is None:
                 continue
@@ -184,22 +222,92 @@ class FilterHeaderView(QHeaderView):
     # Internal
     # ------------------------------------------------------------------
 
+    def _sync_scroll_connection(self) -> None:
+        """(Re)bind the horizontal-scroll hook to the view's current scrollbar.
+
+        Binding the QScrollBar once at construction would be silently wrong
+        if the view ever swapped it: setHorizontalScrollBar destroys the old
+        bar, so the connection would go dead and the filter boxes would stop
+        tracking the scroll, looking exactly like a regression of the bug the
+        hook exists to fix. Re-checked from updateGeometries, which Qt runs
+        often enough that a swap can't go unnoticed.
+        """
+        view = getattr(self, "_view", None)
+        if view is None or not hasattr(view, "horizontalScrollBar"):
+            return
+        bar = view.horizontalScrollBar()
+        if bar is self._scroll_bar:
+            return
+        if self._scroll_bar is not None:
+            try:
+                self._scroll_bar.valueChanged.disconnect(self._on_horizontal_scroll)
+            except (RuntimeError, TypeError):
+                # RuntimeError is the one that matters, and the case this
+                # whole method exists for: setHorizontalScrollBar *destroys*
+                # the bar it replaces, so by the time we get here the old one
+                # is a dangling wrapper and touching it raises "wrapped C/C++
+                # object ... has been deleted". A destroyed bar needs no
+                # disconnect. TypeError covers the milder case of the signal
+                # not being connected in the first place.
+                pass
+        self._scroll_bar = bar
+        if bar is not None:
+            bar.valueChanged.connect(self._on_horizontal_scroll)
+
+    def _on_horizontal_scroll(self, _value: int) -> None:
+        self._position_editors()
+
+    def _label_row_height(self) -> int:
+        """Height of the header's label strip, never zero once known.
+
+        ``QHeaderView.sizeHint()`` momentarily reports 0 during transient
+        layout passes — a model reset (any reload: Apply Enhancements, a
+        merge, a language change) is one. Reading it right then placed every
+        filter editor at y=0, directly on top of the column labels, and
+        nothing moved them back: the recovery only happened if some section
+        also changed width in the same pass, so a reload that produced
+        identical widths left the filter row covering the header until the
+        user resized something.
+
+        Falling back to the last good value keeps the split stable through
+        those passes. Returns 0 only before the header has ever reported a
+        real height, and callers skip laying out at all in that case.
+        """
+        height = QHeaderView.sizeHint(self).height()
+        if height > 0:
+            self._label_height_cache = height
+        return self._label_height_cache
+
     def mousePressEvent(self, event):
         """Route clicks in the label area to sorting, let filter row clicks pass through."""
-        label_height = self.sizeHint().height() - self.FILTER_ROW_HEIGHT
-        if event.position().y() < label_height:
+        self._forwarding_mouse = event.position().y() < self._label_row_height()
+        if self._forwarding_mouse:
             # Check if a QLineEdit is stealing this click (shouldn't, but just in case)
             super().mousePressEvent(event)
         # Clicks in the filter row are handled by the QLineEdit widgets
 
     def mouseReleaseEvent(self, event):
-        label_height = self.sizeHint().height() - self.FILTER_ROW_HEIGHT
-        if event.position().y() < label_height:
+        if self._forwarding_mouse or event.position().y() < self._label_row_height():
             super().mouseReleaseEvent(event)
+        self._forwarding_mouse = False
 
     def mouseMoveEvent(self, event):
-        label_height = self.sizeHint().height() - self.FILTER_ROW_HEIGHT
-        if event.position().y() < label_height:
+        # Once a press has been forwarded, keep forwarding until release even
+        # if the pointer drops below the label strip. That strip is only ~16px
+        # tall, so a column-resize drag leaves it almost immediately; gating
+        # purely on the current y silently froze the drag mid-resize
+        # (measured: a divider drag that drifted into the filter row left the
+        # column at its original width). Hover moves with no button held still
+        # obey the plain y test, so the filter row keeps its own cursor.
+        # Self-heal the flag: it is set on press and cleared on release, but a
+        # release can go missing (a broken mouse grab, a modal opening
+        # mid-drag, a synthetic press with no matching release). A move with
+        # no button held cannot be part of a drag, so it is a safe point to
+        # clear it -- otherwise a lost release would leave every later hover
+        # forwarding, showing the resize cursor over the filter boxes.
+        if not event.buttons():
+            self._forwarding_mouse = False
+        if self._forwarding_mouse or event.position().y() < self._label_row_height():
             super().mouseMoveEvent(event)
 
     def _on_text_changed(self, text: str = "") -> None:

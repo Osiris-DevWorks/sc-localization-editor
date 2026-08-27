@@ -428,6 +428,11 @@ class AppSettings:
     AUTO_WRITE_ENABLED = "auto_write_enabled"
     WINDOW_GEOMETRY = "window_geometry"
     WINDOW_STATE = "window_state"
+    # String Editor column widths, written only once the user has actually
+    # dragged (or double-click-fitted) a column. Absent means "never touched",
+    # which is what keeps every fresh install opening at the same computed
+    # default layout. See get_string_column_widths.
+    STRING_COLUMN_WIDTHS = "string_column_widths"
     # Explicit override for the user-data directory. When set, takes
     # precedence over the Documents\Smart Citizen\ default. Users who have
     # Documents redirected to OneDrive can point this at a local path to
@@ -521,6 +526,12 @@ class AppSettings:
         "pending_cache_cleanup",
         "window_geometry",
         "window_state",
+        # Column widths are machine-local for the same reason window geometry
+        # is: they are measured against one screen. Exported and adopted
+        # verbatim, a wide-monitor layout arrives on a laptop with columns
+        # running off the edge, and HELP.md promises an export carries no
+        # machine-specific layout.
+        "string_column_widths",
         "base_global_path",
         "vehicles_path",
         "last_overrides_path",
@@ -1573,6 +1584,72 @@ class AppSettings:
         AppSettings.settings().setValue(
             AppSettings.WINDOW_STATE, AppSettings._encode_qbytes(state)
         )
+
+    @staticmethod
+    def reset_window_layout() -> None:
+        """Forget every persisted size: window geometry, dock/toolbar layout,
+        and String Editor column widths.
+
+        Backs the "Reset Window Proportions" action. Removing the keys rather
+        than writing defaults into them is deliberate — absence is what the
+        rest of the code already treats as "never customised", so the window
+        falls back to its mode-driven size and the table recomputes its
+        column layout, exactly as on a fresh install. Touches nothing else:
+        game paths, language, and localization data are unaffected.
+        """
+        settings = AppSettings.settings()
+        for key in (AppSettings.WINDOW_GEOMETRY,
+                    AppSettings.WINDOW_STATE,
+                    AppSettings.STRING_COLUMN_WIDTHS):
+            settings.remove(key)
+        settings.sync()
+
+    @staticmethod
+    def get_string_column_widths() -> list[int]:
+        """Return saved String Editor column widths, or [] if never set.
+
+        Stored as a JSON list string for the same reason as get_owned_items:
+        a raw Python list round-trips through the registry as a QStringList.
+
+        An empty list means the user has never resized a column, and the
+        table computes its default layout from the current window and data
+        instead. That is what makes every fresh install open identically
+        while still letting a user's own widths stick once they set them.
+        Any non-int or malformed value degrades to [] rather than raising —
+        a corrupt setting must never stop the table from being built.
+        """
+        import json
+        raw = AppSettings.settings().value(
+            AppSettings.STRING_COLUMN_WIDTHS, "", type=str
+        )
+        if not raw:
+            return []
+        try:
+            widths = json.loads(raw)
+            return [int(w) for w in widths] if isinstance(widths, list) else []
+        except (ValueError, TypeError):
+            return []
+
+    @staticmethod
+    def set_string_column_widths(widths) -> None:
+        """Persist String Editor column widths (list of pixel ints).
+
+        Defensive for the same reason the getter is, and more so: this runs
+        from closeEvent, so an unhandled coercion error here would surface
+        while the window is shutting down. A layout that can't be stored is
+        dropped, which just means the table recomputes its default next
+        launch.
+        """
+        import json
+        try:
+            cleaned = [int(w) for w in widths]
+        except (TypeError, ValueError):
+            logger.warning("Discarding unstorable column widths: %r", widths)
+            return
+        AppSettings.settings().setValue(
+            AppSettings.STRING_COLUMN_WIDTHS, json.dumps(cleaned)
+        )
+        AppSettings.settings().sync()
 
     @staticmethod
     def get_source_path(source_name: str) -> str:

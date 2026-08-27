@@ -160,6 +160,10 @@
       "ht": "",
       "at": "Passer en mode simple"
     },
+    "menu_reset_window_proportions": {
+      "ht": "",
+      "at": "Réinitialiser les proportions de la fenêtre"
+    },
     "editor_tooltip": {
       "ht": "",
       "at": "Afficher/masquer l'éditeur de chaînes ancré sur le côté, une plus grande zone pour modifier la valeur personnalisée de la ligne sélectionnée"
@@ -183,6 +187,10 @@
     "switch_to_simple_tooltip": {
       "ht": "",
       "at": "Passer à la vue simplifiée à un seul bouton."
+    },
+    "reset_window_proportions_tooltip": {
+      "ht": "",
+      "at": "Restaure la taille de la fenêtre, la disposition des panneaux et la largeur des colonnes de l'éditeur de chaînes à leurs valeurs par défaut."
     },
     "more_tooltip": {
       "ht": "",
@@ -2011,6 +2019,14 @@
     "app_title": {
       "ht": "",
       "at": "Smart Citizen"
+    },
+    "reset_proportions_title": {
+      "ht": "",
+      "at": "Réinitialiser les proportions de la fenêtre"
+    },
+    "reset_proportions_body": {
+      "ht": "",
+      "at": "Réinitialiser la taille de la fenêtre, la disposition des panneaux et la largeur des colonnes de l'éditeur de chaînes à leurs valeurs par défaut ?\n\nVos tailles enregistrées seront oubliées. Vos paramètres et vos données de localisation ne sont pas affectés."
     }
   },
   "progress": {
@@ -2223,6 +2239,10 @@
     "settings_exported": {
       "ht": "",
       "at": "Sauvegarde des parametres exportee"
+    },
+    "window_proportions_reset": {
+      "ht": "",
+      "at": "Proportions de la fenêtre réinitialisées."
     }
   },
   "import_flow": {

@@ -84,6 +84,84 @@ def test_encode_empty_is_empty_string():
     assert AppSettings._encode_qbytes(b"") == ""
 
 
+# ── String Editor column widths ──────────────────────────────────────────────
+#
+# Stored as a JSON list string rather than a raw list: a Python list handed to
+# QSettings comes back as a QStringList (the same trap get_owned_items
+# documents). Absent means "the user has never resized a column", which is
+# what keeps every fresh install opening at the same computed default layout.
+
+def test_column_widths_roundtrip_portable(portable_settings):
+    AppSettings.set_string_column_widths([118, 212, 92, 34])
+    assert AppSettings.get_string_column_widths() == [118, 212, 92, 34]
+
+
+def test_column_widths_absent_is_empty_list(portable_settings):
+    """_freeze_columns_interactive() treats [] as 'use the computed defaults',
+    so a fresh install must not report phantom widths."""
+    assert AppSettings.get_string_column_widths() == []
+
+
+def test_column_widths_stored_as_json_text(portable_settings, tmp_path):
+    AppSettings.set_string_column_widths([10, 20])
+    data = json.loads((tmp_path / "config.json").read_text(encoding="utf-8"))
+    assert isinstance(data[AppSettings.STRING_COLUMN_WIDTHS], str)
+
+
+@pytest.mark.parametrize("bad", ["not json", "{}", '"text"', '[1, "x", 3]'])
+def test_column_widths_corrupt_value_degrades_to_empty(portable_settings, bad):
+    """A corrupt setting must never stop the table being built — it degrades
+    to 'no saved widths' and the default layout is computed instead."""
+    AppSettings.settings().setValue(AppSettings.STRING_COLUMN_WIDTHS, bad)
+    assert AppSettings.get_string_column_widths() == []
+
+
+def test_column_widths_survive_a_single_column(portable_settings):
+    """The QStringList trap mangles single-item lists specifically."""
+    AppSettings.set_string_column_widths([137])
+    assert AppSettings.get_string_column_widths() == [137]
+
+
+# ── Reset Window Proportions ─────────────────────────────────────────────────
+#
+# Removes the keys rather than writing defaults into them: absence is what the
+# rest of the code already reads as "never customised", so the window falls
+# back to its mode-driven size and the table recomputes its column layout.
+
+def test_reset_clears_all_three_layout_keys(portable_settings):
+    AppSettings.set_window_geometry(QByteArray(SAMPLE))
+    AppSettings.set_window_state(QByteArray(SAMPLE))
+    AppSettings.set_string_column_widths([100, 200, 300])
+
+    AppSettings.reset_window_layout()
+
+    assert AppSettings.get_window_geometry() == b""
+    assert AppSettings.get_window_state() == b""
+    assert AppSettings.get_string_column_widths() == []
+
+
+def test_reset_leaves_unrelated_settings_alone(portable_settings):
+    """The confirmation promises settings and localization data are
+    untouched, so the reset must be surgical about what it removes."""
+    AppSettings.set_window_geometry(QByteArray(SAMPLE))
+    AppSettings.set_selected_language("german")
+    AppSettings.set_ui_mode(AppSettings.UI_MODE_ADVANCED)
+    AppSettings.set_owned_items({"QuadraCell"})
+
+    AppSettings.reset_window_layout()
+
+    assert AppSettings.get_selected_language() == "german"
+    assert AppSettings.get_ui_mode() == AppSettings.UI_MODE_ADVANCED
+    assert AppSettings.get_owned_items() == {"QuadraCell"}
+
+
+def test_reset_is_safe_when_nothing_was_saved(portable_settings):
+    """Reachable on a fresh install: the action is always enabled."""
+    AppSettings.reset_window_layout()          # must not raise
+    assert AppSettings.get_window_geometry() == b""
+    assert AppSettings.get_string_column_widths() == []
+
+
 # ── JsonSettings safety net ──────────────────────────────────────────────────
 
 def test_persist_does_not_crash_on_non_serializable(tmp_path):

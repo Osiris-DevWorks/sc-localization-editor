@@ -5,15 +5,16 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from PyQt6.QtCore import Qt, QTimer, pyqtSlot, QThread, pyqtSignal, QModelIndex, QPropertyAnimation, QEasingCurve
+from PyQt6.QtCore import Qt, QTimer, pyqtSlot, QThread, pyqtSignal, QModelIndex, QPropertyAnimation, QEasingCurve, QSize, QEvent
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QComboBox, QCheckBox,
     QFileDialog, QMessageBox, QTabWidget,
     QHeaderView, QStatusBar, QFrame, QStyledItemDelegate,
     QAbstractItemView, QMenu, QProgressDialog, QProgressBar, QTextBrowser,
-    QTableView, QStackedLayout, QStackedWidget, QGraphicsOpacityEffect,
-    QDockWidget, QPlainTextEdit, QInputDialog,
+    QTableView, QStackedLayout, QGraphicsOpacityEffect,
+    QDockWidget, QPlainTextEdit, QInputDialog, QScrollArea, QStyle,
+    QSizePolicy,
 )
 from PyQt6.QtGui import QColor, QFont, QCursor, QPixmap, QIcon, QPalette
 from PyQt6.QtCore import QUrl
@@ -294,6 +295,95 @@ def _render_preview_html(key: str, raw: str, stamp: str | None = None) -> str:
 
 
 
+# Height of the String Editor's preview pane, and therefore of the filter
+# row sitting beside it — the two are deliberately the same so their boxes
+# line up. See the setMaximumHeight call in setup_ui for why 60.
+PREVIEW_PANE_HEIGHT = 60
+
+# Pixels the String Editor's table scrolls horizontally per wheel notch /
+# arrow-button click. See the setSingleStep call in create_strings_tab for
+# why Qt's own value (derived from column widths) is too coarse.
+HORIZONTAL_SCROLL_STEP = 24
+
+
+class SingleRowScrollArea(QScrollArea):
+    """Horizontal-only scroll container sized to the single row it wraps.
+
+    A plain QScrollArea is the wrong shape for this job: it reports a
+    generic 576x384 sizeHint regardless of content and defaults to an
+    Expanding vertical policy, so wrapping the String Editor's filter row
+    in one made it 358px tall for a 44px row (measured) — a large empty
+    background with the controls floating in the middle — and stole that
+    height from the table below. It also left the layout free to squeeze
+    the row below its natural width, clipping the trailing buttons behind
+    a scrollbar even on a wide screen.
+
+    This reports the wrapped row's own hints instead:
+
+    * height — the row's natural height (plus a reserved strip for the
+      horizontal scrollbar), floored at ``matched_height`` so the box can
+      be lined up with a neighbour of a known height. Fixed vertical
+      policy makes the layout honour it exactly.
+    * width  — the row's natural width as the *preferred* size, so a
+      layout with room to spare gives the row everything it needs.
+    * minimum width — near zero, which is the whole point of the wrapper:
+      the row's ~1300px natural width would otherwise propagate up
+      through the outer QScrollArea (see setup_ui) and force the whole
+      window wider than a narrow screen. Shrinking scrolls this row
+      internally instead, the same way the table already contains its own
+      column overflow.
+
+    The wrapped row is pinned to the *box* height and anchored to the top
+    of the viewport. Pinning is what keeps the controls still: with
+    ``setWidgetResizable(True)`` alone the row tracks the viewport, and the
+    viewport loses ~12px the moment the horizontal scrollbar appears, so
+    the row's vertically centred controls jumped ~6px and fell out of
+    alignment with the preview pane exactly as the window crossed that
+    width. Pinning to the box height (rather than the row's own natural
+    height) also means the row's own layout centres the controls in the
+    full box, which is what lines them up with the pane beside them.
+    """
+
+    def __init__(self, parent=None, matched_height: int = 0):
+        super().__init__(parent)
+        self._matched_height = matched_height
+        self._natural_row_height = 0
+        self.setWidgetResizable(True)
+        self.setFrameShape(QFrame.Shape.NoFrame)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+
+    def setWidget(self, row) -> None:
+        # Cache the natural height BEFORE pinning: setFixedHeight rewrites
+        # the row's own sizeHint, so reading it afterwards would feed the
+        # pinned height back into _box_height and inflate the box on every
+        # call.
+        self._natural_row_height = row.sizeHint().height()
+        row.setFixedHeight(self._box_height())
+        super().setWidget(row)
+
+    def _box_height(self) -> int:
+        bar = self.horizontalScrollBar().sizeHint().height()
+        return max(self._natural_row_height + bar, self._matched_height)
+
+    def sizeHint(self) -> QSize:
+        row = self.widget()
+        if row is None:
+            return super().sizeHint()
+        return QSize(row.sizeHint().width(), self._box_height())
+
+    def minimumSizeHint(self) -> QSize:
+        row = self.widget()
+        if row is None:
+            return super().minimumSizeHint()
+        # Width deliberately 0: see the class docstring — the wrapper
+        # exists precisely so this row can't dictate the window's minimum
+        # width. Height still tracks the row so it's never clipped.
+        return QSize(0, self._box_height())
+
+
 class MainWindow(QMainWindow):
     """Main application window."""
 
@@ -396,6 +486,13 @@ class MainWindow(QMainWindow):
 
         # Build UI
         self.setup_ui()
+        # Experiment: Qt otherwise derives the window's minimum size from the
+        # toolbar/filter row's natural (unshrinkable) width, which is what
+        # was blocking manual narrowing below that point. Overriding it here
+        # lets the user resize down to whatever they like during a session;
+        # the QScrollArea wrapping in setup_ui() means shrinking below the
+        # content's natural size scrolls it rather than squeezing/clipping it.
+        self.setMinimumSize(0, 0)
         self.restore_window_state()
 
         # Ensure cache directory exists
@@ -417,7 +514,34 @@ class MainWindow(QMainWindow):
     def setup_ui(self):
         """Build user interface."""
         central_widget = QWidget()
-        self.setCentralWidget(central_widget)
+        # Experiment: route the content through a QScrollArea instead of
+        # setting it as the central widget directly. setWidgetResizable(True)
+        # still lets central_widget expand to fill the window when there's
+        # room, but once the window shrinks below central_widget's natural
+        # minimum size, scrollbars appear for the overflow instead of the
+        # toolbar/table getting visually squeezed. Removing it is not an
+        # option: without it the window hard-floors around 666px wide and
+        # can't be dragged smaller, which is this branch's whole point.
+        #
+        # This is now a last-resort *chrome* scroller. No tab page contributes
+        # a width floor any more (see _on_tab_changed's history: an explicit
+        # per-page minimumWidth used to), so what's left is the window's own
+        # furniture -- the main toolbar and the Log tab's toolbar row. It
+        # therefore only engages below a ~682px window, and when it does it
+        # engages identically on all 8 tabs, so scrollbar placement stays
+        # consistent even in that regime. Each tab contains its own content
+        # overflow internally, which is what keeps every tab's bars in the
+        # same pixel row.
+        scroll_area = QScrollArea()
+        scroll_area.setWidget(central_widget)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.setCentralWidget(scroll_area)
+        # Kept for _size_window_for_mode: the scroll area's own
+        # minimumSizeHint() is a small generic value unrelated to its
+        # child's real content, so the mode-driven default-size calculation
+        # needs a direct reference to the wrapped widget instead.
+        self._content_widget = central_widget
         main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(8, 8, 8, 8)
         main_layout.setSpacing(8)
@@ -432,6 +556,16 @@ class MainWindow(QMainWindow):
         self.tagline_label = QLabel(tr("branding.tagline"))
         main_layout.addWidget(self.tagline_label)
         self._apply_branding_styles()
+
+        # Fixed height on both. A QLabel defaults to a Preferred vertical
+        # policy, so it will absorb spare height if the widget below it ever
+        # stops doing so, and these two are the ones a user notices: on a
+        # maximised window they grew from their 35px/15px hints to 343px
+        # each, leaving the title stranded above a wide gap. Neither should
+        # ever be taller than its own text.
+        for label in (self.title_label, self.tagline_label):
+            label.setSizePolicy(label.sizePolicy().horizontalPolicy(),
+                                QSizePolicy.Policy.Fixed)
 
         toolbar_layout = self.create_toolbar()
 
@@ -515,18 +649,23 @@ class MainWindow(QMainWindow):
         self._previous_tab_index = self.tabs.currentIndex()
 
         # #180: Simple/Advanced view switch. The tabbed UI (Advanced) and the
-        # one-button Simple page share a QStackedWidget so switching is a page
-        # swap rather than a teardown, and the QTabWidget keeps its stretch=1
-        # placement inside the stack.
+        # one-button Simple page are siblings in the content layout, swapped
+        # by visibility, so switching is a show/hide rather than a teardown
+        # and both keep their stretch=1 placement.
         self.simple_page = SimpleModeWidget()
         self.simple_page.generate_and_apply_requested.connect(self._run_simple_apply)
         self.simple_page.switch_to_advanced_requested.connect(
             lambda: self._apply_ui_mode(AppSettings.UI_MODE_ADVANCED)
         )
-        self.view_stack = QStackedWidget()
-        self.view_stack.addWidget(self.tabs)         # Advanced
-        self.view_stack.addWidget(self.simple_page)  # Simple
-        main_layout.addWidget(self.view_stack, 1)
+        # Siblings swapped by visibility, deliberately not a QStackedWidget: a
+        # stack reports its *tallest* page, so with Simple showing it would go
+        # on reserving height for the Advanced tabs (323px against the 214 the
+        # Simple page needs), leaving dead space between the buttons and the
+        # footer. A hidden widget's layout item is empty, so the page that
+        # isn't showing costs nothing and the one that is takes the stretch
+        # and centres itself.
+        main_layout.addWidget(self.tabs, 1)          # Advanced
+        main_layout.addWidget(self.simple_page, 1)   # Simple
 
         # Footer
         footer_layout = self.create_footer()
@@ -568,22 +707,14 @@ class MainWindow(QMainWindow):
         """
         if mode not in (AppSettings.UI_MODE_SIMPLE, AppSettings.UI_MODE_ADVANCED):
             mode = AppSettings.UI_MODE_SIMPLE
-        from PyQt6.QtWidgets import QSizePolicy
 
         simple = mode == AppSettings.UI_MODE_SIMPLE
-        self.view_stack.setCurrentWidget(self.simple_page if simple else self.tabs)
+        # Plain visibility, which is the whole mechanism: the hidden page's
+        # layout item is empty, so it contributes nothing to the window's
+        # size hint and the visible one takes the stretch and centres itself.
+        self.simple_page.setVisible(simple)
+        self.tabs.setVisible(not simple)
         self.toolbar_container.setVisible(not simple)
-        # Only the visible page should drive the window's size hint. A
-        # QStackedWidget otherwise sizes to its largest page, so the compact
-        # Simple page would be inflated by the big Advanced tabs. Setting the
-        # hidden page's policy to Ignored zeroes its contribution to the hint,
-        # letting Simple shrink to its own minimum.
-        ignored = QSizePolicy.Policy.Ignored
-        live = QSizePolicy.Policy.Expanding
-        self.simple_page.setSizePolicy(live if simple else ignored,
-                                       live if simple else ignored)
-        self.tabs.setSizePolicy(ignored if simple else live,
-                                ignored if simple else live)
         AppSettings.set_ui_mode(mode)
         # Resize to suit the new view on a live switch. At startup the window
         # isn't shown yet (isVisible() is False) — showEvent applies the
@@ -601,8 +732,22 @@ class MainWindow(QMainWindow):
         it no longer inflates the stacked-widget hint. Called once at first
         show and on every live mode switch, so the size tracks the mode rather
         than whatever the window was last left at.
+
+        Advanced sizes the window *before* maximizing rather than just
+        calling showMaximized(). Windows records whatever geometry the
+        window last had while un-maximized as the rectangle restore-down
+        returns to (WINDOWPLACEMENT.rcNormalPosition), and with the
+        QScrollArea-wrapped central widget (see setup_ui) that startup
+        geometry is a tiny ~576x405 — so maximizing straight from it left
+        restore-down natively giving back a uselessly small window
+        (verified via GetWindowPlacement: 592x444 before this, 1648x916
+        after). Setting a real normal size first fixes it at the source,
+        and Windows then tracks any size the user picks while windowed on
+        its own.
         """
         if mode == AppSettings.UI_MODE_ADVANCED:
+            if not self.isMaximized() and not self.isFullScreen():
+                self.resize(self._default_advanced_windowed_size())
             self.showMaximized()
         elif self.isMaximized() or self.isFullScreen():
             # showNormal() restores the prior (maximized) geometry on the next
@@ -613,14 +758,76 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(0, lambda: self._shrink_to_fit_if_simple())
         else:
             # First show / already-normal window: no pending restore to race.
-            self.resize(self.minimumSizeHint())
+            self.resize(self._window_size_for_content(self._simple_content_size()))
 
     def _shrink_to_fit_if_simple(self) -> None:
-        """Resize to the minimum that fits the Simple page, if still in Simple
+        """Resize to the size that fits the Simple page, if still in Simple
         mode. Deferred from _size_window_for_mode after an un-maximize so the
         async geometry restore doesn't clobber the shrink."""
         if AppSettings.get_ui_mode() == AppSettings.UI_MODE_SIMPLE:
-            self.resize(self.minimumSizeHint())
+            self.resize(self._window_size_for_content(self._simple_content_size()))
+
+    def _simple_content_size(self) -> QSize:
+        """The content size Simple mode's window has to accommodate.
+
+        The height can't come from minimumSizeHint. Simple's layout is
+        height-for-width — a word-wrapped label needs a second line at this
+        window's width — so its real requirement (measured: 461px) is well
+        above the width-unconstrained minimum (352px). Sizing the window to
+        that minimum gave a 376px viewport for 461px of content, which is why
+        Simple opened with a vertical scrollbar over a page that visibly had
+        room to spare.
+
+        Width still comes from the minimum: Simple's page is happy narrow,
+        and taking its preferred width would open a needlessly wide window.
+        The height is then asked for *at that width*, which is the whole
+        point of height-for-width and can't be read off a plain sizeHint.
+        """
+        content = self._content_widget
+        width = content.minimumSizeHint().width()
+        height = max(content.sizeHint().height(),
+                     content.minimumSizeHint().height())
+        layout = content.layout()
+        if layout is not None and layout.hasHeightForWidth():
+            height = max(height, layout.heightForWidth(width))
+        return QSize(width, height)
+
+    def _window_size_for_content(self, content_size: QSize) -> QSize:
+        """Translate a target size for self._content_widget into a full
+        window resize() argument.
+
+        Needed because self._content_widget is wrapped in a QScrollArea (see
+        setup_ui -- lets a manual shrink below content size scroll instead of
+        squeezing widgets), so the window's own minimumSizeHint() no longer
+        reflects the content directly. QScrollArea.sizeHint() doesn't work
+        either as a substitute -- verified it's capped/unreliable once the
+        wrapped content is larger than a small default (real app content
+        came back ~576x405 regardless of the actual ~1100x700+ layout size).
+        Chrome (status bar / margins outside the scroll area) is instead
+        measured from actual current widget geometry, which stays accurate
+        at any content size since it reflects real layout, not a hint.
+
+        Padded by two scrollbar extents in each dimension. Landing exactly on
+        content_size leaves zero slack, so if either dimension is a pixel
+        short the scroll area reserves space for that scrollbar, which then
+        steals from the *other* dimension's viewport too and can trigger a
+        second, otherwise-unwanted scrollbar. One extent of padding wasn't
+        enough on its own either: pinning the width right at its minimum
+        can make a wrapped label need a little *more* height than the
+        width-unconstrained minimumSizeHint() measurement predicted (a
+        height-for-width feedback effect), reproduced eating exactly the
+        first extent's worth of slack. A second extent's headroom is a
+        deliberately generous margin against that, at the cost of a few
+        pixels of window size nobody will notice.
+        """
+        central = self.centralWidget()
+        chrome_w = self.width() - central.width()
+        chrome_h = self.height() - central.height()
+        pad = 2 * central.style().pixelMetric(QStyle.PixelMetric.PM_ScrollBarExtent)
+        return QSize(
+            content_size.width() + chrome_w + pad,
+            content_size.height() + chrome_h + pad,
+        )
 
     def _on_tab_changed(self, new_index: int):
         """Revert unapplied enhancement checkbox changes when leaving the Enhancements tab."""
@@ -689,6 +896,18 @@ class MainWindow(QMainWindow):
             tr("toolbar.menu_test_plan"), self.show_test_plan
         )
         self._action_test_plan.setToolTip(tr("toolbar.test_plan_tooltip"))
+        more_menu.addSeparator()
+        # Escape hatch for the persisted layout: window geometry and column
+        # widths now survive across launches, so a user who drags a column to
+        # a sliver (or leaves the window somewhere awkward) needs a way back
+        # that doesn't involve editing settings by hand.
+        self._action_reset_proportions = more_menu.addAction(
+            tr("toolbar.menu_reset_window_proportions"),
+            self._reset_window_proportions,
+        )
+        self._action_reset_proportions.setToolTip(
+            tr("toolbar.reset_window_proportions_tooltip")
+        )
         more_menu.addSeparator()
         # #180: jump to the simplified one-button view. Lives in the toolbar
         # (Advanced-only); the way back is the Simple page's own button.
@@ -1232,6 +1451,13 @@ class MainWindow(QMainWindow):
         """Create strings table tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
+        # Zero margins so the table's own scrollbars land flush against the
+        # tab's edges, in the same pixel row as Config / Enhancements /
+        # Blueprint Tracker, whose scroll areas sit in a zero-margin outer
+        # layout. Qt's default 9px page margins are what used to inset this
+        # tab's bars and make them look misplaced next to the others. The
+        # inset is re-applied per-row below so only the table goes flush.
+        layout.setContentsMargins(0, 0, 0, 0)
 
         # Rendered-preview pane: shows the currently-selected row's effective
         # value (custom override if present, else the merged baseline) with
@@ -1262,15 +1488,48 @@ class MainWindow(QMainWindow):
         # ~2–3 lines of rendered HTML; anything longer (mission journals,
         # multi-line descriptions) overflows into the built-in scrollbar
         # rather than growing the pane.
-        from PyQt6.QtWidgets import QSizePolicy
         self.preview_pane.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        self.preview_pane.setMaximumHeight(60)
+        self.preview_pane.setMaximumHeight(PREVIEW_PANE_HEIGHT)
 
         # Filter row: category/status/search toggles. Lives here (not the
         # shared toolbar) so it's only visible while this tab is active.
+        filter_row_widget = QWidget()
+        filter_row_widget.setLayout(self.create_string_filter_row())
+        # Experiment: this row's ~10 unwrapped controls (label/combo/5
+        # checkboxes/3 buttons) sum to a natural minimum width well past
+        # 1300px -- never a problem before (showMaximized() ignores
+        # minimum-size floors), but now that the whole window is wrapped in
+        # a QScrollArea (see setup_ui) that width was propagating all the
+        # way up and forcing either an outer scrollbar or a squeeze on any
+        # narrower screen. Giving the row its own horizontal-only scroll
+        # area contains the overflow right here, the same way the table
+        # already contains its own column overflow, instead of it leaking
+        # into the rest of the window. See SingleRowScrollArea for why a
+        # plain QScrollArea can't be used as-is.
+        # matched_height: the row's own content only needs ~56px, but the
+        # preview pane beside it is 60 — pad the box out to match so the
+        # two line up instead of the row sitting 4px short.
+        filter_row_scroll = SingleRowScrollArea(matched_height=PREVIEW_PANE_HEIGHT)
+        filter_row_scroll.setWidget(filter_row_widget)
+
         filter_and_preview_row = QHBoxLayout()
         filter_and_preview_row.setSpacing(12)
-        filter_and_preview_row.addLayout(self.create_string_filter_row(), 2)
+        # Re-apply the page inset this row alone: the page itself is now
+        # zero-margin (so the table can go flush to the tab edges), but the
+        # filter row and preview pane should stay visually inset exactly as
+        # before. No bottom margin -- the layout spacing already separates
+        # this row from the table.
+        filter_and_preview_row.setContentsMargins(9, 9, 9, 0)
+        # No stretch on the filter row (unlike the preview pane): a stretch
+        # factor makes QHBoxLayout split the width by ratio and ignore
+        # sizeHint entirely, which squeezed the row below its natural width
+        # and clipped the trailing buttons. At stretch 0 it takes exactly
+        # the width it needs and the preview pane absorbs the rest --
+        # matching the pre-wrapper behaviour, where the row's own minimum
+        # width served as that floor. Extra width would be wasted on this
+        # row anyway: create_string_filter_row ends in addStretch(), so
+        # anything past its natural width is empty space.
+        filter_and_preview_row.addWidget(filter_row_scroll)
         filter_and_preview_row.addWidget(self.preview_pane, 1)
         layout.addLayout(filter_and_preview_row)
 
@@ -1311,6 +1570,22 @@ class MainWindow(QMainWindow):
         # Table settings
         self.table.setAlternatingRowColors(True)
         self.table.setSortingEnabled(True)
+        # Smooth horizontal scrolling. Qt's default ScrollPerItem moves a whole
+        # column per step, which with wide value columns is a huge jump --
+        # measured 300px per step, the scrollbar offering only 7 positions
+        # across 1734px of content. Per-pixel makes the drag continuous and
+        # also keeps the header's filter boxes tracking their columns
+        # smoothly, since they follow the same offset. Vertical stays
+        # per-item: a step there is one row, which is what a table should do.
+        self.table.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
+        # Per-pixel fixes dragging the bar, but the wheel and the arrow
+        # buttons move by singleStep, which Qt derives from the column widths
+        # (measured 241px) -- still a lurch per notch. A fixed small step
+        # scrolls smoothly; Qt multiplies it by the system's wheel-scroll-lines
+        # setting, so a notch lands around 70px. Verified this survives the
+        # updateGeometries passes from window resizes, column resizes and
+        # scrollTo, rather than being recomputed back.
+        self.table.horizontalScrollBar().setSingleStep(HORIZONTAL_SCROLL_STEP)
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.show_context_menu)
@@ -1318,17 +1593,23 @@ class MainWindow(QMainWindow):
         # Hide row numbers
         self.table.verticalHeader().setVisible(False)
 
-        # Set column widths
+        # Column-width state. _user_resized_columns is the handover flag: until
+        # the user drags (or double-click-fits) a column, the default layout
+        # is recomputed on every table resize so it tracks the window exactly
+        # as the old Stretch/ResizeToContents modes did. The suppress flag
+        # stops our own sizing being mistaken for a user drag, since
+        # QHeaderView emits sectionResized either way.
         header = self.filter_header
-        header.setSectionResizeMode(COL_CATEGORY, QHeaderView.ResizeMode.ResizeToContents)  # Category
-        header.setSectionResizeMode(COL_KEY, QHeaderView.ResizeMode.Stretch)                # Key
-        header.setSectionResizeMode(COL_DEFAULT, QHeaderView.ResizeMode.Stretch)            # Default Value
-        header.setSectionResizeMode(COL_CURRENT, QHeaderView.ResizeMode.Stretch)            # Current Value
-        header.setSectionResizeMode(COL_STAR, QHeaderView.ResizeMode.ResizeToContents)      # ★
-        header.setSectionResizeMode(COL_ORDER, QHeaderView.ResizeMode.ResizeToContents)     # Order #
-        header.setSectionResizeMode(COL_CUSTOM, QHeaderView.ResizeMode.Stretch)             # Custom Value
-        header.setSectionResizeMode(COL_STATUS, QHeaderView.ResizeMode.ResizeToContents)    # Status
-        header.setSectionResizeMode(COL_OWNED, QHeaderView.ResizeMode.ResizeToContents)     # Owned (#157)
+        self._user_resized_columns = False
+        self._suppress_column_capture = False
+        header.sectionResized.connect(self._on_column_resized)
+        self._apply_default_column_layout()
+        # Recompute that default layout whenever the table changes width.
+        # Without this the columns would keep whatever widths they had when
+        # the layout was last computed -- which at startup is while the window
+        # is still Simple-mode sized (measured: a 639px viewport giving 78px
+        # columns), leaving them stuck tiny after switching to Advanced.
+        self.table.viewport().installEventFilter(self)
 
         # Set custom delegates: Custom Value text editor + Sort Order spin box.
         # Parent each to the table so Qt's object tree owns them: the view does
@@ -1343,6 +1624,21 @@ class MainWindow(QMainWindow):
         # Double-click: copy Current Value → Custom Value and open for edit
         self.table.doubleClicked.connect(self._on_cell_double_clicked)
 
+        # Status label sits ABOVE the table, not below it. Anything below the
+        # view stops that view's horizontal scrollbar reaching the tab's
+        # bottom edge, which is what put this tab's bar on a different line
+        # from every other tab's. Word-wrapped so a long "Showing N of M"
+        # (or a long translation of it) can't become a width floor on the
+        # page the way the old fixed-width label could.
+        self.table_status_label = QLabel(tr("strings_tab.no_data"))
+        self.table_status_label.setWordWrap(True)
+        self.table_status_label.setContentsMargins(9, 2, 9, 2)
+        layout.addWidget(self.table_status_label)
+
+        # No frame: the three scroll-area tabs are already NoFrame, and the
+        # 1px border is the last thing that would offset this tab's bars
+        # from theirs.
+        self.table.setFrameShape(QFrame.Shape.NoFrame)
         layout.addWidget(self.table)
 
         # Hook selection after the model is attached so selectionModel() exists.
@@ -1351,18 +1647,235 @@ class MainWindow(QMainWindow):
             self._on_preview_row_changed
         )
 
-        # Status label
-        self.table_status_label = QLabel(tr("strings_tab.no_data"))
-        layout.addWidget(self.table_status_label)
-
         return widget
+
+    # The pre-Interactive sizing modes. Kept as data because
+    # _apply_default_column_layout replays them to recompute the default
+    # layout: it is Qt's own algorithm, so the result is identical to how
+    # the table sized itself before columns became user-resizable.
+    @staticmethod
+    def _default_column_modes() -> dict:
+        rtc = QHeaderView.ResizeMode.ResizeToContents
+        stretch = QHeaderView.ResizeMode.Stretch
+        return {
+            COL_CATEGORY: rtc,
+            COL_KEY: stretch,
+            COL_DEFAULT: stretch,
+            COL_CURRENT: stretch,
+            COL_STAR: rtc,
+            COL_ORDER: rtc,
+            COL_CUSTOM: stretch,
+            COL_STATUS: rtc,
+            COL_OWNED: rtc,
+        }
+
+    def _on_column_resized(self, logical_index: int, old: int, new: int) -> None:
+        """Note that the user has taken ownership of the column layout.
+
+        QHeaderView emits sectionResized for programmatic changes too, so our
+        own sizing passes set _suppress_column_capture first. Only an
+        unsuppressed signal means a real drag or a divider double-click, and
+        that is what stops the default layout being recomputed from then on.
+        """
+        if self._suppress_column_capture:
+            return
+        self._user_resized_columns = True
+
+    def _apply_default_column_layout(self) -> None:
+        """Size the columns the way the table always used to, then hand them
+        back to the user as draggable Interactive sections.
+
+        Every column ends up Interactive, because that is the only mode Qt
+        lets the user drag and the only one it auto-fits on a divider
+        double-click (verified: a 150px column snapped to 727px, exactly
+        sizeHintForColumn). But Interactive alone has no opinion about width,
+        so the old auto modes are replayed first and their result captured --
+        Qt's own algorithm, so the default is identical to before, at whatever
+        width the table currently is. Switching the modes back preserves those
+        computed widths without needing an event-loop turn (verified).
+
+        Runs on every table resize until the user takes over, so the default
+        keeps tracking the window like Stretch did. A saved layout wins
+        outright; a saved layout whose length no longer matches the column
+        count (a column added or removed in a later build) is ignored rather
+        than applied piecemeal.
+        """
+        header = getattr(self, "filter_header", None)
+        if header is None or self._user_resized_columns:
+            return
+        count = header.count()
+        if not count:
+            return
+
+        saved = AppSettings.get_string_column_widths()
+        adopting_saved = len(saved) == count and all(w > 0 for w in saved)
+        widths = saved if adopting_saved else self._default_column_widths()
+
+        self._suppress_column_capture = True
+        try:
+            # Interactive permanently, never toggled back. An earlier version
+            # flipped the sections into the auto modes on each resize and
+            # captured the result a tick later; that left them non-draggable
+            # between resizes, so a drag landing in that window was silently
+            # discarded. Computing the widths outright keeps them draggable
+            # at all times.
+            for i in range(count):
+                header.setSectionResizeMode(i, QHeaderView.ResizeMode.Interactive)
+            for i, w in enumerate(widths):
+                header.resizeSection(i, w)
+        finally:
+            self._suppress_column_capture = False
+
+        if adopting_saved:
+            # Their layout from a previous session: stop recomputing, exactly
+            # as if they had just dragged it.
+            self._user_resized_columns = True
+
+    def _reset_window_proportions(self) -> None:
+        """Put every persisted size back to how a fresh install looks.
+
+        Covers the three things this app remembers about layout: the window's
+        own geometry, the dock/toolbar arrangement, and the String Editor's
+        column widths. Deliberately does not touch anything else -- game
+        paths, language, owned blueprints and localization data are all left
+        alone, and the confirmation text says so.
+        """
+        if QMessageBox.question(
+            self,
+            tr("dialogs.reset_proportions_title"),
+            tr("dialogs.reset_proportions_body"),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        ) != QMessageBox.StandardButton.Yes:
+            return
+
+        AppSettings.reset_window_layout()
+
+        # Docks/toolbars back to the as-built arrangement captured before the
+        # saved state was ever applied (see restore_window_state).
+        default_state = getattr(self, "_default_window_state", None)
+        if default_state:
+            self.restoreState(default_state)
+
+        # Columns: clearing the handover flag is what lets the default layout
+        # be recomputed again, and keeps it tracking the window afterwards.
+        self._user_resized_columns = False
+        self._apply_default_column_layout()
+
+        # Window: with the saved geometry gone, fall back to the mode-driven
+        # default (Advanced maximizes, Simple shrinks to fit). Clearing the
+        # restored flag keeps a later showEvent consistent with that.
+        self._geometry_restored = False
+        self._size_window_for_mode(AppSettings.get_ui_mode())
+
+        logger.info("Window proportions reset to defaults")
+        self.statusBar().showMessage(tr("status_bar.window_proportions_reset"), 5000)
+
+    def _default_column_widths(self) -> list[int]:
+        """The widths the old Stretch/ResizeToContents modes would produce.
+
+        Verified against Qt's own output at four viewport widths (1886, 1200,
+        900, 628 -- exact match at every one):
+
+        * a ResizeToContents column takes sectionSizeHint, which already
+          accounts for both the header label and the visible cell contents;
+        * the Stretch columns split whatever is left in equal shares, with
+          the leftover remainder handed one pixel at a time to the first of
+          them. Stretch notably does NOT floor at sectionSizeHint -- at a
+          628px viewport Qt shrinks those columns to 76px, well under their
+          111px hint -- so this must not clamp them there either.
+
+        Computed rather than measured because Qt defers the real section
+        layout: reading sectionSize() straight after setting a mode returns
+        the previous layout, which left the columns summing to 1598 in an
+        1886px viewport and never catching up.
+        """
+        header = self.filter_header
+        table = getattr(self, "table", None)
+        if table is None:
+            return []
+        count = header.count()
+        modes = self._default_column_modes()
+        # A list, not a set: the leftover pixels go to the first stretch
+        # columns in order, which is what matches Qt's own distribution.
+        stretch = [i for i in range(count)
+                   if modes.get(i) == QHeaderView.ResizeMode.Stretch]
+        widths = self._section_size_hints(header, count)
+        if not stretch:
+            return widths
+
+        floor = header.minimumSectionSize()
+        fixed = sum(widths[i] for i in range(count) if i not in stretch)
+        remaining = max(0, table.viewport().width() - fixed)
+        base, extra = divmod(remaining, len(stretch))
+        for rank, col in enumerate(stretch):
+            widths[col] = max(floor, base + (1 if rank < extra else 0))
+        return widths
+
+    def _section_size_hints(self, header, count: int) -> list[int]:
+        """Per-column content hints, cached between data loads.
+
+        sectionSizeHint delegates to QTableView.sizeHintForColumn, which walks
+        every row currently in the viewport and asks each delegate for a size
+        hint -- roughly 270 delegate calls across nine columns at a typical
+        row count. _default_column_widths runs from the viewport's resize
+        event, so uncached this repeated that walk on every frame of a window
+        drag, with two columns carrying custom delegates.
+
+        The hints only move when the data, the font or the translations do,
+        never when the window is dragged, so the cache is dropped at those
+        points (see _invalidate_section_size_hints) rather than per resize.
+        """
+        cache = getattr(self, "_section_hint_cache", None)
+        if cache is not None and len(cache) == count:
+            return list(cache)
+        hints = [header.sectionSizeHint(i) for i in range(count)]
+        self._section_hint_cache = hints
+        return list(hints)
+
+    def _invalidate_section_size_hints(self) -> None:
+        """Drop the cached column hints after anything that changes them."""
+        self._section_hint_cache = None
+
+    def changeEvent(self, event) -> None:
+        """Drop the cached column hints when the font or style changes.
+
+        sectionSizeHint measures rendered text, so it moves with the
+        application font and with any style that changes metrics. Without
+        this the cache would only be dropped on a data load or a language
+        change, leaving the fixed-width columns sized from stale hints until
+        the next reload.
+        """
+        super().changeEvent(event)
+        if event.type() in (QEvent.Type.FontChange, QEvent.Type.StyleChange,
+                            QEvent.Type.ApplicationFontChange):
+            self._invalidate_section_size_hints()
+
+    def eventFilter(self, obj, event):
+        """Re-fit the default column layout when the table changes width.
+
+        The table's viewport is the only thing watched here. Once the user
+        has resized a column, _apply_default_column_layout returns early and
+        this becomes a no-op for the rest of the session.
+        """
+        if (event.type() == QEvent.Type.Resize
+                and getattr(self, "table", None) is not None
+                and obj is self.table.viewport()):
+            self._apply_default_column_layout()
+        return super().eventFilter(obj, event)
 
     def create_about_tab(self) -> QWidget:
         """Create about tab."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
+        # A QTextBrowser is already a QAbstractScrollArea filling the tab, so
+        # it must never be wrapped in a QScrollArea (that double-nests the
+        # bars). Zeroing the margins is what puts its own bar at the tab
+        # edge, in line with every other tab.
+        layout.setContentsMargins(0, 0, 0, 0)
 
         self.about_browser = QTextBrowser()
+        self.about_browser.setFrameShape(QFrame.Shape.NoFrame)
         self.about_browser.setOpenExternalLinks(True)
         self._render_about_html()
         layout.addWidget(self.about_browser)
@@ -1466,7 +1979,11 @@ class MainWindow(QMainWindow):
         theme swaps recolor it consistently."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
+        # See create_about_tab: the browser is its own scroll area, so zero
+        # margins (not a wrapper) are what align its bar with the other tabs.
+        layout.setContentsMargins(0, 0, 0, 0)
         self.faq_browser = QTextBrowser()
+        self.faq_browser.setFrameShape(QFrame.Shape.NoFrame)
         self.faq_browser.setOpenExternalLinks(True)
         self._render_faq_html()
         layout.addWidget(self.faq_browser)
@@ -1498,7 +2015,11 @@ class MainWindow(QMainWindow):
         """
         widget = QWidget()
         layout = QVBoxLayout(widget)
+        # See create_about_tab: the browser is its own scroll area, so zero
+        # margins (not a wrapper) are what align its bar with the other tabs.
+        layout.setContentsMargins(0, 0, 0, 0)
         self.legal_browser = QTextBrowser()
+        self.legal_browser.setFrameShape(QFrame.Shape.NoFrame)
         self.legal_browser.setOpenExternalLinks(True)
         self._render_legal_html()
         layout.addWidget(self.legal_browser)
@@ -3508,8 +4029,27 @@ class MainWindow(QMainWindow):
         # doing it pre-show is unreliable. Guarded so it runs a single time.
         if not getattr(self, "_initial_size_applied", False):
             self._initial_size_applied = True
-            self._size_window_for_mode(AppSettings.get_ui_mode())
+            # Skipped when restore_window_state() brought back a real saved
+            # geometry — the user's own size/position wins over the
+            # mode-driven default. Without this guard the default would
+            # immediately maximize (Advanced) or shrink (Simple) over it and
+            # persisting geometry would have no visible effect.
+            if not getattr(self, "_geometry_restored", False):
+                self._size_window_for_mode(AppSettings.get_ui_mode())
         self._maybe_start_first_run_tutorial()
+
+    def _default_advanced_windowed_size(self) -> QSize:
+        """The windowed size Advanced mode is given before it maximizes --
+        a generous fraction of the screen, which then becomes what
+        restore-down returns to (see _size_window_for_mode). Advanced's
+        content (the full table, many columns) needs real room to be
+        usable, unlike Simple's minimal two-button page -- so unlike
+        Simple's shrink-to-minimumSizeHint default, this is sized off the
+        screen instead of the content's bare minimum."""
+        from PyQt6.QtWidgets import QApplication
+        screen = self.screen() or QApplication.primaryScreen()
+        available = screen.availableGeometry()
+        return QSize(int(available.width() * 0.85), int(available.height() * 0.85))
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts."""
@@ -3787,6 +4327,10 @@ class MainWindow(QMainWindow):
         self._action_test_plan.setToolTip(tr("toolbar.test_plan_tooltip"))
         self._action_switch_to_simple.setText(tr("toolbar.menu_switch_to_simple"))
         self._action_switch_to_simple.setToolTip(tr("toolbar.switch_to_simple_tooltip"))
+        self._action_reset_proportions.setText(tr("toolbar.menu_reset_window_proportions"))
+        self._action_reset_proportions.setToolTip(
+            tr("toolbar.reset_window_proportions_tooltip")
+        )
 
         # Footer
         self.osiris_button.setToolTip(tr("toolbar.osiris_github_tooltip"))
@@ -3794,6 +4338,8 @@ class MainWindow(QMainWindow):
 
         # Simple-mode page (#180)
         self.simple_page.retranslate_ui()
+        # Column header labels changed length, so their content hints did too.
+        self._invalidate_section_size_hints()
 
         # Filter row
         self._category_label.setText(tr("filters.category_label"))
@@ -4600,6 +5146,12 @@ class MainWindow(QMainWindow):
         self._rebuild_blueprint_metadata()  # #157 follow-up: filter data
         self._recompute_owned()  # #157: weave [Owned] tags + populate Owned stars
 
+        # Re-fit the default layout now that there are real rows to measure —
+        # the ResizeToContents columns can only size themselves once the model
+        # has data. No-op once the user has taken the columns over.
+        self._invalidate_section_size_hints()
+        QTimer.singleShot(0, self._apply_default_column_layout)
+
         # Update status bar with entry counts and per-source status
         self._update_status_bar()
 
@@ -4996,9 +5548,22 @@ class MainWindow(QMainWindow):
             self._loader_worker.quit()
             self._loader_worker.wait()
 
-        # Persist only the dock/toolbar layout; window size is mode-driven and
-        # recomputed on next launch (see _size_window_for_mode).
         AppSettings.set_window_state(self.saveState())
+        # Geometry too, so the window reopens where and how the user left it.
+        # saveGeometry() encodes the maximized/fullscreen flag alongside the
+        # normal-state rectangle, so restoreGeometry() brings back both, and a
+        # window left maximized doesn't reopen as a restored-down rectangle.
+        AppSettings.set_window_geometry(self.saveGeometry())
+
+        # Column widths only once the user has actually changed them. Writing
+        # them unconditionally would freeze whatever this session's window
+        # width happened to produce, so a user who never touched a column
+        # would stop getting a layout fitted to their current screen.
+        if getattr(self, "_user_resized_columns", False) and hasattr(self, "filter_header"):
+            AppSettings.set_string_column_widths(
+                [self.filter_header.sectionSize(i)
+                 for i in range(self.filter_header.count())]
+            )
 
         event.accept()
 
@@ -5561,15 +6126,34 @@ class MainWindow(QMainWindow):
         self._model.notify_entry_changed(entry_idx)
 
     def restore_window_state(self):
-        """Restore the dock / toolbar layout.
+        """Restore the dock / toolbar layout and the saved window geometry.
 
-        Window *size* is mode-driven (Simple opens compact, Advanced opens
-        maximized — see _size_window_for_mode), so geometry is intentionally
-        neither persisted nor restored; only the dock/toolbar arrangement is.
+        On a first run there is no saved geometry, so the window falls back to
+        the mode-driven default (Simple opens compact, Advanced opens
+        maximized — see _size_window_for_mode). That is what makes every fresh
+        install open at the same size. Once the user has moved or resized the
+        window, their geometry is restored instead and the mode-driven sizing
+        is skipped for that launch (see showEvent), so it can't be overridden.
+
+        Sets _geometry_restored, which showEvent reads.
         """
+        # Snapshot the as-built dock/toolbar layout before anything is
+        # restored over it. This is the only moment a pristine arrangement
+        # exists, and it's what "Reset Window Proportions" restores -- there
+        # is no Qt API to ask a QMainWindow for its default layout later.
+        self._default_window_state = self.saveState()
+
         state = AppSettings.get_window_state()
         if state:
             self.restoreState(state)
+
+        self._geometry_restored = False
+        geometry = AppSettings.get_window_geometry()
+        if geometry:
+            # restoreGeometry returns False for a malformed/stale blob (e.g.
+            # saved on a monitor layout that no longer exists), in which case
+            # we leave the mode-driven default to run as if on a first launch.
+            self._geometry_restored = bool(self.restoreGeometry(geometry))
 
     def markdown_to_html(self, markdown_text: str) -> str:
         """Convert markdown to HTML with theme-aware styling.
