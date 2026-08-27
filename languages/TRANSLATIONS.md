@@ -50,6 +50,14 @@ them against the new source.
 
 ## Backfill log
 
+- **2.3.1 cycle (2026-08-27, Claude Opus 5):** `HELP.md` docs-parity for the
+  window-layout work (#364), across all 7 translated languages. Per language:
+  the resizable-columns bullet in section 2, a new **Window Layout** section
+  covering persisted window/dock/column state and **Reset Window Proportions**,
+  and section 13's machine-specific-exclusions list extended to name the
+  String Editor column widths (which Export Settings deliberately leaves out).
+  AI translations styled on each file's existing register; no `ht` strings were
+  touched, since these are documents rather than `ui.json` keys.
 - **2.3.0 pre-release (2026-08-02, Claude Fable 5):** Full docs-parity sweep
   for all 7 languages, bringing every `HELP.md` and `ABOUT.md` up to the
   English originals at the 2.3.0 pre-release gate. Per language: the new
