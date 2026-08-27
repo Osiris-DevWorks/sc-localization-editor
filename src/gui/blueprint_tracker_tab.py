@@ -259,7 +259,7 @@ class BlueprintTrackerTab(QWidget):
             tr("enhancements.blueprints_search_placeholder")
         )
         self._blueprints_search.setClearButtonEnabled(True)
-        self._blueprints_search.textChanged.connect(self._refilter_blueprints_available)
+        self._blueprints_search.textChanged.connect(self._refilter_blueprint_lists)
         layout.addWidget(self._blueprints_search)
 
         # Display-only toggle (#221): show each item's Tag Builder tag inline
@@ -279,7 +279,7 @@ class BlueprintTrackerTab(QWidget):
         self._blueprints_mission_combo = _NoWheelComboBox()
         self._blueprints_mission_combo.addItem(tr("enhancements.blueprints_facet_any"), None)
         self._blueprints_mission_combo.currentIndexChanged.connect(
-            self._refilter_blueprints_available
+            self._refilter_blueprint_lists
         )
         mission_row.addWidget(self._blueprints_mission_combo, 1)
         layout.addLayout(mission_row)
@@ -300,7 +300,7 @@ class BlueprintTrackerTab(QWidget):
             lbl.setProperty("role", "secondary")
             combo = _NoWheelComboBox()
             combo.addItem(tr("enhancements.blueprints_facet_any"), None)
-            combo.currentIndexChanged.connect(self._refilter_blueprints_available)
+            combo.currentIndexChanged.connect(self._refilter_blueprint_lists)
             self._blueprints_facet_combos[attr] = combo
             self._blueprints_facet_labels[label_key] = lbl
             facet_row.addWidget(lbl)
@@ -547,7 +547,7 @@ class BlueprintTrackerTab(QWidget):
                 lst.addItem(self._make_blueprint_item(name))
             lst.blockSignals(False)
 
-        self._refilter_blueprints_available()
+        self._refilter_blueprint_lists()
 
         # Empty state: no metadata and nothing owned -> guide the user to
         # generate mission enhancements first; hide the (useless) controls.
@@ -587,16 +587,39 @@ class BlueprintTrackerTab(QWidget):
                 return False
         return True
 
-    def _refilter_blueprints_available(self, *_args) -> None:
-        """Hide available rows that don't pass the current filters."""
-        lst = self._blueprints_available_list
-        for i in range(lst.count()):
-            item = lst.item(i)
-            name = item.data(Qt.ItemDataRole.UserRole)
-            item.setHidden(not self._blueprint_item_visible(name))
+    def _refilter_blueprint_lists(self, *_args) -> None:
+        """Hide rows in both lists that don't pass the current filters (#374).
+
+        Used to only touch the Available list -- the search box and Type/
+        Class/Size/Grade/Mission dropdowns silently had no effect on the
+        Owned list, so a player narrowing down to find one component among
+        hundreds of owned items had no way to do it short of scrolling.
+        _blueprint_item_visible is a pure predicate on the name alone, so
+        applying it to both lists uniformly is correct: there's nothing
+        list-specific about "does this item match the current filters".
+        """
+        for lst in (self._blueprints_available_list, self._blueprints_owned_list):
+            for i in range(lst.count()):
+                item = lst.item(i)
+                name = item.data(Qt.ItemDataRole.UserRole)
+                item.setHidden(not self._blueprint_item_visible(name))
 
     def _selected_names(self, lst) -> list:
-        return [it.data(Qt.ItemDataRole.UserRole) for it in lst.selectedItems()]
+        """Names of the selected rows that are actually visible (#374 review).
+
+        Hiding a QListWidgetItem does not deselect it, and both lists allow
+        ExtendedSelection, so a selection made before filtering can survive a
+        search/dropdown change with some of its rows now hidden. Reading
+        selectedItems() unfiltered here meant Remove could silently un-own
+        items the user could no longer see -- the same class of silent
+        ownership loss #372 was filed over, just reached through a filter
+        instead of a foreign log name. Filtering at the point of use (rather
+        than clearing the selection when the filter changes) keeps "what you
+        can see is what you act on" true without discarding a selection the
+        user may want back once they clear the filter.
+        """
+        return [it.data(Qt.ItemDataRole.UserRole)
+                for it in lst.selectedItems() if not it.isHidden()]
 
     def _on_blueprints_show_tags_toggled(self, checked: bool) -> None:
         """Persist the show-tags display toggle and re-render (#221)."""
