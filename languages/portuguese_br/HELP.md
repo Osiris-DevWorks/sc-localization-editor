@@ -32,6 +32,7 @@ Quando a extração termina, o `base.ini` extraído é carregado na tabela autom
   - **Aprimorado**: gerado automaticamente pelo processo de aprimoramentos (sobreposições de estatísticas, tags de blueprint etc.).
   - **Inalterado**: texto original do `base.ini`.
   - **Novo**: a chave só existe nas suas alterações ou nos aprimoramentos, não no `base.ini` original.
+- **Redimensione qualquer coluna** arrastando o separador entre dois cabeçalhos, ou dê um duplo clique em um separador para ajustar a coluna à largura do seu conteúdo mais longo. Suas larguras são lembradas entre as execuções. Enquanto você não redimensionar nada, o Smart Citizen ajusta as colunas à sua janela automaticamente, de modo que uma instalação nova sempre abre de forma adequada na própria tela. Para recuperar esse layout automático, use **Redefinir proporções da janela** (veja abaixo).
 
 ## 3. Painel de Pré-visualização
 
@@ -101,7 +102,7 @@ Use **Resetar user.ini** na aba **Config** para apagar todas as suas edições p
 
 ## 13. Exportar / Importar Configurações
 
-Use **Exportar Configurações…** e **Importar Configurações…** na aba **Config** para mover toda a sua configuração do Smart Citizen entre PCs, ou fazer um backup antes de uma reinstalação. A exportação empacota as configurações do app e as alterações do `user.ini` de todos os canais em um único zip pequeno, incluindo o caminho de instalação do Star Citizen; caminhos específicos da máquina que não fariam sentido em outro PC (sua pasta de dados, o local do cache, a geometria da janela) ficam de fora. A importação sobrepõe esse backup às suas configurações atuais e substitui o `user.ini` dos canais que ele contém: seus arquivos `user.ini` atuais são salvos antes via **Restaurar user.ini**, então uma importação é reversível. O caminho do Star Citizen só é mantido se ainda existir no PC de destino; caso contrário, o Smart Citizen o detecta automaticamente. O Smart Citizen reinicia após uma importação para carregar as novas configurações, e então oferece regenerar e aplicar seus aprimoramentos.
+Use **Exportar Configurações…** e **Importar Configurações…** na aba **Config** para mover toda a sua configuração do Smart Citizen entre PCs, ou fazer um backup antes de uma reinstalação. A exportação empacota as configurações do app e as alterações do `user.ini` de todos os canais em um único zip pequeno, incluindo o caminho de instalação do Star Citizen; caminhos específicos da máquina que não fariam sentido em outro PC (sua pasta de dados, o local do cache, a geometria da janela, as larguras das colunas do editor de strings) ficam de fora. A importação sobrepõe esse backup às suas configurações atuais e substitui o `user.ini` dos canais que ele contém: seus arquivos `user.ini` atuais são salvos antes via **Restaurar user.ini**, então uma importação é reversível. O caminho do Star Citizen só é mantido se ainda existir no PC de destino; caso contrário, o Smart Citizen o detecta automaticamente. O Smart Citizen reinicia após uma importação para carregar as novas configurações, e então oferece regenerar e aplicar seus aprimoramentos.
 
 ## 14. Após Atualizações do Jogo
 
@@ -181,6 +182,12 @@ Escolha um tema em **Config → Aparência**:
 - **Padrão**: SCLE, um tema cyber azul-marinho inspirado na interface mobiGlas do Star Citizen.
 - **Claro / Escuro**: temas de interface clássicos.
 - **ODW**: assinatura Osiris DevWorks, grafite marinho com dourado antigo.
+
+## Layout da janela
+
+O Smart Citizen lembra o tamanho da sua janela, o layout do editor de strings acoplado e as larguras das suas colunas entre as execuções. Cada aba rola o próprio conteúdo, então você pode reduzir a janela o quanto quiser e alcançar tudo rolando, em vez de ver os controles comprimidos ou cortados.
+
+Se o seu layout acabar em um estado incômodo (uma coluna reduzida a uma tira, ou um tamanho de janela que não serve mais para a sua tela), use **Mais → Redefinir proporções da janela**. Isso restaura o tamanho da janela, o layout dos painéis e as larguras das colunas para os padrões. Suas configurações, edições e dados de localização não são afetados.
 
 ## Barra de Status
 

@@ -890,7 +890,7 @@ def render_tag(config: TagConfig, values: dict[str, str]) -> str:
 
     Returns "" when no element resolves to a non-empty value (caller skips
     prepending). The returned string already includes any enclosing brackets;
-    callers prepend a single space between the tag and the item name.
+    callers join it to the item name via :func:`join_tag`, not a bare space.
     """
     if not config.elements:
         return ""
@@ -926,3 +926,36 @@ def render_tag(config: TagConfig, values: dict[str, str]) -> str:
 
     body = sep.join(parts)
     return f"{open_c}{body}{close_c}"
+
+
+def join_tag(name: str, tag: str, placement: str) -> str:
+    """Join a rendered *tag* to an item *name* with a single space, honoring
+    *placement*: only the exact value ``"append"`` puts the tag after the
+    name, and everything else (including an empty or unrecognized value)
+    prepends. Returns *name* unchanged if *tag* is empty.
+
+    Stated that way round deliberately, because it is the way the code reads
+    and the two are not interchangeable: describing it as '"prepend" puts the
+    tag first, anything else appends' would promise the opposite behaviour for
+    every value that is neither, and prepend is the default the Tag Builder
+    ships.
+
+    Single source of truth for this join so the 4 call sites in
+    generate_enhancements_ini.py (components/missiles/ship weapons/
+    commodities) don't each hand-duplicate the placement ternary.
+
+    Reversing this join for "None (space only)" enclosing -- which has no
+    delimiter char to mark the boundary -- is handled entirely on the
+    matching side (#352): see owned_items.strip_via_stock_diff (compares
+    against the item's known pre-tag stock value where available -- fully
+    reliable, no guessing) and owned_items._looks_like_none_style_tag_word
+    (a conservative heuristic fallback for contexts with no stock value to
+    compare against, e.g. mission bullet text). An earlier attempt solved
+    this by inserting an extra marker space here at generation time, but
+    that touches every applied game file and turned out to collide with
+    real messy whitespace already present in some raw item names -- keeping
+    this join a plain single space avoids that risk entirely.
+    """
+    if not tag:
+        return name
+    return f"{name} {tag}" if placement == "append" else f"{tag} {name}"

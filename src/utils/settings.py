@@ -1,5 +1,6 @@
 """Settings management using QSettings."""
 import base64
+import datetime
 import json
 import logging
 import os
@@ -129,6 +130,7 @@ def _scan_common_sc_install_locations() -> "str | None":
     if _sc_scan_cache is not _SC_SCAN_UNSET:
         return _sc_scan_cache
 
+    candidates: list[str] = []
     for letter in string.ascii_uppercase:
         drive_root = Path(f"{letter}:\\")
         if not drive_root.exists():
@@ -136,12 +138,84 @@ def _scan_common_sc_install_locations() -> "str | None":
         for subpath in _COMMON_SC_SUBPATHS:
             candidate = drive_root / subpath
             if _is_valid_sc_root(str(candidate)):
-                _sc_scan_cache = str(candidate)
-                return _sc_scan_cache
+                candidates.append(str(candidate))
 
-    _sc_scan_cache = None
-    return None
+    if not candidates:
+        _sc_scan_cache = None
+        return None
 
+    _sc_scan_cache = _pick_live_sc_install(candidates)
+    return _sc_scan_cache
+
+
+def _newest_p4k_mtime(root: str) -> float:
+    """Most recent Data.p4k mtime across *root*'s channel folders, or 0.0.
+
+    Every channel is checked rather than LIVE alone: a user who plays PTU
+    keeps that channel current while LIVE sits untouched, and picking the
+    install by its stalest channel would get the comparison backwards.
+    """
+    newest = 0.0
+    for channel in AppSettings.AVAILABLE_CHANNELS:
+        try:
+            newest = max(newest, (Path(root) / channel / "Data.p4k").stat().st_mtime)
+        except (OSError, ValueError):
+            continue
+    return newest
+
+
+def _pick_live_sc_install(candidates: "list[str]") -> str:
+    r"""Choose the install the RSI Launcher is actually maintaining.
+
+    The scan used to return its first hit and stop. That is drive-major over
+    a subpath list whose first entry is ``Program Files\Roberts Space
+    Industries\StarCitizen``, so an abandoned install on an earlier drive
+    beat the real one every time. Issue #370 was exactly that: a leftover
+    ``D:\Program Files\Roberts Space Industries\StarCitizen`` won over the
+    live ``E:\Roberts Space Industries\StarCitizen``, and because the
+    orphan's Data.p4k still held an older DataForge database (Game.dcb
+    rather than the current Game2.dcb) every downstream step failed in ways
+    that pointed anywhere but here. The user was told to verify their game
+    files, which did nothing, because the launcher was dutifully verifying
+    the install we were not reading.
+
+    Newest Data.p4k wins. An abandoned install's archive is frozen at
+    whenever it stopped being patched, while the live one moves with every
+    game update, so recency is the one signal that separates them without
+    asking the launcher where it thinks the game is. Ties and unreadable
+    timestamps fall back to the original scan order, so a single-install
+    machine behaves exactly as before.
+
+    Every candidate is logged either way. The heuristic can still be wrong,
+    and when it is, a support log that names the alternatives turns a long
+    diagnostic thread into one line someone can read.
+    """
+    # One filesystem walk per candidate, reused for both the ranking and the
+    # log line below. Calling _newest_p4k_mtime again while building the
+    # message would not just double the stat calls; it would read the disk a
+    # second time, so the install we ranked and the date we report could
+    # disagree about the same folder.
+    mtimes = {c: _newest_p4k_mtime(c) for c in candidates}
+    ranked = sorted(candidates, key=lambda c: -mtimes[c])
+    chosen = ranked[0]
+    if len(candidates) > 1:
+        listing = ", ".join(
+            f"{c} (Data.p4k "
+            + (
+                datetime.datetime.fromtimestamp(mtimes[c]).strftime("%Y-%m-%d")
+                if mtimes[c] else "none"
+            )
+            + ")"
+            for c in ranked
+        )
+        logger.warning(
+            f"Multiple Star Citizen installs found; using the one with the "
+            f"newest Data.p4k: {chosen}. All candidates: {listing}. If the "
+            f"wrong one was picked, set the install path in the Config tab."
+        )
+    else:
+        logger.info(f"Auto-detected Star Citizen install: {chosen}")
+    return chosen
 
 class AppSettings:
     """Wrapper around QSettings for application configuration."""
@@ -354,6 +428,11 @@ class AppSettings:
     AUTO_WRITE_ENABLED = "auto_write_enabled"
     WINDOW_GEOMETRY = "window_geometry"
     WINDOW_STATE = "window_state"
+    # String Editor column widths, written only once the user has actually
+    # dragged (or double-click-fitted) a column. Absent means "never touched",
+    # which is what keeps every fresh install opening at the same computed
+    # default layout. See get_string_column_widths.
+    STRING_COLUMN_WIDTHS = "string_column_widths"
     # Explicit override for the user-data directory. When set, takes
     # precedence over the Documents\Smart Citizen\ default. Users who have
     # Documents redirected to OneDrive can point this at a local path to
@@ -447,6 +526,12 @@ class AppSettings:
         "pending_cache_cleanup",
         "window_geometry",
         "window_state",
+        # Column widths are machine-local for the same reason window geometry
+        # is: they are measured against one screen. Exported and adopted
+        # verbatim, a wide-monitor layout arrives on a laptop with columns
+        # running off the edge, and HELP.md promises an export carries no
+        # machine-specific layout.
+        "string_column_widths",
         "base_global_path",
         "vehicles_path",
         "last_overrides_path",
@@ -1499,6 +1584,72 @@ class AppSettings:
         AppSettings.settings().setValue(
             AppSettings.WINDOW_STATE, AppSettings._encode_qbytes(state)
         )
+
+    @staticmethod
+    def reset_window_layout() -> None:
+        """Forget every persisted size: window geometry, dock/toolbar layout,
+        and String Editor column widths.
+
+        Backs the "Reset Window Proportions" action. Removing the keys rather
+        than writing defaults into them is deliberate — absence is what the
+        rest of the code already treats as "never customised", so the window
+        falls back to its mode-driven size and the table recomputes its
+        column layout, exactly as on a fresh install. Touches nothing else:
+        game paths, language, and localization data are unaffected.
+        """
+        settings = AppSettings.settings()
+        for key in (AppSettings.WINDOW_GEOMETRY,
+                    AppSettings.WINDOW_STATE,
+                    AppSettings.STRING_COLUMN_WIDTHS):
+            settings.remove(key)
+        settings.sync()
+
+    @staticmethod
+    def get_string_column_widths() -> list[int]:
+        """Return saved String Editor column widths, or [] if never set.
+
+        Stored as a JSON list string for the same reason as get_owned_items:
+        a raw Python list round-trips through the registry as a QStringList.
+
+        An empty list means the user has never resized a column, and the
+        table computes its default layout from the current window and data
+        instead. That is what makes every fresh install open identically
+        while still letting a user's own widths stick once they set them.
+        Any non-int or malformed value degrades to [] rather than raising —
+        a corrupt setting must never stop the table from being built.
+        """
+        import json
+        raw = AppSettings.settings().value(
+            AppSettings.STRING_COLUMN_WIDTHS, "", type=str
+        )
+        if not raw:
+            return []
+        try:
+            widths = json.loads(raw)
+            return [int(w) for w in widths] if isinstance(widths, list) else []
+        except (ValueError, TypeError):
+            return []
+
+    @staticmethod
+    def set_string_column_widths(widths) -> None:
+        """Persist String Editor column widths (list of pixel ints).
+
+        Defensive for the same reason the getter is, and more so: this runs
+        from closeEvent, so an unhandled coercion error here would surface
+        while the window is shutting down. A layout that can't be stored is
+        dropped, which just means the table recomputes its default next
+        launch.
+        """
+        import json
+        try:
+            cleaned = [int(w) for w in widths]
+        except (TypeError, ValueError):
+            logger.warning("Discarding unstorable column widths: %r", widths)
+            return
+        AppSettings.settings().setValue(
+            AppSettings.STRING_COLUMN_WIDTHS, json.dumps(cleaned)
+        )
+        AppSettings.settings().sync()
 
     @staticmethod
     def get_source_path(source_name: str) -> str:

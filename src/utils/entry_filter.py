@@ -28,6 +28,7 @@ def filter_entry_indices(
     bp_titles_only: bool = False,
     bp_descs_only: bool = False,
     ship_vehicle_names_only: bool = False,
+    bp_header: "str | None" = None,
 ) -> list[int]:
     """Return indices of entries that pass all active filters.
 
@@ -54,6 +55,9 @@ def filter_entry_indices(
         bp_descs_only: When True, keep mission-description rows containing the
             POTENTIAL BLUEPRINTS section (#156). When both bp_* flags are set
             the row passes if it matches EITHER (blueprint titles OR bodies).
+        bp_header: The user's actual configured "blueprints" mission header
+            (#353), e.g. AppSettings.get_mission_headers()["blueprints"].
+            Without it, a renamed header is never recognized here either.
         ship_vehicle_names_only: When True, show ONLY ship/vehicle name rows
             (vehicle_Name*, Wikelo *_VehicleName) -- every other row is
             hidden, including ship description rows and every non-Ships
@@ -148,7 +152,9 @@ def filter_entry_indices(
             # key/original_value/category"), so the two differ on purpose.
             is_mission = entry.category == CATEGORY_MISSIONS
             is_bp_title = bp_titles_only and is_mission and "[BP" in val
-            is_bp_desc = bp_descs_only and is_mission and has_bp_section(val)
+            is_bp_desc = (
+                bp_descs_only and is_mission and has_bp_section(val, bp_header)
+            )
             if not (is_bp_title or is_bp_desc):
                 continue
         if active_filter_fns:
