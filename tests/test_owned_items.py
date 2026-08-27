@@ -11,10 +11,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from utils.owned_items import (  # noqa: E402
     BULLET_NAME_ALIASES,
+    NONE_STYLE_ENCLOSING,
     apply_owned_to_value,
+    enclosings_from_tag_configs,
     extract_bp_item_names,
     has_bp_section,
     normalize_item_name,
+    strip_via_stock_diff,
 )
 
 pytestmark = [pytest.mark.unit, pytest.mark.regression]
@@ -128,6 +131,189 @@ class TestNormalize:
         words get stripped; anything else survives untouched."""
         assert normalize_item_name("Artimex Arms (Modified)") == "Artimex Arms (Modified)"
         assert normalize_item_name("Ballistic Gatling (x2)") == "Ballistic Gatling (x2)"
+
+    # -- #352: configurable enclosing styles ---------------------------------
+
+    def test_default_enclosings_unchanged_from_hardcoded_square(self):
+        """Regression guard: omitting `enclosings` must behave exactly like
+        the original hardcoded Square-only implementation."""
+        assert normalize_item_name("[Mil-S1-A] Norfield") == "Norfield"
+        assert normalize_item_name("Barbican [IND-S3-B]") == "Barbican"
+
+    def test_strips_leading_tag_round_enclosing(self):
+        assert normalize_item_name(
+            "(Mil-S1-A) Norfield", enclosings=(("(", ")"),)
+        ) == "Norfield"
+
+    def test_strips_trailing_tag_curly_enclosing(self):
+        assert normalize_item_name(
+            "Barbican {IND-S3-B}", enclosings=(("{", "}"),)
+        ) == "Barbican"
+
+    def test_strips_leading_tag_angle_enclosing(self):
+        assert normalize_item_name(
+            "<Mil-S1-A> Norfield", enclosings=(("<", ">"),)
+        ) == "Norfield"
+
+    def test_square_tag_untouched_when_only_round_configured(self):
+        """A style NOT in the active set is never stripped -- proves this
+        fix targets only the actually-configured style(s), not "any bracket
+        shape at all"."""
+        assert normalize_item_name(
+            "[Mil-S1-A] Norfield", enclosings=(("(", ")"),)
+        ) == "[Mil-S1-A] Norfield"
+
+    def test_configured_non_square_enclosing_can_collide_with_real_parenthetical_name(self):
+        """Accepted, documented residual risk: Round/Curly/Angle punctuation
+        sometimes appears in a REAL item name (unlike Square, which never
+        does in Star Citizen's own text). If a category is actively
+        reconfigured to Round, a real "(...)" suffix in that same context
+        will be stripped as if it were a tag -- this is an inherent, opt-in
+        ambiguity from the user's own configuration choice, not a bug."""
+        assert normalize_item_name(
+            "Artimex Arms (Modified)", enclosings=(("(", ")"),)
+        ) == "Artimex Arms"
+
+    def test_none_enclosing_stripped_via_stock_diff(self):
+        """A known stock (pre-tag) value recovers a "None (space only)" tag
+        authoritatively via diffing -- no delimiter needed at all (#352)."""
+        assert normalize_item_name("Mil-S1-A Norfield", stock="Norfield") == "Norfield"
+
+    def test_none_enclosing_stripped_via_heuristic_without_stock(self):
+        """Without a stock value, the conservative heuristic still catches
+        the common case: a leading/trailing word with an embedded Tag
+        Builder separator char plus a size/grade-shaped sub-token.
+
+        Requires the None style to actually be among the configured
+        enclosings -- see test_none_style_heuristic_is_off_unless_configured
+        for why it is no longer unconditional.
+        """
+        none_cfg = (("[", "]"), NONE_STYLE_ENCLOSING)
+        assert normalize_item_name("Mil-S1-A Norfield", none_cfg) == "Norfield"
+        assert normalize_item_name("Norfield Mil-S1-A", none_cfg) == "Norfield"
+
+    def test_none_style_heuristic_is_off_unless_configured(self):
+        """The heuristic strips a word carrying a separator char plus an
+        S<digits>/lone-A-F token, and real item names can take that shape.
+        Running it for users who never selected None enclosing spent that
+        risk on people who got nothing back for it, so it is now gated on
+        the style actually being configured.
+
+        "F-4 Blaster" is the demonstration: realistic in shape (single-letter
+        designators are common), and reduced to "Blaster" by the ungated
+        version. Two names collapsing onto one key is a wrong [Owned] tag on
+        an item the user does not own.
+        """
+        assert normalize_item_name("F-4 Blaster") == "F-4 Blaster"
+        assert normalize_item_name("Mil-S1-A Norfield") == "Mil-S1-A Norfield"
+        # ...and still stripped for a user who did configure None style.
+        none_cfg = (("[", "]"), NONE_STYLE_ENCLOSING)
+        assert normalize_item_name("Mil-S1-A Norfield", none_cfg) == "Norfield"
+
+    def test_none_style_pair_does_not_break_bracket_matching(self):
+        """The delimiter-less pair rides along in the same tuple as the real
+        bracket pairs, so _build_tag_patterns has to skip it rather than
+        build a degenerate alternative from two empty strings."""
+        cfg = (("[", "]"), NONE_STYLE_ENCLOSING)
+        assert normalize_item_name("[Mil-S1-A] Norfield", cfg) == "Norfield"
+        assert normalize_item_name("Norfield [Mil-S1-A]", cfg) == "Norfield"
+
+    def test_none_enclosing_without_separator_or_stock_is_unrecoverable(self):
+        """A "None"-style tag whose elements are joined by a plain space
+        (separator="space") has no embedded punctuation for the heuristic to
+        key off, and with no stock value to diff against either, this stays
+        a genuine, accepted gap -- not every configuration is recoverable."""
+        assert normalize_item_name("Military S2 A Norfield") == "Military S2 A Norfield"
+
+    def test_empty_enclosings_tuple_is_a_noop(self):
+        assert normalize_item_name("[X] Name", enclosings=()) == "[X] Name"
+
+    def test_heuristic_does_not_misfire_on_leading_numeric_hyphen_word(self):
+        """Regression guard: an earlier, looser heuristic (bare digit runs
+        counted as "size-shaped") misfired on this exact real item name --
+        "10-Series" has a hyphen but its digits aren't S-prefixed, so it
+        must NOT be treated as a tag word (#352)."""
+        assert normalize_item_name("10-Series Greatsword Cannon") == "10-Series Greatsword Cannon"
+
+    def test_heuristic_does_not_misfire_on_messy_raw_whitespace(self):
+        """Regression guard for an earlier marker-based attempt at this fix,
+        which broke on exactly this case: real Game.log-scraped names can
+        already carry irregular multi-space runs unrelated to any tag."""
+        assert normalize_item_name("F55  LMG   Magazine") == "F55 LMG Magazine"
+
+    def test_stock_diff_takes_priority_over_bracket_and_heuristic(self):
+        """When a stock value is available, it wins outright -- even over a
+        bracketed tag, since diffing is authoritative and bracket-matching
+        is still a guess by comparison."""
+        assert normalize_item_name(
+            "[Mil-S1-A] Norfield", stock="Norfield"
+        ) == "Norfield"
+
+    def test_stock_not_found_falls_back_to_bracket_stripping(self):
+        """A stock value that doesn't actually appear in the tagged value
+        (e.g. a non-English install, where default_values is always
+        English) must not corrupt the result -- falls through to the
+        existing bracket-based path instead."""
+        assert normalize_item_name(
+            "[Mil-S1-A] Norfield", stock="Something Else Entirely"
+        ) == "Norfield"
+
+    def test_stock_diff_prepend_and_append(self):
+        assert strip_via_stock_diff("Mil-S1-A Norfield", "Norfield") == "Mil-S1-A"
+        assert strip_via_stock_diff("Norfield Mil-S1-A", "Norfield") == "Mil-S1-A"
+
+    def test_stock_diff_no_match_returns_none(self):
+        assert strip_via_stock_diff("Something Unrelated", "Norfield") is None
+
+    def test_stock_diff_untagged_returns_empty_string(self):
+        assert strip_via_stock_diff("Norfield", "Norfield") == ""
+
+    def test_stock_diff_empty_stock_returns_none(self):
+        assert strip_via_stock_diff("Mil-S1-A Norfield", "") is None
+
+
+class TestEnclosingsFromTagConfigs:
+    class _FakeCfg:
+        def __init__(self, enclosing):
+            self.enclosing = enclosing
+
+    def test_default_categories_ignore_commodities_and_mission_titles(self):
+        tag_configs = {
+            "components": self._FakeCfg("square"),
+            "missiles": self._FakeCfg("square"),
+            "ship_weapons": self._FakeCfg("square"),
+            "commodities": self._FakeCfg("round"),
+            "mission_titles": self._FakeCfg("curly"),
+        }
+        result = enclosings_from_tag_configs(tag_configs)
+        assert ("(", ")") not in result
+        assert ("{", "}") not in result
+
+    def test_square_always_present_even_when_unconfigured(self):
+        tag_configs = {
+            "components": self._FakeCfg("round"),
+            "missiles": self._FakeCfg("round"),
+            "ship_weapons": self._FakeCfg("round"),
+        }
+        result = enclosings_from_tag_configs(tag_configs)
+        assert ("[", "]") in result
+
+    def test_dedups_shared_style(self):
+        tag_configs = {
+            "components": self._FakeCfg("round"),
+            "missiles": self._FakeCfg("round"),
+            "ship_weapons": self._FakeCfg("square"),
+        }
+        result = enclosings_from_tag_configs(tag_configs)
+        assert result.count(("(", ")")) == 1
+
+    def test_fresh_install_defaults_to_square_only(self):
+        tag_configs = {
+            "components": self._FakeCfg("square"),
+            "missiles": self._FakeCfg("square"),
+            "ship_weapons": self._FakeCfg("square"),
+        }
+        assert enclosings_from_tag_configs(tag_configs) == (("[", "]"),)
 
 
 class TestExtract:
@@ -545,6 +731,37 @@ class TestModelOwnedColumn:
         m.set_owned_state({"Norfield"}, {"Norfield"})
         item_row = m.source_row_for_entry_index(0)
         assert m.data(m.index(item_row, COL_OWNED), Qt.ItemDataRole.DisplayRole) == "★"   # filled star
+
+    def test_filled_star_when_owned_under_non_square_enclosing(self, qapp):
+        """#352: the Owned star must still resolve when an entry's own value
+        carries a non-Square Tag Builder tag, provided the model was told
+        about the active enclosing via set_owned_state."""
+        from src.gui.string_table_model import COL_OWNED, StringTableModel
+        from src.models.string_model import StringEntry
+        m = StringTableModel()
+        item = StringEntry(key="item_NameNorfield", source_file="global",
+                           category="Components", original_value="(Mil-S1-A) Norfield",
+                           custom_value="", status="Unmodified")
+        m.set_data_source([item], {}, "*")
+        m.set_owned_state({"Norfield"}, {"Norfield"}, enclosings=(("(", ")"),))
+        item_row = m.source_row_for_entry_index(0)
+        assert m.data(m.index(item_row, COL_OWNED), Qt.ItemDataRole.DisplayRole) == "★"
+
+    def test_filled_star_when_owned_under_none_enclosing_via_stock(self, qapp):
+        """#352: "None (space only)" enclosing resolves via the entry's own
+        stock (pre-tag) value, which the model already carries as
+        `default_values` from set_data_source -- no enclosings config
+        needed for this path since the diff is authoritative."""
+        from src.gui.string_table_model import COL_OWNED, StringTableModel
+        from src.models.string_model import StringEntry
+        m = StringTableModel()
+        item = StringEntry(key="item_NameNorfield", source_file="global",
+                           category="Components", original_value="Mil-S1-A Norfield",
+                           custom_value="", status="Unmodified")
+        m.set_data_source([item], {"item_NameNorfield": "Norfield"}, "*")
+        m.set_owned_state({"Norfield"}, {"Norfield"})
+        item_row = m.source_row_for_entry_index(0)
+        assert m.data(m.index(item_row, COL_OWNED), Qt.ItemDataRole.DisplayRole) == "★"
 
     def test_sort_by_owned_floats_owned_to_top(self, qapp):
         # #189: clicking the Owned header must group owned items, like Favorites,

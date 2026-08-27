@@ -696,6 +696,7 @@ class BlueprintTrackerTab(QWidget):
             match_import_names,
             parse_import_names,
         )
+        from src.utils.owned_items import enclosings_from_tag_configs
 
         path, _ = QFileDialog.getOpenFileName(
             self,
@@ -706,8 +707,9 @@ class BlueprintTrackerTab(QWidget):
         if not path:
             return
 
+        enclosings = enclosings_from_tag_configs(AppSettings.get_all_tag_configs())
         try:
-            imported_names = parse_import_names(path)
+            imported_names = parse_import_names(path, enclosings=enclosings)
         except InvalidImportFileError as e:
             QMessageBox.critical(
                 self,
@@ -716,7 +718,9 @@ class BlueprintTrackerTab(QWidget):
             )
             return
 
-        matched, unmatched = match_import_names(imported_names, set(self._blueprint_meta))
+        matched, unmatched = match_import_names(
+            imported_names, set(self._blueprint_meta), enclosings=enclosings
+        )
         skipped_list = "\n".join(sorted(unmatched, key=str.lower))
         if not matched:
             box = QMessageBox(self)

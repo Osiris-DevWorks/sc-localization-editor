@@ -124,6 +124,16 @@ class TestParseImportNamesJson:
         }), encoding="utf-8")
         assert parse_import_names(path) == {"Norfield"}
 
+    def test_strips_non_square_tag_when_enclosing_passed(self, tmp_path):
+        """#352: a name tagged with a Round-enclosed Tag Builder style must
+        still resolve when the caller passes the actual configured
+        enclosing."""
+        path = tmp_path / "export.json"
+        path.write_text(json.dumps({
+            "blueprints": [{"name": "(FN) Norfield"}],
+        }), encoding="utf-8")
+        assert parse_import_names(path, enclosings=(("(", ")"),)) == {"Norfield"}
+
     def test_entries_with_no_name_are_skipped(self, tmp_path):
         path = tmp_path / "export.json"
         path.write_text(json.dumps({
@@ -224,4 +234,14 @@ class TestMatchImportNames:
             {"Norfield"}, {"[FN] Norfield"}
         )
         assert matched == {"[FN] Norfield"}
+        assert unmatched == set()
+
+    def test_matches_non_square_known_set_when_enclosing_passed(self):
+        """#352: a known-set entry tagged with a Round-enclosed style must
+        still match a bare imported name when the actual configured
+        enclosing is passed through."""
+        matched, unmatched = match_import_names(
+            {"Norfield"}, {"(FN) Norfield"}, enclosings=(("(", ")"),)
+        )
+        assert matched == {"(FN) Norfield"}
         assert unmatched == set()

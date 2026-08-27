@@ -2250,10 +2250,11 @@ class MainWindow(QMainWindow):
             # live owned overlay isn't baked in). Idempotent.
             _owned = AppSettings.get_owned_items()
             if _owned:
-                from src.utils.owned_items import apply_owned_to_value
+                from src.utils.owned_items import apply_owned_to_value, enclosings_from_tag_configs
+                _enclosings = enclosings_from_tag_configs(AppSettings.get_all_tag_configs())
                 _bp_header = self._bp_header()
                 for _k, _v in list(merged_dict.items()):
-                    _nv = apply_owned_to_value(_v, _owned, bp_header=_bp_header)
+                    _nv = apply_owned_to_value(_v, _owned, enclosings=_enclosings, bp_header=_bp_header)
                     if _nv != _v:
                         merged_dict[_k] = _nv
 
@@ -5895,8 +5896,13 @@ class MainWindow(QMainWindow):
         it runs on load — not on every owned-toggle (that path re-partitions
         the cached result)."""
         from src.utils.blueprint_meta import build_blueprint_metadata
+        from src.utils.owned_items import enclosings_from_tag_configs
+        enclosings = enclosings_from_tag_configs(AppSettings.get_all_tag_configs())
         bp_header = self._bp_header()
-        self._blueprint_meta = build_blueprint_metadata(self.entries, bp_header=bp_header)
+        self._blueprint_meta = build_blueprint_metadata(
+            self.entries, enclosings=enclosings,
+            default_values=self.default_values, bp_header=bp_header,
+        )
         self._bp_item_names = set(self._blueprint_meta)
 
     def _recompute_owned(self):
@@ -5905,14 +5911,15 @@ class MainWindow(QMainWindow):
         Owned change; the transform is idempotent so repeated runs never double
         the tag. The eligible-name set + filter metadata are built separately by
         `_rebuild_blueprint_metadata` (cached, not rescanned here)."""
-        from src.utils.owned_items import apply_owned_to_value
+        from src.utils.owned_items import apply_owned_to_value, enclosings_from_tag_configs
+        enclosings = enclosings_from_tag_configs(AppSettings.get_all_tag_configs())
         bp_header = self._bp_header()
         owned = AppSettings.get_owned_items()
         for e in self.entries:
-            new_val = apply_owned_to_value(e.original_value, owned, bp_header=bp_header)
+            new_val = apply_owned_to_value(e.original_value, owned, enclosings=enclosings, bp_header=bp_header)
             if new_val != e.original_value:
                 e.original_value = new_val
-        self._model.set_owned_state(self._bp_item_names, owned)
+        self._model.set_owned_state(self._bp_item_names, owned, enclosings=enclosings)
         # Feed the blueprint metadata to the Blueprint Tracker tab (it can't
         # see the loaded strings the data is derived from).
         if hasattr(self, "blueprint_tracker_tab"):
@@ -6043,10 +6050,11 @@ class MainWindow(QMainWindow):
         self._bp_scan_channel = None
 
         if result is not None:
-            from src.utils.owned_items import normalize_item_name
+            from src.utils.owned_items import enclosings_from_tag_configs, normalize_item_name
 
             # Normalize raw log names to the shared owned-set identity; drop blanks.
-            scanned = {normalize_item_name(n) for n in result.names}
+            enclosings = enclosings_from_tag_configs(AppSettings.get_all_tag_configs())
+            scanned = {normalize_item_name(n, enclosings=enclosings) for n in result.names}
             scanned.discard("")
 
             owned = AppSettings.get_owned_items()

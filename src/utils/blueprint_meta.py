@@ -15,13 +15,18 @@ Mission names come from pairing each blueprint-bearing ``..._Desc_NNN`` entry
 with its sibling ``..._Title_NNN`` entry.
 
 Qt-free so it unit-tests with plain entry stand-ins (anything exposing
-``key`` / ``original_value`` / ``category``).
+``key`` / ``original_value`` / ``category``). The Tag Builder's enclosing
+style is per-category, user-configurable, live QSettings state, so it's
+never read here directly (#352) -- callers resolve it themselves (see
+``owned_items.enclosings_from_tag_configs``) and pass a plain ``enclosings``
+tuple into :func:`build_blueprint_metadata`.
 """
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Optional
+from functools import lru_cache
+from typing import Optional, Sequence
 
 from src.models.string_model import (
     CATEGORY_MISSIONS,
@@ -64,9 +69,12 @@ _ARMOR_EXTRA_WORDS = (
 )
 from src.utils.owned_items import (
     BULLET_NAME_ALIASES,
+    NONE_STYLE_ENCLOSING,
     extract_bp_item_names,
+    find_none_style_tag_word,
     has_bp_section,
     normalize_item_name,
+    strip_via_stock_diff,
 )
 from src.utils.tag_builder import DEFAULT_COMPONENT_CLASS_MAPPING
 
@@ -276,14 +284,10 @@ _EXTRA_NAME_KEY_PREFIXES = (
     "item_mining_mininglaser_",
 )
 
-# The bracketed component tag, e.g. "[MIL-S3-B]" or the user-reconfigured
-# "[CMP.S1.B.PW]". Parsed by tokenizing the contents rather than a fixed
-# pattern, because the tag's separator, element order, and which elements
-# appear are all Tag-Builder-configurable (see parse_component_tag). Matched
-# leading OR trailing since the category's placement setting can put it on
-# either side (mirrors normalize_item_name's leading/trailing handling).
-_TAG_BRACKET_RE = re.compile(r"^\s*\[([^\]]+)\]")
-_TRAILING_TAG_BRACKET_RE = re.compile(r"\[([^\]]+)\]\s*$")
+# Default (open, close) pair(s) to parse when a caller doesn't pass its own —
+# today's original hardcoded Square-only behavior, preserved exactly so every
+# existing caller that doesn't know about #352 is unaffected.
+_DEFAULT_ENCLOSINGS: tuple[tuple[str, str], ...] = (("[", "]"),)
 _SIZE_TOKEN_RE = re.compile(r"^S?(\d+)$", re.IGNORECASE)
 # Size straight from the loc key (stable regardless of tag config):
 # item_NamePOWR_ACOM_S01_StarHeart -> S1.
@@ -319,7 +323,31 @@ class BlueprintItem:
     tagged_name: str = ""
 
 
-def parse_component_tag(value: str):
+@lru_cache(maxsize=16)
+def _build_tag_patterns(enclosings: tuple[tuple[str, str], ...]):
+    """Compiled (leading_re, trailing_re) for the given (open, close) pairs,
+    each with one capture group per alternative (the delimiter chars differ
+    per alternative, so a single shared group isn't possible). Returns
+    (None, None) when no pair has both a non-empty open and close.
+    ``enclosings`` must be a tuple of 2-tuples (hashable, for this cache).
+    """
+    alts = "|".join(
+        re.escape(o) + r"([^" + re.escape(c) + r"]+)" + re.escape(c)
+        for o, c in enclosings if o and c
+    )
+    if not alts:
+        return None, None
+    return (
+        re.compile(r"^\s*(?:" + alts + r")"),
+        re.compile(r"(?:" + alts + r")\s*$"),
+    )
+
+
+def parse_component_tag(
+    value: str,
+    enclosings: "Sequence[tuple[str, str]] | None" = None,
+    stock: "str | None" = None,
+):
     """Best-effort ``(class, size, grade)`` from a component tag.
 
     Robust to the Tag Builder's configurable separator / element order / which
@@ -329,11 +357,24 @@ def parse_component_tag(value: str):
     prepend) or trailing (``Norfield [MIL-S3-B]``, append) — a category
     configured to append lost Class/Grade extraction entirely until this
     matched normalize_item_name's leading/trailing symmetry. The tokens
-    inside the ``[...]`` are split on any non-alphanumeric separator and
+    inside the tag are split on any non-alphanumeric separator and
     classified: an ``S?<digits>`` token is the size, a lone A-F letter is the
     grade, and the first multi-letter token is the class (type codes like
     ``PW`` come after the class in the tag, so they don't win). Missing
     pieces are ``None``.
+
+    ``stock``, when given, is the item's known pre-Tag-Builder value for the
+    same loc key (#352) -- see ``owned_items.normalize_item_name``'s
+    docstring for the full rationale. Takes priority over bracket matching:
+    diffing against a known value via ``owned_items.strip_via_stock_diff`` is
+    authoritative for every enclosing style, not a guess.
+
+    ``enclosings`` is the set of (open, close) delimiter pairs to try, e.g.
+    ``(("[", "]"), ("(", ")"))``. Defaults to Square only (``[ ]``) when
+    omitted, matching this function's original hardcoded behavior exactly.
+    This module stays Qt-free/settings-free (see the module docstring): a
+    caller that needs the real, currently-configured enclosing resolves it
+    via ``owned_items.enclosings_from_tag_configs`` and passes it down.
 
     Limitation: a single-letter (Short-style) class code can't be told apart from
     a grade letter, so class may be missed under a Short class style — size still
@@ -346,12 +387,50 @@ def parse_component_tag(value: str):
     too, not just leading ones. The call-site gate (only components actually
     routed through the Tag Builder reach this function) makes it unlikely in
     practice; the leading-only version of this regex had the same weakness.
+
+    A "None (space only)" enclosing tag has no delimiter char to match by, so
+    when ``stock`` isn't available (or doesn't match), it falls back to
+    ``owned_items.find_none_style_tag_word``'s conservative heuristic -- see
+    that function's docstring for the matching rule and its known
+    limitations.
     """
-    m = _TAG_BRACKET_RE.match(value or "") or _TRAILING_TAG_BRACKET_RE.search(value or "")
-    if not m:
+    inner = None
+    if stock:
+        diff = strip_via_stock_diff(value or "", stock)
+        # "" is a confirmed match (value == stock, i.e. definitely not
+        # tagged) -- must NOT fall through to bracket/heuristic guessing
+        # below, which could fabricate a false facet from a stock name that
+        # coincidentally looks tag-shaped. Only None (no match at all) falls
+        # through.
+        if diff is not None:
+            inner = diff
+    resolved = tuple(enclosings) if enclosings is not None else _DEFAULT_ENCLOSINGS
+    if inner is None:
+        leading_re, trailing_re = _build_tag_patterns(resolved)
+        if leading_re is not None:
+            m = leading_re.match(value or "") or trailing_re.search(value or "")
+            if m:
+                # One capture group per enclosing alternative (they use
+                # different delimiter chars) — whichever one matched is the
+                # only non-None group.
+                inner = next((g for g in m.groups() if g is not None), None)
+    # Gated exactly as normalize_item_name gates its own use of this
+    # heuristic. Ungated it fabricates facets from ordinary names that merely
+    # look tag-shaped: "250-E Laser Pointer" reads as size S250 grade E,
+    # "C-788 Cannon" as S788/C. A populated `stock` short-circuits it, so
+    # English installs are largely covered by accident, but `default_values`
+    # is English by design -- on a non-English install the diff never matches
+    # and every translated name reaches this. Facets only, so it cannot
+    # produce a false [Owned], but it silently poisons the Class/Size/Grade
+    # filters. Same defect the sibling had; it just did not reach here.
+    if inner is None and NONE_STYLE_ENCLOSING in resolved:
+        found = find_none_style_tag_word(value or "")
+        if found is not None:
+            inner = found[0]
+    if inner is None:
         return (None, None, None)
     cls = size = grade = None
-    for tok in re.split(r"[^A-Za-z0-9]+", m.group(1)):
+    for tok in re.split(r"[^A-Za-z0-9]+", inner):
         if not tok:
             continue
         sm = _SIZE_TOKEN_RE.match(tok)
@@ -438,7 +517,10 @@ def _title_pair_key(base: str, num) -> tuple:
 
 
 def build_blueprint_metadata(
-    entries, bp_header: "str | None" = None
+    entries,
+    enclosings: "Sequence[tuple[str, str]] | None" = None,
+    default_values: "dict[str, str] | None" = None,
+    bp_header: "str | None" = None,
 ) -> dict:
     """Scan loaded strings once and return ``{name: BlueprintItem}``.
 
@@ -447,6 +529,28 @@ def build_blueprint_metadata(
     owned set and ``StringTableModel`` use, so it drops straight into the
     Blueprints shuttle.
 
+    ``default_values``, when given, is ``{key: stock_value}`` -- each key's
+    pristine, pre-Tag-Builder English value (e.g. ``main_window.py``'s
+    ``self.default_values``, straight from the cached stock ``base.ini``)
+    (#352). Pass 1 uses it, per entry, to recover that entry's own tag
+    authoritatively via diffing (``owned_items.strip_via_stock_diff``)
+    instead of guessing from the tagged value's shape -- this works for
+    every enclosing style, including "None (space only)", which has no
+    delimiter char to guess by. Falls back to the ``enclosings``-driven
+    bracket stripping and then a conservative heuristic when a given key
+    has no stock value (new/discovered items) or the value doesn't match
+    (non-English installs, since ``default_values`` is always English).
+
+    ``enclosings`` is the set of (open, close) Tag Builder delimiter pairs to
+    recognize when stripping/parsing a tag — defaults to Square only when
+    omitted. Resolved once here and threaded uniformly into every pass; an
+    entry's ``category`` (Pass 1's ``cat``) is a coarse string-model bucket
+    like ``"Ship Items"``, not one of the Tag Builder's own categories
+    (components/missiles/ship_weapons), so there's no reliable way to narrow
+    to a single enclosing per entry — callers instead pass the deduplicated
+    set of everything currently configured (see
+    ``owned_items.enclosings_from_tag_configs``).
+
     ``bp_header``, when given, is the user's actual configured "blueprints"
     mission header (#353) -- e.g. ``AppSettings.get_mission_headers()
     ["blueprints"]``. Without it, a renamed header is never recognized as a
@@ -454,6 +558,9 @@ def build_blueprint_metadata(
     skips every mission, not just mis-tags one. See
     ``owned_items.has_bp_section``'s docstring.
     """
+    enclosings = tuple(enclosings) if enclosings is not None else _DEFAULT_ENCLOSINGS
+    default_values = default_values or {}
+
     # Pass 1: name->key map (for type), component tag attrs, mission titles,
     # and the blueprint-bearing desc values.
     name_to_key: dict = {}      # normalized display name -> its loc key
@@ -471,7 +578,8 @@ def build_blueprint_metadata(
 
         if (kl.startswith("item_name") or kl.startswith("vehicle_name")
                 or kl.startswith(_EXTRA_NAME_KEY_PREFIXES)):
-            nm = normalize_item_name(val)
+            stock = default_values.get(key) or None
+            nm = normalize_item_name(val, enclosings, stock)
             if nm:
                 keyslug_to_name[_key_slug(key)] = nm
                 # Prefer the longest value when multiple distinct keys
@@ -493,7 +601,7 @@ def build_blueprint_metadata(
                     # different tag shape (e.g. [E-S2], no grade) that would
                     # pollute the facets.
                     if cat == "Ship Items" and component_type_from_key(key):
-                        cls, tag_size, grade = parse_component_tag(val)
+                        cls, tag_size, grade = parse_component_tag(val, enclosings, stock)
                         cls = expand_class_full_word(cls)
                         size = strip_size_prefix(size_from_key(key) or tag_size)
                         if cls or size or grade:
@@ -533,7 +641,7 @@ def build_blueprint_metadata(
     missions_by_name: dict = {}
     for pair, val in bp_descs:
         title = titles.get(pair) if pair else None
-        for raw_nm in extract_bp_item_names(val, bp_header):
+        for raw_nm in extract_bp_item_names(val, enclosings, bp_header):
             if raw_nm in name_to_value:
                 nm = raw_nm
             elif raw_nm in _BULLET_NAME_ALIASES:
@@ -568,7 +676,7 @@ def build_blueprint_metadata(
     # item still shows up rather than being silently dropped. Never
     # overwrites an item a mission already supplied.
     for raw_name, manual_type in MANUAL_BLUEPRINT_ITEMS:
-        nm = normalize_item_name(raw_name)
+        nm = normalize_item_name(raw_name, enclosings)
         if not nm or nm in result:
             continue
         key = name_to_key.get(nm)
