@@ -12,6 +12,14 @@ on:
 
 jobs:
   claude-review:
+    # Repository secrets are withheld from `pull_request` runs that
+    # originate in a fork, so `claude_code_oauth_token` below resolves to
+    # an empty string and the run fails on auth rather than on the code.
+    # Skip those cleanly instead of reporting a red X on every external
+    # PR. Branches pushed to this repo still run, which is the normal
+    # flow -- every regular contributor here has write access.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
     # Optional: Filter by PR author
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||
