@@ -19,7 +19,11 @@ import json
 
 # Each section is a title plus a flat list of one-line test items. Keep items
 # imperative and self-contained ("do X, confirm Y") so a tester needs no other
-# doc. This plan covers Smart Citizen 2.3.0 (the diff over its 2.2.1 base).
+# doc. This plan covers Smart Citizen 2.3.1 (the diff over its 2.3.0 base).
+#
+# Keep each item under ~190 characters. tests/test_test_plan.py chunks the
+# submitted report at a 200-char limit and asserts every line survives intact,
+# so a longer item fails that test rather than just wrapping awkwardly.
 TEST_SECTIONS: list[dict] = [
     {
         "title": "Core workflow (smoke)",
@@ -31,81 +35,82 @@ TEST_SECTIONS: list[dict] = [
         ],
     },
     {
-        "title": "New languages (#298, #299, #300, #301)",
+        "title": "Tag Builder enclosing styles (#352)",
         "items": [
-            "Switch to Italian, restart: the UI, the guided tour, and the FAQ tab all show Italian text.",
-            "Repeat for Chinese: game strings download from the 42Kit source without an error (this exercises the new download fix).",
-            "Repeat for Japanese and German: UI translated, game strings load, Apply writes to the matching Localization folder and the game shows the language.",
-            "In each language, open Help, About, and the FAQ tab: the text is translated (not English), and Help carries the Export / Import Settings section at 13.",
-            "Run the installer fresh: the Select Language page offers all 8 languages; pick German and the app opens in German.",
-            "Reinstall over an existing install: the language page pre-selects your previously saved language.",
+            "Tag Builder > Ship Weapons: set Enclosing to Angle, Save Tag Changes, Generate Enhancements.",
+            "Blueprint Tracker: NDB-26 Repeater shows its tag in <angle> brackets, and its Type/Class/Size/Grade are filled in, not blank.",
+            "Set the Class filter to Military: the Available list narrows to <MIL-...> items only, and hovering one shows its facets in the tooltip.",
+            "Repeat with Round and Curly on Components: QuadraCell, QuadraCell MT, FR-66 and FR-76 all keep their tag and their facets.",
+            "Set Enclosing to None (space only) and regenerate: those same items still resolve their tag and facets rather than going blank.",
+            "Set every category back to Square and regenerate: everything still resolves, exactly as in 2.3.0.",
         ],
     },
     {
-        "title": "Blueprint Tracker additions (#249, #268, #308, #335, #336)",
+        "title": "Renamed blueprints mission header (#353)",
         "items": [
-            "Type filter: an Ammo option exists, and magazine/battery/canister blueprints (e.g. P4-AR Magazine, salvage canisters) sit under it, not FPS Weapon or Other.",
-            "\"Also scan LIVE/HOTFIX (whichever isn't active)\" is checked by default; scanning with it on reads the sibling channel's logs too, and PTU/EPTU/TECH-PREVIEW are never touched.",
-            "Check \"Rescan all logs (ignore last scan)\", scan: every log is re-read, the checkbox unchecks itself after the scan.",
-            "Export Owned Blueprints to JSON, then import the same file: the summary says 0 blueprints were added (not the file size).",
-            "Export to CSV, clear a few owned items, import the CSV: only the missing ones are re-added; importing never removes anything.",
-            "Import an scmdb.net export file: its blueprint names match and land in Owned.",
-            "In a mission's POTENTIAL BLUEPRINTS, raw-filename bullets like \"bp_craft_nozzle_fuelgiver...\" no longer appear; those items show their real names (e.g. Harkin).",
+            "Config > Mission Labels: rename the blueprints header (e.g. to \"LOOT\"), then Generate Enhancements.",
+            "Blueprint Tracker still populates; it does not go empty.",
+            "String Editor: the BP Descriptions filter still finds those mission bodies under the renamed header.",
+            "Mark an item owned and Apply Owned Tags: the [Owned] tag still lands on its bullet under the renamed header in game.",
+            "Set the header back to the default and regenerate: everything still works.",
         ],
     },
     {
-        "title": "Settings Backup (#311)",
+        "title": "Blueprint names from another editor (#372)",
         "items": [
-            "Config tab > Export Settings...: a small zip is written; open it and confirm it contains a manifest and per-channel user.ini files.",
-            "Import Settings... with that zip: the confirm dialog names Restore user.ini as the undo path; after confirming, the app restarts and offers to regenerate and apply.",
-            "After the restart, spot-check settings and a channel's user.ini contents match what was exported.",
-            "Switch the app to French, Spanish, or Portuguese and open the import confirm dialog: the text is translated, carries accents, and references that language's Restore user.ini button name.",
+            "If you have ever run another localization editor (e.g. StarStrings), open Blueprint Tracker and check the Owned list for garbled names like \"Ind/1/B Colossus\".",
+            "Launch the app once: any such stored names are repaired to their real names (Colossus) automatically, and the items show as owned.",
+            "Scan Logs for Owned Blueprints: names recovered from old logs land under their real names, not the other tool's format.",
+            "Items that genuinely are not in your item list are left alone rather than deleted — nothing you owned should disappear from the Owned list.",
         ],
     },
     {
-        "title": "Ship favoriting rules (#329, #330)",
+        "title": "Blueprint Tracker lists and filters (#354, #374)",
         "items": [
-            "In the strings table, the favorite star works on ship/vehicle NAME rows only; a ship description row shows no star and right-click offers no Add Favorite.",
-            "Turn on the Ship/Vehicle Names Only filter: the table narrows to exactly the rows favoriting applies to.",
-            "If a description row still carries a favorite prefix from an older version (custom value starts with *): right-click offers Remove Favorite, and it strips the prefix.",
+            "Type/Class/Size/Grade dropdowns and the search box narrow the Owned list as well as the Available list.",
+            "Clear every filter: both lists show all of their items again.",
+            "No component appears in Available and Owned at the same time (the \"stacking\" report).",
+            "Commodity crafting-material lines (e.g. \"Power Plants: 10 items\") never show up as fake blueprint items in either list.",
         ],
     },
     {
-        "title": "Tags: nozzles, mining lasers, commodities, [BP?] (#266, #325, #341)",
+        "title": "Window layout and String Editor columns (#364)",
         "items": [
-            "With Components > Type enabled, generate: fuel nozzle names (Norfield, Harkin, ...) and mining-laser heads carry a bracketed tag in blueprint lists and the String Editor.",
-            "On a fresh profile, commodities show no name tags until you enable the commodity elements in the Tag Builder (all three default off).",
-            "Find a Rayari \"resources for research\" mission: its title shows [BP?] and its details body says 25% chance; a Recco Battaglia mission still shows plain [BP].",
+            "Below full screen, every tab has its horizontal scrollbar in the same place, and nothing is clipped or squeezed off the edge.",
+            "Drag a String Editor column divider: the column resizes, and the filter box under it follows to match its new width.",
+            "Double-click a column divider: the column snaps to fit its widest content.",
+            "Scroll the String Editor sideways: the filter boxes stay glued to their own columns instead of stranding.",
+            "Reload (Apply Enhancements, a merge, or a language change): the filter row stays below the column names, never covering them.",
+            "Drag the window narrower than its content: it shrinks freely and scrolls, rather than refusing to resize.",
+            "Simple mode opens with no scrollbar and no dead space above the footer links.",
+            "More > Reset Window Proportions: the confirm dialog says settings and localization data are untouched; window, docks and column widths return to defaults.",
+            "Restart: your window size and column widths are remembered.",
+            "Export Settings and open the zip: it carries no column widths (those stay machine-local).",
         ],
     },
     {
-        "title": "Fit and finish (#292, #296, #302, #303, #304, #319, #345, #346, #347, #349)",
+        "title": "Star Citizen install detection (#370)",
         "items": [
-            "Open Help (and the Test Plan panel): each opens wide enough to read without dragging, and can still be dragged wider.",
-            "Blueprint Tracker: hover a blueprint that drops from several missions (e.g. the R97 Shotgun) — each mission is on its own line, not one long comma-separated run.",
-            "With Components > Type enabled, generate: the size-0 mining heads (S0 Helix, S00 Hofstede, Lawson) show a size in their tag, e.g. [Mining Laser-S0], matching their S1/S2 siblings.",
-            "Bomb racks, BEHR scopes, and the NOVA gatling also show a size in their tags (same underlying fix).",
-            "Mark S00 Hofstede owned, Apply Owned Tags, then find a mission listing it: the bullet carries the blue [Owned] tag in game.",
-            "Simple mode's one-button apply: after the run, Generate Enhancements is green, not stuck red.",
-            "After a log scan that applies owned tags, Apply Owned Tags is green, not stuck red.",
-            "Switch channels: Save Tag Changes lights up correctly for the new channel (not stale-green from the old one).",
-            "Start an extraction while the RSI Launcher is downloading or verifying: a plain-language message explains Data.p4k is locked, with no crash or raw error.",
-            "After Apply, the launcher version string shows the Smart Citizen watermark on its own second line, once (no piling up after repeated applies).",
-            "Mission descriptions show reputation rewards without a leading + (e.g. \"500\", not \"+500\").",
+            "With more than one Star Citizen install on the machine, Config shows the one you actually play (the newest Data.p4k), not the first drive letter found.",
+            "Extract DataForge: it completes normally rather than hanging for many minutes on a stale or half-installed copy.",
+            "Point Config at a folder with no usable Data.p4k and extract: the message names the DCB file, its size and the p4k path, and suggests Verify Files.",
         ],
     },
     {
-        "title": "Resource Signature ore-name annotation + mission-details breakdown (#331)",
+        "title": "Stale-output detection and translated runs (#363, pool headings)",
         "items": [
-            "Enhancements Tab: the ore-name RS checkbox and the Mission Detail Field's Resource Signatures checkbox are independent, both on by default.",
-            "With the default settings, generate and check a mineable ore's Mining Compendium entry: its name reads e.g. \"Aluminium (RS 4285)\".",
-            "Same setting, then find a Recco Battaglia scan/mining mission: the Work Brief text and Primary Objectives panel also show the ore name with its RS value appended.",
-            "Same mission, MISSION DETAILS shows a per-ore RS value progression line too, e.g. \"Ice: 4300 - 8600 - ...\".",
-            "Turn both off and regenerate: neither the ore-name annotation nor the DETAILS breakdown appears; the mission-title [RS ####] tag (General Tags) is unaffected either way.",
+            "Generate Enhancements, then change any Tag Builder setting WITHOUT regenerating, and restart the app.",
+            "At startup, Save Tag Changes and Generate Enhancements are both red: the files on disk no longer match your settings, and the app says so without you cycling a checkbox.",
+            "The reported case: on an install upgraded from an older version, tick \"annotate component tags in mission descriptions\" and restart. The buttons light up, not grey over stale output.",
+            "Regenerate: both buttons go green, and the annotations actually appear in game.",
+            "Import Settings from a backup whose Tag Builder config differs from your current one: the buttons light up instead of clearing.",
+            "Interrupt or fail a generation run: the buttons stay red for a retry, rather than going grey over files the tag config never reached.",
+            "Switch language and restart: the freshness checks and the category status dots read that language's generated files, not English ones.",
+            "On a translated run, a mission offering more than one blueprint pool shows its pool headings translated, not in English.",
         ],
     },
     {
-        "title": "Portable build (#293)",
+        "title": "Portable build",
         "items": [
             "Unzip the portable build into a deep folder path (several nested folders), run it, extract and apply: no path-length errors.",
             "Close the app and delete the whole portable folder to the Recycle Bin: the delete succeeds without a path-too-long failure.",
