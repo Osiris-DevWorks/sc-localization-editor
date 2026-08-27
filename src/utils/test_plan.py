@@ -97,11 +97,16 @@ TEST_SECTIONS: list[dict] = [
         ],
     },
     {
-        "title": "Translated runs and channel switching (#363, pool headings)",
+        "title": "Stale-output detection and translated runs (#363, pool headings)",
         "items": [
-            "Switch to a non-English language, restart, Generate Enhancements: the category status dots reflect that language's generated files, not English ones.",
-            "On that translated run, a mission offering more than one blueprint pool shows its pool headings translated, not in English.",
-            "Switch channels (LIVE <-> HOTFIX) and restart: the freshness checks and Save Tag Changes reflect the new channel from startup, not stale state from the old one.",
+            "Generate Enhancements, then change any Tag Builder setting WITHOUT regenerating, and restart the app.",
+            "At startup, Save Tag Changes and Generate Enhancements are both red: the files on disk no longer match your settings, and the app says so without you cycling a checkbox.",
+            "The reported case: on an install upgraded from an older version, tick \"annotate component tags in mission descriptions\" and restart. The buttons light up, not grey over stale output.",
+            "Regenerate: both buttons go green, and the annotations actually appear in game.",
+            "Import Settings from a backup whose Tag Builder config differs from your current one: the buttons light up instead of clearing.",
+            "Interrupt or fail a generation run: the buttons stay red for a retry, rather than going grey over files the tag config never reached.",
+            "Switch language and restart: the freshness checks and the category status dots read that language's generated files, not English ones.",
+            "On a translated run, a mission offering more than one blueprint pool shows its pool headings translated, not in English.",
         ],
     },
     {
