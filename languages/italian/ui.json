@@ -2507,6 +2507,10 @@
     "p4k_locked": {
       "ht": "",
       "at": "Sembra che Star Citizen si stia aggiornando in questo momento. I suoi file di gioco (Data.p4k) sono bloccati da un altro programma, solitamente l'RSI Launcher che sta scaricando o verificando un aggiornamento.\n\nAttendi che tutti gli aggiornamenti e le verifiche nell'RSI Launcher siano completati, poi riprova."
+    },
+    "dataforge_timeout": {
+      "ht": "",
+      "at": "La conversione del database di gioco ha superato i 30 minuti ed è stata interrotta.\n\nDatabase trovato: {dcb} ({size} MB) in:\n{path}\n\nUn'installazione integra si converte in molto meno di un minuto. Di solito significa che Smart Citizen sta leggendo la cartella di Star Citizen sbagliata. Un'installazione vecchia o residua sul disco sembra valida ma contiene file di gioco obsoleti.\n\nApri l'RSI Launcher e controlla il percorso di installazione mostrato. Se non corrisponde al percorso sopra, correggilo nella scheda Config di Smart Citizen. Se corrisponde, esegui invece \"Verify Files\" nel launcher."
     }
   },
   "apply": {
