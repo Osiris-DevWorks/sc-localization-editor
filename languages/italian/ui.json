@@ -160,6 +160,10 @@
       "ht": "",
       "at": "Passa alla Modalità Semplice"
     },
+    "menu_reset_window_proportions": {
+      "ht": "",
+      "at": "Reimposta le proporzioni della finestra"
+    },
     "editor_tooltip": {
       "ht": "",
       "at": "Attiva/disattiva l'Editor Stringhe laterale, un'area più ampia per modificare il valore personalizzato della riga selezionata"
@@ -183,6 +187,10 @@
     "switch_to_simple_tooltip": {
       "ht": "",
       "at": "Passa alla vista semplificata a un solo pulsante."
+    },
+    "reset_window_proportions_tooltip": {
+      "ht": "",
+      "at": "Ripristina le dimensioni della finestra, il layout dei pannelli e la larghezza delle colonne dell'editor di stringhe ai valori predefiniti."
     },
     "more_tooltip": {
       "ht": "",
@@ -2011,6 +2019,14 @@
     "app_title": {
       "ht": "",
       "at": "Smart Citizen"
+    },
+    "reset_proportions_title": {
+      "ht": "",
+      "at": "Reimposta le proporzioni della finestra"
+    },
+    "reset_proportions_body": {
+      "ht": "",
+      "at": "Reimpostare le dimensioni della finestra, il layout dei pannelli e la larghezza delle colonne dell'editor di stringhe ai valori predefiniti?\n\nLe dimensioni salvate andranno perse. Le impostazioni e i dati di localizzazione non vengono modificati."
     }
   },
   "progress": {
@@ -2223,6 +2239,10 @@
     "settings_exported": {
       "ht": "",
       "at": "Backup impostazioni esportato"
+    },
+    "window_proportions_reset": {
+      "ht": "",
+      "at": "Proporzioni della finestra reimpostate."
     }
   },
   "import_flow": {
@@ -2507,6 +2527,10 @@
     "p4k_locked": {
       "ht": "",
       "at": "Sembra che Star Citizen si stia aggiornando in questo momento. I suoi file di gioco (Data.p4k) sono bloccati da un altro programma, solitamente l'RSI Launcher che sta scaricando o verificando un aggiornamento.\n\nAttendi che tutti gli aggiornamenti e le verifiche nell'RSI Launcher siano completati, poi riprova."
+    },
+    "dataforge_timeout": {
+      "ht": "",
+      "at": "La conversione del database di gioco ha superato i 30 minuti ed è stata interrotta.\n\nDatabase trovato: {dcb} ({size} MB) in:\n{path}\n\nUn'installazione integra si converte in molto meno di un minuto. Di solito significa che Smart Citizen sta leggendo la cartella di Star Citizen sbagliata. Un'installazione vecchia o residua sul disco sembra valida ma contiene file di gioco obsoleti.\n\nApri l'RSI Launcher e controlla il percorso di installazione mostrato. Se non corrisponde al percorso sopra, correggilo nella scheda Config di Smart Citizen. Se corrisponde, esegui invece \"Verify Files\" nel launcher."
     }
   },
   "apply": {

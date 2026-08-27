@@ -77,11 +77,17 @@ class LogTab(QWidget):
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
+        # Zero margins so the viewer's horizontal scrollbar lands flush at the
+        # tab's bottom edge, in the same pixel row as every other tab's bar.
+        # NoWrap below means this view always has a horizontal bar with real
+        # log content, so its placement is the most visible of the lot. The
+        # 8px inset is re-applied to the toolbar and status rows instead.
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
 
         # Toolbar row
         toolbar = QHBoxLayout()
+        toolbar.setContentsMargins(8, 8, 8, 0)
 
         self._min_level_label = QLabel(tr("log.min_level_label"))
         toolbar.addWidget(self._min_level_label)
@@ -131,13 +137,17 @@ class LogTab(QWidget):
         )
         # Disable the default word-wrap so long lines scroll horizontally
         self._view.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
-        layout.addWidget(self._view)
 
-        # Status bar
+        # Status bar sits ABOVE the viewer: a widget below it would stop its
+        # horizontal scrollbar reaching the tab's bottom edge, which is what
+        # left this tab's bar out of line with the others.
         self._status_label = QLabel(tr("log.lines_label", count=0))
         self._status_label.setProperty("role", "secondary")
         self._status_label.setStyleSheet("font-size: 10px;")
+        self._status_label.setContentsMargins(8, 0, 8, 2)
         layout.addWidget(self._status_label)
+
+        layout.addWidget(self._view)
 
     # ── Retranslation ─────────────────────────────────────────────────────────
 

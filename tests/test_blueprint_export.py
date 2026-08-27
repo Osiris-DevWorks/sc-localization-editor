@@ -124,6 +124,16 @@ class TestParseImportNamesJson:
         }), encoding="utf-8")
         assert parse_import_names(path) == {"Norfield"}
 
+    def test_strips_non_square_tag_when_enclosing_passed(self, tmp_path):
+        """#352: a name tagged with a Round-enclosed Tag Builder style must
+        still resolve when the caller passes the actual configured
+        enclosing."""
+        path = tmp_path / "export.json"
+        path.write_text(json.dumps({
+            "blueprints": [{"name": "(FN) Norfield"}],
+        }), encoding="utf-8")
+        assert parse_import_names(path, enclosings=(("(", ")"),)) == {"Norfield"}
+
     def test_entries_with_no_name_are_skipped(self, tmp_path):
         path = tmp_path / "export.json"
         path.write_text(json.dumps({
@@ -224,4 +234,47 @@ class TestMatchImportNames:
             {"Norfield"}, {"[FN] Norfield"}
         )
         assert matched == {"[FN] Norfield"}
+        assert unmatched == set()
+
+    def test_recovers_a_foreign_formatted_import_name_via_catalogue(self):
+        """#372: an owned set exported before upgrading can still carry a
+        foreign editor's decoration (e.g. StarStrings' "Ind/1/B Colossus").
+        Passing the wider known-item catalogue lets that recover the same
+        way a log scan would, as long as the recovered real name is also
+        currently Blueprint-Tracker-eligible (present in *known*)."""
+        matched, unmatched = match_import_names(
+            {"Ind/1/B Colossus"}, {"Colossus"}, catalogue={"Colossus"}
+        )
+        assert matched == {"Colossus"}
+        assert unmatched == set()
+
+    def test_recovered_name_not_currently_eligible_stays_unmatched(self):
+        """The recovered real name must ALSO be in *known* to count as
+        matched -- catalogue only proves it's a real item, not that the
+        Blueprint Tracker has anywhere to mark it owned right now (e.g. it
+        rotated out of every mission's current reward pool)."""
+        matched, unmatched = match_import_names(
+            {"Ind/1/B Colossus"}, set(), catalogue={"Colossus"}
+        )
+        assert matched == set()
+        assert unmatched == {"Ind/1/B Colossus"}
+
+    def test_omitting_catalogue_skips_recovery_entirely(self):
+        """No catalogue means the original exact-match-only behavior --
+        recovery is opt-in, not a silent behavior change for existing
+        callers that don't pass it."""
+        matched, unmatched = match_import_names(
+            {"Ind/1/B Colossus"}, {"Colossus"}
+        )
+        assert matched == set()
+        assert unmatched == {"Ind/1/B Colossus"}
+
+    def test_matches_non_square_known_set_when_enclosing_passed(self):
+        """#352: a known-set entry tagged with a Round-enclosed style must
+        still match a bare imported name when the actual configured
+        enclosing is passed through."""
+        matched, unmatched = match_import_names(
+            {"Norfield"}, {"(FN) Norfield"}, enclosings=(("(", ")"),)
+        )
+        assert matched == {"(FN) Norfield"}
         assert unmatched == set()

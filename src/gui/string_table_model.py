@@ -128,7 +128,7 @@ def _group_sort_key(key: str) -> tuple[str, int]:
 # Column key-function factories for sort()
 # ---------------------------------------------------------------------------
 def _make_sort_key(entries, default_values, sort_keys, col, grouped, favorite_prefix,
-                   owned_items=None, bp_item_names=None):
+                   owned_items=None, bp_item_names=None, enclosings=None):
     """Return a key function for sorted() given the column and grouped-sort state."""
     owned_items = owned_items or set()
     bp_item_names = bp_item_names or set()
@@ -153,7 +153,8 @@ def _make_sort_key(entries, default_values, sort_keys, col, grouped, favorite_pr
         # so ordering within each group is stable. (#189)
         def owned_key(idx):
             e = entries[idx]
-            name = normalize_item_name(e.custom_value or e.original_value)
+            stock = default_values.get(e.key) or None
+            name = normalize_item_name(e.custom_value or e.original_value, enclosings, stock)
             is_owned = name in bp_item_names and name in owned_items
             return (0 if is_owned else 1, e.key.lower())
         return owned_key
@@ -214,6 +215,11 @@ class StringTableModel(QAbstractTableModel):
         # that get an Owned star), and the user's owned set. Both normalized.
         self._bp_item_names: set[str] = set()
         self._owned_items: set[str] = set()
+        # #352: the Tag Builder enclosing pair(s) currently configured, so the
+        # Owned-star matching (_owned_name) strips the right style. None until
+        # set_owned_state() runs at least once; normalize_item_name treats
+        # None as its own Square-only default.
+        self._enclosings = None
         # Cached values recomputed only on theme/language change, not per-paint.
         self._header_labels: list[str] = [tr(k) for k in _HEADER_KEYS]
         self._fav_bg: QColor = _compute_fav_bg()
@@ -263,18 +269,32 @@ class StringTableModel(QAbstractTableModel):
     def set_grouped_sort(self, enabled: bool) -> None:
         self._grouped_sort = enabled
 
-    def set_owned_state(self, bp_item_names: set, owned_items: set) -> None:
+    def set_owned_state(self, bp_item_names: set, owned_items: set, enclosings=None) -> None:
         """#157: set which item names are blueprint items (eligible for the
-        Owned star) and which are currently owned. Triggers a full refresh."""
+        Owned star) and which are currently owned. Triggers a full refresh.
+
+        ``enclosings`` is the set of (open, close) Tag Builder delimiter
+        pairs currently configured (#352) -- see
+        ``owned_items.enclosings_from_tag_configs``. Defaults to None
+        (Square only), matching this method's original behavior."""
         self.beginResetModel()
         self._bp_item_names = bp_item_names or set()
         self._owned_items = owned_items or set()
+        self._enclosings = enclosings
         self.endResetModel()
 
     def _owned_name(self, entry: StringEntry) -> str:
         """Normalized display name used to match an entry against blueprint
-        bullet names (the row's effective value, tag-stripped)."""
-        return normalize_item_name(entry.custom_value or entry.original_value)
+        bullet names (the row's effective value, tag-stripped).
+
+        Passes the entry's stock (pre-Tag-Builder) value, when known, so a
+        "None (space only)" enclosing tag resolves authoritatively via diff
+        rather than a guess (#352) -- see normalize_item_name's docstring.
+        """
+        stock = self._default_values.get(entry.key) or None
+        return normalize_item_name(
+            entry.custom_value or entry.original_value, self._enclosings, stock
+        )
 
     def _is_bp_item(self, entry: StringEntry) -> bool:
         """True if this row names an item that appears in a blueprint list."""
@@ -509,7 +529,7 @@ class StringTableModel(QAbstractTableModel):
         key_fn = _make_sort_key(
             self._entries, self._default_values, self._sort_keys,
             self._sort_column, self._grouped_sort, self._favorite_prefix,
-            self._owned_items, self._bp_item_names,
+            self._owned_items, self._bp_item_names, self._enclosings,
         )
         reverse = self._sort_order == Qt.SortOrder.DescendingOrder
         self._filtered_indices.sort(key=key_fn, reverse=reverse)

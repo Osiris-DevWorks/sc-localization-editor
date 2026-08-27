@@ -53,8 +53,8 @@ try:
         DEFAULT_COMMODITY_USAGE_MAPPING, DEFAULT_COMPONENT_CLASS_MAPPING,
         DEFAULT_COMPONENT_TYPE_MAPPING, DEFAULT_TAG_CONFIGS, ElementSpec,
         SIZE_ABBREV_BY_WORD, TagConfig, USAGE_INPUT_SEP,
-        abbreviate_title, apply_mission_title, render_route, render_tag,
-        route_enabled,
+        abbreviate_title, apply_mission_title, join_tag, render_route,
+        render_tag, route_enabled,
     )
 except ImportError:  # pragma: no cover — only triggers if src/ is removed
     CRAFT_USAGE_CATEGORIES = ()  # type: ignore[assignment]
@@ -71,6 +71,10 @@ except ImportError:  # pragma: no cover — only triggers if src/ is removed
     apply_mission_title = None  # type: ignore[assignment]
     abbreviate_title = None  # type: ignore[assignment]
     SIZE_ABBREV_BY_WORD = {}  # type: ignore[assignment]
+    def join_tag(name, tag, placement):  # type: ignore[misc]
+        if not tag:
+            return name
+        return f"{name} {tag}" if placement == "append" else f"{tag} {name}"
     def route_enabled(_cfg):  # type: ignore[misc]
         return False
 
@@ -3556,10 +3560,7 @@ def build_blueprint_pool_lookup(
                     # what the app shows.
                     tag = entity_name_tags.get(entity_ref) or name_fallback_tags.get(name)
                     if tag:
-                        if name_tag_placement == "append":
-                            name = f"{name} {tag}"
-                        else:
-                            name = f"{tag} {name}"
+                        name = join_tag(name, tag, name_tag_placement)
                     if name and name not in names:
                         names.append(name)
             if names:
@@ -4820,9 +4821,8 @@ def _place_commodity_tag(base_name: str, tag: str, cfg) -> str:
     """Combine an item name and its commodity tag per the config's placement
     (prepend = tag before the name, otherwise after). Shared by the crafting
     loop and the collection-only pass so the placement rule lives in one spot."""
-    if cfg and getattr(cfg, "placement", "append") == "prepend":
-        return f"{tag} {base_name}"
-    return f"{base_name} {tag}"
+    placement = getattr(cfg, "placement", "append") if cfg else "append"
+    return join_tag(base_name, tag, placement)
 
 
 def _parse_compendium_locations(base_content: str) -> dict:
@@ -6076,18 +6076,18 @@ def scan_entity_dir(
                         # `placement` is the user-configurable choice on the
                         # Tag Builder; default "prepend" puts the tag in
                         # front of the name so it sorts/scans naturally
-                        # next to its neighbors.
-                        if name_tag_placement == "append":
-                            out[name_key] = f"{name_value} {tag}"
-                        else:
-                            out[name_key] = f"{tag} {name_value}"
+                        # next to its neighbors. join_tag sniffs the tag
+                        # string itself for its enclosing style (#352) rather
+                        # than trusting a single passed-in config: `tagger`
+                        # can be `_ship_weapon_name_tag_factory`'s closure,
+                        # which dispatches between TWO different TagConfigs
+                        # (damage-based vs. mining-laser-style) per item, so
+                        # there's no single "the" enclosing available here.
+                        out[name_key] = join_tag(name_value, tag, name_tag_placement)
                         short_key = f"{name_key}_short"
                         short_value = loc.get(short_key)
                         if short_value:
-                            if name_tag_placement == "append":
-                                out[short_key] = f"{short_value} {tag}"
-                            else:
-                                out[short_key] = f"{tag} {short_value}"
+                            out[short_key] = join_tag(short_value, tag, name_tag_placement)
 
     logger.info(f"{entity_dir.name}: {matched} matched, {discovered} discovered, {missed} no enhancements, {skipped} no loc key")
     return out
@@ -6351,14 +6351,11 @@ def enhancements_bare_type_tags(ctx: dict) -> dict[str, str]:
         tag = _bare_type_tag_from_desc(desc_value, comp_cfg)
         if not tag:
             continue
-        if placement == "append":
-            out[key] = f"{name_value} {tag}"
-        else:
-            out[key] = f"{tag} {name_value}"
+        out[key] = join_tag(name_value, tag, placement)
         short_key = f"{key}_short"
         short_value = loc.get(short_key)
         if short_value:
-            out[short_key] = f"{short_value} {tag}" if placement == "append" else f"{tag} {short_value}"
+            out[short_key] = join_tag(short_value, tag, placement)
 
     logger.info(f"Finished bare-type tags ({len(out)} entries)")
     return out

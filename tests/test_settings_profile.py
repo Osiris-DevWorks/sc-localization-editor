@@ -242,6 +242,18 @@ class TestExcludedKeys:
     def test_explicit_exclusions(self, key):
         assert AppSettings.is_profile_excluded_key(key)
 
+    def test_column_widths_are_machine_local(self):
+        """Named explicitly rather than left to the parametrized sweep above:
+        that one iterates the set, so dropping the key would delete its own
+        test case and pass silently.
+
+        Column widths are measured against one screen, exactly like window
+        geometry. Carried in an export and adopted verbatim, a wide-monitor
+        layout lands on a laptop with columns off the edge, and HELP.md
+        promises an export carries no machine-specific layout.
+        """
+        assert AppSettings.is_profile_excluded_key("string_column_widths")
+
     def test_migration_markers_excluded(self):
         assert AppSettings.is_profile_excluded_key("_channel_layout_migrated")
         assert AppSettings.is_profile_excluded_key("_retired_url_sources_pruned_v3")
