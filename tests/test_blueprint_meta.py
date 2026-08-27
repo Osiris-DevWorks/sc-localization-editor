@@ -385,6 +385,26 @@ def test_item_in_multiple_missions_unions_titles():
     assert meta["Balandin"].missions == frozenset({"First Job", "Second Job"})
 
 
+def test_renamed_blueprints_header_recognized_when_bp_header_passed():
+    """#353: a user-renamed "blueprints" mission header must still populate
+    the Blueprint Tracker when the actual configured header is passed
+    through -- without it, every mission using the renamed header was
+    silently unscanned, not just mis-tagged."""
+    desc = "x\\n<EM4>MY LOOT</EM4>\\n- Antium Core"
+    meta = build_blueprint_metadata(
+        [_Entry("M_Desc_001", desc, "Missions")], bp_header="MY LOOT"
+    )
+    assert "Antium Core" in meta
+
+
+def test_renamed_blueprints_header_not_recognized_without_bp_header():
+    """Regression guard: omitting bp_header must behave exactly like the
+    original hardcoded-default-only implementation."""
+    desc = "x\\n<EM4>MY LOOT</EM4>\\n- Antium Core"
+    meta = build_blueprint_metadata([_Entry("M_Desc_001", desc, "Missions")])
+    assert "Antium Core" not in meta
+
+
 def test_desc_without_title_yields_no_mission_but_keeps_item():
     desc = "x\\n<EM4>POTENTIAL BLUEPRINTS</EM4>\\n- Orphan Part"
     meta = build_blueprint_metadata([_Entry("Loose_Desc_001", desc, "Missions")])
@@ -398,6 +418,25 @@ def test_no_blueprint_entries_is_empty():
     meta = build_blueprint_metadata([_Entry("vehicle_NameRSI_Polaris", "Polaris", "Ships")])
     assert "Polaris" not in meta
     assert set(meta) == {normalize_item_name(n) for n, _ in MANUAL_BLUEPRINT_ITEMS}
+
+
+def test_non_mission_entry_with_colliding_header_is_not_scanned():
+    """#354: the Blueprint Tracker "stacked" fake items like "Power Plants:
+    10 items" because a commodity's independently-renameable "Blueprint
+    Data" header can collide with the "blueprints" mission header, and
+    has_bp_section() ran on every entry's value unconditionally --
+    scanning a commodity's crafting-material-usage summary as if it were a
+    real mission's blueprint reward list. Only "Missions"-category entries
+    should ever be scanned this way."""
+    commodity_desc = (
+        "Iron Ore is a common metal.\\n<EM3>POTENTIAL BLUEPRINTS</EM3>"
+        "\\n- Power Plants: 10 items\\n- Quantum Drives: 3 items (S1-S3)"
+    )
+    meta = build_blueprint_metadata(
+        [_Entry("items_commodities_iron_desc", commodity_desc, "Commodities")]
+    )
+    assert "Power Plants: 10 items" not in meta
+    assert "Quantum Drives: 3 items (S1-S3)" not in meta
 
 
 class TestManualBlueprintItems:

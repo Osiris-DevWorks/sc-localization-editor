@@ -32,6 +32,7 @@ Cuando la extracción termina, el `base.ini` extraído se carga automáticamente
   - **Mejorado**: generado automáticamente por el proceso de mejoras (superposiciones de estadísticas, etiquetas de blueprints, etc.).
   - **Sin modificar**: texto original del `base.ini`.
   - **Nuevo**: la clave solo existe en tus cambios o en el proceso de mejoras, no en el `base.ini` original.
+- **Cambia el ancho de cualquier columna** arrastrando el separador entre dos encabezados, o haz doble clic en un separador para ajustar la columna al ancho de su contenido más largo. Tus anchos se recuerdan entre sesiones. Mientras no cambies nada tú mismo, Smart Citizen ajusta las columnas a tu ventana automáticamente, de modo que una instalación nueva siempre se abre correctamente en su propia pantalla. Para recuperar esa disposición automática, usa **Restablecer las proporciones de la ventana** (más abajo).
 
 ## 3. Panel de vista previa
 
@@ -101,7 +102,7 @@ Usa **Restablecer user.ini** en la pestaña **Configuración** para borrar todas
 
 ## 13. Exportar / Importar ajustes
 
-Usa **Exportar ajustes…** e **Importar ajustes…** en la pestaña **Configuración** para mover toda tu configuración de Smart Citizen entre PC, o para respaldarla antes de una instalación limpia. La exportación empaqueta tus ajustes de la aplicación y los cambios de `user.ini` de todos los canales en un único zip pequeño, incluida tu ruta de instalación de Star Citizen; las rutas propias de cada máquina que no tendrían sentido en otro PC (tu carpeta de datos, la ubicación de la caché, la geometría de la ventana) se quedan fuera. La importación superpone esa copia a tu configuración actual y sustituye el `user.ini` de los canales que contiene: tus archivos `user.ini` actuales se guardan antes como instantánea mediante **Restaurar user.ini**, así que una importación es reversible. Tu ruta de Star Citizen solo se conserva si sigue existiendo en el PC donde importas; si no, Smart Citizen la detecta automáticamente. Tras una importación, Smart Citizen se reinicia para cargar la nueva configuración y después ofrece regenerar y aplicar tus mejoras.
+Usa **Exportar ajustes…** e **Importar ajustes…** en la pestaña **Configuración** para mover toda tu configuración de Smart Citizen entre PC, o para respaldarla antes de una instalación limpia. La exportación empaqueta tus ajustes de la aplicación y los cambios de `user.ini` de todos los canales en un único zip pequeño, incluida tu ruta de instalación de Star Citizen; las rutas propias de cada máquina que no tendrían sentido en otro PC (tu carpeta de datos, la ubicación de la caché, la geometría de la ventana, los anchos de columna del editor de cadenas) se quedan fuera. La importación superpone esa copia a tu configuración actual y sustituye el `user.ini` de los canales que contiene: tus archivos `user.ini` actuales se guardan antes como instantánea mediante **Restaurar user.ini**, así que una importación es reversible. Tu ruta de Star Citizen solo se conserva si sigue existiendo en el PC donde importas; si no, Smart Citizen la detecta automáticamente. Tras una importación, Smart Citizen se reinicia para cargar la nueva configuración y después ofrece regenerar y aplicar tus mejoras.
 
 ## 14. Tras las actualizaciones del juego
 
@@ -181,6 +182,12 @@ Elige un tema en **Configuración → Apariencia**:
 - **Predeterminado**: SCLE, un tema ciber azul marino inspirado en la interfaz mobiGlas de Star Citizen.
 - **Claro / Oscuro**: temas de interfaz clásicos.
 - **ODW**: la firma de Osiris DevWorks, grafito marino con dorado antiguo.
+
+## Disposición de la ventana
+
+Smart Citizen recuerda el tamaño de tu ventana, la disposición del editor de cadenas acoplado y los anchos de tus columnas entre sesiones. Cada pestaña desplaza su propio contenido, así que puedes reducir la ventana todo lo que quieras y llegar a cualquier control desplazándote, en lugar de ver los controles comprimidos o recortados.
+
+Si tu disposición acaba en un estado incómodo (una columna reducida a una franja, o un tamaño de ventana que ya no encaja en tu pantalla), usa **Más → Restablecer las proporciones de la ventana**. Restaura el tamaño de la ventana, la disposición de los paneles y los anchos de columna a sus valores predeterminados. Tus ajustes, tus ediciones y tus datos de localización no se tocan.
 
 ## Barra de estado
 

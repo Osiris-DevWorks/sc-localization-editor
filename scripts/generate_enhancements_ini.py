@@ -3107,16 +3107,258 @@ def _pool_rank_label(pool_name: str) -> str:
 
 def _merge_blueprint_pool(
     mission_blueprints: dict, title_key: str, system_name: str,
-    pool_uuid: str, pool_items: list, pool_label: str,
+    pool_key, pool_items: list, pool_label: str,
 ) -> None:
-    """Merge *pool_items* into mission_blueprints[title_key][system_name][pool_label],
-    preserving order and de-duplicating across repeated calls."""
+    """Merge *pool_items* into
+    mission_blueprints[title_key][system_name][pool_key] = (pool_label, items),
+    preserving order and de-duplicating across repeated calls for the same
+    pool_key.
+
+    *pool_key* is a hashable identity for whichever pool UUID(s) fed this
+    call — a single UUID, or (from scan_contract_generators) a sorted tuple
+    of every pool UUID one contract combined under the same pool_label.
+    Keyed by pool identity, not pool_label alone (#360): two distinct
+    blueprint pools for the same mission title/system (e.g. two different
+    contract variants' randomized reward sets, neither rank-tiered) share
+    the same empty pool_label, and merging on the label alone flattened
+    both variants' items into one list with no way to tell which items
+    came from which pool — reported as a mission's POTENTIAL BLUEPRINTS
+    section showing unrelated item sets (armor + an unrelated weapon) as
+    one undifferentiated block. Keying by pool identity keeps genuinely
+    distinct pools apart while still merging pools a single contract
+    always awards together (see the caller's per-contract grouping); the
+    renderer's fingerprint-based grouping (see the POTENTIAL BLUEPRINTS
+    section builder) then gives each distinct item set its own
+    sub-heading, the same way it already does for rank tiers.
+    """
     per_system = mission_blueprints.setdefault(title_key, {})
-    per_label = per_system.setdefault(system_name, {})
-    existing_items = per_label.setdefault(pool_label, [])
+    per_pool = per_system.setdefault(system_name, {})
+    _label, existing_items = per_pool.setdefault(pool_key, (pool_label, []))
     for item in pool_items:
         if item not in existing_items:
             existing_items.append(item)
+
+
+# Manual label overrides for known multi-pool missions where CIG reuses the
+# SAME description text across every variant (#360 follow-up), so there's
+# no data-driven way to tell which pool belongs to which specific mission
+# instance -- confirmed via a live report cross-referenced against SCMDB
+# (a third-party mission database) for the "Additional Resources For
+# Research" family: every variant (Irradiated Valakkar Pearl delivery,
+# Yormandi Eye delivery, ...) shows the identical description key, so ALL
+# their pools always render together no matter which one a player is
+# actually looking at. Rather than pretend Smart Citizen can tell them
+# apart, every instance shows every known pool, each labeled with what it's
+# FOR -- a player who's seen this once can recognize "this is the Yormandi
+# Eye set" regardless of which specific mission body it's rendering under.
+# Keyed by the pool's own exact item set (order-independent) so no XML/UUID
+# plumbing is needed -- just what's already visible in the rendered list.
+# Add entries here as more ambiguous multi-pool missions are found; any
+# pool not listed keeps the automatic "first item" naming below.
+#
+# ENGLISH ONLY, by construction, in both directions: the keys are English
+# display names, and the values are English labels a maintainer wrote. A
+# non-English run resolves item names from its own loc data, so the lookup
+# cannot match -- and even if it did, it would inject English text into a
+# translated mission body. _pool_label_override therefore skips the table
+# entirely on a non-English run and logs that it did, rather than silently
+# missing on every pool. Localizing the labels is separate, larger work;
+# keying on pool UUIDs would make the lookup language-invariant but costs
+# the "just paste what you see in the list" property that makes this table
+# maintainable, and would not fix the labels themselves.
+_BLUEPRINT_POOL_LABEL_OVERRIDES: dict[frozenset[str], str] = {
+    frozenset({
+        "P8-AR Rifle", "P8-AR Rifle Magazine (15 Cap)",
+        "Palatino Arms", "Palatino Arms Moonfall",
+        "Palatino Core", "Palatino Core Moonfall",
+        "Palatino Helmet", "Palatino Helmet Moonfall",
+        "Palatino Legs", "Palatino Legs Moonfall",
+    }): "Yormandi Eyes",
+    frozenset({
+        'Prism "Bonedust" Laser Shotgun', 'Prism "Deep Sea" Laser Shotgun',
+        'Prism "Firesteel" Laser Shotgun', "Prism Laser Shotgun",
+        "Prism Laser Shotgun Battery (20 cap)", "Siebe Helmet",
+        "Stirling Exploration Suit",
+    }): "Irradiated Valakkar Pearls",
+}
+
+# Overlap threshold (fraction of the smaller set) for _warn_if_near_override_miss
+# below -- deliberately conservative so unrelated pools that just happen to
+# share a couple of item names (e.g. a common battery/magazine) don't trigger
+# a false-positive warning on every generation run.
+_OVERRIDE_DRIFT_OVERLAP_THRESHOLD = 0.7
+
+
+def _pool_label_override(items, allow_overrides: bool) -> "str | None":
+    """The manual label for this pool's exact item set, or None.
+
+    Single entry point for both call sites below so the override lookup and
+    its drift tripwire can't drift apart, and so the language gate is applied
+    in one place rather than remembered twice.
+
+    *allow_overrides* is False on a non-English run. The table is keyed on
+    English item display names, and a non-English run resolves those names
+    from its own language's loc data, so the lookup can never match: a German
+    user silently got the auto "first item" naming instead of "Yormandi Eyes"
+    with nothing to indicate the table had been consulted at all. The
+    tripwire couldn't report it either, since fully translated names share
+    zero items with the English set and so never reach the overlap
+    threshold -- the one signal designed to catch a stale table stays quiet
+    for exactly the case where it never had a chance. Skipping outright, and
+    saying so once in the log, is honest where a silent miss was not.
+
+    Note this is a real limitation, not a workaround: the labels themselves
+    ("Yormandi Eyes") are maintainer-authored English strings, so matching on
+    another language would still emit English text into a translated mission
+    body. Making these labels properly localizable is a separate piece of
+    work from making the lookup stop failing silently.
+    """
+    if not allow_overrides:
+        return None
+    key = frozenset(items)
+    override = _BLUEPRINT_POOL_LABEL_OVERRIDES.get(key)
+    if override is None:
+        _warn_if_near_override_miss(key)
+    return override
+
+
+def _warn_if_near_override_miss(fp_items: frozenset[str]) -> None:
+    """Log a warning if *fp_items* closely overlaps a known override's item
+    set without exactly matching it.
+
+    The override table (above) matches on exact item-set equality, so if
+    CIG adds, removes, or renames an item in a pool it's tracking, the
+    override silently stops applying with no error -- the section just
+    reverts to auto-generated naming. That's a reasonable failure mode for
+    an end user, but it leaves a maintainer with no signal that the table
+    needs updating. This is a cheap heuristic tripwire for exactly that:
+    if a pool shares most of its items with a known override but isn't an
+    exact match, it's very likely the SAME pool having drifted rather than
+    a coincidentally-similar unrelated one.
+    """
+    for override_items, label in _BLUEPRINT_POOL_LABEL_OVERRIDES.items():
+        if fp_items == override_items:
+            continue  # exact match -- handled by the normal override path
+        overlap = fp_items & override_items
+        if not overlap:
+            continue
+        smaller = min(len(fp_items), len(override_items))
+        if smaller and len(overlap) / smaller >= _OVERRIDE_DRIFT_OVERLAP_THRESHOLD:
+            logger.warning(
+                f"Blueprint pool {sorted(fp_items)} closely resembles the "
+                f"'{label}' override ({sorted(override_items)}) but isn't an "
+                f"exact match -- CIG may have changed this pool's items; "
+                f"check whether _BLUEPRINT_POOL_LABEL_OVERRIDES needs updating."
+            )
+
+
+def _build_blueprint_body_parts(unique_fps: dict,
+                                allow_overrides: bool = True) -> list[str]:
+    """Render a mission's blueprint-pool fingerprints into POTENTIAL
+    BLUEPRINTS body text blocks, one per distinct item set.
+
+    *unique_fps* maps a fingerprint (tuple of item names) to the list of
+    (system_name, pool_label) keys that produced it -- built by the caller
+    from mission_blueprints[title_key], after narrowing to the systems the
+    specific description body being rendered actually covers.
+
+    A single fingerprint renders as a bare bullet list (no header) unless
+    it carries a rank label or a manual override (see
+    ``_BLUEPRINT_POOL_LABEL_OVERRIDES``), matching the pre-#360 shape for
+    ordinary single-pool missions. Multiple fingerprints each get a
+    ``<EM4>[System, Label]</EM4>`` header -- and when two fingerprints would
+    otherwise produce the IDENTICAL header text (same system, both
+    unlabeled -- e.g. two contract variants of the same research mission
+    with different, non-rank-tiered reward pools, see #360), the header is
+    disambiguated with the fingerprint's OWN first item name (e.g.
+    ``[Rayari_ResourceGathering, P8-AR Rifle Set]`` vs
+    ``[Rayari_ResourceGathering, Prism Laser Shotgun Set]``) rather than an
+    opaque positional counter -- a player scanning just the headers can then
+    tell which section is which without reading every bullet first. Live
+    report: a Rayari research mission's blueprint list originally showed
+    ``[Rayari_ResourceGathering]`` twice with nothing distinguishing which
+    items belonged to which; a follow-up report noted that numbering them
+    "Reward Set 1" / "Reward Set 2" fixed the duplicate-header confusion
+    but still didn't tell a player what each set actually contained -- and
+    that the item-based naming above still didn't, since the two sets are
+    really "which mission variant awards this" rather than "what's in the
+    box." A manual override table lets a maintainer say that directly for
+    missions where it's been worked out. On the rare chance two colliding
+    (non-overridden) sets also share the same first item, a numeric suffix
+    is appended as a last-resort tiebreaker so headers are always at least
+    visually distinct.
+    """
+    if len(unique_fps) == 1:
+        items = list(next(iter(unique_fps)))
+        only_keys = next(iter(unique_fps.values()))
+        override = _pool_label_override(items, allow_overrides)
+        if override is not None:
+            return [f"<EM4>[{override}]</EM4>\\n" + "\\n".join(f"- {name}" for name in items)]
+        only_labels = sorted({l for _, l in only_keys if l})
+        if only_labels:
+            only_systems = sorted({s for s, _ in only_keys})
+            header = f"{', '.join(only_systems)}, {', '.join(only_labels)}"
+            return [f"<EM4>[{header}]</EM4>\\n" + "\\n".join(f"- {name}" for name in items)]
+        return ["\\n".join(f"- {name}" for name in items)]
+
+    header_entries = []
+    for fp, keys in unique_fps.items():
+        override = _pool_label_override(fp, allow_overrides)
+        if override is not None:
+            header_entries.append((override, fp, keys))
+            continue
+        systems = sorted({s for s, _ in keys})
+        labels = sorted({l for _, l in keys if l})
+        sys_str = ", ".join(systems)
+        header = f"{sys_str}, {', '.join(labels)}" if labels else sys_str
+        header_entries.append((header, fp, keys))
+    # Sort by (system/label keys, header text, fingerprint): the keys
+    # dimension groups naturally-distinct sections (different system or
+    # rank label) in a stable order as before; the header-text tiebreak
+    # resolves ties where the header ALREADY differs -- e.g. two
+    # override-labeled pools sharing the same (system, label) because CIG
+    # reuses one description across every variant, see #360 -- by the
+    # label a maintainer actually gave the pool; and the fingerprint
+    # tiebreak (each pool's own item tuple, content-based and so already
+    # deterministic) covers the remaining case where the header ALSO ties
+    # (e.g. two same-system unlabeled pools before Pass 1 below has told
+    # them apart). Previously this whole ordering fell back to
+    # filesystem/dict-insertion order once system+label tied, which could
+    # vary e.g. the [Yormandi Eyes] vs [Irradiated Valakkar Pearls]
+    # section order across regenerations depending on which contract XML
+    # the scanner happened to reach first.
+    header_entries.sort(key=lambda entry: (sorted(entry[2]), entry[0], entry[1]))
+    header_entries = [(header, fp) for header, fp, _keys in header_entries]
+    header_counts: dict[str, int] = {}
+    for header, _fp in header_entries:
+        header_counts[header] = header_counts.get(header, 0) + 1
+
+    # Pass 1: disambiguate colliding headers by naming each after its own
+    # first item, instead of a meaningless positional counter. Overridden
+    # headers are (in practice) unique already, so they naturally skip this.
+    named_entries = []
+    for header, fp in header_entries:
+        if header_counts[header] > 1:
+            representative = fp[0] if fp else "Unknown"
+            header = f"{header}, {representative} Set"
+        named_entries.append((header, fp))
+
+    # Pass 2: safety net for the rare case where two colliding sets happen
+    # to share the same first item too -- the item-based naming above
+    # would otherwise collide right back into the exact problem it fixes.
+    named_counts: dict[str, int] = {}
+    for header, _fp in named_entries:
+        named_counts[header] = named_counts.get(header, 0) + 1
+    seen_counts: dict[str, int] = {}
+    body_parts: list[str] = []
+    for header, fp in named_entries:
+        if named_counts[header] > 1:
+            seen_counts[header] = seen_counts.get(header, 0) + 1
+            header = f"{header} ({seen_counts[header]})"
+        body_parts.append(
+            f"<EM4>[{header}]</EM4>\\n" + "\\n".join(f"- {name}" for name in fp)
+        )
+    return body_parts
 
 
 # Fuel nozzles hit the filename-fallback tier (#281): their entityClass UUID
@@ -3718,14 +3960,25 @@ def scan_contract_generators(
 
     Returns tuple of:
         - missions: dict mapping title_key → [ContractVariant, ...]
-        - mission_blueprints: dict title_key → dict system_name → dict pool_label → list of craftable item display names.
-          The pool_label dimension preserves rank-tier sub-grouping derived from the
-          pool filename (e.g. ``Rank 0–1`` / ``Rank 2–3`` / ``Rank 4`` from Shubin
-          progression pools). Empty string label is used for pools whose names don't
-          encode a rank — those render with the original system-only header.
-          Multiple system entries indicate per-region pools (e.g. Stanton vs Pyro
-          Shubin HandMining); multiple label entries within a system indicate
-          rank-tiered pools the same contract pulls from at different ranks.
+        - mission_blueprints: dict title_key → dict system_name → dict pool_key →
+          (pool_label, list of craftable item display names). pool_key is a
+          single pool UUID, or a sorted tuple of UUIDs when one contract
+          combines several pools under the same label (see the per-contract
+          grouping below) — never plain pool_label: two distinct pools (e.g.
+          two different contract variants' randomized reward sets for the
+          same mission title) can easily share the same — usually empty,
+          non-rank — label, and keying on the label alone silently merged
+          their item lists into one undifferentiated block with no way to
+          recover which items came from which pool (#360). pool_label still
+          rides along per entry for the renderer's sub-heading, and preserves
+          rank-tier sub-grouping derived from the pool filename (e.g.
+          ``Rank 0–1`` / ``Rank 2–3`` / ``Rank 4`` from Shubin progression
+          pools) — empty string
+          for pools whose names don't encode a rank. Multiple system entries
+          indicate per-region pools (e.g. Stanton vs Pyro Shubin HandMining);
+          multiple pool entries within a system indicate either rank-tiered pools
+          the same contract pulls from at different ranks, or genuinely distinct
+          reward pools sharing the same title/system.
         - mission_items: dict mapping title_key → list of reward item display names
     Sorted by system name for consistent output.
     """
@@ -3739,13 +3992,18 @@ def scan_contract_generators(
     standings_lookup = standings_lookup or {}
     standing_track_lookup = standing_track_lookup or {}
     missions: dict[str, list[ContractVariant]] = {}
-    # Per-system, per-pool-label item lists. The extra label dimension keeps
-    # items from different rank-tier pools separate inside one system so the
-    # renderer can show ``[Stanton, Rank 0–1]`` / ``[Stanton, Rank 2–3]`` /
+    # Per-system, per-pool-identity (label, item list) entries. Keyed by pool
+    # identity (a single pool UUID, or a sorted tuple of UUIDs one contract
+    # combines under the same label) rather than pool_label alone, so
+    # distinct pools stay distinct even when their label is the same empty
+    # non-rank string (#360) — the renderer still groups by label for
+    # display, e.g. ``[Stanton, Rank 0–1]`` / ``[Stanton, Rank 2–3]`` /
     # ``[Stanton, Rank 4]`` instead of one merged blob. Pools whose names
-    # don't carry a rank token use an empty-string label and render with
-    # the original system-only header.
-    mission_blueprints: dict[str, dict[str, dict[str, list[str]]]] = {}
+    # don't carry a rank token use an empty-string label and render with the
+    # original system-only header, unless the renderer finds more than one
+    # distinct item set under that header, in which case it falls back to a
+    # per-pool sub-heading.
+    mission_blueprints: dict[str, dict[str, dict]] = {}
     mission_bp_chance: dict[str, float] = {}
     mission_items: dict[str, list[str]] = {}
 
@@ -3928,6 +4186,27 @@ def scan_contract_generators(
                             contract_has_bp = False
                             contract_bp_chance = 0.0
                             contract_bp_variant = contract.get("debugName", "")
+                            # Accumulate this contract's own BlueprintRewards
+                            # locally, grouped by pool_label, before merging
+                            # into mission_blueprints (#360). This preserves
+                            # two existing behaviors: pools sharing a label
+                            # within ONE contract still combine into one list
+                            # (Adagio: an FPS-gear pool and a ship-component
+                            # pool always awarded together by the same
+                            # contract), while pools with different labels
+                            # stay separate (Shubin rank tiers). The key
+                            # passed to _merge_blueprint_pool is THIS
+                            # contract's own set of pool UUIDs for that
+                            # label, so a DIFFERENT contract variant that
+                            # happens to share (title, system, label) with
+                            # this one -- e.g. two alternate reward pools of
+                            # the same-titled mission -- lands under its own
+                            # key instead of being silently flattened into
+                            # this contract's list. Re-encountering the
+                            # identical pool set (same contract re-parsed, or
+                            # a genuinely repeated variant) still produces
+                            # the same key and dedupes as before.
+                            contract_pools_by_label: dict[str, tuple[list[str], list[str]]] = {}
                             for bp_elem in contract.iter("BlueprintRewards"):
                                 pool_uuid = bp_elem.get("blueprintPool", "")
                                 null_uuid = "00000000-0000-0000-0000-000000000000"
@@ -3942,16 +4221,22 @@ def scan_contract_generators(
                                     # which keeps their sub-section header at the
                                     # bare ``[system_name]`` shape.
                                     pool_label = _pool_rank_label(pool_names.get(pool_uuid, ""))
-                                    _merge_blueprint_pool(
-                                        mission_blueprints, title_key, system_name,
-                                        pool_uuid, pool_items, pool_label,
-                                    )
+                                    label_uuids, label_items = contract_pools_by_label.setdefault(pool_label, ([], []))
+                                    label_uuids.append(pool_uuid)
+                                    for item in pool_items:
+                                        if item not in label_items:
+                                            label_items.append(item)
                                     try:
                                         contract_bp_chance = float(bp_elem.get("chance", "1"))
                                     except (ValueError, TypeError):
                                         contract_bp_chance = 1.0
                                     if title_key not in mission_bp_chance:
                                         mission_bp_chance[title_key] = contract_bp_chance
+                            for pool_label, (label_uuids, label_items) in contract_pools_by_label.items():
+                                _merge_blueprint_pool(
+                                    mission_blueprints, title_key, system_name,
+                                    tuple(sorted(label_uuids)), label_items, pool_label,
+                                )
 
                             # Extract item rewards
                             null_uuid = "00000000-0000-0000-0000-000000000000"
@@ -4062,14 +4347,16 @@ def scan_contract_generators(
                                     missions[sub_title] = []
                                 missions[sub_title].append(ContractVariant(system_name, success_xp, failure_xp, sub_desc or desc_key, contract_flags, spawns, contract_difficulty, contract_has_bp, contract_bp_chance, contract_bp_variant, rank_name, rep_track))
                                 if contract_has_bp and sub_title != title_key:
-                                    for bp_elem in contract.iter("BlueprintRewards"):
-                                        sub_pool_uuid = bp_elem.get("blueprintPool", "")
-                                        if sub_pool_uuid not in blueprint_pools:
-                                            continue
-                                        pool_label = _pool_rank_label(pool_names.get(sub_pool_uuid, ""))
+                                    # Reuse contract_pools_by_label (already
+                                    # scanned above) instead of re-iterating
+                                    # contract.iter("BlueprintRewards") -- a
+                                    # sub-contract inherits the SAME parent
+                                    # contract's pools, so this is the same
+                                    # data, not a fresh scan.
+                                    for pool_label, (label_uuids, label_items) in contract_pools_by_label.items():
                                         _merge_blueprint_pool(
                                             mission_blueprints, sub_title, system_name,
-                                            sub_pool_uuid, blueprint_pools[sub_pool_uuid], pool_label,
+                                            tuple(sorted(label_uuids)), label_items, pool_label,
                                         )
                                     if sub_title not in mission_bp_chance:
                                         mission_bp_chance[sub_title] = contract_bp_chance
@@ -6294,6 +6581,19 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
     records           = ctx["records"]
     forge_dir         = ctx["forge_dir"]
     loc               = ctx["loc"]
+    # Whether this run resolves item names in English. main() sets tag_loc to
+    # the English loc dict, which IS `loc` on an English run and a separately
+    # parsed English base.ini otherwise, so identity here is the language
+    # signal without threading a new ctx key. Gates the manual pool-label
+    # overrides, which are keyed on English display names and so can never
+    # match a translated run -- see _pool_label_override.
+    _overrides_ok     = ctx.get("tag_loc") is loc
+    if not _overrides_ok:
+        logger.info(
+            "Blueprint pool label overrides skipped: this run resolves item "
+            "names in a non-English language, and the override table is keyed "
+            "on English display names. Pools fall back to automatic naming."
+        )
     entity_names      = ctx["entity_names"]
     entity_names_by_filename = ctx.get("entity_names_by_filename", {})
     entity_name_tags  = ctx.get("entity_name_tags", {})
@@ -6748,42 +7048,24 @@ def _run_gen_missions(ctx: dict) -> dict[str, str]:
 
                 pools_by_system = mission_blueprints.get(title_key, {})
                 desc_systems = {v.system_name for v in desc_variants if v.has_bp}
-                desc_pools = {s: by_label for s, by_label in pools_by_system.items() if s in desc_systems}
+                desc_pools = {s: by_pool for s, by_pool in pools_by_system.items() if s in desc_systems}
                 if not desc_pools:
                     desc_pools = pools_by_system
-                # Flatten the per-system, per-rank-label structure into one
-                # row per (system, label) pair so equal-item-list pairs can
-                # dedupe under one header (e.g. Stanton + Pyro both award the
-                # same Rank0to1 pool → one "[Stanton, Pyro, Rank 0–1]" header
+                # Flatten the per-system, per-pool structure into one row per
+                # (system, label) pair so equal-item-list pairs can dedupe
+                # under one header (e.g. Stanton + Pyro both award the same
+                # Rank0to1 pool → one "[Stanton, Pyro, Rank 0–1]" header
                 # instead of two). The de-dup key is the item-list tuple as
                 # before; only the header construction grows a label axis.
+                # by_pool is keyed by pool_uuid (see _merge_blueprint_pool,
+                # #360) so distinct pools sharing the same label still land
+                # as separate fingerprints here instead of one merged blob.
                 unique_fps: dict = {}
-                for sys_name, by_label in desc_pools.items():
-                    for pool_label, items in by_label.items():
+                for sys_name, by_pool in desc_pools.items():
+                    for pool_label, items in by_pool.values():
                         fp = tuple(items)
                         unique_fps.setdefault(fp, []).append((sys_name, pool_label))
-                bp_body_parts: list[str] = []
-                if len(unique_fps) == 1:
-                    items = list(next(iter(unique_fps)))
-                    only_keys = next(iter(unique_fps.values()))
-                    only_labels = sorted({l for _, l in only_keys if l})
-                    if only_labels:
-                        only_systems = sorted({s for s, _ in only_keys})
-                        header = f"{', '.join(only_systems)}, {', '.join(only_labels)}"
-                        bp_body_parts.append(
-                            f"<EM4>[{header}]</EM4>\\n" + "\\n".join(f"- {name}" for name in items)
-                        )
-                    else:
-                        bp_body_parts.append("\\n".join(f"- {name}" for name in items))
-                else:
-                    for fp, keys in sorted(unique_fps.items(), key=lambda kv: sorted(kv[1])):
-                        systems = sorted({s for s, _ in keys})
-                        labels = sorted({l for _, l in keys if l})
-                        sys_str = ", ".join(systems)
-                        header = f"{sys_str}, {', '.join(labels)}" if labels else sys_str
-                        bp_body_parts.append(
-                            f"<EM4>[{header}]</EM4>\\n" + "\\n".join(f"- {name}" for name in fp)
-                        )
+                bp_body_parts = _build_blueprint_body_parts(unique_fps, _overrides_ok)
                 # Join regional sub-sections with a blank line between them
                 # (two `\n` literals = one empty line in CIG's renderer) so
                 # the eye can tell adjacent [Pyro RegionA] / [Pyro RegionB]

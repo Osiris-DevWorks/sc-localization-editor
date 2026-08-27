@@ -29,6 +29,7 @@ from functools import lru_cache
 from typing import Optional, Sequence
 
 from src.models.string_model import (
+    CATEGORY_MISSIONS,
     _ARMOR_GEAR_WORDS,
     _FPS_WEAPON_WORDS,
     _SHIP_WEAPON_SIZE_RE,
@@ -519,6 +520,7 @@ def build_blueprint_metadata(
     entries,
     enclosings: "Sequence[tuple[str, str]] | None" = None,
     default_values: "dict[str, str] | None" = None,
+    bp_header: "str | None" = None,
 ) -> dict:
     """Scan loaded strings once and return ``{name: BlueprintItem}``.
 
@@ -548,6 +550,13 @@ def build_blueprint_metadata(
     to a single enclosing per entry — callers instead pass the deduplicated
     set of everything currently configured (see
     ``owned_items.enclosings_from_tag_configs``).
+
+    ``bp_header``, when given, is the user's actual configured "blueprints"
+    mission header (#353) -- e.g. ``AppSettings.get_mission_headers()
+    ["blueprints"]``. Without it, a renamed header is never recognized as a
+    blueprint-bearing section at all, so the Pass 1 gate below silently
+    skips every mission, not just mis-tags one. See
+    ``owned_items.has_bp_section``'s docstring.
     """
     enclosings = tuple(enclosings) if enclosings is not None else _DEFAULT_ENCLOSINGS
     default_values = default_values or {}
@@ -605,7 +614,19 @@ def build_blueprint_metadata(
             titles[_title_pair_key(tm.group("base"), tm.group("num"))] = \
                 clean_mission_title(val)
 
-        if has_bp_section(val):
+        # #354: gated to Missions entries only. A POTENTIAL BLUEPRINTS
+        # section only ever legitimately exists in a mission's Desc text --
+        # without this gate, has_bp_section runs on every entry's value
+        # unconditionally, so if a user's independently-configurable
+        # "Blueprint Data" mission-commodity header (settings.py's
+        # MISSION_HEADER_BLUEPRINT_DATA) happens to collide with the
+        # "blueprints" header text, a commodity's crafting-material-usage
+        # summary ("- Power Plants: 10 items", "- Quantum Drives: 3 items
+        # (S1-S3)", one per raw material) gets scanned as if it were a real
+        # mission's blueprint reward list -- fabricating fake, unownable
+        # "items" that show up identically in both Available and Owned
+        # (reported as the tracker "stacking" components).
+        if cat == CATEGORY_MISSIONS and has_bp_section(val, bp_header):
             dm = _DESC_KEY_RE.match(key)
             pair = _title_pair_key(dm.group("base"), dm.group("num")) if dm else None
             bp_descs.append((pair, val))
@@ -620,7 +641,7 @@ def build_blueprint_metadata(
     missions_by_name: dict = {}
     for pair, val in bp_descs:
         title = titles.get(pair) if pair else None
-        for raw_nm in extract_bp_item_names(val, enclosings):
+        for raw_nm in extract_bp_item_names(val, enclosings, bp_header):
             if raw_nm in name_to_value:
                 nm = raw_nm
             elif raw_nm in _BULLET_NAME_ALIASES:

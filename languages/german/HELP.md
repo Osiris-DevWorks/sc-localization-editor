@@ -30,6 +30,7 @@ Nach Abschluss der Extraktion wird die extrahierte `base.ini` automatisch in die
   - **Erweitert** — automatisch von der Erweiterungspipeline erzeugt (Statistik-Overlays, Bauplan-Tags usw.).
   - **Unverändert** — Standardtext aus `base.ini`.
   - **Neu** — der Schlüssel existiert nur in deinen Überschreibungen oder in der Erweiterungspipeline, nicht in der Standard-`base.ini`.
+- **Ändere die Breite jeder Spalte**, indem du den Trenner zwischen zwei Spaltenköpfen ziehst, oder doppelklicke auf einen Trenner, damit sich die Spalte an ihren breitesten sichtbaren Inhalt anpasst. Deine Breiten bleiben über Neustarts hinweg erhalten. Solange du nichts selbst anpasst, passt Smart Citizen die Spalten automatisch an dein Fenster an, damit eine frische Installation immer sinnvoll auf ihrem eigenen Bildschirm öffnet. Um dieses automatische Layout zurückzubekommen, nutze **Fensterproportionen zurücksetzen** (siehe unten).
 
 ## 3. Vorschaubereich
 
@@ -99,7 +100,7 @@ Verwende **user.ini zurücksetzen** im **Konfiguration**-Tab, um alle deine pers
 
 ## 13. Einstellungen exportieren / importieren
 
-Verwende **Einstellungen exportieren…** und **Einstellungen importieren…** im **Konfiguration**-Tab, um dein gesamtes Smart-Citizen-Setup zwischen PCs zu übertragen oder es vor einer Neuinstallation zu sichern. Der Export bündelt deine App-Einstellungen und die `user.ini`-Überschreibungen jedes Kanals in ein einziges kleines Zip, einschließlich deines Star-Citizen-Installationspfads; maschinenspezifische Pfade, die auf einem anderen PC keinen Sinn ergeben würden (dein Datenordner, der Cache-Speicherort, die Fenstergeometrie), bleiben außen vor. Der Import legt diese Sicherung über deine aktuellen Einstellungen und ersetzt die `user.ini` für die enthaltenen Kanäle; deine aktuellen `user.ini`-Dateien werden zuvor über **user.ini wiederherstellen** als Momentaufnahme gesichert, sodass ein Import umkehrbar ist. Dein Star-Citizen-Pfad wird nur übernommen, wenn er auf dem Ziel-PC noch existiert; andernfalls erkennt Smart Citizen ihn stattdessen automatisch. Nach einem Import startet Smart Citizen neu, um die neuen Einstellungen zu laden, und bietet dann an, deine Erweiterungen neu zu erstellen und anzuwenden.
+Verwende **Einstellungen exportieren…** und **Einstellungen importieren…** im **Konfiguration**-Tab, um dein gesamtes Smart-Citizen-Setup zwischen PCs zu übertragen oder es vor einer Neuinstallation zu sichern. Der Export bündelt deine App-Einstellungen und die `user.ini`-Überschreibungen jedes Kanals in ein einziges kleines Zip, einschließlich deines Star-Citizen-Installationspfads; maschinenspezifische Pfade, die auf einem anderen PC keinen Sinn ergeben würden (dein Datenordner, der Cache-Speicherort, die Fenstergeometrie, die Spaltenbreiten des String-Editors), bleiben außen vor. Der Import legt diese Sicherung über deine aktuellen Einstellungen und ersetzt die `user.ini` für die enthaltenen Kanäle; deine aktuellen `user.ini`-Dateien werden zuvor über **user.ini wiederherstellen** als Momentaufnahme gesichert, sodass ein Import umkehrbar ist. Dein Star-Citizen-Pfad wird nur übernommen, wenn er auf dem Ziel-PC noch existiert; andernfalls erkennt Smart Citizen ihn stattdessen automatisch. Nach einem Import startet Smart Citizen neu, um die neuen Einstellungen zu laden, und bietet dann an, deine Erweiterungen neu zu erstellen und anzuwenden.
 
 ## 14. Nach Spiel-Updates
 
@@ -179,6 +180,12 @@ Wähle ein Design im Abschnitt **Konfiguration-Tab → Erscheinungsbild**:
 - **Standard** — SCLE, ein tiefes Marineblau-Cyber-Design, inspiriert von der mobiGlas-Oberfläche aus Star Citizen.
 - **Hell / Dunkel** — klassische Oberflächen-Designs.
 - **ODW** — Osiris-DevWorks-Signatur, Marineblau-Anthrazit mit Antikgold.
+
+## Fensterlayout
+
+Smart Citizen merkt sich deine Fenstergröße, das Layout des angedockten String-Editors und deine Spaltenbreiten über Neustarts hinweg. Jeder Tab scrollt seinen eigenen Inhalt, du kannst das Fenster also beliebig klein ziehen und alles durch Scrollen erreichen, statt Bedienelemente gestaucht oder abgeschnitten zu sehen.
+
+Wenn dein Layout einmal unbrauchbar wird (eine Spalte auf einen Streifen zusammengezogen oder eine Fenstergröße, die nicht mehr zu deinem Bildschirm passt), nutze **Mehr → Fensterproportionen zurücksetzen**. Damit werden Fenstergröße, Panel-Layout und Spaltenbreiten auf die Standardwerte zurückgesetzt. Deine Einstellungen, Bearbeitungen und Lokalisierungsdaten bleiben unberührt.
 
 ## Statusleiste
 

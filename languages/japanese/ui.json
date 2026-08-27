@@ -160,6 +160,10 @@
       "ht": "",
       "at": "シンプルモードに切り替え"
     },
+    "menu_reset_window_proportions": {
+      "ht": "",
+      "at": "ウィンドウの比率をリセット"
+    },
     "editor_tooltip": {
       "ht": "",
       "at": "サイドにドッキングする文字列エディターを切り替えます。選択した行のカスタム値をより広い領域で編集できます。"
@@ -183,6 +187,10 @@
     "switch_to_simple_tooltip": {
       "ht": "",
       "at": "簡略化されたワンボタンビューに切り替えます。"
+    },
+    "reset_window_proportions_tooltip": {
+      "ht": "",
+      "at": "ウィンドウサイズ、パネルのレイアウト、文字列エディターの列幅を既定値に戻します。"
     },
     "more_tooltip": {
       "ht": "",
@@ -2011,6 +2019,14 @@
     "app_title": {
       "ht": "",
       "at": "Smart Citizen"
+    },
+    "reset_proportions_title": {
+      "ht": "",
+      "at": "ウィンドウの比率をリセット"
+    },
+    "reset_proportions_body": {
+      "ht": "",
+      "at": "ウィンドウサイズ、パネルのレイアウト、文字列エディターの列幅を既定値に戻しますか？\n\n保存されたサイズは破棄されます。設定とローカライズデータには影響しません。"
     }
   },
   "progress": {
@@ -2223,6 +2239,10 @@
     "settings_exported": {
       "ht": "",
       "at": "設定バックアップをエクスポートしました"
+    },
+    "window_proportions_reset": {
+      "ht": "",
+      "at": "ウィンドウの比率を既定値に戻しました。"
     }
   },
   "import_flow": {
@@ -2507,6 +2527,10 @@
     "p4k_locked": {
       "ht": "",
       "at": "Star Citizen は現在アップデート中のようです。ゲームファイル（Data.p4k）が他のプログラム（通常は更新をダウンロードまたは検証している RSI Launcher）によってロックされています。\n\nRSI Launcher でのすべての更新と検証が完了するまで待ってから、もう一度お試しください。"
+    },
+    "dataforge_timeout": {
+      "ht": "",
+      "at": "ゲームデータベースの変換に30分以上かかったため中止されました。\n\n検出されたデータベース: {dcb} ({size} MB)\n場所: {path}\n\n正常なインストールなら1分もかかりません。多くの場合、Smart Citizen が誤った Star Citizen フォルダーを読み込んでいることを意味します。ドライブに残った古いインストールは有効に見えても、古いゲームファイルを含んでいます。\n\nRSI Launcher を開き、表示されているインストール先を確認してください。上記のパスと異なる場合は、Smart Citizen の Config タブで修正してください。同じパスの場合は、代わりに Verify Files を実行してください。"
     }
   },
   "apply": {
