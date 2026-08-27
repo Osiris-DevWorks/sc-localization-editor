@@ -590,7 +590,21 @@ class BlueprintTrackerTab(QWidget):
                 item.setHidden(not self._blueprint_item_visible(name))
 
     def _selected_names(self, lst) -> list:
-        return [it.data(Qt.ItemDataRole.UserRole) for it in lst.selectedItems()]
+        """Names of the selected rows that are actually visible (#374 review).
+
+        Hiding a QListWidgetItem does not deselect it, and both lists allow
+        ExtendedSelection, so a selection made before filtering can survive a
+        search/dropdown change with some of its rows now hidden. Reading
+        selectedItems() unfiltered here meant Remove could silently un-own
+        items the user could no longer see -- the same class of silent
+        ownership loss #372 was filed over, just reached through a filter
+        instead of a foreign log name. Filtering at the point of use (rather
+        than clearing the selection when the filter changes) keeps "what you
+        can see is what you act on" true without discarding a selection the
+        user may want back once they clear the filter.
+        """
+        return [it.data(Qt.ItemDataRole.UserRole)
+                for it in lst.selectedItems() if not it.isHidden()]
 
     def _on_blueprints_show_tags_toggled(self, checked: bool) -> None:
         """Persist the show-tags display toggle and re-render (#221)."""
