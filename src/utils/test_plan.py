@@ -71,6 +71,7 @@ TEST_SECTIONS: list[dict] = [
             "Clear every filter: both lists show all of their items again.",
             "No component appears in Available and Owned at the same time (the \"stacking\" report).",
             "Commodity crafting-material lines (e.g. \"Power Plants: 10 items\") never show up as fake blueprint items in either list.",
+            "In Owned, select several items, then type in the search box so only one stays visible, and click Remove: only the visible one is un-owned.",
         ],
     },
     {
