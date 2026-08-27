@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from functools import lru_cache
 
 # The bullet line separator inside a stored INI value (literal backslash-n).
 _NL = "\\n"
@@ -115,13 +116,62 @@ BULLET_NAME_ALIASES: dict[str, str] = {
 # Tracker altogether, regardless of any per-item fix.
 _ALT_BP_SECTION_HEADER = "MULTIPLE BLUEPRINT POOLS"
 BP_SECTION_HEADER = "POTENTIAL BLUEPRINTS"
-_BP_HEADER_RE = re.compile(
-    "(?:" + re.escape(BP_SECTION_HEADER) + "|" + re.escape(_ALT_BP_SECTION_HEADER) + ")",
-    re.IGNORECASE,
-)
 
 
-def has_bp_section(value: str) -> bool:
+@lru_cache(maxsize=8)
+def _build_bp_header_re(custom_header: "str | None"):
+    """Compiled header-matching regex, optionally widened to ALSO recognize
+    *custom_header* -- the user's actual configured "blueprints" mission
+    header (AppSettings.get_mission_headers()["blueprints"]), which the
+    generator writes verbatim into mission text instead of the hardcoded
+    default when the user has renamed it (#353). Without this, has_bp_section
+    /_bp_section_span never matched a renamed header at all, so the Blueprint
+    Tracker silently stopped scanning every mission -- not just mis-tagging
+    one, the whole feature going dark for anyone who renamed this header.
+
+    Anchored to an ``<EM3>``/``<EM4>`` wrapper (matching open/close tag
+    number, like _SECTION_HEADER_RE below), not a bare substring search: the
+    generator always writes the header as ``f"<{em}>{header}</{em}>"``
+    (generate_enhancements_ini.py), so requiring that wrapper here too rules
+    out an unrelated, coincidental occurrence of the header text elsewhere in
+    the SAME mission's own prose. This matters far more once the header is
+    user-renameable -- "POTENTIAL BLUEPRINTS" is distinctive enough to never
+    collide with real flavor text by accident, but a user-chosen replacement
+    (a real report: renamed to "stuff") can easily be an ordinary word CIG's
+    own mission dialogue already uses elsewhere in the same body, which the
+    old bare-substring match would treat as the section start and sweep every
+    stray "\\n- <word>" prose bullet between that false match and the real
+    header (or next section) into the item set as if they were blueprints.
+
+    *custom_header* is skipped (falls back to the module-level default-only
+    pattern) when empty or already equal to one of the built-in headers, so
+    the common "never renamed it" case doesn't pay for an extra regex build.
+    Cached because this can be called once per entry across a full rescan.
+    """
+    parts = [BP_SECTION_HEADER, _ALT_BP_SECTION_HEADER]
+    if custom_header:
+        custom_header = custom_header.strip()
+        if custom_header and custom_header.upper() not in {p.upper() for p in parts}:
+            parts.append(custom_header)
+    alt = "|".join(re.escape(p) for p in parts)
+    # A trailing parenthesised qualifier is part of the header, not a
+    # different header. CIG ships several: "Potential Blueprints (Repeat
+    # Only)", "(BitZeros Only)", "(Nyx Only)", "(Pyro IV/V Area Only)", and
+    # "Multiple Blueprint Pools (Yormandi Eye Only)" -- 20 lines across the
+    # 292 header-bearing lines in tests/fixtures/kraken_global_latest.ini.
+    # Requiring the wrapper to hold *only* the header text dropped every one
+    # of them, which is the same "mission silently absent from the tracker"
+    # failure this function exists to fix, just for a different subset. The
+    # group stays optional and bounded to one parenthesised run, so it still
+    # rejects unrelated text: "<EM3>stuffed animals</EM3>" does not match a
+    # header renamed to "stuff".
+    return re.compile(
+        r"<EM([34])>\s*(?:" + alt + r")(?:\s*\([^)]*\))?\s*</EM\1>",
+        re.IGNORECASE,
+    )
+
+
+def has_bp_section(value: str, bp_header: "str | None" = None) -> bool:
     """True if *value* contains a recognised blueprint-section header.
 
     Single source of truth for the "is this a blueprint-bearing mission
@@ -130,8 +180,13 @@ def has_bp_section(value: str) -> bool:
     Descriptions" checkbox) -- both used to do their own raw ``BP_SECTION_
     HEADER in value.upper()`` substring check, which missed the
     "MULTIPLE BLUEPRINT POOLS" header entirely.
+
+    ``bp_header``, when given, is the user's actual configured "blueprints"
+    mission header (#353) -- see :func:`_build_bp_header_re`. Defaults to
+    matching only the built-in headers when omitted, matching this
+    function's original hardcoded behavior exactly.
     """
-    return bool(_BP_HEADER_RE.search(value or ""))
+    return bool(_build_bp_header_re(bp_header).search(value or ""))
 
 
 # A tag that MIGHT be a genuine section header (POTENTIAL BLUEPRINTS, ITEM
@@ -156,11 +211,12 @@ _AWARDED_FROM_RE = re.compile(r"^awarded from .+ variants$", re.IGNORECASE)
 _POOL_LABEL_RE = re.compile(r"^pool \d+$", re.IGNORECASE)
 
 
-def _bp_section_span(value: str):
+def _bp_section_span(value: str, bp_header: "str | None" = None):
     """Return (start, end) spanning just the blueprint section's bullet
     content — from right after its header (POTENTIAL BLUEPRINTS or MULTIPLE
-    BLUEPRINT POOLS) up to the next real section header (or end of string).
-    ``None`` when there's no such section.
+    BLUEPRINT POOLS, or the user's renamed header -- see :func:`has_bp_
+    section`) up to the next real section header (or end of string). ``None``
+    when there's no such section.
 
     Bounding the scan this way matters: CIG mission bodies sometimes carry a
     stray "\\n- <word>" line in the flavor-text prose *before* the header
@@ -171,8 +227,13 @@ def _bp_section_span(value: str):
     section are pooled into a single set -- this module doesn't track which
     specific pool/tier a bullet belongs to, matching the pre-existing
     region-label behaviour.
+
+    The END boundary doesn't need ``bp_header`` awareness even if the user
+    also renamed "MISSION DETAILS"/"ITEM REWARDS"/etc: the loop below treats
+    ANY other ``<EM3>``/``<EM4>`` tag as the next section's start regardless
+    of its specific text, so a renamed header there is already handled.
     """
-    m = _BP_HEADER_RE.search(value)
+    m = _build_bp_header_re(bp_header).search(value)
     if not m:
         return None
     start = m.end()
@@ -222,17 +283,18 @@ def normalize_item_name(name: str) -> str:
     return BULLET_NAME_ALIASES.get(s, s)
 
 
-def extract_bp_item_names(value: str) -> set[str]:
+def extract_bp_item_names(value: str, bp_header: "str | None" = None) -> set[str]:
     """Return the normalized item names in *value*'s POTENTIAL BLUEPRINTS list.
 
     Empty when the value has no such section. Scoped to just that section's
     span (see :func:`_bp_section_span`) so a stray prose bullet before the
     header or a real bullet in a later section (ITEM REWARDS, ...) isn't
-    picked up as a blueprint item.
+    picked up as a blueprint item. ``bp_header`` is forwarded to
+    :func:`_bp_section_span` -- see :func:`has_bp_section`'s docstring (#353).
     """
     if not value:
         return set()
-    span = _bp_section_span(value)
+    span = _bp_section_span(value, bp_header)
     if span is None:
         return set()
     start, end = span
@@ -241,7 +303,9 @@ def extract_bp_item_names(value: str) -> set[str]:
             if normalize_item_name(m.group(1))}
 
 
-def apply_owned_to_value(value: str, owned: set[str]) -> str:
+def apply_owned_to_value(
+    value: str, owned: set[str], bp_header: "str | None" = None
+) -> str:
     """Return *value* with ``[Owned]`` on bullets whose item is in *owned*.
 
     Idempotent: any existing ``[Owned]`` tag is removed first, so the result is
@@ -250,7 +314,8 @@ def apply_owned_to_value(value: str, owned: set[str]) -> str:
     stripping stale owned tags, in case an item was just un-owned). Retagging
     is scoped to just that section's span (see :func:`_bp_section_span`) so a
     stray prose bullet before the header or a bullet in a later section can
-    never be mistaken for a blueprint item.
+    never be mistaken for a blueprint item. ``bp_header`` is forwarded to
+    :func:`_bp_section_span` -- see :func:`has_bp_section`'s docstring (#353).
     """
     if not value:
         return value
@@ -258,7 +323,7 @@ def apply_owned_to_value(value: str, owned: set[str]) -> str:
     value = _OWNED_STRIP_RE.sub("", value)
     if not owned:
         return value
-    span = _bp_section_span(value)
+    span = _bp_section_span(value, bp_header)
     if span is None:
         return value
     start, end = span

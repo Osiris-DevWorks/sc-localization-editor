@@ -437,13 +437,22 @@ def _title_pair_key(base: str, num) -> tuple:
     return (base.lower(), num or "")
 
 
-def build_blueprint_metadata(entries) -> dict:
+def build_blueprint_metadata(
+    entries, bp_header: "str | None" = None
+) -> dict:
     """Scan loaded strings once and return ``{name: BlueprintItem}``.
 
     *entries* is any iterable of objects exposing ``key`` / ``original_value``
     / ``category``. The result is keyed by the same normalized item names the
     owned set and ``StringTableModel`` use, so it drops straight into the
     Blueprints shuttle.
+
+    ``bp_header``, when given, is the user's actual configured "blueprints"
+    mission header (#353) -- e.g. ``AppSettings.get_mission_headers()
+    ["blueprints"]``. Without it, a renamed header is never recognized as a
+    blueprint-bearing section at all, so the Pass 1 gate below silently
+    skips every mission, not just mis-tags one. See
+    ``owned_items.has_bp_section``'s docstring.
     """
     # Pass 1: name->key map (for type), component tag attrs, mission titles,
     # and the blueprint-bearing desc values.
@@ -509,7 +518,7 @@ def build_blueprint_metadata(entries) -> dict:
         # mission's blueprint reward list -- fabricating fake, unownable
         # "items" that show up identically in both Available and Owned
         # (reported as the tracker "stacking" components).
-        if cat == CATEGORY_MISSIONS and has_bp_section(val):
+        if cat == CATEGORY_MISSIONS and has_bp_section(val, bp_header):
             dm = _DESC_KEY_RE.match(key)
             pair = _title_pair_key(dm.group("base"), dm.group("num")) if dm else None
             bp_descs.append((pair, val))
@@ -524,7 +533,7 @@ def build_blueprint_metadata(entries) -> dict:
     missions_by_name: dict = {}
     for pair, val in bp_descs:
         title = titles.get(pair) if pair else None
-        for raw_nm in extract_bp_item_names(val):
+        for raw_nm in extract_bp_item_names(val, bp_header):
             if raw_nm in name_to_value:
                 nm = raw_nm
             elif raw_nm in _BULLET_NAME_ALIASES:

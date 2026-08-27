@@ -141,6 +141,109 @@ class TestExtract:
     def test_empty_value(self):
         assert extract_bp_item_names("") == set()
 
+    # -- #353: renamed "blueprints" mission header ---------------------------
+
+    def test_renamed_header_not_recognized_by_default(self):
+        """Regression guard: without bp_header, a renamed header is invisible
+        -- pins the pre-fix behavior so the fix below is a real change."""
+        renamed = _DESC.replace("POTENTIAL BLUEPRINTS", "MY LOOT")
+        assert extract_bp_item_names(renamed) == set()
+
+    def test_renamed_header_recognized_when_bp_header_passed(self):
+        renamed = _DESC.replace("POTENTIAL BLUEPRINTS", "MY LOOT")
+        names = extract_bp_item_names(renamed, bp_header="MY LOOT")
+        assert names == {"Antium Core", "Norfield", "Abrade Scraper Module"}
+
+    def test_bp_header_matching_is_case_insensitive(self):
+        renamed = _DESC.replace("POTENTIAL BLUEPRINTS", "my loot")
+        names = extract_bp_item_names(renamed, bp_header="My Loot")
+        assert names == {"Antium Core", "Norfield", "Abrade Scraper Module"}
+
+    def test_bp_header_still_recognizes_default_when_not_renamed(self):
+        """Passing bp_header must not stop the built-in default from still
+        working for missions that never got regenerated since the rename."""
+        names = extract_bp_item_names(_DESC, bp_header="MY LOOT")
+        assert names == {"Antium Core", "Norfield", "Abrade Scraper Module"}
+
+    def test_renamed_header_word_appearing_unwrapped_in_prose_is_not_a_false_positive(self):
+        """Real report: renaming the header to a short/common word ("stuff")
+        let it accidentally match an unrelated, unwrapped occurrence of that
+        same word elsewhere in the mission's own prose (a stray "- <name>"
+        bullet list), starting the scan window too early and sweeping
+        unrelated prose bullets ("Ed", "H", "Wallace", ...) into the item
+        set as if they were real blueprints. The header match must be
+        anchored to the actual <EM3>/<EM4> wrapper the generator always uses
+        (see _build_bp_header_re), not a bare substring search, so an
+        earlier unwrapped occurrence of the same text is correctly ignored.
+        """
+        desc = (
+            "Grab that stuff for me.\\n- Ed\\n- H\\n- Wallace"
+            "\\n\\n<EM3>stuff</EM3>\\n- Antium Core"
+        )
+        names = extract_bp_item_names(desc, bp_header="stuff")
+        assert names == {"Antium Core"}
+
+    # CIG qualifies its own headers, and every one of these appears in
+    # tests/fixtures/kraken_global_latest.ini. Anchoring the match to an
+    # <EM3>/<EM4> wrapper that may hold ONLY the header text dropped all of
+    # them (20 of the fixture's 292 header-bearing lines), which is the same
+    # "mission silently absent from the Blueprint Tracker" failure #353 is
+    # about, just for a different subset. Every hand-written test above still
+    # passed, because none of them used a real CIG header.
+    @pytest.mark.parametrize("header_text", [
+        "Potential Blueprints (Repeat Only)",
+        "Potential Blueprints (BitZeros Only)",
+        "Potential Blueprints (Nyx Only)",
+        "Potential Blueprints (Pyro IV/V Area Only)",
+        "Multiple Blueprint Pools (Repeat Only)",
+        "Multiple Blueprint Pools (Yormandi Eye Only)",
+    ])
+    def test_cig_qualified_headers_are_recognized(self, header_text):
+        nl = chr(92) + "n"
+        val = f"flavor text{nl}<EM4>{header_text}</EM4>{nl}- Antium Core"
+        assert extract_bp_item_names(val) == {"Antium Core"}
+
+    def test_qualifier_tolerance_does_not_admit_unrelated_wrapped_text(self):
+        """The optional qualifier must stay bounded to a parenthesised run, or
+        it would undo the very false-positive guard the wrapper anchor exists
+        for: a header renamed to a common word must not match prose that
+        merely starts with it."""
+        nl = chr(92) + "n"
+        val = f"x{nl}<EM3>stuffed animals</EM3>{nl}- Antium Core"
+        assert extract_bp_item_names(val, bp_header="stuff") == set()
+
+    def test_fixture_header_recognition_matches_bare_substring_search(self):
+        """Parity guard against the real CIG data.
+
+        The regression this pins was invisible to every hand-written case, so
+        it is checked against the shipped fixture instead: whatever the
+        anchored pattern does, it must not recognise FEWER header-bearing
+        lines than a naive substring search for the two built-in headers.
+        """
+        import re
+        from pathlib import Path
+        # Same `utils.` import path this module already uses at the top --
+        # `utils.owned_items` and `src.utils.owned_items` are distinct module
+        # objects under this repo's dual pythonpath.
+        from utils.owned_items import (
+            _ALT_BP_SECTION_HEADER, _build_bp_header_re, BP_SECTION_HEADER,
+        )
+
+        fixture = Path(__file__).parent / "fixtures" / "kraken_global_latest.ini"
+        if not fixture.exists():                       # optional large fixture
+            pytest.skip("kraken_global_latest.ini not present")
+        lines = [l for l in fixture.read_text(encoding="utf-8", errors="replace")
+                 .splitlines() if "=" in l]
+        bare = re.compile(
+            "(?:" + re.escape(BP_SECTION_HEADER) + "|"
+            + re.escape(_ALT_BP_SECTION_HEADER) + ")", re.IGNORECASE)
+        anchored = _build_bp_header_re(None)
+        missed = [l for l in lines if bare.search(l) and not anchored.search(l)]
+        assert not missed, (
+            f"{len(missed)} header-bearing lines in the real fixture are no "
+            f"longer recognised, e.g. {missed[0][:160]!r}"
+        )
+
     def test_excludes_prose_bullet_before_header_and_later_section_bullet(self):
         """A stray "- Stows" line in the mission's flavor-text prose (before
         the POTENTIAL BLUEPRINTS header) and a real bullet in a later ITEM
@@ -290,7 +393,7 @@ class TestApply:
         # #222: a bullet carrying a non-breaking space or a trailing component
         # tag still matches an owned entry stored in bare/plain form.
         nl = chr(92) + "n"
-        val = ("POTENTIAL BLUEPRINTS" + nl + "- Lynx" + chr(0xA0) + "Legs"
+        val = ("<EM3>POTENTIAL BLUEPRINTS</EM3>" + nl + "- Lynx" + chr(0xA0) + "Legs"
                + nl + "- Barbican [IND-S3-B]" + nl + "- Norfield")
         out = apply_owned_to_value(val, {"Lynx Legs", "Barbican"})
         assert out.count("<EM4>[Owned]</EM4>") == 2
