@@ -457,6 +457,14 @@ class MainWindow(QMainWindow):
         # #157: item names (normalized) that appear in any POTENTIAL BLUEPRINTS
         # list — the rows eligible for the Owned star. Recomputed on each load.
         self._bp_item_names: set[str] = set()
+        # #372: every real item/vehicle name this install currently knows
+        # about, not just ones eligible for the Owned star above — see
+        # blueprint_meta.known_item_names' docstring. What foreign-editor
+        # name recovery anchors against; _bp_item_names is too narrow for
+        # that (an item merely rotated out of every mission's current reward
+        # pool would misread as unmatched and could be resolved into an
+        # unrelated shorter owned item).
+        self._known_item_names: set[str] = set()
         # #157 follow-up: per-blueprint-item metadata (mission names + ship
         # component type/class/size/grade) for the Blueprints shuttle filters.
         # Built once per load (pure function of the loaded strings), so
@@ -5895,7 +5903,7 @@ class MainWindow(QMainWindow):
         Blueprints shuttle filters on. Pure function of the loaded strings, so
         it runs on load — not on every owned-toggle (that path re-partitions
         the cached result)."""
-        from src.utils.blueprint_meta import build_blueprint_metadata
+        from src.utils.blueprint_meta import build_blueprint_metadata, known_item_names
         from src.utils.owned_items import enclosings_from_tag_configs
         enclosings = enclosings_from_tag_configs(AppSettings.get_all_tag_configs())
         bp_header = self._bp_header()
@@ -5904,6 +5912,70 @@ class MainWindow(QMainWindow):
             default_values=self.default_values, bp_header=bp_header,
         )
         self._bp_item_names = set(self._blueprint_meta)
+        # Deliberately broader than _bp_item_names -- every real item name
+        # this install knows about, not just ones currently offered as a
+        # mission reward. See known_item_names' and repair_foreign_owned_
+        # names' docstrings for why recovery must anchor on this wider set.
+        self._known_item_names = known_item_names(
+            self.entries, enclosings=enclosings,
+            default_values=self.default_values,
+        )
+        if hasattr(self, "blueprint_tracker_tab"):
+            self.blueprint_tracker_tab.set_known_item_names(self._known_item_names)
+        self._repair_foreign_owned_names()
+
+    def _repair_foreign_owned_names(self) -> None:
+        """One-shot cleanup of owned entries left by another editor (#372).
+
+        The scan-time fix only helps the next scan. A user who already imported
+        foreign-formatted names has them sitting in the owned set, and
+        re-scanning re-reads the same old logs, so nothing they can do from the
+        UI clears it -- the reporter deleted every Smart Citizen folder and
+        reinstalled, and the broken names came straight back.
+
+        Runs after the catalogue is rebuilt, since that is what recovery
+        anchors on -- ``_known_item_names``, not ``_bp_item_names``: see
+        ``owned_items.repair_foreign_owned_names``'s docstring for why the
+        narrower Blueprint Tracker set caused this same step to silently
+        delete real owned items that had simply rotated out of every
+        mission's current reward pool. Writes only when something actually
+        changed, so the normal case costs one set comparison and no settings
+        write. An unrecoverable name is left exactly as-is rather than
+        dropped: it may be a real item this install simply cannot see right
+        now, and silently deleting a user's owned marks is worse than
+        leaving one unmatched.
+
+        Wrapped defensively: by the time this runs, ``self.entries`` has
+        already loaded successfully, so a failure in this ancillary cleanup
+        step must never surface as a load/merge failure to the caller -- it
+        should log and leave the owned set untouched instead.
+        """
+        catalogue = self._known_item_names
+        if not catalogue:
+            return
+        try:
+            from src.utils.owned_items import repair_foreign_owned_names
+
+            owned = AppSettings.get_owned_items()
+            repaired, renamed = repair_foreign_owned_names(owned, catalogue)
+            if not renamed:
+                return
+            for nm, real in renamed.items():
+                if real is not None:
+                    logger.info(
+                        f"Owned set: repaired {nm!r} -> {real!r} (left by another "
+                        f"localization editor, #372)"
+                    )
+                else:
+                    logger.info(
+                        f"Owned set: dropped {nm!r} as an already-owned duplicate (#372)"
+                    )
+            AppSettings.set_owned_items(repaired)
+            logger.info(
+                f"Owned set: {len(owned)} entries repaired to {len(repaired)} (#372)"
+            )
+        except Exception:
+            logger.exception("Owned-set repair failed (#372); leaving owned set untouched")
 
     def _recompute_owned(self):
         """#157: weave/strip [Owned] tags on blueprint-list bullets to match the
@@ -6050,12 +6122,45 @@ class MainWindow(QMainWindow):
         self._bp_scan_channel = None
 
         if result is not None:
-            from src.utils.owned_items import enclosings_from_tag_configs, normalize_item_name
+            from src.utils.owned_items import (
+                enclosings_from_tag_configs, normalize_item_name,
+                resolve_against_catalogue,
+            )
 
             # Normalize raw log names to the shared owned-set identity; drop blanks.
             enclosings = enclosings_from_tag_configs(AppSettings.get_all_tag_configs())
             scanned = {normalize_item_name(n, enclosings=enclosings) for n in result.names}
             scanned.discard("")
+
+            # #372: Star Citizen logs whatever name it was DISPLAYING, so a
+            # player who previously ran a different localization editor has
+            # that tool's naming baked into their old logs forever. Those names
+            # match nothing here, so their blueprints silently never show as
+            # owned, and regenerating cannot help because the bad names are in
+            # the logs rather than in anything we write.
+            #
+            # Anything that already matches the catalogue is left alone; only
+            # otherwise-unusable names are put through recovery, which anchors
+            # on the real item list instead of on any one tool's format (see
+            # resolve_against_catalogue). Deliberately _known_item_names, not
+            # _bp_item_names: the latter only covers names currently offered
+            # as a mission reward, so a real item merely rotated out of every
+            # mission's reward pool this patch would misread as "foreign" and
+            # could resolve into an unrelated shorter item (see
+            # owned_items.repair_foreign_owned_names' docstring).
+            catalogue = self._known_item_names or set()
+            if catalogue:
+                recovered = set()
+                for nm in sorted(scanned - catalogue):
+                    real = resolve_against_catalogue(nm, catalogue)
+                    if real is not None:
+                        logger.info(
+                            f"BP scan: recovered {real!r} from foreign-formatted "
+                            f"log name {nm!r} (#372)"
+                        )
+                        scanned.discard(nm)
+                        recovered.add(real)
+                scanned |= recovered
 
             owned = AppSettings.get_owned_items()
             # Exclude names another queued channel already claimed this run,
