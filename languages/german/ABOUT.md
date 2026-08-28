@@ -88,6 +88,7 @@ Die nicht-englischen Spieltexte sind Community-Übersetzungen:
 - **INI importieren**: Eine vorhandene INI-Datei importieren und Konflikte Schlüssel für Schlüssel mit dem integrierten Konfliktdialog lösen
 - **Einfacher & erweiterter Modus**: Öffnet sich zu einem einfachen Zwei-Knopf-Bildschirm (ein Knopf wendet Erweiterungen mit deinen gespeicherten Einstellungen an, der andere wechselt zur erweiterten Ansicht), oder nutze die vollständige erweiterte Oberfläche (Tabelle, Filter, Erweiterungen, Konfiguration), wann immer du von Hand bearbeiten möchtest. Wähle deinen Standard bei der Installation und wechsle jederzeit in der App zwischen ihnen
 - **FAQ-Tab**: Die häufigsten Fragen, direkt in der App beantwortet — welche Dateien berührt werden, Bann-Risiko, die Windows-Warnung vor unbekannten Apps und wie man Änderungen rückgängig macht
+- **Flexibles Fenster & Spalten**: Ändere die Fenstergröße beliebig — jeder Tab scrollt seinen eigenen Inhalt, statt Bedienelemente zu stauchen oder abzuschneiden. Die Spalten des String-Editors lassen sich per Ziehen anpassen (Doppelklick auf einen Trenner passt die Spalte an ihren Inhalt an), und Breiten wie Fensterlayout bleiben über Neustarts hinweg erhalten — mit **Mehr → Fensterproportionen zurücksetzen** stellst du die Standardwerte wieder her
 - **Geführtes Tutorial**: Eine Coach-Mark-Tour führt neue Nutzer beim ersten Start jeder Version durch den Arbeitsablauf — jederzeit über den Tutorial-Knopf wiederholbar
 
 ### 🔄 Datenquelle & Persistenz

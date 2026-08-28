@@ -90,6 +90,7 @@ As strings do jogo em idiomas diferentes do inglês são traduções da comunida
 - **Importar INI**: importe um arquivo INI existente e resolva conflitos chave por chave com a caixa de diálogo integrada
 - **Modo Simples e Modo Avançado**: abra em uma tela Simples de dois botões (um aplica os aprimoramentos com suas configurações salvas, o outro muda para o Avançado), ou use a interface Avançada completa (tabela, filtros, Aprimoramentos, Config) sempre que quiser editar à mão. Escolha o padrão na instalação e alterne dentro do app
 - **Aba FAQ**: as perguntas que mais recebemos, respondidas direto no app — quais arquivos são tocados, risco de banimento, o aviso de app não reconhecido do Windows, e como desfazer as alterações
+- **Janela e colunas flexíveis**: redimensione a janela como quiser — cada aba rola o próprio conteúdo em vez de espremer ou cortar os controles. As colunas do Editor de Strings são redimensionáveis arrastando (clique duplo em um divisor para ajustá-la ao conteúdo) e suas larguras e o layout da janela são mantidos entre inicializações, com **Mais → Redefinir proporções da janela** para restaurar os padrões
 - **Tutorial Guiado**: um tour com balões orienta novos usuários pelo fluxo de trabalho no primeiro uso de cada versão, repetível a qualquer momento pelo botão Tutorial
 
 ### 🔄 Origem dos Dados e Persistência

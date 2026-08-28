@@ -90,6 +90,7 @@ Los textos del juego en idiomas distintos del inglés son traducciones comunitar
 - **Importar INI**: importa un archivo INI existente y resuelve los conflictos clave por clave con el diálogo integrado
 - **Modo simple y modo avanzado**: abre en una pantalla simple de dos botones (uno aplica las mejoras con tu configuración guardada, el otro cambia al avanzado), o usa la interfaz avanzada completa (tabla, filtros, Mejoras, Configuración) siempre que quieras editar a mano. Elige el predeterminado en la instalación y alterna dentro de la aplicación
 - **Pestaña FAQ**: las preguntas que más recibimos, respondidas directamente en la aplicación — qué archivos se tocan, el riesgo de baneo, el aviso de aplicación no reconocida de Windows, y cómo deshacer los cambios
+- **Ventana y columnas flexibles**: cambia el tamaño de la ventana a tu gusto — cada pestaña desplaza su propio contenido en lugar de comprimir o recortar los controles. Las columnas del Editor de textos se redimensionan arrastrando (doble clic en un separador para ajustarla a su contenido) y tus anchos y la disposición de la ventana se conservan entre inicios, con **Más → Restablecer las proporciones de la ventana** para volver a los valores predeterminados
 - **Tutorial guiado**: una visita con indicaciones acompaña a los nuevos usuarios por el flujo de trabajo en el primer arranque de cada versión, repetible en cualquier momento desde el botón Tutorial
 
 ### 🔄 Origen de datos y persistencia

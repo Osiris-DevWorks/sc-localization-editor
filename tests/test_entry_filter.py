@@ -264,6 +264,38 @@ def test_bp_descs_only_recognises_multiple_blueprint_pools_header():
     assert result == [0]
 
 
+def test_bp_descs_only_recognises_a_renamed_blueprints_header():
+    """#353: the "BP Descriptions" filter is a second, independent matcher
+    over the same data as the Blueprint Tracker. If the two disagree about
+    what opens a blueprint section, a row shows under this filter but never
+    reaches the tracker -- so the configured header has to reach here too."""
+    nl = chr(92) + "n"
+    entries = [
+        _e("desc_renamed", category="Missions",
+           original_value=f"POSTING...{nl}<EM4>MY LOOT</EM4>{nl}- Antium Core"),
+        _e("plain_desc", category="Missions",
+           original_value="A description with no rewards section"),
+    ]
+    # Without the configured header the row is invisible, exactly as before.
+    assert filter_entry_indices(entries, {}, _no_filters(), "All", "All", False, False, "★",
+                                bp_descs_only=True) == []
+    # With it, the renamed section is recognised.
+    assert filter_entry_indices(entries, {}, _no_filters(), "All", "All", False, False, "★",
+                                bp_descs_only=True, bp_header="MY LOOT") == [0]
+
+
+def test_bp_descs_only_still_recognises_the_default_header_when_renamed():
+    """Passing a custom header must not stop the built-in default matching --
+    missions not regenerated since the rename still carry it."""
+    nl = chr(92) + "n"
+    entries = [
+        _e("desc_default", category="Missions",
+           original_value=f"POSTING...{nl}<EM4>POTENTIAL BLUEPRINTS</EM4>{nl}- Antium Core"),
+    ]
+    assert filter_entry_indices(entries, {}, _no_filters(), "All", "All", False, False, "★",
+                                bp_descs_only=True, bp_header="MY LOOT") == [0]
+
+
 def test_bp_filter_reads_custom_override_when_present():
     # A user override on a title row is what's shown, so the tag must be read
     # from custom_value when set. category="Missions" because #354 gates both
