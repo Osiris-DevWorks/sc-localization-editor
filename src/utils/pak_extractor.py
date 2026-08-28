@@ -54,6 +54,28 @@ class P4kLockedError(RuntimeError):
     the same treatment, and needed a reliable way to recognize this case."""
 
 
+class DataForgeTimeoutError(RuntimeError):
+    """unforge.exe ran past its timeout converting the DataForge database.
+
+    A RuntimeError subclass for the same reason as P4kLockedError above: an
+    anticipated condition that carries its own friendly message, which
+    DataForgeExtractWorker recognises via isinstance() so its blanket
+    ``except Exception`` does not log at ERROR and fire the global
+    ErrorDialogHandler on top of the dialog the ``error`` signal already
+    shows.
+
+    Overwhelmingly this means the game install is inconsistent rather than
+    the machine being slow. Measured on a healthy 4.9.188.23497 install,
+    unforge converts the 330 MB Game2.dcb in about 40 seconds against a
+    1800 second budget. Issue #370 was a user whose Data.p4k carried a
+    114 MB ``Game.dcb`` while their build_manifest.id was byte-for-byte
+    identical to a working install's: a patch that never finished applying
+    to the 160 GB archive. unforge sat on the mismatched database until the
+    timeout while their memory climbed, and all the user saw was "DataForge
+    extraction failed" with no mention of a timeout at all.
+    """
+
+
 def _raise_unp4k_failure(returncode: int, output: str) -> None:
     """Raise for a non-zero unp4k exit — P4kLockedError for a locked Data.p4k,
     plain RuntimeError otherwise.
@@ -78,6 +100,52 @@ def _raise_unp4k_failure(returncode: int, output: str) -> None:
         raise P4kLockedError(tr("extract.p4k_locked"))
     logger.error(f"unp4k.exe exited with code {returncode}; output:\n{output[:2000]}")
     raise RuntimeError(f"unp4k.exe exited with code {returncode}.\n\n{output}")
+
+
+def _unforge_timeout_error(exc, dcb_path: Path, dcb_mb: float,
+                           p4k_path: Path) -> DataForgeTimeoutError:
+    """Log everything the timeout knows and build the error to raise.
+
+    Two things the previous bare propagation threw away.
+
+    First, the diagnostics. On Windows ``subprocess.run`` kills the child and
+    re-collects its output onto the exception (``exc.stdout``/``exc.stderr``)
+    precisely so a timeout is not silent, but nothing caught the exception, so
+    that output went in the bin. The normal success path logs unforge's output
+    a few lines below; the one failure that most needs it logged nothing.
+
+    Second, which database it was chewing on. The name and size are the whole
+    diagnosis: a healthy install yields Game2.dcb at ~330 MB, and #370's
+    stalled one yielded Game.dcb at 114 MB. Without both in the log there is
+    no way to tell a mismatched install from a slow machine, and the two need
+    opposite advice.
+
+    Returns the exception rather than raising it, so the caller's `raise`
+    is visible at the call site. Raising from in here would leave `result`
+    statically possibly-unbound after the try block, resting on an implicit
+    "this never returns" contract that a later edit could quietly break into
+    a confusing NameError."""
+    def _decode(v) -> str:
+        if not v:
+            return ""
+        return v if isinstance(v, str) else v.decode("utf-8", "replace")
+
+    out = _decode(getattr(exc, "stdout", None)).strip()
+    err = _decode(getattr(exc, "stderr", None)).strip()
+    logger.warning(
+        f"unforge.exe timed out after {exc.timeout:.0f}s on {dcb_path.name} "
+        f"({dcb_mb:.0f} MB). A healthy install converts in well under a "
+        f"minute, so this usually means Data.p4k does not match the "
+        f"installed build (see issue #370)."
+    )
+    if out:
+        logger.warning(f"unforge partial stdout ({len(out)} bytes, truncated): {out[:2000]}")
+    if err:
+        logger.warning(f"unforge partial stderr ({len(err)} bytes, truncated): {err[:2000]}")
+    return DataForgeTimeoutError(
+        tr("extract.dataforge_timeout", dcb=dcb_path.name,
+           size=f"{dcb_mb:.0f}", path=str(p4k_path))
+    )
 
 
 def robust_rmtree(path: Path, attempts: int = 6) -> None:
@@ -395,12 +463,19 @@ def extract_dataforge(
             progress_callback(tr("progress.unforge"))
         if progress_pct_callback:
             progress_pct_callback(1, TOTAL_PHASES, tr("progress.unforge_short"))
+        # Size is captured before the run so the timeout handler can name it:
+        # "Game.dcb (114 MB)" versus a healthy "Game2.dcb (330 MB)" is the
+        # entire diagnosis when this stalls (#370).
+        dcb_mb = dcb_path.stat().st_size / 1_048_576
         logger.info(f"Running unforge: {unforge_exe} {dcb_path}")
-        result = subprocess.run(
-            [str(unforge_exe), str(dcb_path)],
-            timeout=1800,   # 30 minutes max
-            **_get_subprocess_kwargs()
-        )
+        try:
+            result = subprocess.run(
+                [str(unforge_exe), str(dcb_path)],
+                timeout=1800,   # 30 minutes max
+                **_get_subprocess_kwargs()
+            )
+        except subprocess.TimeoutExpired as e:
+            raise _unforge_timeout_error(e, dcb_path, dcb_mb, p4k_path) from e
         # Always log unforge's output at INFO (truncated). A zero-length
         # stdout + sub-second runtime is typically a silent failure — e.g.
         # missing .NET runtime, the user's AV quarantining a temp file, or

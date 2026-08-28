@@ -32,6 +32,7 @@ Une fois l'extraction terminée, le `base.ini` extrait est chargé automatiqueme
   - **Enrichi** : généré automatiquement par le pipeline d'enrichissements (surcouches de stats, balises de plans, etc.).
   - **Inchangé** : texte d'origine du `base.ini`.
   - **Nouveau** : la clé n'existe que dans vos modifications ou dans le pipeline d'enrichissements, pas dans le `base.ini` d'origine.
+- **Redimensionnez n'importe quelle colonne** en faisant glisser le séparateur entre deux en-têtes, ou double-cliquez sur un séparateur pour ajuster la colonne à la largeur de son contenu le plus large. Vos largeurs sont mémorisées d'une session à l'autre. Tant que vous ne redimensionnez rien vous-même, Smart Citizen ajuste les colonnes à votre fenêtre automatiquement, afin qu'une nouvelle installation s'ouvre toujours correctement sur son propre écran. Pour retrouver cette mise en page automatique, utilisez **Réinitialiser les proportions de la fenêtre** (voir plus bas).
 
 ## 3. Panneau d'aperçu
 
@@ -101,7 +102,7 @@ Utilisez **Réinitialiser user.ini** dans l'onglet **Paramètres** pour effacer 
 
 ## 13. Exporter / Importer les paramètres
 
-Utilisez **Exporter les paramètres…** et **Importer les paramètres…** dans l'onglet **Paramètres** pour déplacer toute votre configuration Smart Citizen d'un PC à l'autre, ou la sauvegarder avant une réinstallation. L'export regroupe vos paramètres d'application et les modifications `user.ini` de chaque canal dans un petit zip unique, y compris votre chemin d'installation de Star Citizen ; les chemins propres à la machine qui n'auraient pas de sens sur un autre PC (votre dossier de données, l'emplacement du cache, la géométrie de la fenêtre) sont laissés de côté. L'import superpose cette sauvegarde à vos paramètres actuels et remplace `user.ini` pour les canaux qu'elle contient : vos fichiers `user.ini` actuels sont d'abord pris en instantané via **Restaurer user.ini**, un import est donc réversible. Votre chemin Star Citizen n'est conservé que s'il existe encore sur le PC où vous importez ; sinon Smart Citizen le détecte automatiquement à la place. Smart Citizen redémarre après un import pour charger les nouveaux paramètres, puis propose de régénérer et d'appliquer vos enrichissements.
+Utilisez **Exporter les paramètres…** et **Importer les paramètres…** dans l'onglet **Paramètres** pour déplacer toute votre configuration Smart Citizen d'un PC à l'autre, ou la sauvegarder avant une réinstallation. L'export regroupe vos paramètres d'application et les modifications `user.ini` de chaque canal dans un petit zip unique, y compris votre chemin d'installation de Star Citizen ; les chemins propres à la machine qui n'auraient pas de sens sur un autre PC (votre dossier de données, l'emplacement du cache, la géométrie de la fenêtre, la largeur des colonnes de l'éditeur de chaînes) sont laissés de côté. L'import superpose cette sauvegarde à vos paramètres actuels et remplace `user.ini` pour les canaux qu'elle contient : vos fichiers `user.ini` actuels sont d'abord pris en instantané via **Restaurer user.ini**, un import est donc réversible. Votre chemin Star Citizen n'est conservé que s'il existe encore sur le PC où vous importez ; sinon Smart Citizen le détecte automatiquement à la place. Smart Citizen redémarre après un import pour charger les nouveaux paramètres, puis propose de régénérer et d'appliquer vos enrichissements.
 
 ## 14. Après les mises à jour du jeu
 
@@ -181,6 +182,12 @@ Choisissez un thème dans **Paramètres → Apparence** :
 - **Défaut** : SCLE, un thème cyber bleu nuit inspiré de l'interface mobiGlas de Star Citizen.
 - **Clair / Sombre** : thèmes d'interface classiques.
 - **ODW** : signature Osiris DevWorks, anthracite marine et or antique.
+
+## Disposition de la fenêtre
+
+Smart Citizen mémorise la taille de votre fenêtre, la disposition de l'éditeur de textes ancré et la largeur de vos colonnes d'une session à l'autre. Chaque onglet fait défiler son propre contenu : vous pouvez donc réduire la fenêtre autant que vous le souhaitez et atteindre chaque contrôle en faisant défiler, plutôt que de les voir comprimés ou tronqués.
+
+Si votre disposition finit dans un état gênant (une colonne réduite à un filet, ou une taille de fenêtre qui ne convient plus à votre écran), utilisez **Plus → Réinitialiser les proportions de la fenêtre**. Cela restaure la taille de la fenêtre, la disposition des panneaux et la largeur des colonnes par défaut. Vos réglages, vos modifications et vos données de localisation ne sont pas touchés.
 
 ## Barre d'état
 

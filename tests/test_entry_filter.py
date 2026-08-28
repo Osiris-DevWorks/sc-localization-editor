@@ -177,11 +177,12 @@ def test_favorites_marker_searchable_in_star_column():
 
 def _bp_entries():
     return [
-        _e("title_bp", original_value="Retrieve Cargo Haul <EM4>[BP]</EM4>"),
-        _e("title_bpq", original_value="Recoup Stolen Haul <EM4>[BP?]</EM4>"),
-        _e("desc_bp", original_value="POSTING...\n<EM4>POTENTIAL BLUEPRINTS</EM4>\n- Antium Core"),
-        _e("plain_title", original_value="Some Mission"),
-        _e("plain_desc", original_value="A description with no rewards section"),
+        _e("title_bp", category="Missions", original_value="Retrieve Cargo Haul <EM4>[BP]</EM4>"),
+        _e("title_bpq", category="Missions", original_value="Recoup Stolen Haul <EM4>[BP?]</EM4>"),
+        _e("desc_bp", category="Missions",
+           original_value="POSTING...\n<EM4>POTENTIAL BLUEPRINTS</EM4>\n- Antium Core"),
+        _e("plain_title", category="Missions", original_value="Some Mission"),
+        _e("plain_desc", category="Missions", original_value="A description with no rewards section"),
     ]
 
 
@@ -199,6 +200,45 @@ def test_bp_descs_only_keeps_potential_blueprints_bodies():
     assert result == [2]  # the POTENTIAL BLUEPRINTS body only
 
 
+def test_enhancement_label_matches_the_category_constant():
+    """#354's gate compares against CATEGORY_MISSIONS, but the parser can
+    assign a category from AppSettings.ENHANCEMENT_LABELS instead (a mission
+    entry sourced from mission_rewards_enhancements.ini takes that route, not
+    the key-prefix classifier). The two have to spell it identically or those
+    entries silently fail the gate and vanish from the Blueprint Tracker.
+
+    Documented on the constant; asserted here so it cannot drift quietly.
+    """
+    from src.models.string_model import CATEGORY_MISSIONS
+    from src.utils.settings import AppSettings
+
+    assert AppSettings.ENHANCEMENT_LABELS["missions"] == CATEGORY_MISSIONS
+
+
+def test_bp_titles_only_excludes_non_mission_entry():
+    """#354 symmetry: "[BP" only means "blueprint mission" on a mission title.
+    The desc half was gated when the bug was reported; leaving the title half
+    open would have let the same class of false positive through, and read as
+    a deliberate asymmetry to whoever touched this next."""
+    e = [_e("items_commodities_iron_desc", category="Commodities",
+            original_value="Iron Ore. Not a mission. <EM4>[BP]</EM4>")]
+    result = filter_entry_indices(e, {}, _no_filters(), "All", "All", False, False, "★",
+                                  bp_titles_only=True)
+    assert result == []
+
+
+def test_bp_descs_only_excludes_non_mission_colliding_header():
+    """#354: a commodity whose value happens to contain matching header
+    text (e.g. a renamed "Blueprint Data" header colliding with the
+    "blueprints" header) must not be picked up here either -- only
+    "Missions"-category entries qualify."""
+    e = [_e("items_commodities_iron_desc", category="Commodities",
+            original_value="Iron Ore.\n<EM3>POTENTIAL BLUEPRINTS</EM3>\n- Power Plants: 10 items")]
+    result = filter_entry_indices(e, {}, _no_filters(), "All", "All", False, False, "★",
+                                  bp_descs_only=True)
+    assert result == []
+
+
 def test_both_bp_flags_show_titles_or_descs():
     e = _bp_entries()
     result = filter_entry_indices(e, {}, _no_filters(), "All", "All", False, False, "★",
@@ -213,21 +253,56 @@ def test_bp_descs_only_recognises_multiple_blueprint_pools_header():
     follow-up) -- pre-fix, the "BP Descriptions" checkbox only recognised
     "POTENTIAL BLUEPRINTS" and silently excluded these mission bodies."""
     entries = [
-        _e("desc_pools", original_value=(
+        _e("desc_pools", category="Missions", original_value=(
             "POSTING...\n<EM4>MULTIPLE BLUEPRINT POOLS</EM4>"
             "\n<EM4>Pool 1</EM4>\n- Helix I Mining Laser (Mining Laser)"
         )),
-        _e("plain_desc", original_value="A description with no rewards section"),
+        _e("plain_desc", category="Missions", original_value="A description with no rewards section"),
     ]
     result = filter_entry_indices(entries, {}, _no_filters(), "All", "All", False, False, "★",
                                   bp_descs_only=True)
     assert result == [0]
 
 
+def test_bp_descs_only_recognises_a_renamed_blueprints_header():
+    """#353: the "BP Descriptions" filter is a second, independent matcher
+    over the same data as the Blueprint Tracker. If the two disagree about
+    what opens a blueprint section, a row shows under this filter but never
+    reaches the tracker -- so the configured header has to reach here too."""
+    nl = chr(92) + "n"
+    entries = [
+        _e("desc_renamed", category="Missions",
+           original_value=f"POSTING...{nl}<EM4>MY LOOT</EM4>{nl}- Antium Core"),
+        _e("plain_desc", category="Missions",
+           original_value="A description with no rewards section"),
+    ]
+    # Without the configured header the row is invisible, exactly as before.
+    assert filter_entry_indices(entries, {}, _no_filters(), "All", "All", False, False, "★",
+                                bp_descs_only=True) == []
+    # With it, the renamed section is recognised.
+    assert filter_entry_indices(entries, {}, _no_filters(), "All", "All", False, False, "★",
+                                bp_descs_only=True, bp_header="MY LOOT") == [0]
+
+
+def test_bp_descs_only_still_recognises_the_default_header_when_renamed():
+    """Passing a custom header must not stop the built-in default matching --
+    missions not regenerated since the rename still carry it."""
+    nl = chr(92) + "n"
+    entries = [
+        _e("desc_default", category="Missions",
+           original_value=f"POSTING...{nl}<EM4>POTENTIAL BLUEPRINTS</EM4>{nl}- Antium Core"),
+    ]
+    assert filter_entry_indices(entries, {}, _no_filters(), "All", "All", False, False, "★",
+                                bp_descs_only=True, bp_header="MY LOOT") == [0]
+
+
 def test_bp_filter_reads_custom_override_when_present():
     # A user override on a title row is what's shown, so the tag must be read
-    # from custom_value when set.
-    e = [_e("t", original_value="bare title", custom_value="Custom <EM4>[BP]</EM4>")]
+    # from custom_value when set. category="Missions" because #354 gates both
+    # bp_* checks on it; this test is about custom_value precedence, so it
+    # supplies the category rather than relying on the default.
+    e = [_e("t", category="Missions",
+            original_value="bare title", custom_value="Custom <EM4>[BP]</EM4>")]
     result = filter_entry_indices(e, {}, _no_filters(), "All", "All", False, False, "★",
                                   bp_titles_only=True)
     assert result == [0]

@@ -90,6 +90,7 @@ Les textes du jeu en langues autres que l'anglais sont des traductions communaut
 - **Importer un INI** : importez un fichier INI existant et résolvez les conflits clé par clé avec la boîte de dialogue intégrée
 - **Mode Simple et mode Avancé** : ouvrez sur un écran Simple à deux boutons (l'un applique les enrichissements avec vos réglages enregistrés, l'autre bascule en mode Avancé), ou utilisez l'interface Avancée complète (tableau, filtres, Enrichissements, Paramètres) dès que vous voulez retoucher à la main. Choisissez votre mode par défaut à l'installation et basculez dans l'application
 - **Onglet FAQ** : les questions qu'on nous pose le plus, répondues directement dans l'application — quels fichiers sont touchés, le risque de bannissement, l'avertissement Windows « application non reconnue », et comment annuler ses modifications
+- **Fenêtre et colonnes flexibles** : redimensionnez la fenêtre à votre guise — chaque onglet fait défiler son propre contenu au lieu de comprimer ou de tronquer les contrôles. Les colonnes de l'Éditeur de textes se redimensionnent par glissement (double-cliquez sur un séparateur pour l'ajuster au contenu) et vos largeurs comme la disposition de la fenêtre sont conservées d'un lancement à l'autre, avec **Plus → Réinitialiser les proportions de la fenêtre** pour rétablir les valeurs par défaut
 - **Tutoriel guidé** : une visite à info-bulles accompagne les nouveaux utilisateurs au premier lancement de chaque version, rejouable à tout moment depuis le bouton Tutoriel
 
 ### 🔄 Données et persistance

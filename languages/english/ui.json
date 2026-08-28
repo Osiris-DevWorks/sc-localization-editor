@@ -160,6 +160,10 @@
       "ht": "Switch to Simple Mode",
       "at": ""
     },
+    "menu_reset_window_proportions": {
+      "ht": "Reset Window Proportions",
+      "at": ""
+    },
     "editor_tooltip": {
       "ht": "Toggle the side-docked String Editor, a larger canvas for editing the selected row's custom value",
       "at": ""
@@ -182,6 +186,10 @@
     },
     "switch_to_simple_tooltip": {
       "ht": "Switch to the simplified one-button view.",
+      "at": ""
+    },
+    "reset_window_proportions_tooltip": {
+      "ht": "Restore the window size, panel layout and String Editor column widths to their defaults.",
       "at": ""
     },
     "more_tooltip": {
@@ -2011,6 +2019,14 @@
     "app_title": {
       "ht": "Smart Citizen",
       "at": ""
+    },
+    "reset_proportions_title": {
+      "ht": "Reset Window Proportions",
+      "at": ""
+    },
+    "reset_proportions_body": {
+      "ht": "Reset the window size, panel layout and String Editor column widths back to their defaults?\n\nYour saved sizes will be forgotten. Your settings and localization data are not affected.",
+      "at": ""
     }
   },
   "progress": {
@@ -2222,6 +2238,10 @@
     },
     "manifest_missing": {
       "ht": "SC {channel} (manifest missing)",
+      "at": ""
+    },
+    "window_proportions_reset": {
+      "ht": "Window proportions reset to defaults.",
       "at": ""
     }
   },
@@ -2506,6 +2526,10 @@
     },
     "p4k_locked": {
       "ht": "Star Citizen appears to be updating right now. Its game files (Data.p4k) are locked by another program, usually the RSI Launcher downloading or verifying an update.\n\nWait until all updates and verification finish in the RSI Launcher, then try again.",
+      "at": ""
+    },
+    "dataforge_timeout": {
+      "ht": "Converting the game database took longer than 30 minutes and was stopped.\n\nThe database found was {dcb} ({size} MB) at:\n{path}\n\nA healthy install converts in well under a minute, so this usually means Smart Citizen is reading the wrong Star Citizen folder. An old or leftover install still on your drive will look valid but hold outdated game files.\n\nOpen the RSI Launcher and check the install location it shows for Star Citizen. If it is not the path above, correct it in Smart Citizen's Config tab. If it IS the same path, run Verify Files in the launcher to repair the install instead.",
       "at": ""
     }
   },

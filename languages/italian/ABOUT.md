@@ -88,6 +88,7 @@ I testi di gioco in lingue diverse dall'inglese sono traduzioni della community:
 - **Importa INI**: importa un file INI esistente e risolvi i conflitti chiave per chiave con la finestra di dialogo integrata
 - **Modalità Semplice e Avanzata**: si apre su una schermata Semplice a due pulsanti (uno applica i miglioramenti con le tue impostazioni salvate, l'altro passa alla modalità Avanzata), oppure usa l'interfaccia Avanzata completa (tabella, filtri, Miglioramenti, Configurazione) ogni volta che vuoi modificare a mano. Scegli la modalità predefinita all'installazione e passa dall'una all'altra all'interno dell'app
 - **Scheda FAQ**: le domande che riceviamo più spesso, con risposta direttamente nell'app — quali file vengono toccati, il rischio di ban, l'avviso di Windows sull'app non riconosciuta e come annullare le modifiche
+- **Finestra e colonne flessibili**: ridimensiona la finestra come preferisci — ogni scheda scorre il proprio contenuto invece di comprimere o tagliare i controlli. Le colonne dell'Editor Stringhe sono ridimensionabili trascinandole (doppio clic su un separatore per adattarla al contenuto) e le larghezze e la disposizione della finestra vengono mantenute tra un avvio e l'altro, con **Altro → Reimposta le proporzioni della finestra** per ripristinare i valori predefiniti
 - **Tutorial guidato**: un tour con indicatori guida i nuovi utenti attraverso il flusso di lavoro al primo avvio di ogni versione, rigiocabile in qualsiasi momento dal pulsante Tutorial
 
 ### 🔄 Origine dati e persistenza

@@ -86,6 +86,23 @@ _MISSION_PREFIXES = (
     "wantedlevel", "wstr_", "xenothreat_",
 )
 
+# The category name for mission entries. Named because #354 turned it from a
+# display string into a load-bearing gate: blueprint_meta and entry_filter both
+# refuse to scan an entry for a POTENTIAL BLUEPRINTS section unless it carries
+# this exact category, so a typo in either would silently empty the Blueprint
+# Tracker rather than fail loudly. Every place that decides "is this a mission
+# entry" reads this constant: the classifier below, ini_parser's source-based
+# override, and the two scan gates.
+#
+# Deliberately not localized. This is an internal classification token, not UI
+# text -- src/parser and src/models contain no tr() calls at all -- so the gates
+# keep working for a user running the app in German.
+#
+# AppSettings.ENHANCEMENT_LABELS["missions"] must stay equal to this: the
+# parser routes enhancement-sourced entries through that label, so the two
+# meeting is what lets a mission enhancement pass the same gate.
+CATEGORY_MISSIONS = "Missions"
+
 
 @lru_cache(maxsize=None)
 def _extract_category_impl(key: str) -> str:
@@ -156,7 +173,7 @@ def _extract_category_impl(key: str) -> str:
     if "journal" in key_lower:
         return "Journal"
     if key_lower.startswith(_MISSION_PREFIXES):
-        return "Missions"
+        return CATEGORY_MISSIONS
 
     return "Other"
 

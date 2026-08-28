@@ -7,7 +7,9 @@ tested independently of Qt.
 import logging
 
 from src.gui.string_table_model import NUM_COLUMNS
-from src.models.string_model import StringEntry, is_favoritable_ship
+from src.models.string_model import (
+    CATEGORY_MISSIONS, StringEntry, is_favoritable_ship,
+)
 from src.utils.owned_items import has_bp_section
 from src.utils.ship_sort_prefix import get_order
 
@@ -26,6 +28,7 @@ def filter_entry_indices(
     bp_titles_only: bool = False,
     bp_descs_only: bool = False,
     ship_vehicle_names_only: bool = False,
+    bp_header: "str | None" = None,
 ) -> list[int]:
     """Return indices of entries that pass all active filters.
 
@@ -52,6 +55,9 @@ def filter_entry_indices(
         bp_descs_only: When True, keep mission-description rows containing the
             POTENTIAL BLUEPRINTS section (#156). When both bp_* flags are set
             the row passes if it matches EITHER (blueprint titles OR bodies).
+        bp_header: The user's actual configured "blueprints" mission header
+            (#353), e.g. AppSettings.get_mission_headers()["blueprints"].
+            Without it, a renamed header is never recognized here either.
         ship_vehicle_names_only: When True, show ONLY ship/vehicle name rows
             (vehicle_Name*, Wikelo *_VehicleName) -- every other row is
             hidden, including ship description rows and every non-Ships
@@ -129,8 +135,26 @@ def filter_entry_indices(
         # carries the enhancement) is what's shown, so test that.
         if bp_titles_only or bp_descs_only:
             val = entry.custom_value or entry.original_value
-            is_bp_title = bp_titles_only and "[BP" in val
-            is_bp_desc = bp_descs_only and has_bp_section(val)
+            # #354: both halves are gated to Missions entries. The desc gate is
+            # the reported bug -- a commodity's independently-renameable
+            # "Blueprint Data" header can collide with the blueprints header,
+            # so has_bp_section matched a crafting-material summary and
+            # fabricated unownable items (see blueprint_meta.py's matching
+            # gate). The title gate is the same reasoning applied to the same
+            # question: "[BP" only means "blueprint mission" on a mission
+            # title, and leaving one half ungated invites the next reader to
+            # assume the asymmetry was load-bearing when it was an oversight.
+            #
+            # entry.category is read directly, not via getattr, because this
+            # parameter is typed list[StringEntry] and category is a required
+            # field. blueprint_meta guards the same read because its own
+            # contract is duck-typed ("any iterable of objects exposing
+            # key/original_value/category"), so the two differ on purpose.
+            is_mission = entry.category == CATEGORY_MISSIONS
+            is_bp_title = bp_titles_only and is_mission and "[BP" in val
+            is_bp_desc = (
+                bp_descs_only and is_mission and has_bp_section(val, bp_header)
+            )
             if not (is_bp_title or is_bp_desc):
                 continue
         if active_filter_fns:

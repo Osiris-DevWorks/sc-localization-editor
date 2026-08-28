@@ -30,6 +30,7 @@ Al termine dell'estrazione, il `base.ini` estratto viene caricato automaticament
   - **Migliorato** — generato automaticamente dalla pipeline dei miglioramenti (sovrapposizioni di statistiche, tag dei blueprint, ecc.).
   - **Non modificato** — testo originale del `base.ini`.
   - **Nuovo** — la chiave esiste solo nelle tue modifiche o nella pipeline dei miglioramenti, non nel `base.ini` originale.
+- **Ridimensiona qualsiasi colonna** trascinando il separatore tra due intestazioni, oppure fai doppio clic su un separatore per adattare la colonna alla larghezza del suo contenuto più esteso. Le tue larghezze vengono ricordate tra un avvio e l'altro. Finché non ridimensioni nulla tu stesso, Smart Citizen adatta le colonne alla tua finestra automaticamente, così una nuova installazione si apre sempre correttamente sul proprio schermo. Per riavere quella disposizione automatica, usa **Reimposta le proporzioni della finestra** (vedi sotto).
 
 ## 3. Riquadro di anteprima
 
@@ -99,7 +100,7 @@ Usa **Reimposta user.ini** nella scheda **Configurazione** per cancellare tutte 
 
 ## 13. Esportare / Importare le impostazioni
 
-Usa **Esporta Impostazioni…** e **Importa Impostazioni…** nella scheda **Configurazione** per spostare l'intera configurazione di Smart Citizen tra PC, o per farne un backup prima di un'installazione pulita. L'esportazione raccoglie le impostazioni dell'app e le modifiche `user.ini` di ogni canale in un unico piccolo zip, incluso il percorso di installazione di Star Citizen; i percorsi specifici della macchina che non avrebbero senso su un altro PC (la cartella dati, la posizione della cache, la geometria della finestra) vengono esclusi. L'importazione sovrappone quel backup alle impostazioni attuali e sostituisce `user.ini` per i canali che contiene: i tuoi file `user.ini` attuali vengono prima salvati in uno snapshot tramite **Ripristina user.ini**, quindi un'importazione è reversibile. Il percorso di Star Citizen viene mantenuto solo se esiste ancora sul PC su cui stai importando; altrimenti Smart Citizen lo rileva automaticamente. Dopo un'importazione Smart Citizen si riavvia per caricare le nuove impostazioni, poi propone di rigenerare e applicare i tuoi miglioramenti.
+Usa **Esporta Impostazioni…** e **Importa Impostazioni…** nella scheda **Configurazione** per spostare l'intera configurazione di Smart Citizen tra PC, o per farne un backup prima di un'installazione pulita. L'esportazione raccoglie le impostazioni dell'app e le modifiche `user.ini` di ogni canale in un unico piccolo zip, incluso il percorso di installazione di Star Citizen; i percorsi specifici della macchina che non avrebbero senso su un altro PC (la cartella dati, la posizione della cache, la geometria della finestra, le larghezze delle colonne dell'editor di stringhe) vengono esclusi. L'importazione sovrappone quel backup alle impostazioni attuali e sostituisce `user.ini` per i canali che contiene: i tuoi file `user.ini` attuali vengono prima salvati in uno snapshot tramite **Ripristina user.ini**, quindi un'importazione è reversibile. Il percorso di Star Citizen viene mantenuto solo se esiste ancora sul PC su cui stai importando; altrimenti Smart Citizen lo rileva automaticamente. Dopo un'importazione Smart Citizen si riavvia per caricare le nuove impostazioni, poi propone di rigenerare e applicare i tuoi miglioramenti.
 
 ## 14. Dopo gli aggiornamenti del gioco
 
@@ -179,6 +180,12 @@ Scegli un tema nella sezione **scheda Configurazione → Aspetto**:
 - **Predefinito** — SCLE, un tema cyber blu notte ispirato all'interfaccia mobiGlas di Star Citizen.
 - **Chiaro / Scuro** — temi classici dell'interfaccia.
 - **ODW** — firma Osiris DevWorks, antracite blu notte con oro antico.
+
+## Disposizione della finestra
+
+Smart Citizen ricorda le dimensioni della finestra, la disposizione dell'editor di stringhe agganciato e le larghezze delle colonne tra un avvio e l'altro. Ogni scheda scorre il proprio contenuto, quindi puoi rimpicciolire la finestra quanto vuoi e raggiungere ogni controllo scorrendo, invece di vederli compressi o tagliati.
+
+Se la disposizione finisce in uno stato scomodo (una colonna ridotta a una striscia, o una dimensione della finestra che non si adatta più al tuo schermo), usa **Altro → Reimposta le proporzioni della finestra**. Ripristina le dimensioni della finestra, la disposizione dei pannelli e le larghezze delle colonne ai valori predefiniti. Le tue impostazioni, le tue modifiche e i dati di localizzazione non vengono toccati.
 
 ## Barra di stato
 
