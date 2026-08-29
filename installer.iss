@@ -894,9 +894,10 @@ begin
   { Skip if it's the same folder as (or nested under) the user data folder
     already just deleted above -- a custom cache_dir is normally a wholly
     separate location, but avoid a redundant/confusing second DelTree pass
-    over the same path either way. }
-  if (CacheDir <> '') and
-     (CompareText(RemoveBackslash(CacheDir), RemoveBackslash(UserDataDir)) <> 0) then
+    over the same path either way. PathUnderRoot covers both cases: it
+    matches an exact match too, since normalizing both sides the same way
+    before the prefix test makes a path trivially "under" itself. }
+  if (CacheDir <> '') and (not PathUnderRoot(CacheDir, UserDataDir)) then
   begin
     if DirExists(CacheDir) then
     begin
