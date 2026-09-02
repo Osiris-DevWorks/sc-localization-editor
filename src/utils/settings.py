@@ -495,6 +495,12 @@ class AppSettings:
     # their own progression, not the same account/blueprint history as
     # LIVE/HOTFIX.
     BLUEPRINT_SCAN_OTHER_CHANNELS = "blueprints/scan_other_channels"
+    # #386: whether Smart Citizen runs "Scan Logs for Owned Blueprints"
+    # automatically on every launch, instead of only on a manual button
+    # click. Off by default -- opt-in, since it's an extra background log
+    # read on every startup and BLUEPRINT_SCAN_OTHER_CHANNELS above already
+    # covers the common "also check my other channel" case once it runs.
+    BLUEPRINT_AUTO_SCAN_ON_STARTUP = "blueprints/auto_scan_on_startup"
 
     # Set at Import Settings time so the NEXT launch can prompt "your imported
     # settings need enhancements regenerated + applied" once the app is fully
@@ -1344,6 +1350,22 @@ class AppSettings:
         """Persist the multi-channel BP Scan checkbox state (#268)."""
         AppSettings.settings().setValue(
             AppSettings.BLUEPRINT_SCAN_OTHER_CHANNELS, bool(enabled)
+        )
+        AppSettings.settings().sync()
+
+    @staticmethod
+    def get_auto_scan_blueprints_enabled() -> bool:
+        """Whether Smart Citizen runs "Scan Logs for Owned Blueprints"
+        automatically on every launch (#386). Default False -- opt-in."""
+        return bool(AppSettings.settings().value(
+            AppSettings.BLUEPRINT_AUTO_SCAN_ON_STARTUP, False, type=bool
+        ))
+
+    @staticmethod
+    def set_auto_scan_blueprints_enabled(enabled: bool) -> None:
+        """Persist the startup auto-scan checkbox state (#386)."""
+        AppSettings.settings().setValue(
+            AppSettings.BLUEPRINT_AUTO_SCAN_ON_STARTUP, bool(enabled)
         )
         AppSettings.settings().sync()
 

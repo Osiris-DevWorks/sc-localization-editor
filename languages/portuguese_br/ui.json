@@ -1366,6 +1366,10 @@
       "ht": "",
       "at": "Escaneia os arquivos de log do Star Citizen (Game.log e logbackups) em busca de notificações de recompensa \"Received Blueprint\" e marca esses blueprints automaticamente como adquiridos."
     },
+    "scan_logs_already_running_tooltip": {
+      "ht": "",
+      "at": "Já há uma varredura em andamento (pode ser a varredura automática de inicialização)."
+    },
     "scan_other_channels_checkbox": {
       "ht": "",
       "at": "Também escanear LIVE/HOTFIX (o que não estiver ativo)"
@@ -1381,6 +1385,18 @@
     "force_rescan_tooltip": {
       "ht": "",
       "at": "Normalmente uma verificação só lê eventos desde a última verificação, para continuar rápida. Marque isto se sua lista de itens possuídos parecer errada e você quiser reler cada registro do zero. Desmarca-se sozinha após a próxima verificação."
+    },
+    "auto_scan_startup_checkbox": {
+      "ht": "",
+      "at": "Escanear logs automaticamente ao iniciar"
+    },
+    "auto_scan_startup_tooltip": {
+      "ht": "",
+      "at": "Executa \"Escanear Logs por Blueprints Adquiridos\" automaticamente toda vez que o Smart Citizen inicia, para que sua lista de Adquiridos fique atualizada sem um clique manual. Usa a mesma cobertura de canais e a mesma varredura incremental do botão acima."
+    },
+    "auto_scan_status_added": {
+      "ht": "",
+      "at": "Varredura automática: {count} blueprints adicionados à sua lista de Adquiridos"
     },
     "apply_owned_tag_btn": {
       "ht": "",
