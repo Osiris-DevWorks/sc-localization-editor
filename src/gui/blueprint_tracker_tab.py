@@ -19,7 +19,9 @@ from PyQt6.QtWidgets import (
     QMessageBox, QPushButton, QScrollArea, QSizePolicy, QVBoxLayout, QWidget,
 )
 
-from src.gui.enhancements_tab import _NoScrollComboBox
+from src.gui.enhancements_tab import (
+    _NoScrollComboBox, reposition_combo_popup_below_if_it_fits,
+)
 from src.gui.theme import get_button_color
 from src.utils.i18n import tr
 from src.utils.settings import AppSettings
@@ -75,18 +77,12 @@ class _NoWheelComboBox(_NoScrollComboBox):
         if popup.height() <= capped_height:
             return
         popup.setFixedHeight(int(capped_height))
-        # _NoScrollComboBox's own "does it fit below" check above ran
-        # against the OLD, uncapped height -- a 100+ row list rarely fits
-        # below, so it likely left the popup flipped above the combo
-        # instead. Re-check now that the popup is a fraction of that size.
-        below_point = self.mapToGlobal(self.rect().bottomLeft())
-        screen = self.screen()
-        fits_below = (
-            screen is None
-            or below_point.y() + popup.height() <= screen.availableGeometry().bottom()
-        )
-        if fits_below:
-            popup.move(below_point)
+        # _NoScrollComboBox's own "does it fit below" check (inside the
+        # super().showPopup() call above) ran against the OLD, uncapped
+        # height -- a 100+ row list rarely fits below, so it likely left
+        # the popup flipped above the combo instead. Re-run the same check
+        # now that the popup is a fraction of that size.
+        reposition_combo_popup_below_if_it_fits(self, popup)
 
 
 def _relabel_details_button(box: QMessageBox, shown_label: str, hidden_label: str) -> None:
