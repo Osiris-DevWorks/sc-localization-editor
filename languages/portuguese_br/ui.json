@@ -1398,6 +1398,14 @@
       "ht": "",
       "at": "Varredura automática: {count} blueprints adicionados à sua lista de Adquiridos"
     },
+    "auto_scan_popup_checkbox": {
+      "ht": "",
+      "at": "Mostrar popup para novos blueprints encontrados pela varredura automática"
+    },
+    "auto_scan_popup_tooltip": {
+      "ht": "",
+      "at": "Quando a varredura automática de inicialização encontra novos blueprints, mostra o mesmo popup de resumo do botão Escanear Logs, em vez de apenas uma mensagem na barra de status. Só se aplica quando uma varredura realmente encontra algo novo."
+    },
     "apply_owned_tag_btn": {
       "ht": "",
       "at": "Aplicar Tags [Owned]"

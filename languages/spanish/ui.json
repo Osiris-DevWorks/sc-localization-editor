@@ -1398,6 +1398,14 @@
       "ht": "",
       "at": "Análisis automático: {count} blueprints añadidos a tu lista de adquiridos"
     },
+    "auto_scan_popup_checkbox": {
+      "ht": "",
+      "at": "Mostrar ventana emergente para nuevos blueprints encontrados por el análisis automático"
+    },
+    "auto_scan_popup_tooltip": {
+      "ht": "",
+      "at": "Cuando el análisis automático al iniciar encuentra nuevos blueprints, muestra la misma ventana emergente de resumen que el botón Escanear registros, en lugar de solo un mensaje en la barra de estado. Solo se aplica cuando un análisis realmente encuentra algo nuevo."
+    },
     "apply_owned_tag_btn": {
       "ht": "",
       "at": "Aplicar etiquetas [Owned]"

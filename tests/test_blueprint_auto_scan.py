@@ -41,6 +41,17 @@ class TestAutoScanSetting:
         assert AppSettings.get_auto_scan_blueprints_enabled() is False
 
 
+class TestAutoScanPopupSetting:
+    def test_default_is_false(self, json_backend):
+        assert AppSettings.get_auto_scan_show_popup_enabled() is False
+
+    def test_round_trips(self, json_backend):
+        AppSettings.set_auto_scan_show_popup_enabled(True)
+        assert AppSettings.get_auto_scan_show_popup_enabled() is True
+        AppSettings.set_auto_scan_show_popup_enabled(False)
+        assert AppSettings.get_auto_scan_show_popup_enabled() is False
+
+
 class _FakeTrackerTab:
     """Carries just what MainWindow's scan pipeline calls on the tab."""
 
@@ -195,3 +206,88 @@ class TestFinishQueueSilentMode:
         stub = _FinishStub(silent=True, new_names=[])
         stub.finish()
         assert stub._bp_scan_silent is False
+
+
+class _FakeMessageBox:
+    """Stands in for QMessageBox so the popup-opt-in path never needs a
+    real QApplication -- same technique as test_install_scan_finished_
+    stale_worker.py's fakes. Records enough to prove the popup path was
+    actually reached, not just that the status-bar branch was skipped."""
+
+    instances = []
+
+    def __init__(self, parent=None):
+        self.parent = parent
+        self.icon = None
+        self.title = None
+        self.text = None
+        self.detailed_text = None
+        self.exec_called = False
+        _FakeMessageBox.instances.append(self)
+
+    def setIcon(self, icon):
+        self.icon = icon
+
+    def setWindowTitle(self, title):
+        self.title = title
+
+    def setText(self, text):
+        self.text = text
+
+    def setDetailedText(self, text):
+        self.detailed_text = text
+
+    def exec(self):
+        self.exec_called = True
+
+    class Icon:
+        Information = "information"
+
+
+class TestFinishQueuePopupOptIn:
+    """#386 follow-up: the sibling checkbox brings the modal popup back for
+    a silent run's "found something new" case specifically."""
+
+    @pytest.fixture(autouse=True)
+    def _fake_message_box(self, monkeypatch):
+        _FakeMessageBox.instances = []
+        monkeypatch.setattr("src.gui.main_window.QMessageBox", _FakeMessageBox)
+        monkeypatch.setattr("src.gui.main_window._relabel_details_button", lambda *a, **k: None)
+        yield
+
+    def test_popup_disabled_stays_on_the_status_bar(self, json_backend):
+        AppSettings.set_auto_scan_show_popup_enabled(False)
+        stub = _FinishStub(silent=True, new_names=["R97 Shotgun"])
+        stub.finish()
+        assert len(stub._status_bar.messages) == 1
+        assert _FakeMessageBox.instances == []
+
+    def test_popup_enabled_shows_the_normal_summary_dialog_instead(self, json_backend):
+        AppSettings.set_auto_scan_show_popup_enabled(True)
+        stub = _FinishStub(silent=True, new_names=["R97 Shotgun", "P4-AR"])
+        stub.finish()
+
+        assert stub._status_bar.messages == []
+        assert len(_FakeMessageBox.instances) == 1
+        box = _FakeMessageBox.instances[0]
+        assert box.exec_called is True
+        assert "R97 Shotgun" in box.detailed_text
+        assert "P4-AR" in box.detailed_text
+
+    def test_popup_enabled_does_not_affect_a_quiet_run(self, json_backend):
+        """Only the "found something new" branch reads this setting -- a
+        run that finds nothing new stays silent regardless."""
+        AppSettings.set_auto_scan_show_popup_enabled(True)
+        stub = _FinishStub(silent=True, new_names=[])
+        stub.finish()
+        assert stub._status_bar.messages == []
+        assert _FakeMessageBox.instances == []
+
+    def test_manual_scans_are_unaffected_by_the_popup_setting(self, json_backend):
+        """The setting only matters for a silent run -- a manual click
+        already shows this same dialog regardless of either checkbox."""
+        AppSettings.set_auto_scan_show_popup_enabled(False)
+        stub = _FinishStub(silent=False, new_names=["R97 Shotgun"])
+        stub.finish()
+        assert stub._status_bar.messages == []
+        assert len(_FakeMessageBox.instances) == 1

@@ -1398,6 +1398,14 @@
       "ht": "",
       "at": "Analyse automatique : {count} plans ajoutés à votre liste de possédés"
     },
+    "auto_scan_popup_checkbox": {
+      "ht": "",
+      "at": "Afficher une fenêtre pour les nouveaux plans trouvés par l'analyse automatique"
+    },
+    "auto_scan_popup_tooltip": {
+      "ht": "",
+      "at": "Lorsque l'analyse automatique au démarrage trouve de nouveaux plans, affiche la même fenêtre récapitulative que le bouton Rechercher dans les journaux, au lieu d'un simple message dans la barre d'état. Ne s'applique que si une analyse trouve réellement quelque chose de nouveau."
+    },
     "apply_owned_tag_btn": {
       "ht": "",
       "at": "Appliquer les étiquettes [Owned]"

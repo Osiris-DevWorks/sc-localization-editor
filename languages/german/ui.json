@@ -1458,6 +1458,14 @@
       "ht": "",
       "at": "Auto-Scan: {count} Baupläne zu deiner Liste eigener Baupläne hinzugefügt"
     },
+    "auto_scan_popup_checkbox": {
+      "ht": "",
+      "at": "Popup für vom Auto-Scan gefundene neue Baupläne anzeigen"
+    },
+    "auto_scan_popup_tooltip": {
+      "ht": "",
+      "at": "Wenn der automatische Start-Scan neue Baupläne findet, wird dasselbe Zusammenfassungs-Popup wie bei der Schaltfläche „Logs scannen\" angezeigt, statt nur einer Statusleisten-Meldung. Gilt nur, wenn ein Scan tatsächlich etwas Neues findet."
+    },
     "hide_added_btn": {
       "ht": "",
       "at": "Hinzugefügte Baupläne ausblenden"

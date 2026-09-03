@@ -6281,7 +6281,11 @@ class MainWindow(QMainWindow):
         # the user its tags were applied.
         self.blueprint_tracker_tab.mark_owned_clean()
 
-        if silent:
+        # #386 follow-up: an opt-in escape hatch back to the normal popup,
+        # for anyone who wants the interruption on a launch that finds
+        # something new. A quiet run (the not-new_names branch above)
+        # ignores this setting entirely -- it only ever applies here.
+        if silent and not AppSettings.get_auto_scan_show_popup_enabled():
             self.statusBar().showMessage(
                 tr("blueprint_tracker.auto_scan_status_added", count=len(new_names))
             )

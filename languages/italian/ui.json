@@ -1398,6 +1398,14 @@
       "ht": "",
       "at": "Scansione automatica: {count} blueprint aggiunti alla tua lista Posseduti"
     },
+    "auto_scan_popup_checkbox": {
+      "ht": "",
+      "at": "Mostra popup per i nuovi blueprint trovati dalla scansione automatica"
+    },
+    "auto_scan_popup_tooltip": {
+      "ht": "",
+      "at": "Quando la scansione automatica all'avvio trova nuovi blueprint, mostra lo stesso popup di riepilogo del pulsante Analizza i log, invece di un semplice messaggio nella barra di stato. Si applica solo quando una scansione trova effettivamente qualcosa di nuovo."
+    },
     "apply_owned_tag_btn": {
       "ht": "",
       "at": "Applica tag posseduto"

@@ -1398,6 +1398,14 @@
       "ht": "Auto-scan: {count} new blueprint(s) added to your Owned list",
       "at": ""
     },
+    "auto_scan_popup_checkbox": {
+      "ht": "Show popup for new blueprints found by auto-scan",
+      "at": ""
+    },
+    "auto_scan_popup_tooltip": {
+      "ht": "When the automatic startup scan finds new blueprints, show the same summary popup the manual Scan Logs button shows, instead of just a status bar message. Only applies when a scan actually finds something new.",
+      "at": ""
+    },
     "apply_owned_tag_btn": {
       "ht": "Apply Owned Tags",
       "at": ""

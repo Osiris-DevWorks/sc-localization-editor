@@ -173,9 +173,10 @@ class BlueprintTrackerTab(QWidget):
         # logs doesn't need mission data loaded, it reads the player's own
         # earned-blueprint history straight from Star Citizen's log files.
         # Row 1: scan-behavior checkboxes (cols 0-1: which channels to cover
-        # #268, whether to ignore the watermark #308, and whether to run the
-        # scan automatically on startup #386 -- all three only affecting
-        # "Scan Logs for Owned Blueprints") | Export/Import the Owned set
+        # #268, whether to ignore the watermark #308, whether to run the scan
+        # automatically on startup #386, and whether that auto-scan pops the
+        # normal summary dialog or just a status bar message -- all four only
+        # affecting "Scan Logs for Owned Blueprints") | Export/Import the Owned set
         # (#234, cols 2-3) -- secondary actions, smaller than the primary
         # scan/apply buttons above them, sharing the row since neither
         # checkbox nor export/import needs mission data loaded.
@@ -249,9 +250,36 @@ class BlueprintTrackerTab(QWidget):
             AppSettings.get_auto_scan_blueprints_enabled()
         )
         self._auto_scan_startup_checkbox.toggled.connect(
-            AppSettings.set_auto_scan_blueprints_enabled
+            self._on_auto_scan_startup_toggled
         )
         checkboxes_row.addWidget(self._auto_scan_startup_checkbox)
+
+        # #386 follow-up: opt back INTO the manual scan's own popup for the
+        # auto-scan too, for anyone who wants the interruption. Off by
+        # default, same as the auto-scan checkbox itself -- the status bar
+        # message stays the default so a launch that finds something new
+        # doesn't surprise everyone who didn't ask for a popup. Only affects
+        # the "found new blueprints" case; a quiet run still never pops
+        # anything, checkbox or not.
+        self._auto_scan_popup_checkbox = QCheckBox(
+            tr("blueprint_tracker.auto_scan_popup_checkbox")
+        )
+        self._auto_scan_popup_checkbox.setToolTip(
+            tr("blueprint_tracker.auto_scan_popup_tooltip")
+        )
+        self._auto_scan_popup_checkbox.setChecked(
+            AppSettings.get_auto_scan_show_popup_enabled()
+        )
+        self._auto_scan_popup_checkbox.toggled.connect(
+            AppSettings.set_auto_scan_show_popup_enabled
+        )
+        # #386 review: this setting has no effect unless auto-scan itself is
+        # on -- greyed out (not just documented in the tooltip) so that's
+        # visible rather than a silently inert checkbox.
+        self._auto_scan_popup_checkbox.setEnabled(
+            self._auto_scan_startup_checkbox.isChecked()
+        )
+        checkboxes_row.addWidget(self._auto_scan_popup_checkbox)
         checkboxes_row.addStretch()
         top_grid.addLayout(checkboxes_row, 1, 0, 1, 2)
 
@@ -426,6 +454,12 @@ class BlueprintTrackerTab(QWidget):
         )
         self._auto_scan_startup_checkbox.setToolTip(
             tr("blueprint_tracker.auto_scan_startup_tooltip")
+        )
+        self._auto_scan_popup_checkbox.setText(
+            tr("blueprint_tracker.auto_scan_popup_checkbox")
+        )
+        self._auto_scan_popup_checkbox.setToolTip(
+            tr("blueprint_tracker.auto_scan_popup_tooltip")
         )
         self._apply_owned_btn.setText(tr("blueprint_tracker.apply_owned_tag_btn"))
         self._set_owned_btn_dirty(self._owned_dirty)  # re-applies the right tooltip
@@ -656,6 +690,14 @@ class BlueprintTrackerTab(QWidget):
         """Persist the show-tags display toggle and re-render (#221)."""
         AppSettings.set_blueprint_show_tags(checked)
         self._render_blueprint_lists()
+
+    def _on_auto_scan_startup_toggled(self, checked: bool) -> None:
+        """Persist the auto-scan checkbox and keep the popup checkbox's
+        enabled state in sync (#386 review) -- the popup setting has no
+        effect unless auto-scan itself is on, so greying it out here
+        (rather than leaving it clickable but inert) makes that visible."""
+        AppSettings.set_auto_scan_blueprints_enabled(checked)
+        self._auto_scan_popup_checkbox.setEnabled(checked)
 
     def _own_selected_blueprints(self) -> None:
         """Move every selected available item into the owned set (one write)."""
