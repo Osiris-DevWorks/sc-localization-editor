@@ -2140,7 +2140,21 @@ class MainWindow(QMainWindow):
         Same enabled/disabled tooltip pattern as the Enhancements tab's
         Generate Enhancements / Save Tag Changes buttons; resolved via tr()
         here (not cached class constants) so it always reflects the active
-        language."""
+        language.
+
+        Also mirrors state onto simple_page's own Apply button (#397) --
+        it was previously never wired to this at all, hardcoded green from
+        construction regardless of whether there was actually anything to
+        apply. Every existing caller of this method (construction, edits,
+        the #387 startup check, theme/language refresh) now keeps both
+        buttons in sync for free. Guarded with hasattr: create_toolbar()
+        (where this first fires, building apply_btn) runs before setup_ui()
+        gets to constructing simple_page a little further down -- despite
+        SimpleModeWidget's own class body appearing earlier in this file,
+        that's definition order, not call order. Safe to skip silently on
+        that first call: SimpleModeWidget's own __init__ default
+        (_apply_dirty = True) already matches, so there's nothing to
+        re-sync once it does exist."""
         self._apply_dirty = dirty
         self.apply_btn.setEnabled(dirty)
         self.apply_btn.setToolTip(
@@ -2153,6 +2167,8 @@ class MainWindow(QMainWindow):
             f"font-weight: bold; padding: 6px; }}"
             f"QPushButton:disabled {{ background-color: {color}; color: {text}; }}"
         )
+        if hasattr(self, "simple_page"):
+            self.simple_page.set_apply_dirty(dirty)
 
     def _mark_apply_dirty(self, *_args):
         """Something that Apply to Game would pick up changed — light the
