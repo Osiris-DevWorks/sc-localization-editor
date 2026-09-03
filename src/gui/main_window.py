@@ -2276,8 +2276,31 @@ class MainWindow(QMainWindow):
 
             return _matches_applied_output(stock_dict, merged_dict, applied_dict)
         except Exception as e:
-            logger.debug(f"Could not verify already-applied state at startup (#387): {e}")
+            logger.debug(f"Could not verify already-applied state (#387): {e}")
             return False
+
+    def _refresh_apply_dirty_after_reload(self) -> None:
+        """Re-verify whether Apply is actually needed after ANY reload, not
+        just the first (#397 follow-up to #387).
+
+        Gating the #387 check to startup only left a real bug: Simple
+        mode's one-button flow reloads immediately after a successful
+        apply_to_game() (to refresh the hidden Advanced view with the
+        just-regenerated content), and _recompute_owned's unconditional
+        _mark_apply_dirty call earlier in this same reload re-marked the
+        button dirty and re-armed the exit-time "unapplied changes"
+        warning -- undoing what apply_to_game() had correctly just cleared
+        a moment earlier, for a session that had, in fact, just been fully
+        applied. Deferring to this same authoritative check on every
+        reload (not assuming "any reload means dirty") fixes that, and is
+        strictly more accurate generally: switching to a channel/language
+        that's already fully applied now correctly shows green too,
+        instead of assuming red.
+        """
+        already_applied = self._entries_already_applied()
+        self._set_apply_btn_dirty(not already_applied)
+        if already_applied:
+            self._session_has_unapplied_edit = False
 
     @pyqtSlot()
     @timed
@@ -5264,13 +5287,7 @@ class MainWindow(QMainWindow):
             self._check_enhancements_after_loading = False
             self._check_enhancements_freshness()
 
-        # #387: only the very first load can start Apply green -- every
-        # later reload (regeneration, channel/language switch, import)
-        # already forces it red via _recompute_owned's _mark_apply_dirty
-        # call above, which is the correct default once the app is running
-        # and stays that way regardless of what this check would say.
-        if not self._initial_load_done:
-            self._set_apply_btn_dirty(not self._entries_already_applied())
+        self._refresh_apply_dirty_after_reload()
 
         # From here on, dirty-marking reflects a real in-session change —
         # see _mark_apply_dirty / _session_has_unapplied_edit.
