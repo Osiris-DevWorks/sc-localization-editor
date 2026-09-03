@@ -56,12 +56,18 @@ class _NoWheelComboBox(_NoScrollComboBox):
     def showPopup(self):  # noqa: N802 (Qt override)
         # #388 follow-up: force the popup window's pixel height down to
         # _MAX_VISIBLE_ITEMS rows, computed from the view's own row height
-        # so it holds regardless of font/theme. QAbstractItemView adds its
-        # own scrollbar automatically once content overflows the viewport,
-        # so capping the height is the only piece needed.
+        # so it holds regardless of font/theme, and force a real scrollbar
+        # (see the policy line below -- Fusion's combo popup defaults to
+        # tiny scroll-arrow buttons instead, confirmed live).
         super().showPopup()  # _NoScrollComboBox: shows, positions below if it fits
         view = self.view()
         popup = view.window()
+        # Fusion's combo popup prefers small top/bottom scroll-arrow
+        # buttons over a real scrollbar once content overflows the
+        # popup -- confirmed live (#388 follow-up), capping the height
+        # above left no visible scrollbar at all. Forcing the policy on
+        # makes Qt render the view's actual scrollbar instead.
+        view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         row_height = view.sizeHintForRow(0) if self.count() else 0
         if row_height <= 0:
             row_height = view.fontMetrics().height() + 6
