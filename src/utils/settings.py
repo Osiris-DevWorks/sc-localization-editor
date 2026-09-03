@@ -3208,13 +3208,24 @@ class AppSettings:
         return defaults
 
     @staticmethod
-    def is_profile_default_materialised(key: str) -> bool:
-        """True when *key*'s default belongs in a backup (see #383)."""
+    def is_profile_default_materialised(key: str, value=None) -> bool:
+        """True when *key*'s default belongs in a backup (see #383).
+
+        *value* is threaded through to is_profile_excluded_key's own
+        data_sources/*/path URL check, the same way export_all_values does
+        for a real stored value — without it, that check sees no value and
+        can't tell a URL-mapped default from a local one, so it falls back
+        to treating any such key as non-URL (excluded). No default in
+        profile_default_values() has that shape today, so this is currently
+        a no-op in practice; passing it costs nothing and keeps the two
+        exclusion checks answering the same question the same way if one
+        ever does.
+        """
         if key in AppSettings.PROFILE_DEFAULT_EXCLUDE_KEYS:
             return False
         if key.startswith(AppSettings.PROFILE_DEFAULT_EXCLUDE_PREFIXES):
             return False
-        return not AppSettings.is_profile_excluded_key(key)
+        return not AppSettings.is_profile_excluded_key(key, value)
 
     @staticmethod
     def export_all_values() -> dict:
@@ -3240,7 +3251,7 @@ class AppSettings:
         out: dict = {
             key: value
             for key, value in AppSettings.profile_default_values().items()
-            if AppSettings.is_profile_default_materialised(key)
+            if AppSettings.is_profile_default_materialised(key, value)
         }
         for key in keys:
             value = backend.value(key)
