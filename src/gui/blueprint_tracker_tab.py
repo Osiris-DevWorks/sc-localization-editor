@@ -37,21 +37,50 @@ class _NoWheelComboBox(_NoScrollComboBox):
     inherits _NoScrollComboBox's popup-placement fix.
     """
 
+    _MAX_VISIBLE_ITEMS = 12
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # #388 follow-up: Mission enumerates one entry per unique mission
-        # title in the loaded strings -- easily 100+. Uncapped, Qt's popup
-        # grows to fit every row instead of scrolling, overflowing the
-        # screen. Capping it also keeps "Any" (always index 0, and the
-        # current item until something else is picked) pinned to the top of
-        # the popup instead of Qt trying to center an oversized list around
-        # it. Type/Class/Size/Grade have far fewer values so this is a
-        # no-op for them in practice, but it's set on the shared class for
-        # consistency in case any of those lists grow later.
-        self.setMaxVisibleItems(12)
+        # Mission enumerates one entry per unique mission title in the
+        # loaded strings -- easily 100+. setMaxVisibleItems is the
+        # documented Qt knob for this, but confirmed live (#388 follow-up)
+        # it has no effect here on its own -- the popup still rendered
+        # every row uncapped. Kept anyway (harmless, correct intent, some
+        # Qt code paths still consult it for sizeHint); showPopup below
+        # does the actual capping by force.
+        self.setMaxVisibleItems(self._MAX_VISIBLE_ITEMS)
 
     def wheelEvent(self, event):  # noqa: N802 (Qt override)
         event.ignore()
+
+    def showPopup(self):  # noqa: N802 (Qt override)
+        # #388 follow-up: force the popup window's pixel height down to
+        # _MAX_VISIBLE_ITEMS rows, computed from the view's own row height
+        # so it holds regardless of font/theme. QAbstractItemView adds its
+        # own scrollbar automatically once content overflows the viewport,
+        # so capping the height is the only piece needed.
+        super().showPopup()  # _NoScrollComboBox: shows, positions below if it fits
+        view = self.view()
+        popup = view.window()
+        row_height = view.sizeHintForRow(0) if self.count() else 0
+        if row_height <= 0:
+            row_height = view.fontMetrics().height() + 6
+        capped_height = row_height * self._MAX_VISIBLE_ITEMS + 2 * view.frameWidth() + 4
+        if popup.height() <= capped_height:
+            return
+        popup.setFixedHeight(int(capped_height))
+        # _NoScrollComboBox's own "does it fit below" check above ran
+        # against the OLD, uncapped height -- a 100+ row list rarely fits
+        # below, so it likely left the popup flipped above the combo
+        # instead. Re-check now that the popup is a fraction of that size.
+        below_point = self.mapToGlobal(self.rect().bottomLeft())
+        screen = self.screen()
+        fits_below = (
+            screen is None
+            or below_point.y() + popup.height() <= screen.availableGeometry().bottom()
+        )
+        if fits_below:
+            popup.move(below_point)
 
 
 def _relabel_details_button(box: QMessageBox, shown_label: str, hidden_label: str) -> None:
