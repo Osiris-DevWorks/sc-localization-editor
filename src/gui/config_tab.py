@@ -580,7 +580,20 @@ class ConfigTab(QWidget):
         Runs in :class:`InstallScanWorker` even for the quick scan: reading
         each install's applied global.ini for the apply watermark is cheap
         warm but measured at 26 s cold, which would freeze the window.
+
+        Re-entry guard (#385 review): the dialog's own "Scan all drives"
+        button stays enabled for the whole deep scan (`set_report` only
+        touches it once a report arrives), and the deep walk is slow by
+        design -- exactly the window a second click needs. Without this, a
+        second call reassigns `self._dupe_worker`/`self._dupe_progress` to
+        the new scan, and the first worker's `finished` handler hits the
+        (correct, already-tested) stale-worker identity check and returns
+        before ever closing its own progress dialog -- an orphaned progress
+        window left on screen for the life of the app.
         """
+        if getattr(self, "_dupe_worker", None) is not None:
+            return
+
         from src.gui.workers import AnimatedProgressDialog, InstallScanWorker
 
         self._dupe_check_btn.setEnabled(False)

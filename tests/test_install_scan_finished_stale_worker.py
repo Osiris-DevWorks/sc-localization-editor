@@ -1,25 +1,34 @@
-"""ConfigTab._on_install_scan_finished: stale-scan guards (#385 review).
+"""ConfigTab install-scan lifecycle guards, all #385 review findings.
 
-Two real bugs, both from cancel-then-act sequences the deep-scan Cancel
-button made reachable for the first time this same round (it didn't exist
-before -- there was no way to cancel a scan at all):
+Three real bugs, all from concurrency windows the deep scan opened up (it's
+slow by design -- a whole-drive walk -- with its own Cancel button, which is
+exactly what makes "another call lands before the first one finishes"
+reachable):
 
 * Re-scanning before a just-cancelled worker's own `finished` arrives
-  reassigns `self._dupe_worker` to the new one. The handler used to read
-  `self._dupe_worker` (not "the worker that actually just finished") and
-  call `.wait()` on it -- the wrong, still-running worker. A custom-`run()`
-  QThread ignores `.quit()`, so `.wait()` blocked the GUI thread for the
-  whole new scan.
+  reassigns `self._dupe_worker` to the new one. `_on_install_scan_finished`
+  used to read `self._dupe_worker` (not "the worker that actually just
+  finished") and call `.wait()` on it -- the wrong, still-running worker. A
+  custom-`run()` QThread ignores `.quit()`, so `.wait()` blocked the GUI
+  thread for the whole new scan.
 * Cancel, then close the results dialog, still leaves the cancelled worker
   running. Its late `finished` used to unconditionally build and `.exec()`
   a brand new modal dialog the user had already explicitly dismissed.
+* `_check_other_installs` itself had no re-entry guard, and the dialog's own
+  "Scan all drives" button stays enabled for the whole deep scan (`set_report`
+  only touches it once a report arrives) -- so a second click while one was
+  already running spawned a second worker, and the first one's `finished`
+  hit the stale-worker check above and returned before ever closing its own
+  progress dialog. Left it orphaned on screen for the life of the app.
 
-The fix passes the specific worker a `finished` connection belongs to as an
-explicit parameter (bound at `.connect()` time via a lambda default arg),
-rather than relying on `self._dupe_worker` or `QObject.sender()` -- which is
-what makes this directly testable with plain stub objects, no QApplication,
-no real QThread, no Qt signal emission at all. Driven on a lightweight stub
-self, same pattern as test_favorite_toggle_stranded.py / test_ui_mode.py.
+The `_on_install_scan_finished` fix passes the specific worker a `finished`
+connection belongs to as an explicit parameter (bound at `.connect()` time
+via a lambda default arg), rather than relying on `self._dupe_worker` or
+`QObject.sender()`. The `_check_other_installs` fix is a plain guard at the
+top of the method. Both are directly testable with plain stub objects, no
+QApplication, no real QThread, no Qt signal emission at all -- driven on a
+lightweight stub self, same pattern as test_favorite_toggle_stranded.py /
+test_ui_mode.py.
 """
 import pytest
 
@@ -29,9 +38,15 @@ pytestmark = pytest.mark.unit
 
 
 class _FakeWorker:
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        # *args/**kwargs: also stands in for a real InstallScanWorker(deep=,
+        # parent=) construction in TestReentrantScanGuard below.
         self.quit_called = False
         self.wait_called = False
+        self.started = False
+        self.progress_pct = _FakeSignal()
+        self.error = _FakeSignal()
+        self.finished = _FakeSignal()
 
     def quit(self):
         self.quit_called = True
@@ -39,13 +54,25 @@ class _FakeWorker:
     def wait(self):
         self.wait_called = True
 
+    def start(self):
+        self.started = True
+
 
 class _FakeProgress:
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        # *args/**kwargs: also stands in for a real AnimatedProgressDialog(...)
+        # construction in TestReentrantScanGuard below.
         self.closed = False
+        self.canceled = _FakeSignal()
 
     def close(self):
         self.closed = True
+
+    def set_progress(self, *args, **kwargs):
+        pass
+
+    def setMaximumWidth(self, _width):
+        pass
 
 
 class _FakeButton:
@@ -94,6 +121,9 @@ class _Stub:
         ConfigTab._on_install_scan_finished(self, report, worker)
 
     def _use_install_root(self, root):
+        pass  # only ever connected, never invoked, in these tests
+
+    def _on_install_scan_error(self, message):
         pass  # only ever connected, never invoked, in these tests
 
 
@@ -193,3 +223,48 @@ class TestCancelledScanDoesNotReopenADismissedDialog:
         stub.finish(report, worker)
 
         assert built == [report], "the cancelled check must not have short-circuited this path"
+
+
+class TestReentrantScanGuard:
+    """_check_other_installs: a scan already running must reject a second call.
+
+    #385 review: the dialog's own "Scan all drives" button stays enabled for
+    the whole deep scan (`set_report` only touches it once a report arrives),
+    and the deep walk is slow by design -- exactly the window a second click
+    needs. Without a guard, a second call reassigned self._dupe_worker /
+    self._dupe_progress to the new scan, and the first worker's `finished`
+    handler then hit the stale-worker identity check above and returned
+    before ever closing its own progress dialog -- an orphaned progress
+    window left on screen for the life of the app.
+    """
+
+    def test_a_running_scan_blocks_a_second_call(self):
+        running = _FakeWorker()
+        stub = _Stub(current_worker=running)
+
+        ConfigTab._check_other_installs(stub, deep=False)
+
+        # The guard returns before anything else runs -- not even the
+        # button gets touched.
+        assert stub._dupe_check_btn.enabled is None
+        assert stub._dupe_worker is running
+
+    def test_no_scan_running_proceeds_past_the_guard(self, monkeypatch):
+        """Guard against overcorrecting: a fresh call with nothing running
+        must still reach the scan-launching code, not get swallowed by the
+        guard meant for the busy case.
+
+        Patches the classes the method's local import resolves to, same
+        technique as test_not_cancelled_with_no_open_dialog_does_build_one
+        above -- no QApplication in this file, so the real
+        AnimatedProgressDialog/InstallScanWorker must not get constructed.
+        """
+        monkeypatch.setattr("src.gui.workers.AnimatedProgressDialog", _FakeProgress)
+        monkeypatch.setattr("src.gui.workers.InstallScanWorker", _FakeWorker)
+        stub = _Stub(current_worker=None)
+
+        ConfigTab._check_other_installs(stub, deep=False)
+
+        assert stub._dupe_check_btn.enabled is False
+        assert isinstance(stub._dupe_worker, _FakeWorker)
+        assert stub._dupe_worker.started
