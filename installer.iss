@@ -108,6 +108,29 @@ begin
   Result := ExpandConstant('{param:AUTOUPDATE|0}') = '1';
 end;
 
+function IsVerySilentUninstall(): Boolean;
+var
+  I: Integer;
+begin
+  { #357 review fix: UninstallSilent() is True for BOTH /SILENT and
+    /VERYSILENT, but only /VERYSILENT means genuinely headless -- /SILENT
+    still shows MsgBox prompts, and the "click NO, uninstall old version
+    only" branch of the reinstall-detection prompt below runs its
+    sub-uninstall with exactly /SILENT (an interactive user is sitting
+    right there, mid-click). Checking the actual command line instead of
+    UninstallSilent() distinguishes that case from the truly automated
+    /VERYSILENT auto-update cleanup (UnInstallOldVersion above). }
+  Result := False;
+  for I := 1 to ParamCount do
+  begin
+    if CompareText(ParamStr(I), '/VERYSILENT') = 0 then
+    begin
+      Result := True;
+      Exit;
+    end;
+  end;
+end;
+
 function GetLocalCacheDefault(): String;
 begin
   { Mirrors AppSettings.get_dataforge_cache_base() default for registry
@@ -854,7 +877,7 @@ end;
 
 procedure DeleteAllUserSettings();
 var
-  UserDataDir, CacheDir: String;
+  UserDataDir, CacheDir, LegacyUserDataDir: String;
 begin
   { #357: the ONE deliberate exception to the #172 persistence lock
     documented in CurUninstallStepChanged below — only reached when the
@@ -890,6 +913,22 @@ begin
   end
   else
     Log('User data folder absent (nothing to delete): ' + UserDataDir);
+
+  { #357 review: the pre-0.9.0, pre-rebrand Documents folder (mirrors
+    MigrateUserDocsFolder's OldDir). GetDocumentsDir() only ever resolves to
+    the current "Smart Citizen" name -- an install that never launched a
+    post-rebrand build (so the migration rename never ran) would otherwise
+    keep its old user.ini/backups/cache here even after a "full wipe". Not
+    gated on user_data_dir being unset: the rename is unconditional on the
+    Documents base, independent of whether a later version's override is
+    also in play, so this folder can exist (or not) regardless. }
+  LegacyUserDataDir := GetDocumentsBase() + '\SC Localization Editor';
+  if DirExists(LegacyUserDataDir) then
+  begin
+    Log('Deleting legacy pre-rebrand user data folder: ' + LegacyUserDataDir);
+    if not DelTree(LegacyUserDataDir, True, True, True) then
+      Log('WARNING: DelTree returned false for legacy user data folder: ' + LegacyUserDataDir);
+  end;
 
   { Skip if it's the same folder as (or nested under) the user data folder
     already just deleted above -- a custom cache_dir is normally a wholly
@@ -987,16 +1026,23 @@ begin
   Result := True;
   DeleteAllSettingsChecked := False;
 
-  { #357: never show the custom dialog during a silent/automated uninstall
-    -- e.g. the old-version cleanup step of an in-app auto-update, which
-    runs its uninstaller with /VERYSILENT (see UnInstallOldVersion above
-    and _launch_installer_and_quit in src/gui/main_window.py). Unlike
-    MsgBox, a raw custom VCL form isn't auto-suppressed by Inno's silent
-    flags, so skipping it here is required — otherwise a fully automated
-    upgrade would hang forever waiting for a click on a dialog nobody can
-    see. Defaults to False (the safe, non-destructive choice): an
-    automated/background uninstall must never accidentally wipe settings. }
-  if UninstallSilent() then
+  { #357: never show the custom dialog during a truly headless uninstall --
+    e.g. the old-version cleanup step of an in-app auto-update, which runs
+    its uninstaller with /VERYSILENT (see UnInstallOldVersion above and
+    _launch_installer_and_quit in src/gui/main_window.py). Unlike MsgBox, a
+    raw custom VCL form isn't auto-suppressed by Inno's silent flags, so
+    skipping it here is required — otherwise a fully automated upgrade
+    would hang forever waiting for a click on a dialog nobody can see.
+    Defaults to False (the safe, non-destructive choice): an
+    automated/background uninstall must never accidentally wipe settings.
+
+    Deliberately checks IsVerySilentUninstall(), not UninstallSilent():
+    the latter is also True for plain /SILENT, which the interactive
+    "click NO, uninstall old version only" reinstall-detection flow further
+    below uses for its sub-uninstall -- that's a user sitting at the
+    installer mid-click, not a headless run, and skipping the dialog there
+    would silently deny them the choice this feature exists to offer. }
+  if IsVerySilentUninstall() then
     Exit;
 
   { Fixed size (AAllowResize=False): a static confirmation dialog has no
