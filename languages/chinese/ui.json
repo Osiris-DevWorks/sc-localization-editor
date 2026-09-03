@@ -844,7 +844,7 @@
     },
     "dupe_check_btn": {
       "ht": "",
-      "at": "确认安装位置"
+      "at": "验证安装位置"
     },
     "dupe_check_tooltip": {
       "ht": "",
