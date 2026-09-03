@@ -105,24 +105,32 @@ def test_simple_widget_starts_dirty(qapp):
     and clickable from construction, not the old hardcoded-green button."""
     from src.gui.simple_mode_widget import SimpleModeWidget
     from src.gui.theme import get_button_color
+    from src.utils.i18n import tr
 
     w = SimpleModeWidget()
     assert w.generate_apply_btn.isEnabled()
     assert get_button_color("needs_apply") in w.generate_apply_btn.styleSheet()
+    assert w.generate_apply_btn.toolTip() == tr("simple_mode.generate_apply_tip")
 
 
-def test_simple_widget_set_apply_dirty_toggles_color_and_enabled(qapp):
+def test_simple_widget_set_apply_dirty_toggles_color_enabled_and_tooltip(qapp):
+    """#397 follow-up: the tooltip has to swap with dirty state too, not
+    just color/enabled -- it was still showing the same static string in
+    both states even after the color/enabled half of the fix landed."""
     from src.gui.simple_mode_widget import SimpleModeWidget
     from src.gui.theme import get_button_color
+    from src.utils.i18n import tr
 
     w = SimpleModeWidget()
     w.set_apply_dirty(False)
     assert not w.generate_apply_btn.isEnabled()
     assert get_button_color("apply") in w.generate_apply_btn.styleSheet()
+    assert w.generate_apply_btn.toolTip() == tr("simple_mode.generate_apply_tip_disabled")
 
     w.set_apply_dirty(True)
     assert w.generate_apply_btn.isEnabled()
     assert get_button_color("needs_apply") in w.generate_apply_btn.styleSheet()
+    assert w.generate_apply_btn.toolTip() == tr("simple_mode.generate_apply_tip")
 
 
 def test_simple_widget_busy_overrides_dirty_for_enabled_not_color(qapp):

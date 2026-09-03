@@ -49,13 +49,12 @@ class SimpleModeWidget(QWidget):
         # fill it, so they end up the same size. Apply Enhancements (primary)
         # sits on top; Switch to Advanced below it.
         self.generate_apply_btn = QPushButton(tr("simple_mode.generate_apply_btn"))
-        self.generate_apply_btn.setToolTip(tr("simple_mode.generate_apply_tip"))
         self.generate_apply_btn.setMinimumHeight(44)
         self.generate_apply_btn.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        # Color/enabled state set below by _refresh_apply_button(), once
-        # self._apply_dirty / self._busy both exist -- not hardcoded here.
+        # Tooltip/color/enabled state set below by _refresh_apply_button(),
+        # once self._apply_dirty / self._busy both exist -- not hardcoded here.
         self.generate_apply_btn.clicked.connect(self.generate_and_apply_requested)
 
         self.advanced_btn = QPushButton(tr("simple_mode.switch_to_advanced"))
@@ -112,15 +111,29 @@ class SimpleModeWidget(QWidget):
         self._refresh_apply_button()
 
     def _refresh_apply_button(self) -> None:
-        """Single chokepoint for this button's enabled state and color, so
-        busy-state and dirty-state can't race and leave it wrong -- busy
-        always wins for enabled (never clickable mid-run), dirty decides
-        color always and enabled whenever not busy."""
+        """Single chokepoint for this button's tooltip, enabled state, and
+        color, so busy-state and dirty-state can't race and leave any of
+        them wrong -- busy always wins for enabled (never clickable
+        mid-run), dirty decides color and tooltip always and enabled
+        whenever not busy.
+
+        The tooltip fix is #397 follow-up: this button's tooltip was still
+        the single static "here's what clicking does" string from
+        construction even after set_apply_dirty started correctly driving
+        color/enabled -- unlike the Advanced-mode Apply button, which
+        already swaps its tooltip text between the two states. Resolved
+        via tr() here (not cached) so a language switch picks it up too,
+        same as retranslate_ui below already does for everything else.
+        """
         color = get_button_color("needs_apply" if self._apply_dirty else "apply")
         self.generate_apply_btn.setStyleSheet(
             f"background-color: {color}; "
             f"color: {get_button_text_color()}; font-weight: bold; "
             f"font-size: 14px; padding: 10px 20px;"
+        )
+        self.generate_apply_btn.setToolTip(
+            tr("simple_mode.generate_apply_tip") if self._apply_dirty
+            else tr("simple_mode.generate_apply_tip_disabled")
         )
         self.generate_apply_btn.setEnabled(self._apply_dirty and not self._busy)
 
@@ -129,5 +142,5 @@ class SimpleModeWidget(QWidget):
         self.advanced_btn.setText(tr("simple_mode.switch_to_advanced"))
         self.advanced_btn.setToolTip(tr("simple_mode.switch_to_advanced_tip"))
         self.generate_apply_btn.setText(tr("simple_mode.generate_apply_btn"))
-        self.generate_apply_btn.setToolTip(tr("simple_mode.generate_apply_tip"))
         self.hint_label.setText(tr("simple_mode.defaults_hint"))
+        self._refresh_apply_button()  # re-picks the right tooltip variant too
