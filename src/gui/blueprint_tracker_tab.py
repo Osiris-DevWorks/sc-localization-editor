@@ -37,6 +37,19 @@ class _NoWheelComboBox(_NoScrollComboBox):
     inherits _NoScrollComboBox's popup-placement fix.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # #388 follow-up: Mission enumerates one entry per unique mission
+        # title in the loaded strings -- easily 100+. Uncapped, Qt's popup
+        # grows to fit every row instead of scrolling, overflowing the
+        # screen. Capping it also keeps "Any" (always index 0, and the
+        # current item until something else is picked) pinned to the top of
+        # the popup instead of Qt trying to center an oversized list around
+        # it. Type/Class/Size/Grade have far fewer values so this is a
+        # no-op for them in practice, but it's set on the shared class for
+        # consistency in case any of those lists grow later.
+        self.setMaxVisibleItems(12)
+
     def wheelEvent(self, event):  # noqa: N802 (Qt override)
         event.ignore()
 
@@ -298,6 +311,18 @@ class BlueprintTrackerTab(QWidget):
             facet_row.addWidget(lbl)
             facet_row.addWidget(combo, 1)
         layout.addLayout(facet_row)
+        self._align_mission_and_type_label_widths()
+
+        # #388 follow-up: the note explaining Type/Class/Size/Grade sits
+        # directly under the facet row it describes, still above the
+        # keyword search box below -- explanatory text about the dropdown
+        # filters reads better right next to them than after the unrelated
+        # search box.
+        self._blueprints_filter_note = QLabel(tr("enhancements.blueprints_filter_note"))
+        self._blueprints_filter_note.setProperty("role", "secondary")
+        self._blueprints_filter_note.setStyleSheet("font-size: 10px;")
+        self._blueprints_filter_note.setWordWrap(True)
+        layout.addWidget(self._blueprints_filter_note)
 
         # #388: keyword search sits beneath the dropdown/checkbox filters
         # above (mission + facet combos, show-tags toggle), matching the
@@ -311,12 +336,6 @@ class BlueprintTrackerTab(QWidget):
         self._blueprints_search.setClearButtonEnabled(True)
         self._blueprints_search.textChanged.connect(self._refilter_blueprint_lists)
         layout.addWidget(self._blueprints_search)
-
-        self._blueprints_filter_note = QLabel(tr("enhancements.blueprints_filter_note"))
-        self._blueprints_filter_note.setProperty("role", "secondary")
-        self._blueprints_filter_note.setStyleSheet("font-size: 10px;")
-        self._blueprints_filter_note.setWordWrap(True)
-        layout.addWidget(self._blueprints_filter_note)
 
         lists_row = QHBoxLayout()
 
@@ -379,6 +398,22 @@ class BlueprintTrackerTab(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(scroll)
 
+    def _align_mission_and_type_label_widths(self) -> None:
+        """#388 follow-up: "Mission:" and "Type:" render at different
+        natural widths, so their combos started at different x positions
+        even though the two rows are meant to read as one column of
+        filters. Pad the shorter label out to match the wider one's
+        sizeHint so both combos line up -- computed from actual rendered
+        text (not a hard-coded pixel value) so it stays correct across
+        every language's translation, and re-run from retranslate_ui after
+        a language switch changes both labels' text.
+        """
+        mission_label = self._blueprints_mission_label
+        type_label = self._blueprints_facet_labels["enhancements.blueprints_facet_type"]
+        width = max(mission_label.sizeHint().width(), type_label.sizeHint().width())
+        mission_label.setMinimumWidth(width)
+        type_label.setMinimumWidth(width)
+
     def retranslate_ui(self) -> None:
         """Re-apply tr() to every text-bearing widget after a language switch."""
         self._title_label.setText(tr("blueprint_tracker.title"))
@@ -414,6 +449,7 @@ class BlueprintTrackerTab(QWidget):
         self._blueprints_remove_btn.setToolTip(tr("enhancements.blueprints_remove_tooltip"))
         for label_key, lbl in self._blueprints_facet_labels.items():
             lbl.setText(tr(label_key))
+        self._align_mission_and_type_label_widths()
 
     @staticmethod
     def _available_blueprints(all_names, owned) -> list:
