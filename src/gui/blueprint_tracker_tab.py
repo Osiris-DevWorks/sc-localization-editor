@@ -254,14 +254,6 @@ class BlueprintTrackerTab(QWidget):
         self._blueprints_empty_note.setWordWrap(True)
         layout.addWidget(self._blueprints_empty_note)
 
-        self._blueprints_search = QLineEdit()
-        self._blueprints_search.setPlaceholderText(
-            tr("enhancements.blueprints_search_placeholder")
-        )
-        self._blueprints_search.setClearButtonEnabled(True)
-        self._blueprints_search.textChanged.connect(self._refilter_blueprint_lists)
-        layout.addWidget(self._blueprints_search)
-
         # Display-only toggle (#221): show each item's Tag Builder tag inline
         # instead of the bare name. Matching/filtering/Owned tracking always
         # use the bare name regardless — see BlueprintItem.tagged_name.
@@ -306,6 +298,19 @@ class BlueprintTrackerTab(QWidget):
             facet_row.addWidget(lbl)
             facet_row.addWidget(combo, 1)
         layout.addLayout(facet_row)
+
+        # #388: keyword search sits beneath the dropdown/checkbox filters
+        # above (mission + facet combos, show-tags toggle), matching the
+        # String Editor's own filter row (create_string_filter_row's
+        # category/status/checkbox controls, all above the table's
+        # per-column keyword search boxes) -- was above them here instead.
+        self._blueprints_search = QLineEdit()
+        self._blueprints_search.setPlaceholderText(
+            tr("enhancements.blueprints_search_placeholder")
+        )
+        self._blueprints_search.setClearButtonEnabled(True)
+        self._blueprints_search.textChanged.connect(self._refilter_blueprint_lists)
+        layout.addWidget(self._blueprints_search)
 
         self._blueprints_filter_note = QLabel(tr("enhancements.blueprints_filter_note"))
         self._blueprints_filter_note.setProperty("role", "secondary")
